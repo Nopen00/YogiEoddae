@@ -14,8 +14,8 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const INITIAL_DATA = [
   { id: '1', keyword: '최근 검색어', date: '04.03' },
-  { id: '2', keyword: '최근 검색어', date: '04.03' },
-  { id: '3', keyword: '최근 검색어', date: '04.03' },
+  { id: '2', keyword: '국밥', date: '04.03' },
+  { id: '3', keyword: '최근', date: '04.03' },
 ];
 
 const SearchScreen = () => {
@@ -155,27 +155,128 @@ const SearchScreen = () => {
   );
 };
 
+// 토글 디자인 수치를 상수로 분리 (수정이 용이함)
+const TOGGLE = {
+  WIDTH: 48,
+  HEIGHT: 24,
+  RADIUS: 12,
+  CIRCLE: 20,
+  C_RADIUS: 10,
+};
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.light.background },
-  recentHeaderRow: { marginTop: Spacing.v.small, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: Spacing.h.medium },
-  recentTitle: { ...Typography.title1, color: Colors.light.black },
-  deleteAllText: { ...Typography.button4, color: Colors.light.grayLight },
-  listContent: { paddingHorizontal: Spacing.h.medium, paddingTop: Spacing.v.small },
-  recentItemContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14 },
-  leftGroup: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-  keywordText: { marginLeft: Spacing.h.small, ...Typography.body2, color: Colors.light.black },
-  rightGroup: { flexDirection: 'row', alignItems: 'center' },
-  dateText: { marginRight: Spacing.h.small, ...Typography.body2, color: Colors.light.grayLight },
-  emptyWrapper: { flex: 1 },
-  emptyTextContainer: { marginTop: Spacing.v.xlarge, alignItems: 'center', marginBottom: 40 },
-  emptyMainText: { ...Typography.subtitle2, color: Colors.light.black, textAlign: 'center' },
-  emptySubText: { marginTop: Spacing.v.small, ...Typography.body2, color: Colors.light.grayLight, textAlign: 'center' },
-  autoSaveFooterContainer: { width: SCREEN_WIDTH - (Spacing.h.medium * 2), alignSelf: 'center', marginTop: Spacing.v.medium },
-  separator: { height: Spacing.lw.small, backgroundColor: Colors.light.grayLight, width: '100%' },
-  autoSaveRow: { marginTop: Spacing.v.medium, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  autoSaveLabel: { ...Typography.subtitle2, color: Colors.light.grayDark },
-  toggleBody: { width: 48, height: 24, borderRadius: 12, position: 'relative', justifyContent: 'center' },
-  toggleCircle: { width: 20, height: 20, borderRadius: 10, backgroundColor: Colors.light.white, position: 'absolute' },
-});
+  // 1. 레이아웃 메인 컨테이너
+  container: { 
+    flex: 1, 
+    backgroundColor: Colors.light.background 
+  },
+
+  // 2. 최근 검색어 헤더 (타이틀 + 전체삭제)
+  recentHeaderRow: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center',
+    marginTop: Spacing.v.small, 
+    paddingHorizontal: Spacing.h.medium 
+  },
+  recentTitle: { 
+    ...Typography.title1, 
+    color: Colors.light.black 
+  },
+  deleteAllText: { 
+    ...Typography.button4, 
+    color: Colors.light.grayLight 
+  },
+
+  // 3. 리스트 및 아이템 영역
+  listContent: { 
+    paddingHorizontal: Spacing.h.medium, 
+    paddingTop: Spacing.v.small 
+  },
+  recentItemContainer: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    paddingVertical: 14 
+  },
+  leftGroup: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    flex: 1 
+  },
+  rightGroup: { 
+    flexDirection: 'row', 
+    alignItems: 'center' 
+  },
+  keywordText: { 
+    marginLeft: Spacing.h.small, 
+    ...Typography.body2, 
+    color: Colors.light.black 
+  },
+  dateText: { 
+    marginRight: Spacing.h.small, 
+    ...Typography.body2, 
+    color: Colors.light.grayLight 
+  },
+
+  // 4. 데이터가 없을 때 (Empty State)
+  emptyWrapper: { 
+    flex: 1 
+  },
+  emptyTextContainer: { 
+    alignItems: 'center',
+    marginTop: Spacing.v.xlarge, 
+    marginBottom: 40 
+  },
+  emptyMainText: { 
+    ...Typography.subtitle2, 
+    color: Colors.light.black, 
+    textAlign: 'center' 
+  },
+  emptySubText: { 
+    marginTop: Spacing.v.small, 
+    ...Typography.body2, 
+    color: Colors.light.grayLight, 
+    textAlign: 'center' 
+  },
+
+  // 5. 푸터 영역 (구분선 + 자동저장 토글)
+  autoSaveFooterContainer: { 
+    alignSelf: 'center',
+    width: SCREEN_WIDTH - (Spacing.h.medium * 2), 
+    marginTop: Spacing.v.medium 
+  },
+  separator: { 
+    height: Spacing.lw.small, 
+    backgroundColor: Colors.light.grayLight, 
+    width: '100%' 
+  },
+  autoSaveRow: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center',
+    marginTop: Spacing.v.medium 
+  },
+  autoSaveLabel: { 
+    ...Typography.subtitle2, 
+    color: Colors.light.grayDark 
+  },
+
+  // 6. 토글 스위치 상세 스타일
+  toggleBody: { 
+    width: TOGGLE.WIDTH, 
+    height: TOGGLE.HEIGHT, 
+    borderRadius: TOGGLE.RADIUS, 
+    position: 'relative', 
+    justifyContent: 'center' 
+  },
+  toggleCircle: { 
+    width: TOGGLE.CIRCLE, 
+    height: TOGGLE.CIRCLE, 
+    borderRadius: TOGGLE.C_RADIUS, 
+    backgroundColor: Colors.light.white, 
+    position: 'absolute' 
+  },
+});;
 
 export default SearchScreen;

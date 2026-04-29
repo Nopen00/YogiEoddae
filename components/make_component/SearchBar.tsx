@@ -1,4 +1,4 @@
-// components/SearchBar.tsx
+// components/make_component/SearchBar.tsx
 import { Colors } from '@/constants/Colors';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';

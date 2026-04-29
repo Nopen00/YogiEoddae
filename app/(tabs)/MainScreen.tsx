@@ -1,4 +1,3 @@
-import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Search } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
@@ -14,7 +13,10 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context'; // 경고 해결 및 성능 최적화
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+// 🚀 구형 useNavigation을 지우고 Expo Router의 useRouter를 가져옵니다!
+import { useRouter } from 'expo-router';
 
 // 디자인 시스템 임포트
 import { Colors } from '@/constants/Colors';
@@ -24,7 +26,7 @@ import { Typography } from '@/constants/Typography';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CAROUSEL_WIDTH = SCREEN_WIDTH - (Spacing.h.medium * 2);
 
-// --- 데이터 영역 ---
+// --- 데이터 영역 (생략 없이 그대로) ---
 const CAROUSEL_IMAGES = [
   { id: '1', uri: 'https://picsum.photos/id/10/400/240', title: '푸른 바다의 전설', subtitle: '드라마 촬영지' },
   { id: '2', uri: 'https://picsum.photos/id/11/400/240', title: '겨울 왕국 여행', subtitle: '영화 속 그곳' },
@@ -48,7 +50,9 @@ const RECOMMENDED_COURSES = [
 ];
 
 const MainScreen = () => {
-  const navigation = useNavigation<any>();
+  // 🚀 navigation 대신 router를 선언합니다!
+  const router = useRouter(); 
+  
   const [activeIndex, setActiveIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
 
@@ -94,7 +98,6 @@ const MainScreen = () => {
   );
 
   return (
-    // edges={['top']} 설정을 통해 하단 흰색 박스 이슈 해결
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       
       {/* 1. 상단 고정 검색바 */}
@@ -102,7 +105,12 @@ const MainScreen = () => {
         <TouchableOpacity 
           style={styles.searchBarContainer}
           activeOpacity={0.9}
-          onPress={() => navigation.navigate('SearchScreen')}
+          // 🚀 여기가 핵심입니다! 
+          // SearchScreen으로 가면서 "나 MainScreen에서 왔어" 라고 알려줍니다.
+          onPress={() => router.push({
+            pathname: '/SearchScreen',
+            params: { from: '/MainScreen' }
+          })}
         >
           <Search size={24} color={Colors.light.primary} />
           <View style={styles.searchPlaceholderWrapper}>
@@ -113,7 +121,7 @@ const MainScreen = () => {
 
       <ScrollView 
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 32 }} // 마지막 콘텐츠 여백
+        contentContainerStyle={{ paddingBottom: 32 }}
       >
         {/* 2. 메인 캐러셀 */}
         <View style={styles.imageBox}>
