@@ -21,7 +21,7 @@ const SearchBar = ({ onBackPress, onClearPress, value, ...props }: SearchBarProp
       <TextInput
         style={[styles.searchInput, value && value.length > 0 && { marginRight: Spacing.h.small }]}
         placeholderTextColor={Colors.light.grayLight}
-        value={value}
+        value={value} 
         {...props}
       />
       {value && value.length > 0 && (

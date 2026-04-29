@@ -184,52 +184,177 @@ const MainScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.light.background },
-  searchBarFixed: { backgroundColor: Colors.light.background, paddingBottom: Spacing.v.small },
+  // 1. 레이아웃 메인 컨테이너
+  container: {
+    flex: 1,
+    backgroundColor: Colors.light.background,
+  },
+
+  searchBarFixed: {
+    backgroundColor: Colors.light.background,
+    paddingBottom: Spacing.v.small,
+  },
+
+  // 2. 상단 검색바
   searchBarContainer: {
     marginTop: Spacing.v.small,
     marginHorizontal: Spacing.h.medium,
     height: 56,
+
     flexDirection: 'row',
     alignItems: 'center',
+
     backgroundColor: Colors.light.white,
     borderWidth: Spacing.lw.small,
     borderColor: Colors.light.grayLight,
     borderRadius: 56,
+
     paddingHorizontal: Spacing.h.medium,
   },
-  searchPlaceholderWrapper: { flex: 1, marginLeft: Spacing.h.small },
-  searchPlaceholderText: { ...Typography.body3, color: Colors.light.grayLight },
-  imageBox: { marginTop: Spacing.v.small, marginHorizontal: Spacing.h.medium, height: 240, position: 'relative' },
-  carouselWrapper: { width: CAROUSEL_WIDTH, height: 240, paddingHorizontal: Spacing.h.xsmall },
-  carouselInner: { flex: 1, borderRadius: Spacing.r.small, overflow: 'hidden', backgroundColor: Colors.light.grayLight },
-  fullImage: { width: '100%', height: '100%' },
-  gradientOverlay: { position: 'absolute', left: 0, right: 0, bottom: 0, height: '50%', justifyContent: 'flex-end' },
-  textOverlay: { paddingLeft: Spacing.h.medium, paddingBottom: Spacing.v.large },
-  carouselTitleText: { ...Typography.HeadLine5, color: Colors.light.white },
-  carouselSubtitleText: { ...Typography.subtitle2, color: Colors.light.white, marginBottom: Spacing.v.small },
-  indicatorContainer: { position: 'absolute', bottom: Spacing.v.small, left: 0, right: 0, flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
-  dot: { width: 8, height: 8, borderRadius: 4, marginHorizontal: Spacing.h.xsmall },
+
+  searchPlaceholderWrapper: {
+    flex: 1,
+    marginLeft: Spacing.h.small,
+  },
+
+  searchPlaceholderText: {
+    ...Typography.body3,
+    color: Colors.light.grayLight,
+  },
+
+  // 3. 메인 캐러셀 영역
+  imageBox: {
+    marginTop: Spacing.v.small,
+    marginHorizontal: Spacing.h.medium,
+    height: 240,
+    position: 'relative',
+  },
+
+  carouselWrapper: {
+    width: CAROUSEL_WIDTH,
+    height: 240,
+    paddingHorizontal: Spacing.h.xsmall,
+  },
+
+  carouselInner: {
+    flex: 1,
+    borderRadius: Spacing.r.small,
+    overflow: 'hidden',
+    backgroundColor: Colors.light.grayLight,
+  },
+
+  fullImage: {
+    width: '100%',
+    height: '100%',
+  },
+
+  gradientOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '50%',
+    justifyContent: 'flex-end',
+  },
+
+  textOverlay: {
+    paddingLeft: Spacing.h.medium,
+    paddingBottom: Spacing.v.large,
+  },
+
+  carouselTitleText: {
+    ...Typography.HeadLine5,
+    color: Colors.light.white,
+  },
+
+  carouselSubtitleText: {
+    ...Typography.subtitle2,
+    color: Colors.light.white,
+    marginBottom: Spacing.v.small,
+  },
+
+  indicatorContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: Spacing.v.small,
+
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginHorizontal: Spacing.h.xsmall,
+  },
+
+  // 4. 국내 여행 버튼
   domesticButton: {
     marginTop: Spacing.v.medium,
     marginHorizontal: Spacing.h.medium,
     height: 122,
+
     backgroundColor: Colors.light.white,
     borderRadius: Spacing.r.small,
     borderWidth: Spacing.lw.small,
     borderColor: Colors.light.grayLight,
+
     paddingTop: Spacing.v.medium,
     paddingLeft: Spacing.h.medium,
   },
-  domesticButtonText: { ...Typography.title1, color: Colors.light.black },
-  sectionTitleContainer: { marginTop: Spacing.v.large, paddingLeft: Spacing.h.medium },
-  sectionTitleText: { ...Typography.HeadLine5, color: Colors.light.black },
-  courseList: { marginTop: Spacing.v.medium },
-  courseListContent: { paddingHorizontal: Spacing.h.medium, gap: Spacing.h.small },
-  courseItemContainer: { width: 160 },
-  courseImageWrapper: { width: 160, height: 120, borderRadius: Spacing.r.small, overflow: 'hidden', backgroundColor: Colors.light.grayLight },
-  courseImage: { width: '100%', height: '100%' },
-  courseTitleText: { marginTop: 8, ...Typography.body3, color: Colors.light.grayDark, textAlign: 'left' },
+
+  domesticButtonText: {
+    ...Typography.title1,
+    color: Colors.light.black,
+  },
+
+  // 5. 섹션 타이틀
+  sectionTitleContainer: {
+    marginTop: Spacing.v.large,
+    paddingLeft: Spacing.h.medium,
+  },
+
+  sectionTitleText: {
+    ...Typography.HeadLine5,
+    color: Colors.light.black,
+  },
+
+  // 6. 코스 리스트
+  courseList: {
+    marginTop: Spacing.v.medium,
+  },
+
+  courseListContent: {
+    paddingHorizontal: Spacing.h.medium,
+    gap: Spacing.h.small,
+  },
+
+  courseItemContainer: {
+    width: 160,
+  },
+
+  courseImageWrapper: {
+    width: 160,
+    height: 120,
+    borderRadius: Spacing.r.small,
+    overflow: 'hidden',
+    backgroundColor: Colors.light.grayLight,
+  },
+
+  courseImage: {
+    width: '100%',
+    height: '100%',
+  },
+
+  courseTitleText: {
+    marginTop: 8,
+    ...Typography.body3,
+    color: Colors.light.grayDark,
+    textAlign: 'left',
+  },
 });
 
 export default MainScreen;

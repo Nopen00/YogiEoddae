@@ -277,6 +277,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.white, 
     position: 'absolute' 
   },
-});;
+});
 
 export default SearchScreen;

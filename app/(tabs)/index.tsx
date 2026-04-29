@@ -112,19 +112,92 @@ const IntroScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.light.background },
-  pageWrapper: { width: SCREEN_WIDTH, alignItems: 'center' },
-  topContent: { alignItems: 'center', paddingTop: Spacing.v.xxlarge },
-  headline: { ...Typography.HeadLine4, color: Colors.light.black, textAlign: 'center', marginBottom: Spacing.v.medium },
-  body: { ...Typography.body3, color: Colors.light.grayDark, textAlign: 'center' },
-  bottomContent: { paddingHorizontal: 56, marginBottom: 16, position: 'absolute', bottom: 0, width: '100%' },
-  indicatorContainer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 32 },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.light.grayLight, marginHorizontal: 4 },
-  activeDot: { backgroundColor: Colors.light.primary },
-  button: { height: 40, backgroundColor: Colors.light.white, borderRadius: Spacing.r.small, borderWidth: Spacing.lw.small, borderColor: Colors.light.grayLight, justifyContent: 'center', alignItems: 'center' },
-  lastPageButton: { backgroundColor: Colors.light.dark, borderWidth: 0 },
-  buttonText: { ...Typography.button2, color: Colors.light.black },
-  lastPageButtonText: { color: Colors.light.white },
+  // 1. 전체 레이아웃
+  container: {
+    flex: 1,
+    backgroundColor: Colors.light.background,
+  },
+
+  pageWrapper: {
+    width: SCREEN_WIDTH,
+    alignItems: 'center',
+  },
+
+  // 2. 상단 콘텐츠
+  topContent: {
+    alignItems: 'center',
+    paddingTop: Spacing.v.xxlarge,
+  },
+
+  headline: {
+    ...Typography.HeadLine4,
+    color: Colors.light.black,
+    textAlign: 'center',
+    marginBottom: Spacing.v.medium,
+  },
+
+  body: {
+    ...Typography.body3,
+    color: Colors.light.grayDark,
+    textAlign: 'center',
+  },
+
+  // 3. 하단 고정 영역
+  bottomContent: {
+    position: 'absolute',
+    bottom: 0,
+
+    width: '100%',
+    paddingHorizontal: 56,
+    marginBottom: 16,
+  },
+
+  // 4. 페이지 인디케이터
+  indicatorContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.light.grayLight,
+    marginHorizontal: 4,
+  },
+
+  activeDot: {
+    backgroundColor: Colors.light.primary,
+  },
+
+  // 5. 버튼 영역
+  button: {
+    height: 40,
+
+    justifyContent: 'center',
+    alignItems: 'center',
+
+    backgroundColor: Colors.light.white,
+    borderRadius: Spacing.r.small,
+    borderWidth: Spacing.lw.small,
+    borderColor: Colors.light.grayLight,
+  },
+
+  lastPageButton: {
+    backgroundColor: Colors.light.dark,
+    borderWidth: 0,
+  },
+
+  buttonText: {
+    ...Typography.button2,
+    color: Colors.light.black,
+  },
+
+  lastPageButtonText: {
+    color: Colors.light.white,
+  },
 });
 
 export default IntroScreen;
