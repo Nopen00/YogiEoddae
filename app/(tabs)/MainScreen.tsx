@@ -177,9 +177,9 @@ const MainScreen = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.light.background },
-  searchBarFixed: { backgroundColor: Colors.light.background, paddingBottom: Spacing.v.medium },
+  searchBarFixed: { backgroundColor: Colors.light.background, paddingBottom: Spacing.v.small },
   searchBarContainer: {
-    ///marginTop: Spacing.v.xlarge,
+    marginTop: Spacing.v.small,
     marginHorizontal: Spacing.h.medium,
     height: 56,
     flexDirection: 'row',
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
   },
   searchPlaceholderWrapper: { flex: 1, marginLeft: Spacing.h.small },
   searchPlaceholderText: { ...Typography.body3, color: Colors.light.grayLight },
-  imageBox: { marginTop: 0, marginHorizontal: Spacing.h.medium, height: 240, position: 'relative' },
+  imageBox: { marginTop: Spacing.v.small, marginHorizontal: Spacing.h.medium, height: 240, position: 'relative' },
   carouselWrapper: { width: CAROUSEL_WIDTH, height: 240, paddingHorizontal: Spacing.h.xsmall },
   carouselInner: { flex: 1, borderRadius: Spacing.r.small, overflow: 'hidden', backgroundColor: Colors.light.grayLight },
   fullImage: { width: '100%', height: '100%' },
