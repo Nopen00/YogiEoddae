@@ -17,6 +17,12 @@ export default function TabLayout() {
         tabBarButton: HapticTab,
       }}>
       <Tabs.Screen
+        name="index"
+        options={{
+          href: null, // 하단 탭 바 아이콘을 생성하지 않음
+        }}
+      />
+      <Tabs.Screen
         name="MainScreen"
         options={{
           title: 'Home',
@@ -28,6 +34,18 @@ export default function TabLayout() {
         options={{
           title: 'Explore',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="SearchScreen"
+        options={{
+          href: null, // 하단 탭 바 아이콘을 생성하지 않음
+        }}
+      />
+      <Tabs.Screen
+        name="SearchResultScreen"
+        options={{
+          href: null, // 하단 탭 바 아이콘을 생성하지 않음
         }}
       />
     </Tabs>

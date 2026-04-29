@@ -1,4 +1,4 @@
-import { useNavigation } from '@react-navigation/native';
+import { useRouter } from 'expo-router'; // navigation 대신 router 사용 권장
 import { Clock, X } from 'lucide-react-native';
 import React, { useRef, useState } from 'react';
 import { Animated, Dimensions, Easing, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -19,14 +19,42 @@ const INITIAL_DATA = [
 ];
 
 const SearchScreen = () => {
-  const navigation = useNavigation();
+  const router = useRouter();
   const [text, setText] = useState('');
   const [recentList, setRecentList] = useState(INITIAL_DATA);
   const [isAutoSaveOn, setIsAutoSaveOn] = useState(true);
 
   const toggleAnimation = useRef(new Animated.Value(isAutoSaveOn ? 1 : 0)).current;
 
-  // 토글 애니메이션 로직
+  // 🚀 [추가] 검색 실행 시 최근 검색어에 추가하는 로직
+  const handleSearch = (keyword: string) => {
+    const trimmedKeyword = keyword.trim();
+    if (!trimmedKeyword) return;
+
+    // 자동저장이 켜져 있을 때만 저장
+    if (isAutoSaveOn) {
+      const newItem = {
+        id: Date.now().toString(), // 고유 ID
+        keyword: trimmedKeyword,
+        date: '04.29', // 실제 날짜를 사용하려면 별도 포맷팅 함수 필요
+      };
+
+      setRecentList((prev) => {
+        // 중복 검색어 제거 후 맨 앞에 추가
+        const filtered = prev.filter((item) => item.keyword !== trimmedKeyword);
+        return [newItem, ...filtered];
+      });
+    }
+
+    // 검색 결과창으로 이동
+    router.push({
+      pathname: '/SearchResultScreen',
+      params: { keyword: trimmedKeyword }
+    });
+    
+    setText(''); // 입력창 비우기
+  };
+
   const handleToggle = () => {
     const nextState = !isAutoSaveOn;
     setIsAutoSaveOn(nextState);
@@ -50,7 +78,12 @@ const SearchScreen = () => {
 
   const renderRecentItem = ({ item }: { item: typeof INITIAL_DATA[0] }) => (
     <View style={styles.recentItemContainer}>
-      <TouchableOpacity style={styles.leftGroup} activeOpacity={0.6}>
+      {/* 🚀 검색어 클릭 시에도 해당 단어로 검색 실행 */}
+      <TouchableOpacity 
+        style={styles.leftGroup} 
+        activeOpacity={0.6}
+        onPress={() => handleSearch(item.keyword)}
+      >
         <Clock size={16} color={Colors.light.grayDark} />
         <Text style={styles.keywordText}>{item.keyword}</Text>
       </TouchableOpacity>
@@ -79,14 +112,16 @@ const SearchScreen = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* 🚀 분리한 SearchBar 컴포넌트 적용 */}
       <SearchBar
         autoFocus
         placeholder="어디로 떠나볼까요?"
         value={text}
         onChangeText={setText}
         onClearPress={() => setText('')}
-        onBackPress={() => navigation.goBack()}
+        onBackPress={() => router.back()}
+        // 🚀 엔터(완료) 버튼 누를 때 검색 실행
+        onSubmitEditing={() => handleSearch(text)}
+        returnKeyType="search"
       />
 
       {recentList.length > 0 ? (
@@ -104,6 +139,7 @@ const SearchScreen = () => {
             contentContainerStyle={styles.listContent}
             ListFooterComponent={AutoSaveFooter}
             showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled" // 검색어 클릭 시 키보드 닫힘 방지
           />
         </>
       ) : (
@@ -121,8 +157,6 @@ const SearchScreen = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.light.background },
-  // headerRow, backButton, searchBarContainer, searchInput 스타일은 SearchBar.tsx로 이동했으므로 삭제 가능
-  
   recentHeaderRow: { marginTop: Spacing.v.small, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: Spacing.h.medium },
   recentTitle: { ...Typography.title1, color: Colors.light.black },
   deleteAllText: { ...Typography.button4, color: Colors.light.grayLight },
