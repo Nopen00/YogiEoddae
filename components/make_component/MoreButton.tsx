@@ -1,3 +1,4 @@
+///components\make_component\MoreButton.tsx
 import { Colors } from '@/constants/Colors'; // 색상 상수
 import { MoreVertical } from 'lucide-react-native'; // 아이콘 임포트
 import React from 'react'; // React 라이브러리 임포트

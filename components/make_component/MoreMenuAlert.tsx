@@ -2,16 +2,16 @@
 
 import React, { useState } from 'react';
 import {
-    Platform,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 import {
-    Calendar,
-    Star,
+  Calendar,
+  Star,
 } from 'lucide-react-native';
 
 import { SaveHeart18 } from '@/components/make_component/icons/SaveHeart';
@@ -21,7 +21,12 @@ import { Colors } from '@/constants/Colors';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 
-export const MoreMenuAlert = () => {
+// ✅ props 인터페이스 추가
+interface MoreMenuAlertProps {
+  onSchedulePress?: () => void;
+}
+
+export const MoreMenuAlert = ({ onSchedulePress }: MoreMenuAlertProps) => {
   const [isSaved, setIsSaved] = useState(false);
 
   const handleSaveToggle = () => {
@@ -41,7 +46,6 @@ export const MoreMenuAlert = () => {
         ) : (
           <UnSaveHeart18 />
         )}
-
         <Text style={styles.menuText}>
           {isSaved ? '저장취소' : '저장하기'}
         </Text>
@@ -49,17 +53,17 @@ export const MoreMenuAlert = () => {
 
       <View style={styles.separator} />
 
-      {/* 일정추가 */}
+      {/* 일정추가 ✅ onSchedulePress 연결 */}
       <TouchableOpacity
         style={styles.menuItem}
         activeOpacity={0.7}
+        onPress={onSchedulePress}
       >
         <Calendar
           size={18}
           color={Colors.light.black}
           strokeWidth={2}
         />
-
         <Text style={styles.menuText}>
           일정추가
         </Text>
@@ -77,7 +81,6 @@ export const MoreMenuAlert = () => {
           color={Colors.light.black}
           strokeWidth={2}
         />
-
         <Text style={styles.menuText}>
           리뷰쓰기
         </Text>
@@ -113,7 +116,6 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.25,
         shadowRadius: 2,
       },
-
       android: {
         elevation: 30,
       },
