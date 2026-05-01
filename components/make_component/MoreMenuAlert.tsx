@@ -1,27 +1,87 @@
-import { Colors } from '@/constants/Colors'; // 색상 상수
-import { Spacing } from '@/constants/Spacing'; // 🚀 간격 상수 추가
-import { Typography } from '@/constants/Typography'; // 타이포그래피 상수
-import { Calendar, Heart, Star } from 'lucide-react-native'; // 아이콘 임포트
-import React from 'react'; // React 라이브러리 임포트
-import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native'; // Native UI 컴포넌트 임포트
+// components/make_component/MoreMenuAlert.tsx
+
+import React, { useState } from 'react';
+import {
+    Platform,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
+
+import {
+    Calendar,
+    Star,
+} from 'lucide-react-native';
+
+import { SaveHeart } from '@/components/make_component/icons/SaveHeart';
+import { UnSaveHeart } from '@/components/make_component/icons/UnSaveHeart';
+
+import { Colors } from '@/constants/Colors';
+import { Spacing } from '@/constants/Spacing';
+import { Typography } from '@/constants/Typography';
 
 export const MoreMenuAlert = () => {
-  const MenuItem = ({ Icon, label }: { Icon: any; label: string }) => (
-    <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
-      <Icon size={18} color={Colors.light.black} strokeWidth={2} /> 
-      <Text style={styles.menuText}>{label}</Text>
-    </TouchableOpacity>
-  );
+  const [isSaved, setIsSaved] = useState(false);
+
+  const handleSaveToggle = () => {
+    setIsSaved((prev) => !prev);
+  };
 
   return (
     <View style={styles.alertContainer}>
-      <MenuItem Icon={Heart} label="저장하기" />
+      {/* 저장 */}
+      <TouchableOpacity
+        style={styles.menuItem}
+        onPress={handleSaveToggle}
+        activeOpacity={0.7}
+      >
+        {isSaved ? (
+          <SaveHeart />
+        ) : (
+          <UnSaveHeart />
+        )}
+
+        <Text style={styles.menuText}>
+          {isSaved ? '저장취소' : '저장하기'}
+        </Text>
+      </TouchableOpacity>
+
       <View style={styles.separator} />
-      
-      <MenuItem Icon={Calendar} label="일정추가" />
+
+      {/* 일정추가 */}
+      <TouchableOpacity
+        style={styles.menuItem}
+        activeOpacity={0.7}
+      >
+        <Calendar
+          size={18}
+          color={Colors.light.black}
+          strokeWidth={2}
+        />
+
+        <Text style={styles.menuText}>
+          일정추가
+        </Text>
+      </TouchableOpacity>
+
       <View style={styles.separator} />
-      
-      <MenuItem Icon={Star} label="리뷰쓰기" />
+
+      {/* 리뷰쓰기 */}
+      <TouchableOpacity
+        style={styles.menuItem}
+        activeOpacity={0.7}
+      >
+        <Star
+          size={18}
+          color={Colors.light.black}
+          strokeWidth={2}
+        />
+
+        <Text style={styles.menuText}>
+          리뷰쓰기
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -29,43 +89,54 @@ export const MoreMenuAlert = () => {
 const styles = StyleSheet.create({
   alertContainer: {
     width: 107,
-    height: 122, // 이전 단계에서 계산된 높이 유지
+    height: 122,
+
     backgroundColor: Colors.light.white,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: Colors.light.grayLight,
+
     position: 'absolute',
-    top: 48, // 버튼 하단 8pt 위치
-    
-    right: Spacing.h.medium, 
-    
+    top: 48,
+    right: Spacing.h.medium,
+
     paddingTop: 8,
-    zIndex: 100,
+    zIndex: 9999,
+
     ...Platform.select({
-      ios: { 
-        shadowColor: Colors.light.black, 
-        shadowOffset: { width: 0, height: 2 }, 
-        shadowOpacity: 0.25, 
-        shadowRadius: 4 
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: {
+          width: 0,
+          height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
       },
-      android: { elevation: 4 },
+
+      android: {
+        elevation: 30,
+      },
     }),
   },
+
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingLeft: 16,
     height: 24,
   },
+
   menuText: {
     marginLeft: 8,
     ...Typography.button4,
     color: Colors.light.black,
   },
+
   separator: {
     height: 1,
-    backgroundColor: Colors.light.grayLight,
-    marginVertical: 8,
     width: '100%',
+    marginVertical: 8,
+    backgroundColor: Colors.light.grayLight,
   },
 });

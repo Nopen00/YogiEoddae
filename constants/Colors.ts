@@ -24,6 +24,8 @@ export const Colors = {
     icon: '#41737C',
     tabIconDefault: '#41737C',
     tabIconSelected: tintColorLight,
+
+    heart: '#F24C54',
   },
   dark: {
     // 다크모드는 현재 배경과 텍스트를 반전시킨 기본값입니다.
