@@ -14,8 +14,8 @@ import {
     Star,
 } from 'lucide-react-native';
 
-import { SaveHeart } from '@/components/make_component/icons/SaveHeart';
-import { UnSaveHeart } from '@/components/make_component/icons/UnSaveHeart';
+import { SaveHeart18 } from '@/components/make_component/icons/SaveHeart';
+import { UnSaveHeart18 } from '@/components/make_component/icons/UnSaveHeart';
 
 import { Colors } from '@/constants/Colors';
 import { Spacing } from '@/constants/Spacing';
@@ -37,9 +37,9 @@ export const MoreMenuAlert = () => {
         activeOpacity={0.7}
       >
         {isSaved ? (
-          <SaveHeart />
+          <SaveHeart18 />
         ) : (
-          <UnSaveHeart />
+          <UnSaveHeart18 />
         )}
 
         <Text style={styles.menuText}>
@@ -108,10 +108,10 @@ const styles = StyleSheet.create({
         shadowColor: '#000',
         shadowOffset: {
           width: 0,
-          height: 2,
+          height: 0,
         },
         shadowOpacity: 0.25,
-        shadowRadius: 4,
+        shadowRadius: 2,
       },
 
       android: {
