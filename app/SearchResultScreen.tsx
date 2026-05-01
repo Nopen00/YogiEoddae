@@ -111,7 +111,14 @@ const SearchResultScreen = () => {
             {(selectedIndex === 0 ? dummyCourses.slice(0, 3) : dummyCourses).map((course) => {
               const { visibleTags, extraCount } = getProcessedTags(course.tags);
               return (
-                <TouchableOpacity key={`course-${course.id}`} style={styles.cardButton} activeOpacity={0.9}>
+                <TouchableOpacity 
+                key={`course-${course.id}`} 
+                style={styles.cardButton} 
+                activeOpacity={0.9} 
+                onPress={() => router.push({
+                  pathname:'/CourseDetailScreen',
+                  params: { id: course.id, title: course.title}
+                  })}>
                   <View style={styles.cardInner}>
                     <View style={styles.imageCircle} />
                     <View style={styles.infoContent}>
