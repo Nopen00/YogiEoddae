@@ -39,7 +39,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.h.medium, 
     marginTop: Spacing.v.small 
   },
-  // backButton 스타일은 이제 BackButton.tsx 내부에서 관리하므로 여기서 제거되었습니다.
   searchBarContainer: { 
     flex: 1, 
     height: 56, 
