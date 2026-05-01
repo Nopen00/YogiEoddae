@@ -48,6 +48,7 @@ const SearchResultScreen = () => {
     return count.toString();
   };
 
+  // 태그 처리 로직
   const getProcessedTags = (tags: string[] = []) => {
     const safeTags = tags || [];
     const sorted = [...safeTags].sort((a, b) => 
@@ -58,12 +59,12 @@ const SearchResultScreen = () => {
     return { visibleTags, extraCount };
   };
 
-  // 샘플 데이터 (각 4개씩 준비하여 더보기 버튼 활성화)
+  // 데이터셋
   const dummyCourses = [
     { id: 1, title: "내가 왕이 될 상인가....", placeCount: 7, media: "드라마", rating: 4.3, likes: 1250, tags: ["역사", "서울", "관광명소", "가족여행"] },
-    { id: 2, title: "해안도로 드라이브 코스", placeCount: 5, media: "유튜브", rating: 4.8, likes: 85, tags: ["강원", "드라이브"] },
+    { id: 2, title: "해안도로 드라이브", placeCount: 5, media: "유튜브", rating: 4.8, likes: 85, tags: ["강원", "드라이브"] },
     { id: 3, title: "서울 야경 투어", placeCount: 4, media: "영화", rating: 4.5, likes: 320, tags: ["야경"] },
-    { id: 4, title: "제주 맛집 탐방", placeCount: 8, media: "인스타", rating: 4.9, likes: 2100, tags: ["맛집"] },
+    { id: 4, title: "제주 맛집", placeCount: 8, media: "SNS", rating: 4.9, likes: 2100, tags: ["제주"] },
   ];
 
   const dummyAttractions = [
@@ -74,10 +75,10 @@ const SearchResultScreen = () => {
   ];
 
   const dummyPhotoSpots = [
-    { id: 1, title: "속초 아이 대관람차", address: "강원 속초시", likes: 5200, tags: ["포토존", "관람차"] },
-    { id: 2, title: "별마당 도서관", address: "서울 강남구", likes: 8900, tags: ["실내", "도서관"] },
+    { id: 1, title: "속초 아이 대관람차", address: "강원 속초시", likes: 5200, tags: ["포토존"] },
+    { id: 2, title: "별마당 도서관", address: "서울 강남구", likes: 8900, tags: ["실내"] },
     { id: 3, title: "강릉 안목해변", address: "강원 강릉시", likes: 3100, tags: ["바다"] },
-    { id: 4, title: "감천문화마을", address: "부산 사하구", likes: 4500, tags: ["마을", "벽화"] },
+    { id: 4, title: "감천문화마을", address: "부산 사하구", likes: 4500, tags: ["마을"] },
   ];
 
   return (
@@ -240,17 +241,19 @@ const styles = StyleSheet.create({
   indicator: { position: 'absolute', bottom: 0, left: 0, height: 1, backgroundColor: Colors.light.black, zIndex: 1 },
   mainContent: { flex: 1, paddingTop: Spacing.v.medium },
   
-  // 🚀 최하단 패딩 64pt로 수정
+  // 🚀 최하단 여백 64pt 설정
   scrollContainer: { paddingBottom: 64 },
 
+  // 🚀 타이틀(하단 항목)의 32pt 위에 위치하도록 설정
   nextSectionWrapper: { marginTop: 32 },
+
   sectionHeader: { paddingHorizontal: Spacing.h.medium, marginBottom: Spacing.v.medium },
-  sectionTitle: { ...Typography.title1, color: Colors.light.black, marginBottom: Spacing.v.small },
+  sectionTitle: { ...Typography.HeadLine7, color: Colors.light.black, marginBottom: Spacing.v.small },
   titleBottomLine: { height: 1, backgroundColor: Colors.light.grayLight },
   cardButton: {
     height: 106,
     marginHorizontal: Spacing.h.medium,
-    marginBottom: 16,
+    marginBottom: 16, // 카드 하단 16pt 여백
     backgroundColor: Colors.light.white,
     borderRadius: Spacing.r.small,
     borderWidth: Spacing.lw.small,
@@ -270,7 +273,8 @@ const styles = StyleSheet.create({
   tagRow: { flexDirection: 'row', alignItems: 'center' },
   tagText: { ...Typography.body2, color: Colors.light.primary, marginRight: 4 },
   
-  // 🚀 카드 하단 16pt 여백 유지
+  // 🚀 상단 항목(카드)에서 16pt 떨어지도록 설정
+  // 카드의 marginBottom(16)과 moreButton의 marginTop(0)이 합쳐져 16pt 유지
   moreButton: { marginTop: 0, alignSelf: 'flex-end', marginRight: 16, paddingVertical: 8 },
   moreButtonText: { ...Typography.button4, color: Colors.light.primary }
 });
