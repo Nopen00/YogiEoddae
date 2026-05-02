@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
   tagContainer: { flexDirection: 'row', marginTop: 8 },
   tagItem: { ...Typography.body2, color: Colors.light.primary, marginRight: 4 },
   dayListSection: { marginTop: 16 },
-  dayScrollContent: { paddingRight: 16, gap: 8 },
+  dayScrollContent: { paddingRight: 0, gap: 8 },
   dayButton: { width: 139, height: 78, borderRadius: 8, borderWidth: 1, alignItems: 'center', paddingTop: 16, paddingHorizontal: 32 },
   dayButtonUnselected: { backgroundColor: Colors.light.white, borderColor: Colors.light.grayLight },
   dayButtonSelected: { backgroundColor: Colors.light.primary, borderColor: Colors.light.primary },
