@@ -1,3 +1,4 @@
+//components\make_component\ScheduleAlert.tsx
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { Calendar, X } from 'lucide-react-native'; // 🚀 달력 아이콘 추가

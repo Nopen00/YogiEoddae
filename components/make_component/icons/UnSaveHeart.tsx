@@ -28,9 +28,9 @@ export const UnSaveHeart32 = () => {
   return (
     <Heart
       size={32}
-      color={Colors.light.black}
+      color={Colors.light.grayDark}
       fill="none"
-      strokeWidth={2}
+      strokeWidth={1.5}
     />
   );
 };

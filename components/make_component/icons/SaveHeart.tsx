@@ -31,7 +31,7 @@ export const SaveHeart32 = () => {
       size={32}
       color="#F24C54"
       fill="#F24C54"
-      strokeWidth={2}
+      strokeWidth={1.5}
 
     />
   );
