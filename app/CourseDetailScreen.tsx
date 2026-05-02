@@ -11,8 +11,6 @@ import React, { useState } from 'react';
 import { StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-console.log('ScheduleAlert:', ScheduleAlert);
-console.log('BackButton:', BackButton);
 
 const CourseDetailScreen = () => {
   const { id, title } = useLocalSearchParams(); 
