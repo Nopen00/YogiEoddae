@@ -1,6 +1,6 @@
 // components/make_component/MoreMenuAlert.tsx
 
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Platform,
   StyleSheet,
@@ -23,22 +23,19 @@ import { Typography } from '@/constants/Typography';
 
 // ✅ props 인터페이스 추가
 interface MoreMenuAlertProps {
+  isSaved: boolean;
+  onSavePress: () => void;
   onSchedulePress?: () => void;
 }
 
-export const MoreMenuAlert = ({ onSchedulePress }: MoreMenuAlertProps) => {
-  const [isSaved, setIsSaved] = useState(false);
-
-  const handleSaveToggle = () => {
-    setIsSaved((prev) => !prev);
-  };
+export const MoreMenuAlert = ({ isSaved, onSavePress, onSchedulePress }: MoreMenuAlertProps) => {
 
   return (
     <View style={styles.alertContainer}>
       {/* 저장 */}
       <TouchableOpacity
         style={styles.menuItem}
-        onPress={handleSaveToggle}
+        onPress={onSavePress}
         activeOpacity={0.7}
       >
         {isSaved ? (

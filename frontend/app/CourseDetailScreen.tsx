@@ -44,8 +44,9 @@ const CourseDetailScreen = () => {
 
   // 좋아요 수 포맷 함수
   const formatLikes = (num: number) => {
-    if (num >= 1000) return `${Math.floor(num / 100) * 100}+`;
-    return num.toString();
+    if (num < 1000) return num.toString();
+    const rounded = Math.floor(num / 100) * 100;
+    return `${(rounded).toLocaleString('en-US')}+`;
   };
 
   // 목업 데이터
@@ -63,6 +64,10 @@ const CourseDetailScreen = () => {
       { name: '장소 명칭 3', rating: 4.8, category: '숙박', address: '서울시 강남구' },
     ]},
   ];
+  const mockPhotoSpots: { id: string; imageUrl: string; title: string; address: string; likes: number; tags: string[] }[] = [
+    { id: '1', imageUrl: 'https://via.placeholder.com/48x48', title: '포토스팟 제목 1', address: '서울시 도봉구', likes: 89, tags: ['태그1', '태그2'] },
+    { id: '2', imageUrl: 'https://via.placeholder.com/48x48', title: '포토스팟 제목 2', address: '서울시 마포구', likes: 1290, tags: ['태그3'] },
+  ];
   const displayLocationCount = locationCount ?? 5;
   const displayMediaType = mediaType ?? '영화';
   const displayRating = Number(rating ?? 4.5).toFixed(1);
@@ -77,7 +82,7 @@ const CourseDetailScreen = () => {
           <View style={styles.flexFill} />
           <View style={styles.moreButtonWrapper}>
             <MoreButton onPress={() => setIsMenuVisible(!isMenuVisible)} />
-            {isMenuVisible && <MoreMenuAlert onSchedulePress={handleSchedulePress} />}
+            {isMenuVisible && <MoreMenuAlert isSaved={isSaved} onSavePress={handleSaveToggle} onSchedulePress={handleSchedulePress} />}
           </View>
         </View>
 
@@ -97,12 +102,12 @@ const CourseDetailScreen = () => {
               <Text style={styles.metaText}>{displayMediaType}</Text>
               <Text style={styles.separator}>|</Text>
               <View style={styles.iconTextRow}>
-                <Star size={14} color={Colors.light.grayDark} strokeWidth={2} />
+                <Star size={16} color={Colors.light.grayDark} strokeWidth={2} />
                 <Text style={[styles.metaText, { marginLeft: 2 }]}>{displayRating}</Text>
               </View>
               <Text style={styles.separator}>|</Text>
               <View style={styles.iconTextRow}>
-                <Heart size={14} color={Colors.light.grayDark} strokeWidth={2} />
+                <Heart size={16} color={Colors.light.grayDark} strokeWidth={2} />
                 <Text style={[styles.metaText, { marginLeft: 2 }]}>{formatLikes(displayLikes)}</Text>
               </View>
             </View>
@@ -213,7 +218,7 @@ const CourseDetailScreen = () => {
                           <View style={styles.cardContent}>
                             <View style={styles.cardNameRow}>
                               <Text style={styles.placeNameText}>{place.name}</Text>
-                              <Star size={14} color={Colors.light.grayDark} strokeWidth={1} />
+                              <Star size={16} color={Colors.light.grayDark} strokeWidth={1} />
                               <Text style={styles.ratingText}>{place.rating.toFixed(1)}</Text>
                             </View>
                             <View style={styles.cardSubRow}>
@@ -238,7 +243,39 @@ const CourseDetailScreen = () => {
 
             {/* 포토스팟 섹션 */}
             <Text style={styles.photoSpotTitle}>포토스팟</Text>
-            <View style={styles.photoSpotBox} />
+            {mockPhotoSpots.map((spot, index) => (
+              <View key={spot.id} style={[styles.photoSpotBox, index > 0 && { marginTop: 8 }]}>
+                <View style={styles.photoSpotItem}>
+                  {/* 이미지 */}
+                  <Image
+                    source={{ uri: spot.imageUrl }}
+                    style={styles.photoSpotImage}
+                  />
+                  <View style={{ width: 16 }} />
+
+                  {/* 정보 */}
+                  <View style={styles.photoSpotContent}>
+                    {/* 제목 */}
+                    <Text style={styles.photoSpotItemTitle}>{spot.title}</Text>
+
+                    {/* 주소 + 하트 + 좋아요 */}
+                    <View style={styles.photoSpotMetaRow}>
+                      <Text style={styles.photoSpotAddress}>{spot.address}</Text>
+                      <Text style={styles.photoSpotSeparator}>|</Text>
+                      <Heart size={16} color={Colors.light.grayDark} strokeWidth={1} />
+                      <Text style={styles.photoSpotLikes}>{formatLikes(spot.likes)}</Text>
+                    </View>
+
+                    {/* 태그 */}
+                    <View style={styles.photoSpotTags}>
+                      {spot.tags.map((tag, tagIndex) => (
+                        <Text key={tagIndex} style={styles.photoSpotTag}>#{tag}</Text>
+                      ))}
+                    </View>
+                  </View>
+                </View>
+              </View>
+            ))}
           </View>
         </ScrollView>
 
@@ -470,7 +507,54 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.light.grayLight,
     borderRadius: 8,
-    minHeight: 120,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 16,
+  },
+  photoSpotItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  photoSpotImage: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.light.grayLight,
+  },
+  photoSpotContent: {
+    flex: 1,
+  },
+  photoSpotItemTitle: {
+    ...Typography.title1,
+    color: Colors.light.black,
+  },
+  photoSpotMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  photoSpotAddress: {
+    ...Typography.subtitle1,
+    color: Colors.light.grayDark,
+  },
+  photoSpotSeparator: {
+    ...Typography.subtitle1,
+    color: Colors.light.grayDark,
+    marginHorizontal: 4,
+  },
+  photoSpotLikes: {
+    ...Typography.subtitle1,
+    color: Colors.light.grayDark,
+    marginLeft: 2,
+  },
+  photoSpotTags: {
+    flexDirection: 'row',
+    marginTop: 8,
+    gap: 4,
+  },
+  photoSpotTag: {
+    ...Typography.body2,
+    color: '#41737c',
   },
 });
 
