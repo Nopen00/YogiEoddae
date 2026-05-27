@@ -69,6 +69,18 @@ class Media(models.Model):
         return f'[{self.get_media_type_display()}] {self.title}'
 
 
+class Photo(models.Model):
+    place = models.ForeignKey(Place, on_delete=models.CASCADE, related_name='photos')
+    image_url = models.URLField(max_length=500)
+    description = models.TextField(blank=True)
+    likes = models.IntegerField(default=0)
+    tags = models.ManyToManyField(Tag, blank=True, related_name='photos')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'{self.place.name} - 사진'
+
+
 class MediaPlace(models.Model):
     """미디어 작품과 촬영 장소를 연결하는 테이블."""
 

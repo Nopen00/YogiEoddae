@@ -43,12 +43,14 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'corsheaders',
     'rest_framework',
     'places',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -149,3 +151,6 @@ YOUTUBE_API_KEY = env('YOUTUBE_API_KEY', default='')
 
 # Kakao Maps SDK 403 방지: Referer 헤더를 크로스 오리진 요청에도 포함
 SECURE_REFERRER_POLICY = 'no-referrer-when-downgrade'
+
+# CORS — React Native 개발 서버 허용 (배포 시 실제 도메인으로 교체)
+CORS_ALLOW_ALL_ORIGINS = True

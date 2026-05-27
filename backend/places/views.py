@@ -7,11 +7,11 @@ from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from .models import Place, Media, MediaPlace, Tag
+from .models import Place, Media, MediaPlace, Tag, Photo
 from .serializers import (
     PlaceSerializer, PlaceMapSerializer,
     MediaSerializer, MediaDetailSerializer, MediaPlaceSerializer,
-    TagSerializer,
+    TagSerializer, PhotoSerializer,
 )
 
 
@@ -391,6 +391,15 @@ class PlaceViewSet(viewsets.ReadOnlyModelViewSet):
         if tag:
             qs = qs.filter(tags__name__icontains=tag)
         return qs
+
+    @action(detail=True, methods=['get'])
+    def photos(self, request, pk=None):
+        """
+        GET /api/places/{id}/photos/   해당 장소의 포토스팟 목록
+        """
+        place = self.get_object()
+        qs = Photo.objects.filter(place=place).prefetch_related('tags')
+        return Response(PhotoSerializer(qs, many=True).data)
 
     @action(detail=False, methods=['get'], url_path='map')
     def map_data(self, request):
