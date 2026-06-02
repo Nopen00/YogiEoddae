@@ -37,6 +37,7 @@ const PlaceDetailScreen = () => {
   const [isSaved, setIsSaved] = useState(false);
   const [isScheduleVisible, setIsScheduleVisible] = useState(false);
   const [savedNearby, setSavedNearby] = useState<Record<number, boolean>>({});
+  const [isToggled, setIsToggled] = useState(false);
 
   const toggleNearby = (index: number) => {
     setSavedNearby(prev => ({ ...prev, [index]: !prev[index] }));
@@ -62,6 +63,12 @@ const PlaceDetailScreen = () => {
   const displayAddress = String(address ?? '서울시 도봉구');
   const displayTags = Array.isArray(tagsParam) ? tagsParam : ['태그1', '태그2', '태그3'];
   const mockLikes = 324;
+  const mockReviews = [
+    { nickname: '여행러닉네임', date: '2025.03.15', rating: 4.3, content: '정말 아름다운 곳이에요. 봄철 벚꽃이 피는 시기에 방문하면 더욱 좋습니다.' },
+    { nickname: '서울탐험가', date: '2025.01.08', rating: 4.7, content: '역사적인 느낌이 물씬 나는 공간입니다. 가이드 투어를 신청하면 더 재밌게 관람할 수 있어요!' },
+    { nickname: '주말여행러', date: '2024.11.22', rating: 3.9, content: '사람이 많아서 조금 복잡했지만 그래도 볼거리가 많아서 좋았습니다.' },
+    { nickname: '힐링여행자', date: '2024.09.10', rating: 4.5, content: '조용하고 아름다운 곳입니다. 이른 아침에 방문하면 한적하게 즐길 수 있어요.' },
+  ];
   const mockNearbyPlaces = [
     { name: '경복궁', category: '관광명소', address: '서울시 종로구' },
     { name: '북촌 한옥마을', category: '관광명소', address: '서울시 종로구' },
@@ -76,7 +83,17 @@ const PlaceDetailScreen = () => {
         <View style={styles.header}>
           <BackButton onPress={() => router.back()} />
           <View style={styles.flexFill} />
-          <View style={styles.moreButtonWrapper}>
+          <View style={styles.toggleGroup}>
+            <TouchableOpacity
+              style={[styles.toggle, { backgroundColor: isToggled ? Colors.light.primary : Colors.light.grayLight }]}
+              onPress={() => setIsToggled(!isToggled)}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.toggleCircle, { left: isToggled ? 26 : 2 }]} />
+            </TouchableOpacity>
+            <Text style={styles.toggleLabel}>{isToggled ? '카카오' : '관광공사'}</Text>
+          </View>
+          <View style={[styles.moreButtonWrapper, { marginLeft: 16 }]}>
             <MoreButton onPress={() => setIsMenuVisible(!isMenuVisible)} />
             {isMenuVisible && (
               <MoreMenuAlert
@@ -182,9 +199,37 @@ const PlaceDetailScreen = () => {
             {/* 구분선 */}
             <View style={styles.dividerBottom} />
 
-            {/* 장소 제목 & 설명 */}
-            <Text style={styles.placeTitle}>{displayName}</Text>
-            <Text style={styles.placeDesc}>이 장소에 대한 상세 설명이 여기에 들어갑니다.</Text>
+            {/* 장소 소개 / 이용자 리뷰 */}
+            <Text style={styles.placeTitle}>{isToggled ? '이용자 리뷰' : displayName}</Text>
+            {isToggled ? (
+              <View style={{ marginTop: 16, gap: 16 }}>
+                {mockReviews.slice(0, 3).map((review, i) => (
+                  <Shadow key={i} distance={4} startColor="rgba(0, 0, 0, 0.15)" offset={[0, 0]} stretch>
+                    <View style={styles.reviewCard}>
+                      <View style={styles.reviewImageBox} />
+                      <View style={styles.reviewContent}>
+                        <Text style={styles.reviewNickname}>{review.nickname}</Text>
+                        <View style={[styles.reviewMetaRow, { marginTop: 4 }]}>
+                          <Text style={styles.reviewSep}>|</Text>
+                          <Text style={[styles.reviewMetaText, { marginLeft: 4 }]}>{review.date}</Text>
+                          <Text style={[styles.reviewSep, { marginLeft: 4 }]}>|</Text>
+                          <Star size={14} strokeWidth={1} color={Colors.light.grayDark} style={{ marginLeft: 4 }} />
+                          <Text style={[styles.reviewMetaText, { marginLeft: 2 }]}>{review.rating.toFixed(1)}</Text>
+                        </View>
+                        <Text style={[styles.reviewText, { marginTop: 8 }]} numberOfLines={2} ellipsizeMode="tail">{review.content}</Text>
+                      </View>
+                    </View>
+                  </Shadow>
+                ))}
+                {mockReviews.length > 3 && (
+                  <TouchableOpacity style={styles.reviewMoreButton} onPress={() => {}}>
+                    <Text style={styles.reviewMoreText}>더보기</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            ) : (
+              <Text style={styles.placeDesc}>이 장소에 대한 상세 설명이 여기에 들어갑니다.</Text>
+            )}
 
             {/* 구분선 */}
             <View style={styles.dividerBottom} />
@@ -255,6 +300,25 @@ const styles = StyleSheet.create({
   },
   flexFill: { flex: 1 },
   moreButtonWrapper: { position: 'relative', alignItems: 'flex-end' },
+  toggleGroup: { flexDirection: 'row', alignItems: 'center' },
+  toggle: {
+    width: 48,
+    height: 24,
+    borderRadius: 12,
+  },
+  toggleCircle: {
+    position: 'absolute',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: Colors.light.white,
+    top: 2,
+  },
+  toggleLabel: {
+    ...Typography.button3,
+    color: Colors.light.black,
+    marginLeft: 8,
+  },
   imageContainer: {
     marginTop: 8,
     marginHorizontal: Spacing.h.medium,
@@ -339,6 +403,45 @@ const styles = StyleSheet.create({
     color: Colors.light.black,
     marginTop: 32,
   },
+  reviewCard: {
+    flexDirection: 'row',
+    height: 102,
+    borderRadius: 8,
+    backgroundColor: Colors.light.white,
+    padding: 8,
+  },
+  reviewImageBox: {
+    width: 86,
+    height: 86,
+    borderRadius: 8,
+    backgroundColor: Colors.light.grayLight,
+  },
+  reviewContent: {
+    flex: 1,
+    marginLeft: 8,
+  },
+  reviewNickname: {
+    ...Typography.subtitle2,
+    color: Colors.light.black,
+  },
+  reviewMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  reviewSep: {
+    ...Typography.body2,
+    color: Colors.light.grayDark,
+  },
+  reviewMetaText: {
+    ...Typography.body2,
+    color: Colors.light.grayDark,
+  },
+  reviewText: {
+    ...Typography.body2,
+    color: Colors.light.grayDark,
+  },
+  reviewMoreButton: { alignSelf: 'flex-end', paddingVertical: 8 },
+  reviewMoreText: { ...Typography.button4, color: Colors.light.primary },
   nearbyScrollContent: {
     gap: 8,
   },
