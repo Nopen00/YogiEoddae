@@ -15,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Shadow } from 'react-native-shadow-2';
 
 const CourseDetailScreen = () => {
-  const { id, title, locationCount, mediaType, mediaTitle, rating, likes, tags: tagsParam } = useLocalSearchParams();
+  const { title, locationCount, mediaType, mediaTitle, rating, likes, tags: tagsParam } = useLocalSearchParams();
   const router = useRouter();
   const { width } = useWindowDimensions();
 
@@ -207,7 +207,19 @@ const CourseDetailScreen = () => {
                     <View style={{ width: 16 }} />
 
                     {/* 코스 카드 */}
-                    <View style={{ flex: 1 }}>
+                    <TouchableOpacity
+                      style={{ flex: 1 }}
+                      activeOpacity={0.8}
+                      onPress={() => router.push({
+                        pathname: '/PlaceDetailScreen',
+                        params: {
+                          name: place.name,
+                          rating: place.rating,
+                          category: place.category,
+                          address: place.address,
+                        },
+                      })}
+                    >
                       <Shadow distance={4} startColor="rgba(0, 0, 0, 0.15)" offset={[0, 0]} stretch>
                         <View style={styles.courseCard}>
                           <Image
@@ -232,7 +244,7 @@ const CourseDetailScreen = () => {
                           </View>
                         </View>
                       </Shadow>
-                    </View>
+                    </TouchableOpacity>
                   </View>
                 ))}
               </View>
@@ -282,10 +294,10 @@ const CourseDetailScreen = () => {
         <ScheduleAlert
           visible={isScheduleVisible}
           onClose={() => setIsScheduleVisible(false)}
-          title={String(title ?? '코스 제목')}
-          period="2025.01.01 ~ 2025.03.01"
-          tags={displayTags}
-          inputText={displayTags[0]}
+          title="서울 봄 여행"
+          period="2026.04.03 ~ 2026.04.05"
+          tags={['서울', '봄여행', '나들이']}
+          inputText=""
         />
       </SafeAreaView>
     </TouchableWithoutFeedback>

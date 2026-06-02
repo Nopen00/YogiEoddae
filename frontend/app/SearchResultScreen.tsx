@@ -161,7 +161,21 @@ const SearchResultScreen = () => {
             {(selectedIndex === 0 ? dummyAttractions.slice(0, 3) : dummyAttractions).map((attr) => {
               const { visibleTags, extraCount } = getProcessedTags(attr.tags);
               return (
-                <TouchableOpacity key={`attr-${attr.id}`} style={styles.cardButton} activeOpacity={0.9}>
+                <TouchableOpacity
+                  key={`attr-${attr.id}`}
+                  style={styles.cardButton}
+                  activeOpacity={0.9}
+                  onPress={() => router.push({
+                    pathname: '/PlaceDetailScreen',
+                    params: {
+                      name: attr.title,
+                      rating: attr.rating,
+                      category: attr.feature,
+                      address: attr.address,
+                      tags: attr.tags,
+                    },
+                  })}
+                >
                   <View style={styles.cardInner}>
                     <View style={styles.imageCircle} />
                     <View style={styles.infoContent}>
