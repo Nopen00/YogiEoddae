@@ -13,7 +13,7 @@ const TAB_ITEMS = [
   { label: '홈',  Icon: Home,     href: '/(tabs)/MainScreen' as const },
   { label: '코스', Icon: MapPin,   href: null },
   { label: '지도', Icon: Map,      href: null },
-  { label: '일정', Icon: Calendar, href: null },
+  { label: '일정', Icon: Calendar, href: '/(tabs)/ScheduleScreen' as const },
 ];
 
 export default function BottomTabBar() {

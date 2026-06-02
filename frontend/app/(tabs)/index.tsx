@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 // 🚀 1. 구형 네비게이션을 지우고 엑스포 라우터를 가져옵니다!
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -29,7 +30,8 @@ const PAGES = [
 const IntroScreen = () => {
   const [activeIndex, setActiveIndex] = useState(0);
   const isLastPage = activeIndex === PAGES.length - 1;
-  
+  const insets = useSafeAreaInsets();
+
   // 🚀 2. router 선언!
   const router = useRouter();
   const flatListRef = useRef<FlatList>(null);
@@ -78,7 +80,7 @@ const IntroScreen = () => {
         bounces={false}
       />
 
-      <View style={styles.bottomContent}>
+      <View style={[styles.bottomContent, { bottom: insets.bottom + 16 }]}>
         <View style={styles.indicatorContainer}>
           {PAGES.map((_, index) => (
             <View
@@ -146,10 +148,8 @@ const styles = StyleSheet.create({
   bottomContent: {
     position: 'absolute',
     bottom: 0,
-
     width: '100%',
     paddingHorizontal: 56,
-    marginBottom: 16,
   },
 
   // 4. 페이지 인디케이터

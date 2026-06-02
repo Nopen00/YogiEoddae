@@ -17,7 +17,9 @@ function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const pathname = usePathname();
 
-  const showTabBar = !HIDDEN_TAB_ROUTES.some((route) => pathname.startsWith(route));
+  const showTabBar =
+    pathname !== '/' &&
+    !HIDDEN_TAB_ROUTES.some((route) => pathname.startsWith(route));
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
