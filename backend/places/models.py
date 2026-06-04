@@ -41,6 +41,8 @@ class Place(models.Model):
     category = models.CharField(max_length=5, choices=CONTENT_TYPES, blank=True, default='')
     # KTO 공식 데이터 = True, YouTube 파싱 등 미확정 = False
     is_verified = models.BooleanField(default=True)
+    kakao_place_id = models.CharField(max_length=50, blank=True, null=True)
+    kakao_place_url = models.URLField(max_length=500, blank=True, null=True)
     tags = models.ManyToManyField(Tag, blank=True, related_name='places')
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -97,6 +99,7 @@ class MediaPlace(models.Model):
 
     media = models.ForeignKey(Media, on_delete=models.CASCADE, related_name='media_places')
     place = models.ForeignKey(Place, on_delete=models.CASCADE, related_name='media_places')
+    day = models.IntegerField(null=True, blank=True)
     scene_description = models.TextField(blank=True)
     confidence_score = models.FloatField(default=1.0)
     is_confirmed = models.BooleanField(default=False)

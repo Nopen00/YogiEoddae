@@ -52,10 +52,12 @@ def kakao_search(query: str):
             d = docs[0]
             addr = d.get('road_address_name') or d.get('address_name', '')
             return {
-                'name':    d['place_name'],
-                'address': addr,
-                'lat':     float(d['y']),
-                'lng':     float(d['x']),
+                'name':             d['place_name'],
+                'address':          addr,
+                'lat':              float(d['y']),
+                'lng':              float(d['x']),
+                'kakao_place_id':   d.get('id'),
+                'kakao_place_url':  d.get('place_url'),
             }
     except Exception:
         pass
