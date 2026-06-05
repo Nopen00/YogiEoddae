@@ -158,3 +158,17 @@ SECURE_REFERRER_POLICY = 'no-referrer-when-downgrade'
 
 # CORS — React Native 개발 서버 허용 (배포 시 실제 도메인으로 교체)
 CORS_ALLOW_ALL_ORIGINS = True
+
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+    "x-device-id",
+    "ngrok-skip-browser-warning",
+]

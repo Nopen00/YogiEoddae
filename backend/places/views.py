@@ -390,7 +390,7 @@ class PlaceViewSet(viewsets.ReadOnlyModelViewSet):
         tag = self.request.query_params.get('tag')
         if tag:
             qs = qs.filter(tags__name__icontains=tag)
-        return qs
+        return qs.distinct()
 
     @action(detail=True, methods=['get'])
     def photos(self, request, pk=None):
@@ -442,12 +442,12 @@ class MediaViewSet(viewsets.ReadOnlyModelViewSet):
         media_type = self.request.query_params.get('type')
         if media_type:
             qs = qs.filter(media_type=media_type)
-        tag = self.request.query_params.get('tag')
-        if tag:
-            qs = qs.filter(tags__name__icontains=tag)
         keyword = self.request.query_params.get('keyword')
         if keyword:
             qs = qs.filter(Q(title__icontains=keyword) | Q(tags__name__icontains=keyword))
+        tag = self.request.query_params.get('tag')
+        if tag:
+            qs = qs.filter(tags__name__icontains=tag)
         return qs.distinct()
 
     @action(detail=True, methods=['get'])
