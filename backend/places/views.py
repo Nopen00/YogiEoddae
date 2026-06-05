@@ -382,7 +382,7 @@ class PlaceViewSet(viewsets.ReadOnlyModelViewSet):
         unverified = self.request.query_params.get('unverified')
 
         if keyword:
-            qs = qs.filter(name__icontains=keyword)
+            qs = qs.filter(Q(name__icontains=keyword) | Q(address__icontains=keyword))
         if category:
             qs = qs.filter(category=category)
         if unverified == 'true':
@@ -445,13 +445,20 @@ class MediaViewSet(viewsets.ReadOnlyModelViewSet):
         tag = self.request.query_params.get('tag')
         if tag:
             qs = qs.filter(tags__name__icontains=tag)
-        return qs
+        keyword = self.request.query_params.get('keyword')
+        if keyword:
+            qs = qs.filter(Q(title__icontains=keyword) | Q(tags__name__icontains=keyword))
+        return qs.distinct()
 
     @action(detail=True, methods=['get'])
     def places(self, request, pk=None):
         media = self.get_object()
-        media_places = MediaPlace.objects.filter(media=media).select_related('place')
-        return Response(MediaPlaceSerializer(media_places, many=True).data)
+        media_places = (MediaPlace.objects
+                        .filter(media=media, status=MediaPlace.STATUS_ADMIN_APPROVED)
+                        .select_related('place')
+                        .prefetch_related('place__tags')
+                        .order_by('day', 'id'))
+        return Response(MediaPlaceSerializer(media_places, many=True, context={'request': request}).data)
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):

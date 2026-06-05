@@ -77,7 +77,7 @@ class MediaPlaceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MediaPlace
-        fields = ['id', 'place', 'scene_description', 'confidence_score', 'is_confirmed', 'created_at']
+        fields = ['id', 'place', 'day', 'scene_description', 'confidence_score', 'is_confirmed', 'created_at']
 
 
 class MediaBriefSerializer(serializers.Serializer):
