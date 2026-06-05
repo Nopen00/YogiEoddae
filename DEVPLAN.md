@@ -306,8 +306,8 @@ python manage.py cleanup_orphaned_users              # 실제 삭제
 | 항목 | 상태 | 비고 |
 |---|---|---|
 | Quiz 기능 | 미구현 | Phase 3 잔여. MediaPlace status `quiz_confirmed` 로직 |
-| is_bookmarked 필드 | 미추가 | Place/Media 상세 응답에 추가 필요 |
-| Place serializer kakao_place_url 노출 | 미추가 | PlaceDetailScreen 리뷰 더보기에 필요 |
+| is_bookmarked 필드 | ✅ 완료 | Place/Media 시리얼라이저에 추가 (2026-06-05) |
+| Place serializer kakao_place_url 노출 | ✅ 완료 | PlaceSerializer fields에 추가 (2026-06-05) |
 | 고아 데이터 정리 자동화 | 수동 | 배포 시 cron 설정 필요 |
 | Naver Maps API | 미해결 | Kakao로 대체 중, 우선순위 낮음 |
 | 프론트 전체 mock 데이터 | 미연결 | API 연결 순차 진행 필요 |

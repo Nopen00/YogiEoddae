@@ -1,5 +1,24 @@
+import uuid
 from rest_framework import serializers
 from .models import MediaPlace, Place, Media, Tag, Photo
+
+
+def _get_user_from_context(context):
+    """request context에서 유저를 추출한다. 한 직렬화 패스에서 한 번만 DB 조회하도록 캐싱."""
+    if 'resolved_user' in context:
+        return context['resolved_user']
+    user = None
+    request = context.get('request')
+    if request:
+        device_id = request.headers.get('X-Device-ID')
+        if device_id:
+            try:
+                from users.models import User
+                user = User.objects.get(device_id=uuid.UUID(device_id))
+            except Exception:
+                pass
+    context['resolved_user'] = user
+    return user
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -10,14 +29,23 @@ class TagSerializer(serializers.ModelSerializer):
 
 class PlaceSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
+    is_bookmarked = serializers.SerializerMethodField()
 
     class Meta:
         model = Place
         fields = [
             'id', 'content_id', 'name', 'address',
             'latitude', 'longitude', 'image_url',
-            'category', 'is_verified', 'tags', 'created_at',
+            'category', 'is_verified', 'kakao_place_url',
+            'tags', 'is_bookmarked', 'created_at',
         ]
+
+    def get_is_bookmarked(self, obj):
+        user = _get_user_from_context(self.context)
+        if not user:
+            return False
+        from bookmarks.models import PlaceBookmark
+        return PlaceBookmark.objects.filter(user=user, place=obj).exists()
 
 
 class PhotoSerializer(serializers.ModelSerializer):
@@ -30,10 +58,18 @@ class PhotoSerializer(serializers.ModelSerializer):
 
 class MediaSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
+    is_bookmarked = serializers.SerializerMethodField()
 
     class Meta:
         model = Media
-        fields = ['id', 'title', 'media_type', 'year', 'thumbnail_url', 'description', 'tags', 'created_at']
+        fields = ['id', 'title', 'media_type', 'year', 'thumbnail_url', 'description', 'tags', 'is_bookmarked', 'created_at']
+
+    def get_is_bookmarked(self, obj):
+        user = _get_user_from_context(self.context)
+        if not user:
+            return False
+        from bookmarks.models import MediaBookmark
+        return MediaBookmark.objects.filter(user=user, media=obj).exists()
 
 
 class MediaPlaceSerializer(serializers.ModelSerializer):
@@ -71,11 +107,19 @@ class PlaceMapSerializer(serializers.ModelSerializer):
 class MediaDetailSerializer(serializers.ModelSerializer):
     """미디어 상세 조회 시 촬영지 목록까지 포함."""
     places = serializers.SerializerMethodField()
+    is_bookmarked = serializers.SerializerMethodField()
 
     class Meta:
         model = Media
-        fields = ['id', 'title', 'media_type', 'year', 'thumbnail_url', 'description', 'places', 'created_at']
+        fields = ['id', 'title', 'media_type', 'year', 'thumbnail_url', 'description', 'tags', 'is_bookmarked', 'places', 'created_at']
 
     def get_places(self, obj):
         media_places = obj.media_places.select_related('place').all()
-        return MediaPlaceSerializer(media_places, many=True).data
+        return MediaPlaceSerializer(media_places, many=True, context=self.context).data
+
+    def get_is_bookmarked(self, obj):
+        user = _get_user_from_context(self.context)
+        if not user:
+            return False
+        from bookmarks.models import MediaBookmark
+        return MediaBookmark.objects.filter(user=user, media=obj).exists()
