@@ -4,7 +4,7 @@ import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { useRouter } from 'expo-router';
 import { Calendar, ChevronRight, Plus } from 'lucide-react-native';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Dimensions,
@@ -15,43 +15,34 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { scheduleApi } from '../../services/api';
+import type { Schedule } from '../../services/types';
 
 const TABS = ['내 일정', '과거 일정', '저장소'];
 const { width } = Dimensions.get('window');
 const TAB_WIDTH = width / TABS.length;
 
-interface Schedule {
-  id: string;
-  title: string;
-  startDate: string;
-  endDate: string;
-  days: number;
-  places: number;
-}
+const formatDate = (dateStr: string | null) => {
+  if (!dateStr) return '';
+  return dateStr.replace(/-/g, '.');
+};
 
-const MOCK_SCHEDULES: Schedule[] = [
-  {
-    id: '1',
-    title: '서울 드라마 투어',
-    startDate: '2025.06.14',
-    endDate: '2025.06.16',
-    days: 3,
-    places: 8,
-  },
-  {
-    id: '2',
-    title: '부산 영화 코스',
-    startDate: '2025.06.20',
-    endDate: '2025.06.21',
-    days: 2,
-    places: 5,
-  },
-];
+const isExpired = (endDate: string | null) => {
+  if (!endDate) return false;
+  return new Date(endDate) < new Date();
+};
 
 export default function ScheduleScreen() {
   const router = useRouter();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const translateX = useRef(new Animated.Value(0)).current;
+  const [mySchedules, setMySchedules] = useState<Schedule[]>([]);
+  const [savedSchedules, setSavedSchedules] = useState<Schedule[]>([]);
+
+  useEffect(() => {
+    scheduleApi.getList().then(res => setMySchedules(res.data)).catch(() => {});
+    scheduleApi.getBookmarked().then(res => setSavedSchedules(res.data)).catch(() => {});
+  }, []);
 
   const handleTabPress = (index: number) => {
     setSelectedIndex(index);
@@ -63,9 +54,15 @@ export default function ScheduleScreen() {
     }).start();
   };
 
-  const isEmpty =
-    selectedIndex === 0 ? MOCK_SCHEDULES.length === 0 : true;
+  const activeSchedules = mySchedules.filter(s => !isExpired(s.end_date));
+  const pastSchedules = mySchedules.filter(s => isExpired(s.end_date));
 
+  const currentList =
+    selectedIndex === 0 ? activeSchedules :
+    selectedIndex === 1 ? pastSchedules :
+    savedSchedules;
+
+  const isEmpty = currentList.length === 0;
   const showAddButton = selectedIndex !== 2 && isEmpty;
 
   return (
@@ -116,26 +113,32 @@ export default function ScheduleScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {MOCK_SCHEDULES.map((schedule) => (
-            <TouchableOpacity key={schedule.id} style={styles.card} activeOpacity={0.85}>
-              <View style={styles.cardImage} />
-              <View style={styles.cardContent}>
-                <View style={styles.cardTopRow}>
-                  <Text style={styles.cardTitle} numberOfLines={1}>{schedule.title}</Text>
-                  <ChevronRight size={16} color={Colors.light.grayDark} />
-                </View>
-                <Text style={styles.cardDate}>
-                  {schedule.startDate} ~ {schedule.endDate}
-                </Text>
-                <View style={styles.cardInfoRow}>
-                  <View style={styles.badge}>
-                    <Text style={styles.badgeText}>{schedule.days}일</Text>
+          {currentList.map((schedule) => {
+            const dayCount = new Set(schedule.daily_places.map(dp => dp.day_number)).size;
+            const placeCount = schedule.daily_places.length;
+            return (
+              <TouchableOpacity key={schedule.id} style={styles.card} activeOpacity={0.85}>
+                <View style={styles.cardImage} />
+                <View style={styles.cardContent}>
+                  <View style={styles.cardTopRow}>
+                    <Text style={styles.cardTitle} numberOfLines={1}>{schedule.title}</Text>
+                    <ChevronRight size={16} color={Colors.light.grayDark} />
                   </View>
-                  <Text style={styles.cardPlaces}>장소 {schedule.places}곳</Text>
+                  <Text style={styles.cardDate}>
+                    {schedule.start_date && schedule.end_date
+                      ? `${formatDate(schedule.start_date)} ~ ${formatDate(schedule.end_date)}`
+                      : '날짜 미정'}
+                  </Text>
+                  <View style={styles.cardInfoRow}>
+                    <View style={styles.badge}>
+                      <Text style={styles.badgeText}>{dayCount}일</Text>
+                    </View>
+                    <Text style={styles.cardPlaces}>장소 {placeCount}곳</Text>
+                  </View>
                 </View>
-              </View>
-            </TouchableOpacity>
-          ))}
+              </TouchableOpacity>
+            );
+          })}
         </ScrollView>
       )}
     </SafeAreaView>

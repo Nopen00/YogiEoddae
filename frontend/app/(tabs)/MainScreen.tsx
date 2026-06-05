@@ -15,83 +15,87 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-// 🚀 구형 useNavigation을 지우고 Expo Router의 useRouter를 가져옵니다!
 import { useRouter } from 'expo-router';
 
-// 디자인 시스템 임포트
 import { Colors } from '@/constants/Colors';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
+import { mediaApi } from '../../services/api';
+import type { Media } from '../../services/types';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CAROUSEL_WIDTH = SCREEN_WIDTH - (Spacing.h.medium * 2);
 
-// --- 데이터 영역 (생략 없이 그대로) ---
-const CAROUSEL_IMAGES = [
-  { id: '1', uri: 'https://picsum.photos/id/10/400/240', title: '푸른 바다의 전설', subtitle: '드라마 촬영지' },
-  { id: '2', uri: 'https://picsum.photos/id/11/400/240', title: '겨울 왕국 여행', subtitle: '영화 속 그곳' },
-  { id: '3', uri: 'https://picsum.photos/id/12/400/240', title: '유튜버의 숨은 맛집', subtitle: '먹방 성지순례' },
-  { id: '4', uri: 'https://picsum.photos/id/13/400/240', title: '한옥의 미를 찾아서', subtitle: '전통 문화 체험' },
-  { id: '5', uri: 'https://picsum.photos/id/14/400/240', title: '도심 속 휴식', subtitle: '서울 야경 명소' },
-];
-
-const POPULAR_COURSES = [
-  { id: '1', uri: 'https://picsum.photos/id/20/320/240', title: '담양 소쇄원 산책' },
-  { id: '2', uri: 'https://picsum.photos/id/21/320/240', title: '여수 밤바다 투어' },
-  { id: '3', uri: 'https://picsum.photos/id/22/320/240', title: '경주 황리단길' },
-  { id: '4', uri: 'https://picsum.photos/id/23/320/240', title: '제주 애월 카페거리' },
-];
-
-const RECOMMENDED_COURSES = [
-  { id: '1', uri: 'https://picsum.photos/id/30/320/240', title: '나만 알고 싶은 숲길' },
-  { id: '2', uri: 'https://picsum.photos/id/31/320/240', title: '강릉 수제버거 맛집' },
-  { id: '3', uri: 'https://picsum.photos/id/32/320/240', title: '부산 흰여울 문화마을' },
-  { id: '4', uri: 'https://picsum.photos/id/33/320/240', title: '가평 쁘띠프랑스' },
-];
-
 const MainScreen = () => {
-  // 🚀 navigation 대신 router를 선언합니다!
-  const router = useRouter(); 
-  
+  const router = useRouter();
+
   const [activeIndex, setActiveIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
+  const [carouselData, setCarouselData] = useState<Media[]>([]);
+  const [popularCourses, setPopularCourses] = useState<Media[]>([]);
+  const [recommendedCourses, setRecommendedCourses] = useState<Media[]>([]);
+
+  useEffect(() => {
+    mediaApi.getList({ type: 'drama' }).then(res => setCarouselData(res.data.results)).catch((e) => console.error('carousel error:', e));
+    mediaApi.getList().then(res => {
+      const all = res.data.results;
+      setPopularCourses(all.slice(0, 4));
+      setRecommendedCourses(all.slice(4, 8));
+    }).catch((e) => console.error('courses error:', e));
+  }, []);
 
   // 캐러셀 자동 슬라이드
   useEffect(() => {
+    if (carouselData.length === 0) return;
     const timer = setInterval(() => {
-      const nextIndex = (activeIndex + 1) % CAROUSEL_IMAGES.length;
+      const nextIndex = (activeIndex + 1) % carouselData.length;
       flatListRef.current?.scrollToIndex({ index: nextIndex, animated: true });
       setActiveIndex(nextIndex);
     }, 3000);
     return () => clearInterval(timer);
-  }, [activeIndex]);
+  }, [activeIndex, carouselData.length]);
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const contentOffsetX = event.nativeEvent.contentOffset.x;
     const currentIndex = Math.round(contentOffsetX / CAROUSEL_WIDTH);
-    if (currentIndex >= 0 && currentIndex < CAROUSEL_IMAGES.length) {
+    if (currentIndex >= 0 && currentIndex < carouselData.length) {
       if (currentIndex !== activeIndex) setActiveIndex(currentIndex);
     }
   };
 
-  const renderCarouselItem = ({ item }: { item: typeof CAROUSEL_IMAGES[0] }) => (
-    <View style={styles.carouselWrapper}>
+  const MEDIA_TYPE_LABEL: Record<string, string> = {
+    drama: '드라마',
+    movie: '영화',
+    youtube: '유튜브',
+    etc: '기타',
+  };
+
+  const renderCarouselItem = ({ item }: { item: Media }) => (
+    <TouchableOpacity
+      style={styles.carouselWrapper}
+      activeOpacity={0.9}
+      onPress={() => router.push({ pathname: '/CourseDetailScreen', params: { id: item.id, title: item.title } })}
+    >
       <View style={styles.carouselInner}>
-        <Image source={{ uri: item.uri }} style={styles.fullImage} resizeMode="cover" />
+        <Image source={{ uri: item.thumbnail_url ?? undefined }} style={styles.fullImage} resizeMode="cover" />
         <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} style={styles.gradientOverlay}>
           <View style={styles.textOverlay}>
-            <Text style={styles.carouselSubtitleText}>{item.subtitle}</Text>
+            <Text style={styles.carouselSubtitleText}>{MEDIA_TYPE_LABEL[item.media_type] ?? item.media_type}</Text>
             <Text style={styles.carouselTitleText}>{item.title}</Text>
           </View>
         </LinearGradient>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
-  const renderCourseItem = ({ item }: { item: typeof POPULAR_COURSES[0] }) => (
-    <TouchableOpacity style={styles.courseItemContainer} activeOpacity={0.8}>
+  const renderCourseItem = ({ item }: { item: Media }) => (
+    <TouchableOpacity
+      style={styles.courseItemContainer}
+      activeOpacity={0.8}
+      onPress={() => router.push({ pathname: '/CourseDetailScreen', params: { id: item.id, title: item.title } })}
+    >
       <View style={styles.courseImageWrapper}>
-        <Image source={{ uri: item.uri }} style={styles.courseImage} />
+        <Image source={{ uri: item.thumbnail_url ?? undefined }} style={styles.courseImage} />
       </View>
       <Text style={styles.courseTitleText} numberOfLines={1}>{item.title}</Text>
     </TouchableOpacity>
@@ -127,9 +131,9 @@ const MainScreen = () => {
         <View style={styles.imageBox}>
           <FlatList
             ref={flatListRef}
-            data={CAROUSEL_IMAGES}
+            data={carouselData}
             renderItem={renderCarouselItem}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item) => String(item.id)}
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
@@ -137,10 +141,10 @@ const MainScreen = () => {
             scrollEventThrottle={16}
           />
           <View style={styles.indicatorContainer}>
-            {CAROUSEL_IMAGES.map((_, index) => (
-              <View 
-                key={index} 
-                style={[styles.dot, { backgroundColor: activeIndex === index ? Colors.light.primary : Colors.light.white }]} 
+            {carouselData.map((_, index) => (
+              <View
+                key={index}
+                style={[styles.dot, { backgroundColor: activeIndex === index ? Colors.light.primary : Colors.light.white }]}
               />
             ))}
           </View>
@@ -156,9 +160,9 @@ const MainScreen = () => {
           <Text style={styles.sectionTitleText}>실시간 인기 코스</Text>
         </View>
         <FlatList
-          data={POPULAR_COURSES}
+          data={popularCourses}
           renderItem={renderCourseItem}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => String(item.id)}
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.courseListContent}
@@ -170,9 +174,9 @@ const MainScreen = () => {
           <Text style={styles.sectionTitleText}>맞춤형 여행 코스</Text>
         </View>
         <FlatList
-          data={RECOMMENDED_COURSES}
+          data={recommendedCourses}
           renderItem={renderCourseItem}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => String(item.id)}
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.courseListContent}

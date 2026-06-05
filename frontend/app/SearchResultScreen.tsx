@@ -1,6 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Heart, Star } from 'lucide-react-native';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Dimensions,
@@ -17,6 +16,8 @@ import SearchBar from '@/components/make_component/SearchBar';
 import { Colors } from '@/constants/Colors';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
+import { mediaApi, placeApi } from '../services/api';
+import type { Media, Place, Tag } from '../services/types';
 
 const CATEGORIES = ["전체", "코스", "명소", "포토스팟"];
 const { width } = Dimensions.get('window');
@@ -27,8 +28,23 @@ const SearchResultScreen = () => {
   const { keyword: initialKeyword } = useLocalSearchParams<{ keyword: string }>();
   
   const [inputText, setInputText] = useState(initialKeyword || '');
+  const [searchKeyword, setSearchKeyword] = useState(initialKeyword || '');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const translateX = useRef(new Animated.Value(0)).current;
+  const [courses, setCourses] = useState<Media[]>([]);
+  const [attractions, setAttractions] = useState<Place[]>([]);
+
+  useEffect(() => {
+    if (!searchKeyword) return;
+    mediaApi.getList({ keyword: searchKeyword }).then(res => setCourses(res.data.results)).catch((e) => console.error('media error:', e));
+    placeApi.getList({ keyword: searchKeyword }).then(res => setAttractions(res.data.results)).catch((e) => console.error('place error:', e));
+  }, [searchKeyword]);
+
+  const handleSearch = () => {
+    const trimmed = inputText.trim();
+    if (!trimmed) return;
+    setSearchKeyword(trimmed);
+  };
 
   const handleTabPress = (index: number) => {
     setSelectedIndex(index);
@@ -40,51 +56,26 @@ const SearchResultScreen = () => {
     }).start();
   };
 
-  const formatLikes = (count: number) => {
-    if (count >= 100) {
-      const rounded = Math.floor(count / 100) * 100;
-      return `${rounded.toLocaleString()}+`;
-    }
-    return count.toString();
+  const MEDIA_TYPE_LABEL: Record<string, string> = {
+    drama: '드라마', movie: '영화', youtube: '유튜브', etc: '기타',
   };
 
-  // 태그 처리 로직
-  const getProcessedTags = (tags: string[] = []) => {
-    const safeTags = tags || [];
-    const sorted = [...safeTags].sort((a, b) => 
-      a === inputText ? -1 : b === inputText ? 1 : 0
-    );
-    const visibleTags = sorted.slice(0, 3);
-    const extraCount = safeTags.length - 3;
+  const CATEGORY_LABEL: Record<string, string> = {
+    '12': '관광지', '14': '문화시설', '15': '축제/행사',
+    '25': '여행코스', '28': '레포츠', '32': '숙박', '38': '쇼핑', '39': '음식점',
+  };
+
+  const getProcessedTags = (tags: Tag[] = []) => {
+    const names = tags.map(t => t.name);
+    const visibleTags = names.slice(0, 3);
+    const extraCount = names.length - 3;
     return { visibleTags, extraCount };
   };
-
-  // 데이터셋
-  const dummyCourses = [
-    { id: 1, title: "내가 왕이 될 상인가....", placeCount: 7, media: "드라마", rating: 4.3, likes: 1250, tags: ["역사", "서울", "관광명소", "가족여행"] },
-    { id: 2, title: "해안도로 드라이브", placeCount: 5, media: "유튜브", rating: 4.8, likes: 85, tags: ["강원", "드라이브"] },
-    { id: 3, title: "서울 야경 투어", placeCount: 4, media: "영화", rating: 4.5, likes: 320, tags: ["야경"] },
-    { id: 4, title: "제주 맛집", placeCount: 8, media: "SNS", rating: 4.9, likes: 2100, tags: ["제주"] },
-  ];
-
-  const dummyAttractions = [
-    { id: 1, title: "경복궁", feature: "관광", address: "서울 종로구", rating: 4.7, likes: 3500, tags: ["역사", "고궁"] },
-    { id: 2, title: "양양 서피비치", feature: "체험", address: "강원 양양군", rating: 4.5, likes: 820, tags: ["서핑", "바다"] },
-    { id: 3, title: "남산타워", feature: "관광", address: "서울 용산구", rating: 4.6, likes: 1500, tags: ["야경"] },
-    { id: 4, title: "불국사", feature: "역사", address: "경북 경주시", rating: 4.8, likes: 2200, tags: ["유적지"] },
-  ];
-
-  const dummyPhotoSpots = [
-    { id: 1, title: "속초 아이 대관람차", address: "강원 속초시", likes: 5200, tags: ["포토존"] },
-    { id: 2, title: "별마당 도서관", address: "서울 강남구", likes: 8900, tags: ["실내"] },
-    { id: 3, title: "강릉 안목해변", address: "강원 강릉시", likes: 3100, tags: ["바다"] },
-    { id: 4, title: "감천문화마을", address: "부산 사하구", likes: 4500, tags: ["마을"] },
-  ];
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.headerWrapper}>
-        <SearchBar value={inputText} onChangeText={setInputText} onBackPress={() => router.back()} onClearPress={() => setInputText('')} />
+        <SearchBar value={inputText} onChangeText={setInputText} onBackPress={() => router.back()} onClearPress={() => setInputText('')} onSubmitEditing={handleSearch} returnKeyType="search" />
       </View>
 
       <View style={styles.tabContainer}>
@@ -108,29 +99,22 @@ const SearchResultScreen = () => {
                 <View style={styles.titleBottomLine} />
               </View>
             )}
-            {(selectedIndex === 0 ? dummyCourses.slice(0, 3) : dummyCourses).map((course) => {
+            {(selectedIndex === 0 ? courses.slice(0, 3) : courses).map((course) => {
               const { visibleTags, extraCount } = getProcessedTags(course.tags);
               return (
-                <TouchableOpacity 
-                key={`course-${course.id}`} 
-                style={styles.cardButton} 
-                activeOpacity={0.9} 
-                onPress={() => router.push({
-                  pathname:'/CourseDetailScreen',
-                  params: { id: course.id, title: course.title}
-                  })}>
+                <TouchableOpacity
+                  key={`course-${course.id}`}
+                  style={styles.cardButton}
+                  activeOpacity={0.9}
+                  onPress={() => router.push({ pathname: '/CourseDetailScreen', params: { id: course.id, title: course.title } })}
+                >
                   <View style={styles.cardInner}>
                     <View style={styles.imageCircle} />
                     <View style={styles.infoContent}>
                       <Text style={styles.courseTitle} numberOfLines={1}>{course.title}</Text>
                       <View style={styles.metadataRow}>
-                        <Text style={styles.metadataText}>{course.placeCount}개 장소</Text>
-                        <Text style={styles.divider}>|</Text>
-                        <Text style={styles.metadataText}>{course.media}</Text>
-                        <Text style={styles.divider}>|</Text>
-                        <View style={styles.iconGroup}><Star size={14} color={Colors.light.grayDark} /><Text style={styles.iconValue}>{course.rating.toFixed(1)}</Text></View>
-                        <Text style={styles.divider}>|</Text>
-                        <View style={styles.iconGroup}><Heart size={14} color={Colors.light.grayDark} /><Text style={styles.iconValue}>{formatLikes(course.likes)}</Text></View>
+                        <Text style={styles.metadataText}>{MEDIA_TYPE_LABEL[course.media_type] ?? course.media_type}</Text>
+                        {course.year != null && <><Text style={styles.divider}>|</Text><Text style={styles.metadataText}>{course.year}년</Text></>}
                       </View>
                       <View style={styles.tagRow}>
                         {visibleTags.map((tag, idx) => <Text key={idx} style={styles.tagText}>#{tag}</Text>)}
@@ -139,9 +123,9 @@ const SearchResultScreen = () => {
                     </View>
                   </View>
                 </TouchableOpacity>
-              )
+              );
             })}
-            {selectedIndex === 0 && dummyCourses.length > 3 && (
+            {selectedIndex === 0 && courses.length > 3 && (
               <TouchableOpacity style={styles.moreButton} onPress={() => handleTabPress(1)}>
                 <Text style={styles.moreButtonText}>더보기</Text>
               </TouchableOpacity>
@@ -158,36 +142,23 @@ const SearchResultScreen = () => {
                 <View style={styles.titleBottomLine} />
               </View>
             )}
-            {(selectedIndex === 0 ? dummyAttractions.slice(0, 3) : dummyAttractions).map((attr) => {
+            {(selectedIndex === 0 ? attractions.slice(0, 3) : attractions).map((attr) => {
               const { visibleTags, extraCount } = getProcessedTags(attr.tags);
               return (
                 <TouchableOpacity
                   key={`attr-${attr.id}`}
                   style={styles.cardButton}
                   activeOpacity={0.9}
-                  onPress={() => router.push({
-                    pathname: '/PlaceDetailScreen',
-                    params: {
-                      name: attr.title,
-                      rating: attr.rating,
-                      category: attr.feature,
-                      address: attr.address,
-                      tags: attr.tags,
-                    },
-                  })}
+                  onPress={() => router.push({ pathname: '/PlaceDetailScreen', params: { id: attr.id, name: attr.name } })}
                 >
                   <View style={styles.cardInner}>
                     <View style={styles.imageCircle} />
                     <View style={styles.infoContent}>
-                      <Text style={styles.courseTitle} numberOfLines={1}>{attr.title}</Text>
+                      <Text style={styles.courseTitle} numberOfLines={1}>{attr.name}</Text>
                       <View style={styles.metadataRow}>
-                        <Text style={styles.metadataText}>{attr.feature}</Text>
+                        <Text style={styles.metadataText}>{CATEGORY_LABEL[attr.category] ?? attr.category}</Text>
                         <Text style={styles.divider}>|</Text>
-                        <Text style={styles.metadataText}>{attr.address}</Text>
-                        <Text style={styles.divider}>|</Text>
-                        <View style={styles.iconGroup}><Star size={14} color={Colors.light.grayDark} /><Text style={styles.iconValue}>{attr.rating.toFixed(1)}</Text></View>
-                        <Text style={styles.divider}>|</Text>
-                        <View style={styles.iconGroup}><Heart size={14} color={Colors.light.grayDark} /><Text style={styles.iconValue}>{formatLikes(attr.likes)}</Text></View>
+                        <Text style={styles.metadataText} numberOfLines={1}>{attr.address}</Text>
                       </View>
                       <View style={styles.tagRow}>
                         {visibleTags.map((tag, idx) => <Text key={idx} style={styles.tagText}>#{tag}</Text>)}
@@ -196,9 +167,9 @@ const SearchResultScreen = () => {
                     </View>
                   </View>
                 </TouchableOpacity>
-              )
+              );
             })}
-            {selectedIndex === 0 && dummyAttractions.length > 3 && (
+            {selectedIndex === 0 && attractions.length > 3 && (
               <TouchableOpacity style={styles.moreButton} onPress={() => handleTabPress(2)}>
                 <Text style={styles.moreButtonText}>더보기</Text>
               </TouchableOpacity>
@@ -215,21 +186,21 @@ const SearchResultScreen = () => {
                 <View style={styles.titleBottomLine} />
               </View>
             )}
-            {(selectedIndex === 0 ? dummyPhotoSpots.slice(0, 3) : dummyPhotoSpots).map((spot) => {
+            {(selectedIndex === 0 ? attractions.slice(0, 3) : attractions).map((spot) => {
               const { visibleTags, extraCount } = getProcessedTags(spot.tags);
               return (
-                <TouchableOpacity key={`spot-${spot.id}`} style={styles.cardButton} activeOpacity={0.9}>
+                <TouchableOpacity
+                  key={`spot-${spot.id}`}
+                  style={styles.cardButton}
+                  activeOpacity={0.9}
+                  onPress={() => router.push({ pathname: '/PlaceDetailScreen', params: { id: spot.id, name: spot.name } })}
+                >
                   <View style={styles.cardInner}>
                     <View style={styles.imageCircle} />
                     <View style={styles.infoContent}>
-                      <Text style={styles.courseTitle} numberOfLines={1}>{spot.title}</Text>
+                      <Text style={styles.courseTitle} numberOfLines={1}>{spot.name}</Text>
                       <View style={styles.metadataRow}>
-                        <Text style={styles.metadataText}>{spot.address}</Text>
-                        <Text style={styles.divider}>|</Text>
-                        <View style={styles.iconGroup}>
-                          <Heart size={14} color={Colors.light.grayDark} />
-                          <Text style={styles.iconValue}>{formatLikes(spot.likes)}</Text>
-                        </View>
+                        <Text style={styles.metadataText} numberOfLines={1}>{spot.address}</Text>
                       </View>
                       <View style={styles.tagRow}>
                         {visibleTags.map((tag, idx) => <Text key={idx} style={styles.tagText}>#{tag}</Text>)}
@@ -238,9 +209,9 @@ const SearchResultScreen = () => {
                     </View>
                   </View>
                 </TouchableOpacity>
-              )
+              );
             })}
-            {selectedIndex === 0 && dummyPhotoSpots.length > 3 && (
+            {selectedIndex === 0 && attractions.length > 3 && (
               <TouchableOpacity style={styles.moreButton} onPress={() => handleTabPress(3)}>
                 <Text style={styles.moreButtonText}>더보기</Text>
               </TouchableOpacity>

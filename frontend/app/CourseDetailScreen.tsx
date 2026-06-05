@@ -8,18 +8,28 @@ import { Colors } from '@/constants/Colors';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Calendar, Heart, Star } from 'lucide-react-native';
-import React, { useState } from 'react';
+import { Calendar, Star } from 'lucide-react-native';
+import React, { useEffect, useState } from 'react';
+import { mediaApi } from '../services/api';
+import type { Media, MediaPlace } from '../services/types';
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Shadow } from 'react-native-shadow-2';
 
+const MEDIA_TYPE_LABEL: Record<string, string> = {
+  drama: '드라마', movie: '영화', youtube: '유튜브', etc: '기타',
+};
+
+const CATEGORY_LABEL: Record<string, string> = {
+  '12': '관광지', '14': '문화시설', '15': '축제/행사',
+  '25': '여행코스', '28': '레포츠', '32': '숙박', '38': '쇼핑', '39': '음식점',
+};
+
 const CourseDetailScreen = () => {
-  const { title, locationCount, mediaType, mediaTitle, rating, likes, tags: tagsParam } = useLocalSearchParams();
+  const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { width } = useWindowDimensions();
 
-  // 이미지 박스 계산 (좌우 16pt 간격)
   const imageWidth = width - Spacing.h.medium * 2;
   const imageHeight = (imageWidth * 3) / 4;
   const smallImageWidth = imageWidth / 2;
@@ -27,14 +37,38 @@ const CourseDetailScreen = () => {
 
   const [isMenuVisible, setIsMenuVisible] = useState(false);
   const [isScheduleVisible, setIsScheduleVisible] = useState(false);
-  const [isSaved, setIsSaved] = useState(false); // 저장하기 상태
+  const [isSaved, setIsSaved] = useState(false);
+  const [media, setMedia] = useState<Media | null>(null);
+  const [mediaPlaces, setMediaPlaces] = useState<MediaPlace[]>([]);
 
-  const closeMenu = () => {
-    if (isMenuVisible) setIsMenuVisible(false);
-  };
+  useEffect(() => {
+    if (!id) return;
+    mediaApi.getDetail(Number(id))
+      .then(res => { setMedia(res.data); setIsSaved(res.data.is_bookmarked); })
+      .catch(() => {});
+    mediaApi.getPlaces(Number(id))
+      .then(res => setMediaPlaces(res.data))
+      .catch(() => {});
+  }, [id]);
 
-  const handleSaveToggle = () => {
-    setIsSaved(!isSaved);
+  // day 번호 기준으로 장소 그룹핑
+  const dayGroups = mediaPlaces.reduce<Record<number, MediaPlace[]>>((acc, mp) => {
+    const key = mp.day ?? 1;
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(mp);
+    return acc;
+  }, {});
+  const sortedDays = Object.keys(dayGroups).map(Number).sort((a, b) => a - b);
+
+  const closeMenu = () => { if (isMenuVisible) setIsMenuVisible(false); };
+
+  const handleSaveToggle = async () => {
+    if (!id) return;
+    try {
+      if (isSaved) await mediaApi.unbookmark(Number(id));
+      else await mediaApi.bookmark(Number(id));
+      setIsSaved(!isSaved);
+    } catch {}
   };
 
   const handleSchedulePress = () => {
@@ -42,41 +76,10 @@ const CourseDetailScreen = () => {
     setIsScheduleVisible(true);
   };
 
-  // 좋아요 수 포맷 함수
-  const formatLikes = (num: number) => {
-    if (num < 1000) return num.toString();
-    const rounded = Math.floor(num / 100) * 100;
-    return `${(rounded).toLocaleString('en-US')}+`;
-  };
-
-  // 목업 데이터
-  const displayTags = Array.isArray(tagsParam) ? tagsParam : ['태그1', '태그2', '태그3', '태그4'];
-  const displayMediaTitle = String(mediaTitle ?? '미디어 제목');
-  const mockDays: { n: number; date: string; places: { name: string; rating: number; category: string; address: string }[] }[] = [
-    { n: 1, date: '01/01 수', places: [
-      { name: '장소 명칭 1', rating: 4.5, category: '관광명소', address: '서울시 도봉구' },
-    ]},
-    { n: 2, date: '01/02 목', places: [
-      { name: '장소 명칭 2', rating: 4.2, category: '음식점', address: '서울시 마포구' },
-      { name: '장소 명칭 2-2', rating: 3.8, category: '카페', address: '서울시 마포구' },
-    ]},
-    { n: 3, date: '01/03 금', places: [
-      { name: '장소 명칭 3', rating: 4.8, category: '숙박', address: '서울시 강남구' },
-    ]},
-  ];
-  const mockPhotoSpots: { id: string; imageUrl: string; title: string; address: string; likes: number; tags: string[] }[] = [
-    { id: '1', imageUrl: 'https://via.placeholder.com/48x48', title: '포토스팟 제목 1', address: '서울시 도봉구', likes: 89, tags: ['태그1', '태그2'] },
-    { id: '2', imageUrl: 'https://via.placeholder.com/48x48', title: '포토스팟 제목 2', address: '서울시 마포구', likes: 1290, tags: ['태그3'] },
-  ];
-  const displayLocationCount = locationCount ?? 5;
-  const displayMediaType = mediaType ?? '영화';
-  const displayRating = Number(rating ?? 4.5).toFixed(1);
-  const displayLikes = Number(likes ?? 1298);
-
   return (
     <TouchableWithoutFeedback onPress={closeMenu}>
       <SafeAreaView style={styles.container} edges={['top']}>
-        {/* 헤더 영역 */}
+        {/* 헤더 */}
         <View style={styles.header}>
           <BackButton onPress={() => router.back()} />
           <View style={styles.flexFill} />
@@ -87,81 +90,62 @@ const CourseDetailScreen = () => {
         </View>
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
-          {/* 이미지 박스 */}
+          {/* 메인 이미지 */}
           <View style={[styles.imageContainer, { width: imageWidth, height: imageHeight }]}>
-            <Image source={{ uri: 'https://via.placeholder.com/400x300' }} style={styles.mainImage} resizeMode="cover" />
+            <Image source={{ uri: media?.thumbnail_url ?? undefined }} style={styles.mainImage} resizeMode="cover" />
           </View>
 
           {/* 정보 섹션 */}
           <View style={styles.infoContainer}>
-            <Text style={styles.titleText}>{title ?? '코스 제목'}</Text>
+            <Text style={styles.titleText}>{media?.title ?? '로딩 중...'}</Text>
 
             <View style={styles.metaRow}>
-              <Text style={styles.metaText}>{displayLocationCount}개 장소</Text>
+              <Text style={styles.metaText}>{mediaPlaces.length}개 장소</Text>
               <Text style={styles.separator}>|</Text>
-              <Text style={styles.metaText}>{displayMediaType}</Text>
-              <Text style={styles.separator}>|</Text>
-              <View style={styles.iconTextRow}>
-                <Star size={16} color={Colors.light.grayDark} strokeWidth={2} />
-                <Text style={[styles.metaText, { marginLeft: 2 }]}>{displayRating}</Text>
-              </View>
-              <Text style={styles.separator}>|</Text>
-              <View style={styles.iconTextRow}>
-                <Heart size={16} color={Colors.light.grayDark} strokeWidth={2} />
-                <Text style={[styles.metaText, { marginLeft: 2 }]}>{formatLikes(displayLikes)}</Text>
-              </View>
+              <Text style={styles.metaText}>{MEDIA_TYPE_LABEL[media?.media_type ?? ''] ?? media?.media_type}</Text>
+              {media?.year != null && (
+                <>
+                  <Text style={styles.separator}>|</Text>
+                  <Text style={styles.metaText}>{media.year}년</Text>
+                </>
+              )}
             </View>
 
             <View style={styles.tagRow}>
-              {displayTags.map((tag, index) => (
-                <Text key={index} style={styles.tagText}>#{tag}</Text>
+              {media?.tags.map((tag) => (
+                <Text key={tag.id} style={styles.tagText}>#{tag.name}</Text>
               ))}
             </View>
 
-            {/* 버튼 그룹 섹션 (태그 16pt 아래, 좌우 32pt 여백) */}
+            {/* 버튼 그룹 */}
             <View style={styles.actionButtonGroup}>
-              {/* 1. 저장하기/저장취소 */}
               <TouchableOpacity style={styles.actionButton} onPress={handleSaveToggle} activeOpacity={0.7}>
-                {isSaved ? (
-                  <SaveHeart32 />
-                ) : (
-                  <UnSaveHeart32/>
-                )}
+                {isSaved ? <SaveHeart32 /> : <UnSaveHeart32 />}
                 <Text style={styles.actionButtonText}>{isSaved ? '저장취소' : '저장하기'}</Text>
               </TouchableOpacity>
-
-              {/* 2. 일정추가 */}
               <TouchableOpacity style={styles.actionButton} onPress={handleSchedulePress} activeOpacity={0.7}>
                 <Calendar size={32} color={Colors.light.grayDark} strokeWidth={1.5} />
                 <Text style={styles.actionButtonText}>일정추가</Text>
               </TouchableOpacity>
-
-              {/* 3. 리뷰쓰기 */}
               <TouchableOpacity style={styles.actionButton} onPress={() => {}} activeOpacity={0.7}>
                 <Star size={32} color={Colors.light.grayDark} strokeWidth={1.5} />
                 <Text style={styles.actionButtonText}>리뷰쓰기</Text>
               </TouchableOpacity>
             </View>
 
-            {/* 구분선 */}
             <View style={styles.divider} />
 
-            {/* 미디어 타이틀 */}
-            <Text style={styles.mediaTitleText}>{displayMediaTitle}</Text>
-
-            {/* 미디어 이미지 박스 */}
+            {/* 미디어 정보 */}
+            <Text style={styles.mediaTitleText}>{media?.title}</Text>
             <View style={[styles.mediaImageContainer, { height: imageHeight }]}>
-              <Image source={{ uri: 'https://via.placeholder.com/400x300' }} style={styles.mediaImage} resizeMode="cover" />
+              <Image source={{ uri: media?.thumbnail_url ?? undefined }} style={styles.mediaImage} resizeMode="cover" />
             </View>
+            <Text style={styles.mediaDescText}>{media?.description}</Text>
 
-            {/* 미디어 설명 */}
-            <Text style={styles.mediaDescText}>미디어 설명이 여기에 들어갑니다.</Text>
-
-            {/* 구분선 */}
             <View style={styles.dividerBottom} />
 
-            {/* 촬영지 섹션 */}
-            <Text style={styles.locationSectionTitle}>{displayMediaTitle} 속 촬영지</Text>
+            {/* 촬영지 섹션 타이틀 */}
+            <Text style={styles.locationSectionTitle}>{media?.title} 속 촬영지</Text>
           </View>
 
           {/* 촬영지 이미지 슬라이드 */}
@@ -171,33 +155,27 @@ const CourseDetailScreen = () => {
             contentContainerStyle={[styles.locationScrollContent, { paddingHorizontal: Spacing.h.medium }]}
             style={{ marginTop: 16 }}
           >
-            {[1, 2, 3, 4].map((_, i) => (
-              <View key={i} style={[styles.locationImageBox, { width: smallImageWidth, height: smallImageHeight }]}>
-                <Image source={{ uri: 'https://via.placeholder.com/200x150' }} style={styles.locationImage} resizeMode="cover" />
+            {mediaPlaces.map((mp) => (
+              <View key={mp.id} style={[styles.locationImageBox, { width: smallImageWidth, height: smallImageHeight }]}>
+                <Image source={{ uri: mp.place.image_url ?? undefined }} style={styles.locationImage} resizeMode="cover" />
               </View>
             ))}
           </ScrollView>
 
           <View style={styles.infoContainer}>
-            {/* 장소 설명 */}
-            <Text style={styles.locationDescText}>장소에 대한 설명이 여기에 들어갑니다.</Text>
-
-            {/* 구분선 */}
             <View style={styles.dividerBottom} />
 
             {/* 코스 섹션 */}
             <Text style={styles.courseSectionTitle}>코스</Text>
 
-            {mockDays.map((day, dayIndex) => (
-              <View key={dayIndex} style={dayIndex > 0 ? { marginTop: 32 } : undefined}>
+            {sortedDays.map((dayNum, dayIndex) => (
+              <View key={dayNum} style={dayIndex > 0 ? { marginTop: 32 } : undefined}>
                 <View style={styles.dayRow}>
-                  <Text style={styles.dayText}>Day {day.n}</Text>
-                  <Text style={styles.dayDateText}>{day.date}</Text>
+                  <Text style={styles.dayText}>Day {dayNum}</Text>
                 </View>
 
-                {day.places.map((place, placeIndex) => (
-                  <View key={placeIndex} style={styles.placeRow}>
-                    {/* 넘버링 원 */}
+                {dayGroups[dayNum].map((mp, placeIndex) => (
+                  <View key={mp.id} style={styles.placeRow}>
                     <View style={styles.placeNumberColumn}>
                       <View style={styles.placeCircle}>
                         <Text style={styles.placeCircleText}>{placeIndex + 1}</Text>
@@ -206,37 +184,26 @@ const CourseDetailScreen = () => {
 
                     <View style={{ width: 16 }} />
 
-                    {/* 코스 카드 */}
                     <TouchableOpacity
                       style={{ flex: 1 }}
                       activeOpacity={0.8}
-                      onPress={() => router.push({
-                        pathname: '/PlaceDetailScreen',
-                        params: {
-                          name: place.name,
-                          rating: place.rating,
-                          category: place.category,
-                          address: place.address,
-                        },
-                      })}
+                      onPress={() => router.push({ pathname: '/PlaceDetailScreen', params: { id: mp.place.id, name: mp.place.name } })}
                     >
                       <Shadow distance={4} startColor="rgba(0, 0, 0, 0.15)" offset={[0, 0]} stretch>
                         <View style={styles.courseCard}>
                           <Image
-                            source={{ uri: 'https://via.placeholder.com/86x86' }}
+                            source={{ uri: mp.place.image_url ?? undefined }}
                             style={styles.courseCardImage}
                             resizeMode="cover"
                           />
                           <View style={styles.cardContent}>
                             <View style={styles.cardNameRow}>
-                              <Text style={styles.placeNameText}>{place.name}</Text>
-                              <Star size={16} color={Colors.light.grayDark} strokeWidth={1} />
-                              <Text style={styles.ratingText}>{place.rating.toFixed(1)}</Text>
+                              <Text style={styles.placeNameText}>{mp.place.name}</Text>
                             </View>
                             <View style={styles.cardSubRow}>
-                              <Text style={styles.cardSubText}>{place.category}</Text>
+                              <Text style={styles.cardSubText}>{CATEGORY_LABEL[mp.place.category] ?? mp.place.category}</Text>
                               <Text style={styles.cardSeparator}>|</Text>
-                              <Text style={styles.cardSubText}>{place.address}</Text>
+                              <Text style={styles.cardSubText} numberOfLines={1}>{mp.place.address}</Text>
                             </View>
                             <TouchableOpacity style={styles.routeButton} activeOpacity={0.7}>
                               <Text style={styles.routeButtonText}>경로 확인</Text>
@@ -250,53 +217,41 @@ const CourseDetailScreen = () => {
               </View>
             ))}
 
-            {/* 구분선 */}
-            <View style={styles.dividerBottom} />
-
             {/* 포토스팟 섹션 */}
-            <Text style={styles.photoSpotTitle}>포토스팟</Text>
-            {mockPhotoSpots.map((spot, index) => (
-              <View key={spot.id} style={[styles.photoSpotBox, index > 0 && { marginTop: 8 }]}>
-                <View style={styles.photoSpotItem}>
-                  {/* 이미지 */}
-                  <Image
-                    source={{ uri: spot.imageUrl }}
-                    style={styles.photoSpotImage}
-                  />
-                  <View style={{ width: 16 }} />
-
-                  {/* 정보 */}
-                  <View style={styles.photoSpotContent}>
-                    {/* 제목 */}
-                    <Text style={styles.photoSpotItemTitle}>{spot.title}</Text>
-
-                    {/* 주소 + 하트 + 좋아요 */}
-                    <View style={styles.photoSpotMetaRow}>
-                      <Text style={styles.photoSpotAddress}>{spot.address}</Text>
-                      <Text style={styles.photoSpotSeparator}>|</Text>
-                      <Heart size={16} color={Colors.light.grayDark} strokeWidth={1} />
-                      <Text style={styles.photoSpotLikes}>{formatLikes(spot.likes)}</Text>
-                    </View>
-
-                    {/* 태그 */}
-                    <View style={styles.photoSpotTags}>
-                      {spot.tags.map((tag, tagIndex) => (
-                        <Text key={tagIndex} style={styles.photoSpotTag}>#{tag}</Text>
-                      ))}
+            {mediaPlaces.length > 0 && (
+              <>
+                <View style={styles.dividerBottom} />
+                <Text style={styles.photoSpotTitle}>포토스팟</Text>
+                {mediaPlaces.map((mp, index) => (
+                  <View key={mp.id} style={[styles.photoSpotBox, index > 0 && { marginTop: 8 }]}>
+                    <View style={styles.photoSpotItem}>
+                      <Image source={{ uri: mp.place.image_url ?? undefined }} style={styles.photoSpotImage} />
+                      <View style={{ width: 16 }} />
+                      <View style={styles.photoSpotContent}>
+                        <Text style={styles.photoSpotItemTitle}>{mp.place.name}</Text>
+                        <View style={styles.photoSpotMetaRow}>
+                          <Text style={styles.photoSpotAddress} numberOfLines={1}>{mp.place.address}</Text>
+                        </View>
+                        <View style={styles.photoSpotTags}>
+                          {mp.place.tags.map((tag) => (
+                            <Text key={tag.id} style={styles.photoSpotTag}>#{tag.name}</Text>
+                          ))}
+                        </View>
+                      </View>
                     </View>
                   </View>
-                </View>
-              </View>
-            ))}
+                ))}
+              </>
+            )}
           </View>
         </ScrollView>
 
         <ScheduleAlert
           visible={isScheduleVisible}
           onClose={() => setIsScheduleVisible(false)}
-          title="서울 봄 여행"
-          period="2026.04.03 ~ 2026.04.05"
-          tags={['서울', '봄여행', '나들이']}
+          title={media?.title ?? ''}
+          period=""
+          tags={media?.tags.map(t => t.name) ?? []}
           inputText=""
         />
       </SafeAreaView>

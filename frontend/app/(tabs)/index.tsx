@@ -1,7 +1,7 @@
 import { Colors } from '@/constants/Colors';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Dimensions,
   FlatList,
@@ -14,9 +14,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-// 🚀 1. 구형 네비게이션을 지우고 엑스포 라우터를 가져옵니다!
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { userApi } from '../../services/api';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -32,9 +33,14 @@ const IntroScreen = () => {
   const isLastPage = activeIndex === PAGES.length - 1;
   const insets = useSafeAreaInsets();
 
-  // 🚀 2. router 선언!
   const router = useRouter();
   const flatListRef = useRef<FlatList>(null);
+
+  useEffect(() => {
+    AsyncStorage.getItem('device_id').then((id) => {
+      if (id) router.replace('/MainScreen');
+    });
+  }, []);
 
   const onScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const scrollOffset = event.nativeEvent.contentOffset.x;
@@ -42,12 +48,15 @@ const IntroScreen = () => {
     setActiveIndex(currentIndex);
   };
 
-  const handlePress = () => {
+  const handlePress = async () => {
     if (isLastPage) {
-      // 🚀 3. 핵심 중의 핵심! 
-      // navigate나 push를 쓰면 뒤에 튜토리얼이 살아남습니다.
-      // replace를 써야 "튜토리얼 창을 부수고 그 자리에 메인 화면을 세운다"가 됩니다!
-      router.replace('/MainScreen'); 
+      try {
+        const res = await userApi.createUser();
+        await AsyncStorage.setItem('device_id', res.data.device_id);
+      } catch (e) {
+        // 유저 생성 실패해도 앱 진입은 허용
+      }
+      router.replace('/MainScreen');
     } else {
       flatListRef.current?.scrollToIndex({
         index: activeIndex + 1,
