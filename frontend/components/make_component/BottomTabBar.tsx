@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Home, MapPin, Map, Calendar } from 'lucide-react-native';
+import { Home, MapPin, Settings, Calendar } from 'lucide-react-native';
 import { Typography } from '@/constants/Typography';
 
 const ICON_COLOR = '#0C0C0C';
@@ -12,8 +12,8 @@ const ICON_STROKE = 2;
 const TAB_ITEMS = [
   { label: '홈',  Icon: Home,     href: '/(tabs)/MainScreen' as const },
   { label: '코스', Icon: MapPin,   href: null },
-  { label: '지도', Icon: Map,      href: null },
   { label: '일정', Icon: Calendar, href: '/(tabs)/ScheduleScreen' as const },
+  { label: '설정', Icon: Settings,  href: '/(tabs)/SettingScreen' as const },
 ];
 
 export default function BottomTabBar() {

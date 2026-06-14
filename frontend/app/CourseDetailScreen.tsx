@@ -8,7 +8,7 @@ import { Colors } from '@/constants/Colors';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Calendar, Star } from 'lucide-react-native';
+import { Calendar, Heart, Star } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { mediaApi } from '../services/api';
 import type { Media, MediaPlace } from '../services/types';
@@ -19,6 +19,8 @@ import { Shadow } from 'react-native-shadow-2';
 const MEDIA_TYPE_LABEL: Record<string, string> = {
   drama: '드라마', movie: '영화', youtube: '유튜브', etc: '기타',
 };
+
+const shortAddress = (address: string) => address.split(' ').slice(0, 2).join(' ');
 
 const CATEGORY_LABEL: Record<string, string> = {
   '12': '관광지', '14': '문화시설', '15': '축제/행사',
@@ -103,10 +105,18 @@ const CourseDetailScreen = () => {
               <Text style={styles.metaText}>{mediaPlaces.length}개 장소</Text>
               <Text style={styles.separator}>|</Text>
               <Text style={styles.metaText}>{MEDIA_TYPE_LABEL[media?.media_type ?? ''] ?? media?.media_type}</Text>
-              {media?.year != null && (
+              {media?.rating != null && (
                 <>
                   <Text style={styles.separator}>|</Text>
-                  <Text style={styles.metaText}>{media.year}년</Text>
+                  <Star size={16} color={Colors.light.grayDark} strokeWidth={2} />
+                  <Text style={styles.metaText}> {media.rating.toFixed(1)}</Text>
+                </>
+              )}
+              {media?.like_count != null && (
+                <>
+                  <Text style={styles.separator}>|</Text>
+                  <Heart size={16} color={Colors.light.grayDark} strokeWidth={2} />
+                  <Text style={styles.metaText}> {media.like_count.toLocaleString()}</Text>
                 </>
               )}
             </View>
@@ -203,7 +213,7 @@ const CourseDetailScreen = () => {
                             <View style={styles.cardSubRow}>
                               <Text style={styles.cardSubText}>{CATEGORY_LABEL[mp.place.category] ?? mp.place.category}</Text>
                               <Text style={styles.cardSeparator}>|</Text>
-                              <Text style={styles.cardSubText} numberOfLines={1}>{mp.place.address}</Text>
+                              <Text style={styles.cardSubText} numberOfLines={1}>{shortAddress(mp.place.address)}</Text>
                             </View>
                             <TouchableOpacity style={styles.routeButton} activeOpacity={0.7}>
                               <Text style={styles.routeButtonText}>경로 확인</Text>

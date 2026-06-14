@@ -1,4 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Heart, Star } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated,
@@ -114,7 +115,26 @@ const SearchResultScreen = () => {
                       <Text style={styles.courseTitle} numberOfLines={1}>{course.title}</Text>
                       <View style={styles.metadataRow}>
                         <Text style={styles.metadataText}>{MEDIA_TYPE_LABEL[course.media_type] ?? course.media_type}</Text>
-                        {course.year != null && <><Text style={styles.divider}>|</Text><Text style={styles.metadataText}>{course.year}년</Text></>}
+                        {course.place_count != null && (
+                          <>
+                            <Text style={styles.divider}>|</Text>
+                            <Text style={styles.metadataText}>{course.place_count}개 장소</Text>
+                          </>
+                        )}
+                        {course.rating != null && (
+                          <>
+                            <Text style={styles.divider}>|</Text>
+                            <Star size={16} color={Colors.light.grayDark} strokeWidth={2} />
+                            <Text style={styles.metadataText}> {course.rating.toFixed(1)}</Text>
+                          </>
+                        )}
+                        {course.like_count != null && (
+                          <>
+                            <Text style={styles.divider}>|</Text>
+                            <Heart size={16} color={Colors.light.grayDark} strokeWidth={2} />
+                            <Text style={styles.metadataText}> {course.like_count.toLocaleString()}</Text>
+                          </>
+                        )}
                       </View>
                       <View style={styles.tagRow}>
                         {visibleTags.map((tag, idx) => <Text key={idx} style={styles.tagText}>#{tag}</Text>)}

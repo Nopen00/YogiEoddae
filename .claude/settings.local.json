@@ -18,7 +18,18 @@
       "Bash(venv\\\\Scripts\\\\python.exe manage.py fetch_youtube_place --url \"https://www.youtube.com/watch?v=GsictFeZmaw\" --media-title \"테스트영상\" --ai gemini --dry-run)",
       "PowerShell(cd \"c:\\\\Users\\\\Nopen\\\\Desktop\\\\LLTTYY\\\\4-1\\\\capstone\\\\capstone_YogiEoddae\"; $env:PYTHONIOENCODING = \"utf-8\"; .\\\\venv\\\\Scripts\\\\python.exe manage.py fetch_youtube_place --url \"https://www.youtube.com/watch?v=GsictFeZmaw\" --media-title \"테스트영상\" --ai gemini --dry-run 2>&1 | Select-String -NotMatch \"FutureWarning|warnings.warn|site-packages|api_core\")",
       "Bash(python manage.py migrate)",
-      "Bash(venv\\\\Scripts\\\\python.exe manage.py migrate)"
+      "Bash(venv\\\\Scripts\\\\python.exe manage.py migrate)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\yoons\\\\OneDrive\\\\바탕 화면\\\\hakgyo\" -Directory)",
+      "Bash(Select-Object Name)",
+      "Bash(python manage.py check)",
+      "PowerShell(python --version)",
+      "PowerShell(Get-Command python -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source; Get-Command python3 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source; \\(Get-Command py -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source\\))",
+      "PowerShell(py --list)",
+      "Bash(dir \"c:\\\\Users\\\\yoons\\\\OneDrive\\\\바탕 화면\\\\hakgyo\\\\backend\" /a)",
+      "PowerShell(Get-Command mysql -ErrorAction SilentlyContinue)",
+      "Bash(git -C \"c:/Users/yoons/OneDrive/바탕 화면/hakgyo\" status)",
+      "Bash(git -C \"c:/Users/yoons/OneDrive/바탕 화면/hakgyo\" diff)",
+      "Bash(git -C \"c:/Users/yoons/OneDrive/바탕 화면/hakgyo\" log --oneline -5)"
     ]
   }
 }
