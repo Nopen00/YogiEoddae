@@ -21,6 +21,21 @@ import { mediaApi, placeApi } from '../services/api';
 import type { Media, Place, Tag } from '../services/types';
 
 const CATEGORIES = ["전체", "코스", "명소", "포토스팟"];
+
+const formatLikeCount = (count: number): string => {
+  if (count < 100) return count.toString();
+  return (Math.floor(count / 100) * 100).toLocaleString() + '+';
+};
+
+const CITY_SHORT: Record<string, string> = {
+  '서울특별시': '서울', '부산광역시': '부산', '대구광역시': '대구',
+  '인천광역시': '인천', '광주광역시': '광주', '대전광역시': '대전',
+  '울산광역시': '울산', '세종특별자치시': '세종', '경기도': '경기',
+  '강원특별자치도': '강원', '강원도': '강원', '충청북도': '충북',
+  '충청남도': '충남', '전라북도': '전북', '전북특별자치도': '전북',
+  '전라남도': '전남', '경상북도': '경북', '경상남도': '경남',
+  '제주특별자치도': '제주',
+};
 const { width } = Dimensions.get('window');
 const TAB_WIDTH = width / CATEGORIES.length;
 
@@ -101,7 +116,7 @@ const SearchResultScreen = () => {
               </View>
             )}
             {(selectedIndex === 0 ? courses.slice(0, 3) : courses).map((course) => {
-              const { visibleTags, extraCount } = getProcessedTags(course.tags);
+              const { visibleTags: courseTags, extraCount: courseExtra } = getProcessedTags(course.tags);
               return (
                 <TouchableOpacity
                   key={`course-${course.id}`}
@@ -114,31 +129,43 @@ const SearchResultScreen = () => {
                     <View style={styles.infoContent}>
                       <Text style={styles.courseTitle} numberOfLines={1}>{course.title}</Text>
                       <View style={styles.metadataRow}>
-                        <Text style={styles.metadataText}>{MEDIA_TYPE_LABEL[course.media_type] ?? course.media_type}</Text>
+                        <View style={styles.metaChip}>
+                          <Text style={styles.metadataText}>{MEDIA_TYPE_LABEL[course.media_type] ?? course.media_type}</Text>
+                          {(course.place_count != null || course.rating != null || course.like_count != null) && (
+                            <Text style={styles.divider}>|</Text>
+                          )}
+                        </View>
                         {course.place_count != null && (
-                          <>
-                            <Text style={styles.divider}>|</Text>
+                          <View style={styles.metaChip}>
                             <Text style={styles.metadataText}>{course.place_count}개 장소</Text>
-                          </>
+                            {(course.rating != null || course.like_count != null) && (
+                              <Text style={styles.divider}>|</Text>
+                            )}
+                          </View>
                         )}
-                        {course.rating != null && (
-                          <>
-                            <Text style={styles.divider}>|</Text>
-                            <Star size={16} color={Colors.light.grayDark} strokeWidth={2} />
-                            <Text style={styles.metadataText}> {course.rating.toFixed(1)}</Text>
-                          </>
-                        )}
-                        {course.like_count != null && (
-                          <>
-                            <Text style={styles.divider}>|</Text>
-                            <Heart size={16} color={Colors.light.grayDark} strokeWidth={2} />
-                            <Text style={styles.metadataText}> {course.like_count.toLocaleString()}</Text>
-                          </>
+                        {(course.rating != null || course.like_count != null) && (
+                          <View style={styles.metaChip}>
+                            {course.rating != null && (
+                              <>
+                                <Star size={16} color={Colors.light.grayDark} strokeWidth={2} />
+                                <Text style={styles.metadataText}> {course.rating.toFixed(1)}</Text>
+                              </>
+                            )}
+                            {course.rating != null && course.like_count != null && (
+                              <Text style={styles.divider}>|</Text>
+                            )}
+                            {course.like_count != null && (
+                              <>
+                                <Heart size={16} color={Colors.light.grayDark} strokeWidth={2} />
+                                <Text style={styles.metadataText}> {formatLikeCount(course.like_count)}</Text>
+                              </>
+                            )}
+                          </View>
                         )}
                       </View>
                       <View style={styles.tagRow}>
-                        {visibleTags.map((tag, idx) => <Text key={idx} style={styles.tagText}>#{tag}</Text>)}
-                        {extraCount > 0 && <Text style={styles.tagText}>+{extraCount}</Text>}
+                        {courseTags.map((tag, idx) => <Text key={idx} style={styles.tagText}>#{tag}</Text>)}
+                        {courseExtra > 0 && <Text style={styles.tagText}>+{courseExtra}</Text>}
                       </View>
                     </View>
                   </View>
@@ -163,7 +190,10 @@ const SearchResultScreen = () => {
               </View>
             )}
             {(selectedIndex === 0 ? attractions.slice(0, 3) : attractions).map((attr) => {
-              const { visibleTags, extraCount } = getProcessedTags(attr.tags);
+              const { visibleTags: attrTags, extraCount: attrExtra } = getProcessedTags(attr.tags);
+              const addrParts = attr.address.split(' ');
+              if (addrParts[0] && CITY_SHORT[addrParts[0]]) addrParts[0] = CITY_SHORT[addrParts[0]];
+              const shortAddr = addrParts.slice(0, 2).join(' ');
               return (
                 <TouchableOpacity
                   key={`attr-${attr.id}`}
@@ -176,13 +206,39 @@ const SearchResultScreen = () => {
                     <View style={styles.infoContent}>
                       <Text style={styles.courseTitle} numberOfLines={1}>{attr.name}</Text>
                       <View style={styles.metadataRow}>
-                        <Text style={styles.metadataText}>{CATEGORY_LABEL[attr.category] ?? attr.category}</Text>
-                        <Text style={styles.divider}>|</Text>
-                        <Text style={styles.metadataText} numberOfLines={1}>{attr.address}</Text>
+                        <View style={styles.metaChip}>
+                          <Text style={styles.metadataText}>{CATEGORY_LABEL[attr.category] ?? attr.category}</Text>
+                          <Text style={styles.divider}>|</Text>
+                        </View>
+                        <View style={styles.metaChip}>
+                          <Text style={styles.metadataText}>{shortAddr}</Text>
+                          {(attr.rating != null || attr.like_count != null) && (
+                            <Text style={styles.divider}>|</Text>
+                          )}
+                        </View>
+                        {(attr.rating != null || attr.like_count != null) && (
+                          <View style={styles.metaChip}>
+                            {attr.rating != null && (
+                              <>
+                                <Star size={16} color={Colors.light.grayDark} strokeWidth={2} />
+                                <Text style={styles.metadataText}> {attr.rating.toFixed(1)}</Text>
+                              </>
+                            )}
+                            {attr.rating != null && attr.like_count != null && (
+                              <Text style={styles.divider}>|</Text>
+                            )}
+                            {attr.like_count != null && (
+                              <>
+                                <Heart size={16} color={Colors.light.grayDark} strokeWidth={2} />
+                                <Text style={styles.metadataText}> {formatLikeCount(attr.like_count)}</Text>
+                              </>
+                            )}
+                          </View>
+                        )}
                       </View>
                       <View style={styles.tagRow}>
-                        {visibleTags.map((tag, idx) => <Text key={idx} style={styles.tagText}>#{tag}</Text>)}
-                        {extraCount > 0 && <Text style={styles.tagText}>+{extraCount}</Text>}
+                        {attrTags.map((tag, idx) => <Text key={idx} style={styles.tagText}>#{tag}</Text>)}
+                        {attrExtra > 0 && <Text style={styles.tagText}>+{attrExtra}</Text>}
                       </View>
                     </View>
                   </View>
@@ -207,7 +263,10 @@ const SearchResultScreen = () => {
               </View>
             )}
             {(selectedIndex === 0 ? attractions.slice(0, 3) : attractions).map((spot) => {
-              const { visibleTags, extraCount } = getProcessedTags(spot.tags);
+              const { visibleTags: spotTags, extraCount: spotExtra } = getProcessedTags(spot.tags);
+              const spotAddrParts = spot.address.split(' ');
+              if (spotAddrParts[0] && CITY_SHORT[spotAddrParts[0]]) spotAddrParts[0] = CITY_SHORT[spotAddrParts[0]];
+              const spotShortAddr = spotAddrParts.slice(0, 2).join(' ');
               return (
                 <TouchableOpacity
                   key={`spot-${spot.id}`}
@@ -220,11 +279,20 @@ const SearchResultScreen = () => {
                     <View style={styles.infoContent}>
                       <Text style={styles.courseTitle} numberOfLines={1}>{spot.name}</Text>
                       <View style={styles.metadataRow}>
-                        <Text style={styles.metadataText} numberOfLines={1}>{spot.address}</Text>
+                        <View style={styles.metaChip}>
+                          <Text style={styles.metadataText}>{spotShortAddr}</Text>
+                          {spot.like_count != null && <Text style={styles.divider}>|</Text>}
+                        </View>
+                        {spot.like_count != null && (
+                          <View style={styles.metaChip}>
+                            <Heart size={16} color={Colors.light.grayDark} strokeWidth={2} />
+                            <Text style={styles.metadataText}> {formatLikeCount(spot.like_count)}</Text>
+                          </View>
+                        )}
                       </View>
                       <View style={styles.tagRow}>
-                        {visibleTags.map((tag, idx) => <Text key={idx} style={styles.tagText}>#{tag}</Text>)}
-                        {extraCount > 0 && <Text style={styles.tagText}>+{extraCount}</Text>}
+                        {spotTags.map((tag, idx) => <Text key={idx} style={styles.tagText}>#{tag}</Text>)}
+                        {spotExtra > 0 && <Text style={styles.tagText}>+{spotExtra}</Text>}
                       </View>
                     </View>
                   </View>
@@ -236,6 +304,18 @@ const SearchResultScreen = () => {
                 <Text style={styles.moreButtonText}>더보기</Text>
               </TouchableOpacity>
             )}
+          </View>
+        )}
+
+        {searchKeyword.length > 0 && (
+          (selectedIndex === 0 && courses.length === 0 && attractions.length === 0) ||
+          (selectedIndex === 1 && courses.length === 0) ||
+          (selectedIndex === 2 && attractions.length === 0) ||
+          (selectedIndex === 3 && attractions.length === 0)
+        ) && (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyTitle}>검색 결과가 없습니다.</Text>
+            <Text style={styles.emptyDesc}>검색어가 정확한지 확인해주세요.</Text>
           </View>
         )}
       </ScrollView>
@@ -263,7 +343,7 @@ const styles = StyleSheet.create({
   sectionTitle: { ...Typography.HeadLine7, color: Colors.light.black, marginBottom: Spacing.v.small },
   titleBottomLine: { height: 1, backgroundColor: Colors.light.grayLight },
   cardButton: {
-    height: 106,
+    minHeight: 106,
     marginHorizontal: Spacing.h.medium,
     marginBottom: 16, // 카드 하단 16pt 여백
     backgroundColor: Colors.light.white,
@@ -277,16 +357,30 @@ const styles = StyleSheet.create({
   imageCircle: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#D9D9D9' },
   infoContent: { flex: 1, marginLeft: 16 },
   courseTitle: { ...Typography.title1, color: Colors.light.black, marginBottom: 4 },
-  metadataRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
+  metadataRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', rowGap: 4, marginBottom: 4 },
   metadataText: { ...Typography.subtitle1, color: Colors.light.grayDark },
   divider: { marginHorizontal: 4, color: Colors.light.grayLight },
   iconGroup: { flexDirection: 'row', alignItems: 'center' },
+  metaChip: { flexDirection: 'row', alignItems: 'center' },
   iconValue: { ...Typography.subtitle1, color: Colors.light.grayDark, marginLeft: 2 },
   tagRow: { flexDirection: 'row', alignItems: 'center' },
   tagText: { ...Typography.body2, color: Colors.light.primary, marginRight: 4 },
   
   // 🚀 상단 항목(카드)에서 16pt 떨어지도록 설정
   // 카드의 marginBottom(16)과 moreButton의 marginTop(0)이 합쳐져 16pt 유지
+  emptyState: {
+    paddingTop: 16,
+    alignItems: 'center',
+  },
+  emptyTitle: {
+    ...Typography.subtitle2,
+    color: Colors.light.black,
+  },
+  emptyDesc: {
+    ...Typography.body2,
+    color: Colors.light.grayLight,
+    marginTop: 16,
+  },
   moreButton: { marginTop: 0, alignSelf: 'flex-end', marginRight: 16, paddingVertical: 8 },
   moreButtonText: { ...Typography.button4, color: Colors.light.primary }
 });

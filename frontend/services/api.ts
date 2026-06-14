@@ -48,6 +48,8 @@ export const mediaApi = {
       : apiClient.get<Media>(`/api/media/${id}/`),
   getPlaces: (id: number) =>
     USE_MOCK ? mock(MOCK_MEDIA_PLACES) : apiClient.get<MediaPlace[]>(`/api/media/${id}/places/`),
+  getBookmarked: () =>
+    USE_MOCK ? mock(MOCK_MEDIA_LIST.filter(m => m.is_bookmarked)) : apiClient.get<Media[]>('/api/media/bookmarked/'),
   bookmark: (id: number) =>
     USE_MOCK ? mock({}) : apiClient.post(`/api/media/${id}/bookmark/`),
   unbookmark: (id: number) =>
@@ -65,6 +67,10 @@ export const placeApi = {
       : apiClient.get<Place>(`/api/places/${id}/`),
   getPhotos: (id: number) =>
     USE_MOCK ? mock(MOCK_PHOTOS) : apiClient.get<Photo[]>(`/api/places/${id}/photos/`),
+  getBookmarked: () =>
+    USE_MOCK
+      ? mock(MOCK_MEDIA_PLACES.map(mp => mp.place).filter(p => p.is_bookmarked))
+      : apiClient.get<Place[]>('/api/places/bookmarked/'),
   bookmark: (id: number) =>
     USE_MOCK ? mock({}) : apiClient.post(`/api/places/${id}/bookmark/`),
   unbookmark: (id: number) =>

@@ -30,6 +30,8 @@ export interface Place {
   is_verified: boolean;
   kakao_place_url?: string;
   is_bookmarked: boolean;
+  rating: number | null;
+  like_count: number | null;
   tags: Tag[];
   created_at: string;
 }
@@ -64,7 +66,7 @@ export interface DailyPlace {
 export interface Schedule {
   id: number;
   title: string;
-  media: Pick<Media, 'id' | 'title' | 'thumbnail_url' | 'media_type'> | null;
+  media: Pick<Media, 'id' | 'title' | 'thumbnail_url' | 'media_type' | 'tags'> | null;
   start_date: string | null;
   end_date: string | null;
   is_bookmarked: boolean;

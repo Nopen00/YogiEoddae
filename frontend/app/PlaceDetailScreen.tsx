@@ -21,14 +21,35 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import { placeApi } from '../services/api';
-import type { Photo, Place } from '../services/types';
+import { placeApi, scheduleApi } from '../services/api';
+import type { Photo, Place, Schedule } from '../services/types';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Shadow } from 'react-native-shadow-2';
 
 const CATEGORY_LABEL: Record<string, string> = {
   '12': '관광지', '14': '문화시설', '15': '축제/행사',
   '25': '여행코스', '28': '레포츠', '32': '숙박', '38': '쇼핑', '39': '음식점',
+};
+
+const CITY_SHORT: Record<string, string> = {
+  '서울특별시': '서울', '부산광역시': '부산', '대구광역시': '대구',
+  '인천광역시': '인천', '광주광역시': '광주', '대전광역시': '대전',
+  '울산광역시': '울산', '세종특별자치시': '세종', '경기도': '경기',
+  '강원특별자치도': '강원', '강원도': '강원', '충청북도': '충북',
+  '충청남도': '충남', '전라북도': '전북', '전북특별자치도': '전북',
+  '전라남도': '전남', '경상북도': '경북', '경상남도': '경남',
+  '제주특별자치도': '제주',
+};
+
+const shortAddress = (address: string) => {
+  const parts = address.split(' ');
+  if (parts[0] && CITY_SHORT[parts[0]]) parts[0] = CITY_SHORT[parts[0]];
+  return parts.slice(0, 2).join(' ');
+};
+
+const formatLikeCount = (count: number): string => {
+  if (count < 100) return count.toString();
+  return (Math.floor(count / 100) * 100).toLocaleString() + '+';
 };
 
 const PlaceDetailScreen = () => {
@@ -49,6 +70,7 @@ const PlaceDetailScreen = () => {
   const [place, setPlace] = useState<Place | null>(null);
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [nearbyPlaces, setNearbyPlaces] = useState<Place[]>([]);
+  const [schedules, setSchedules] = useState<Schedule[]>([]);
 
   useEffect(() => {
     if (!id) return;
@@ -60,6 +82,9 @@ const PlaceDetailScreen = () => {
       .catch(() => {});
     placeApi.getList()
       .then(res => setNearbyPlaces(res.data.results.filter(p => String(p.id) !== id).slice(0, 4)))
+      .catch(() => {});
+    scheduleApi.getList()
+      .then(res => setSchedules(res.data))
       .catch(() => {});
   }, [id]);
 
@@ -117,9 +142,29 @@ const PlaceDetailScreen = () => {
             {/* 장소명 */}
             <Text style={styles.titleText}>{place?.name ?? '로딩 중...'}</Text>
 
-            {/* 카테고리 */}
+            {/* 카테고리 | 주소 | 별점 | 좋아요 */}
             <View style={styles.metaRow}>
               <Text style={styles.metaText}>{CATEGORY_LABEL[place?.category ?? ''] ?? place?.category}</Text>
+              {place?.address && (
+                <>
+                  <Text style={styles.separator}>|</Text>
+                  <Text style={styles.metaText}>{shortAddress(place.address)}</Text>
+                </>
+              )}
+              {place?.rating != null && (
+                <>
+                  <Text style={styles.separator}>|</Text>
+                  <Star size={14} color={Colors.light.grayDark} strokeWidth={2} />
+                  <Text style={[styles.metaText, { marginLeft: 3 }]}>{place.rating.toFixed(1)}</Text>
+                </>
+              )}
+              {place?.like_count != null && (
+                <>
+                  <Text style={styles.separator}>|</Text>
+                  <Heart size={14} color={Colors.light.grayDark} strokeWidth={2} />
+                  <Text style={[styles.metaText, { marginLeft: 3 }]}>{formatLikeCount(place.like_count)}</Text>
+                </>
+              )}
             </View>
 
             {/* 태그 */}
@@ -228,7 +273,7 @@ const PlaceDetailScreen = () => {
                   </View>
                   <Text style={styles.nearbyPlaceName} numberOfLines={1}>{nearby.name}</Text>
                   <Text style={styles.nearbyCategory}>{CATEGORY_LABEL[nearby.category] ?? nearby.category}</Text>
-                  <Text style={styles.nearbyAddress} numberOfLines={1}>{nearby.address}</Text>
+                  <Text style={styles.nearbyAddress} numberOfLines={1}>{shortAddress(nearby.address)}</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -238,10 +283,7 @@ const PlaceDetailScreen = () => {
         <ScheduleAlert
           visible={isScheduleVisible}
           onClose={() => setIsScheduleVisible(false)}
-          title={place?.name ?? ''}
-          period=""
-          tags={place?.tags.map(t => t.name) ?? []}
-          inputText=""
+          schedules={schedules}
         />
       </SafeAreaView>
     </TouchableWithoutFeedback>
