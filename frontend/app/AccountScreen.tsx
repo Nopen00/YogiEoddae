@@ -17,6 +17,7 @@ const AccountScreen = () => {
   const [codeVisible, setCodeVisible] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [popupVisible, setPopupVisible] = useState(false);
+  const [resultPopup, setResultPopup] = useState<{ visible: boolean; isSuccess: boolean }>({ visible: false, isSuccess: true });
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -87,7 +88,12 @@ const AccountScreen = () => {
             <Text style={styles.popupTitle}>계정 복구를 진행하시겠습니까?</Text>
             <Text style={styles.popupDesc}>복구 코드를 입력하면 되돌릴 수 없습니다.</Text>
             <View style={styles.popupButtons}>
-              <TouchableOpacity style={styles.btnComplete} activeOpacity={0.8} onPress={() => { setPopupVisible(false); setInputValue(''); }}>
+              <TouchableOpacity style={styles.btnComplete} activeOpacity={0.8} onPress={() => {
+                const isSuccess = inputValue.trim() === RECOVERY_CODE;
+                setPopupVisible(false);
+                setInputValue('');
+                setResultPopup({ visible: true, isSuccess });
+              }}>
                 <Text style={styles.btnCompleteText}>완료</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.btnCancel} activeOpacity={0.8} onPress={() => { setPopupVisible(false); setInputValue(''); }}>
@@ -96,6 +102,22 @@ const AccountScreen = () => {
             </View>
           </View>
         </View>
+      </Modal>
+      <Modal visible={resultPopup.visible} transparent animationType="fade">
+        <TouchableOpacity
+          style={styles.overlay}
+          activeOpacity={1}
+          onPress={() => setResultPopup({ ...resultPopup, visible: false })}
+        >
+          <View style={styles.resultPopup}>
+            <Text style={styles.resultTitle}>
+              {resultPopup.isSuccess ? '계정 복구에 성공했습니다.' : '계정 복구에 실패했습니다.'}
+            </Text>
+            {!resultPopup.isSuccess && (
+              <Text style={styles.resultDesc}>복구 코드가 올바른지 다시 확인하세요.</Text>
+            )}
+          </View>
+        </TouchableOpacity>
       </Modal>
     </SafeAreaView>
   );
@@ -234,6 +256,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   btnCancelText: { ...Typography.button2, color: Colors.light.white },
+  resultPopup: {
+    width: SCREEN_WIDTH - 64,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.light.grayLight,
+    backgroundColor: Colors.light.white,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 4,
+    alignItems: 'center',
+  },
+  resultTitle: { ...Typography.subtitle2, color: Colors.light.black, textAlign: 'center' },
+  resultDesc: { ...Typography.body2, color: Colors.light.grayDark, textAlign: 'center', marginTop: 16 },
 });
 
 export default AccountScreen;
