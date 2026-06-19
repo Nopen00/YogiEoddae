@@ -152,6 +152,7 @@ KAKAO_REST_KEY = env('KAKAO_REST_KEY', default='')
 ANTHROPIC_API_KEY = env('ANTHROPIC_API_KEY', default='')
 GEMINI_API_KEY = env('GEMINI_API_KEY', default='')
 YOUTUBE_API_KEY = env('YOUTUBE_API_KEY', default='')
+DEVICE_ID_HASH_KEY = env('DEVICE_ID_HASH_KEY')
 
 # Kakao Maps SDK 403 방지: Referer 헤더를 크로스 오리진 요청에도 포함
 SECURE_REFERRER_POLICY = 'no-referrer-when-downgrade'

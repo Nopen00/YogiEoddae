@@ -1,4 +1,3 @@
-import uuid
 from rest_framework import serializers
 from .models import MediaPlace, Place, Media, Tag, Photo
 
@@ -12,11 +11,8 @@ def _get_user_from_context(context):
     if request:
         device_id = request.headers.get('X-Device-ID')
         if device_id:
-            try:
-                from users.models import User
-                user = User.objects.get(device_id=uuid.UUID(device_id))
-            except Exception:
-                pass
+            from users.utils import get_user_by_device_id
+            user = get_user_by_device_id(device_id)
     context['resolved_user'] = user
     return user
 

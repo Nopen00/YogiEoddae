@@ -1,4 +1,3 @@
-import uuid
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -6,18 +5,12 @@ from django.shortcuts import get_object_or_404
 
 from .models import MediaBookmark, PlaceBookmark, PhotoBookmark
 from .serializers import MediaBookmarkSerializer, PlaceBookmarkSerializer, PhotoBookmarkSerializer
-from users.models import User
 from places.models import Media, Place, Photo
+from users.utils import get_user_by_device_id
 
 
 def get_user(request):
-    device_id = request.headers.get('X-Device-ID')
-    if not device_id:
-        return None
-    try:
-        return User.objects.get(device_id=uuid.UUID(device_id))
-    except (User.DoesNotExist, ValueError):
-        return None
+    return get_user_by_device_id(request.headers.get('X-Device-ID'))
 
 
 class BookmarkListView(APIView):

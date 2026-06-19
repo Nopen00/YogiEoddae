@@ -2,6 +2,8 @@ import uuid
 from django.utils import timezone
 from django.utils.deprecation import MiddlewareMixin
 
+from .utils import hash_device_id
+
 
 class UpdateLastActiveMiddleware(MiddlewareMixin):
     """
@@ -14,9 +16,9 @@ class UpdateLastActiveMiddleware(MiddlewareMixin):
             return
 
         try:
-            uid = uuid.UUID(device_id)
+            uuid.UUID(device_id)
         except ValueError:
             return
 
         from users.models import User
-        User.objects.filter(device_id=uid).update(last_active_at=timezone.now())
+        User.objects.filter(device_id_hash=hash_device_id(device_id)).update(last_active_at=timezone.now())

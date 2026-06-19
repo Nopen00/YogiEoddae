@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Schedule, DailyPlace, ScheduleBookmark
+from users.utils import hash_device_id
 
 
 class PlaceBriefSerializer(serializers.Serializer):
@@ -43,7 +44,7 @@ class ScheduleSerializer(serializers.ModelSerializer):
         device_id = request.headers.get('X-Device-ID')
         if not device_id:
             return False
-        return obj.bookmarks.filter(user__device_id=device_id).exists()
+        return obj.bookmarks.filter(user__device_id_hash=hash_device_id(device_id)).exists()
 
 
 class ScheduleCreateSerializer(serializers.ModelSerializer):
