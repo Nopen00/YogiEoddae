@@ -20,8 +20,9 @@ YouTube 영상에서 촬영 장소를 추출해 DB에 저장하는 개발자용 
   1. YouTube Data API  → 제목/설명/태그/댓글 수집
   2. youtube-transcript-api → 자막 수집
   3. Claude 또는 Gemini → 촬영 장소 JSON 추론 (--ai 옵션으로 선택)
-  4. KTO API 1차 검색 → Place 저장 (is_verified=True)
-  5. KTO 결과 없으면 AI 추론 결과로 저장 (is_verified=False, 좌표=0)
+  4. KTO API 1차 검색 → address_hint와 지역이 일치하는 후보 선택 → Place 저장 (is_verified=True)
+  5. KTO 주소가 부정확하면 카카오로 보완, KTO 매칭이 없으면 카카오 좌표 검색으로 대체
+     (둘 다 실패하면 is_verified=False, 좌표=0으로 미확정 저장) — places/services.py의 resolve_place() 공통 사용
   6. Media get_or_create → MediaPlace 연결
 """
 
@@ -441,6 +442,8 @@ class Command(BaseCommand):
             f'\n  {status}: 미디어 [{media.get_media_type_display()}] {media.title}')
 
         # 8. 각 추론 장소 처리
+        from places.services import resolve_place
+
         saved_count = 0
         for loc in inferred:
             loc_name = loc.get('name', '').strip()
@@ -450,34 +453,7 @@ class Command(BaseCommand):
                 continue
 
             self.stdout.write(f'\n  장소 처리: {loc_name}')
-
-            # Step 1: KTO API
-            self.stdout.write(f'    KTO API 검색 중: {loc_name}')
-            kto_places = _kto_search(loc_name)
-
-            if kto_places:
-                place = kto_places[0]
-                self.stdout.write(
-                    self.style.SUCCESS(
-                        f'    ✓ KTO 확인: {place.name} ({place.address})'))
-            else:
-                # Step 2: AI 추론 결과로 미확정 Place 저장
-                self.stdout.write(
-                    self.style.WARNING('    KTO 결과 없음 → AI 추론 결과로 저장 (미확정)'))
-                safe_name = re.sub(r'[^a-zA-Z0-9가-힣]', '_', loc_name)[:20]
-                synthetic_id = f'yt_{video_id}_{safe_name}'
-                place, p_created = Place.objects.get_or_create(
-                    content_id=synthetic_id,
-                    defaults={
-                        'name': loc_name,
-                        'address': loc_address,
-                        'latitude': 0,
-                        'longitude': 0,
-                        'is_verified': False,
-                    },
-                )
-                verb = '저장' if p_created else '기존'
-                self.stdout.write(f'    {verb}: {place.name} (미확정, 좌표 미입력)')
+            place = resolve_place(loc_name, loc_address, video_id, log=self.stdout.write)
 
             # MediaPlace 연결
             mp, mp_created = MediaPlace.objects.get_or_create(

@@ -33,42 +33,94 @@ def _has_precise_address(address: str) -> bool:
     return bool(re.search(r'\d', address))
 
 
-def kakao_search(query: str):
+def _address_matches(candidate_address: str, address_hint: str) -> bool:
     """
-    카카오 키워드 검색 → {name, address, lat, lng} 반환. 실패 시 None.
-    주소는 도로명 > 지번 순으로 우선 사용.
+    address_hint에서 뽑은 지역 단위 토큰(시/구/군/동/로/길 등)이
+    candidate_address에 포함되는지 확인한다. hint가 없거나 토큰을 못 뽑으면
+    검증 불가로 보고 통과시킨다(기존 동작 유지, 오탐 줄이기 위한 보수적 기본값).
+
+    '도'(경기도, 강원도 등 광역 단위)는 같은 도 안에 시/군이 여러 개 있어
+    식별력이 낮으므로, 더 구체적인 단위 토큰이 함께 있으면 제외한다.
     """
-    if not settings.KAKAO_REST_KEY or not query:
+    if not address_hint or not candidate_address:
+        return True
+    tokens = re.findall(r'[가-힣]+(?:시|도|구|군|동|읍|면|로|길)', address_hint)
+    specific_tokens = [t for t in tokens if not t.endswith('도')]
+    tokens = specific_tokens or tokens
+    if not tokens:
+        return True
+    return any(token in candidate_address for token in tokens)
+
+
+def _pick_kto_match(kto_places: list, address_hint: str):
+    """KTO 후보들 중 address_hint와 지역이 일치하는 것을 우선 선택, 없으면 1순위 후보."""
+    if not kto_places:
         return None
+    if address_hint:
+        for p in kto_places:
+            if _address_matches(p.address, address_hint):
+                return p
+    return kto_places[0]
+
+
+def _pick_kakao_match(candidates: list, address_hint: str):
+    """카카오 후보들 중 address_hint와 지역이 일치하는 것을 우선 선택, 없으면 1순위 후보."""
+    if not candidates:
+        return None
+    if address_hint:
+        for c in candidates:
+            if _address_matches(c['address'], address_hint):
+                return c
+    return candidates[0]
+
+
+def _kakao_search_candidates(query: str, size: int = 5) -> list:
+    """카카오 키워드 검색 → 후보 리스트(최대 size개) 반환. 실패 시 빈 리스트."""
+    if not settings.KAKAO_REST_KEY or not query:
+        return []
     headers = {'Authorization': f'KakaoAK {settings.KAKAO_REST_KEY}'}
     try:
         r = http_requests.get(
             'https://dapi.kakao.com/v2/local/search/keyword.json',
-            params={'query': query, 'size': 1},
+            params={'query': query, 'size': size},
             headers=headers, timeout=5,
         )
         docs = r.json().get('documents', [])
-        if docs:
-            d = docs[0]
-            addr = d.get('road_address_name') or d.get('address_name', '')
-            return {
+        return [
+            {
                 'name':             d['place_name'],
-                'address':          addr,
+                'address':          d.get('road_address_name') or d.get('address_name', ''),
                 'lat':              float(d['y']),
                 'lng':              float(d['x']),
                 'kakao_place_id':   d.get('id'),
                 'kakao_place_url':  d.get('place_url'),
             }
+            for d in docs
+        ]
     except Exception:
-        pass
-    return None
+        return []
 
 
-def kakao_geocode(query: str):
-    """카카오 REST API로 장소명/주소 → (lat, lng) 변환. 실패 시 None 반환."""
-    result = kakao_search(query)
-    if result:
-        return result['lat'], result['lng']
+def kakao_search(query: str):
+    """
+    카카오 키워드 검색 → {name, address, lat, lng} 반환(1순위 후보). 실패 시 None.
+    주소는 도로명 > 지번 순으로 우선 사용.
+    """
+    candidates = _kakao_search_candidates(query, size=1)
+    return candidates[0] if candidates else None
+
+
+def kakao_geocode(query: str, address_hint: str = ''):
+    """
+    카카오 REST API로 장소명/주소 → (lat, lng) 변환. 실패 시 None 반환.
+    address_hint를 주면 후보들 중 지역이 일치하는 곳을 우선 선택한다.
+    """
+    if address_hint:
+        match = _pick_kakao_match(_kakao_search_candidates(query), address_hint)
+    else:
+        match = kakao_search(query)
+    if match:
+        return match['lat'], match['lng']
     if not settings.KAKAO_REST_KEY or not query:
         return None
     # 주소 검색도 시도
@@ -85,6 +137,58 @@ def kakao_geocode(query: str):
     except Exception:
         pass
     return None
+
+
+def resolve_place(name: str, address_hint: str, video_id: str, log=lambda msg: None):
+    """
+    장소명 + AI가 추론한 주소 힌트로 실제 Place를 매칭/생성한다.
+    KTO 후보 중 address_hint와 지역이 일치하는 것을 우선 선택하고,
+    주소가 부정확하면 카카오로 보완한다. KTO 매칭이 전혀 없으면
+    카카오 좌표 검색 결과로 미확정 Place를 생성한다.
+    management command(CLI)와 web view 양쪽에서 공통으로 사용한다.
+    """
+    kto_places = _kto_search(name)
+    place = _pick_kto_match(kto_places, address_hint)
+
+    if place:
+        if not _has_precise_address(place.address):
+            kakao_match = _pick_kakao_match(_kakao_search_candidates(place.name), address_hint)
+            if kakao_match and _has_precise_address(kakao_match['address']):
+                place.address = kakao_match['address']
+                place.latitude = kakao_match['lat']
+                place.longitude = kakao_match['lng']
+                place.save(update_fields=['address', 'latitude', 'longitude'])
+                log(f'  KTO+카카오 주소 보완: {place.name} → {place.address}')
+            else:
+                log(f'  KTO 확인: {place.name}')
+        else:
+            log(f'  KTO 확인: {place.name}')
+        return place
+
+    # KTO 매칭 없음 → 카카오 좌표 검색으로 미확정 Place 생성
+    coords = kakao_geocode(name, address_hint) or kakao_geocode(address_hint, address_hint)
+    lat, lng = coords if coords else (0, 0)
+    verified = coords is not None
+
+    safe = re.sub(r'[^a-zA-Z0-9가-힣]', '_', name)[:20]
+    place, created = Place.objects.get_or_create(
+        content_id=f'yt_{video_id}_{safe}',
+        defaults={
+            'name': name,
+            'address': address_hint,
+            'latitude': lat,
+            'longitude': lng,
+            'is_verified': verified,
+        },
+    )
+    if not created and float(place.latitude) == 0 and coords:
+        place.latitude = lat
+        place.longitude = lng
+        place.is_verified = True
+        place.save(update_fields=['latitude', 'longitude', 'is_verified'])
+
+    log(f'  카카오 좌표: {place.name} ({lat}, {lng})' if coords else f'  미확정 저장: {place.name}')
+    return place
 
 
 class _Writer:
@@ -178,54 +282,9 @@ def run_extraction(url, media_title, media_type, max_locations, ai_choice, scene
 
             confidence = float(loc.get('confidence', 0.5))
             reason = loc.get('reason', '')
+            address_hint = loc.get('address_hint', '')
 
-            kto_places = _kto_search(name)
-            if kto_places:
-                place = kto_places[0]
-                # KTO 주소에 번지/도로명 번호가 없으면 카카오로 정확한 주소 보완
-                if not _has_precise_address(place.address):
-                    kakao = kakao_search(place.name)
-                    if kakao and _has_precise_address(kakao['address']):
-                        place.address   = kakao['address']
-                        place.latitude  = kakao['lat']
-                        place.longitude = kakao['lng']
-                        place.save(update_fields=['address', 'latitude', 'longitude'])
-                        writer.write(f'  KTO+카카오 주소 보완: {place.name} → {place.address}')
-                    else:
-                        writer.write(f'  KTO 확인: {place.name}')
-                else:
-                    writer.write(f'  KTO 확인: {place.name}')
-            else:
-                # KTO 실패 → 카카오 API로 좌표 검색
-                address_hint = loc.get('address_hint', '')
-                coords = kakao_geocode(name) or kakao_geocode(address_hint)
-
-                lat = coords[0] if coords else 0
-                lng = coords[1] if coords else 0
-                verified = coords is not None
-
-                safe = re.sub(r'[^a-zA-Z0-9가-힣]', '_', name)[:20]
-                place, created = Place.objects.get_or_create(
-                    content_id=f'yt_{video_id}_{safe}',
-                    defaults={
-                        'name': name,
-                        'address': address_hint,
-                        'latitude': lat,
-                        'longitude': lng,
-                        'is_verified': verified,
-                    },
-                )
-                # 기존 장소인데 좌표가 없었다면 업데이트
-                if not created and float(place.latitude) == 0 and coords:
-                    place.latitude    = lat
-                    place.longitude   = lng
-                    place.is_verified = True
-                    place.save(update_fields=['latitude', 'longitude', 'is_verified'])
-
-                if coords:
-                    writer.write(f'  카카오 좌표: {place.name} ({lat:.4f}, {lng:.4f})')
-                else:
-                    writer.write(f'  미확정 저장: {place.name}')
+            place = resolve_place(name, address_hint, video_id, log=writer.write)
 
             mp, mp_created = MediaPlace.objects.get_or_create(
                 media=media,
