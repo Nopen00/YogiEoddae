@@ -145,6 +145,15 @@ def admin_media_list_view(request):
     return render(request, 'places/admin_media_list.html', {'media_list': media_list})
 
 
+def admin_delete_media_view(request, media_id):
+    """추출 내역(미디어) 삭제 — 연결된 MediaPlace도 함께 삭제됨."""
+    if request.method != 'POST':
+        return JsonResponse({'ok': False}, status=405)
+    media = get_object_or_404(Media, pk=media_id)
+    media.delete()
+    return JsonResponse({'ok': True})
+
+
 def admin_extract_view(request):
     if request.method == 'POST':
         from places.services import run_extraction
