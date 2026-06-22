@@ -239,7 +239,7 @@ export default function ScheduleScreen() {
       {selectedIndex === 0 && (
         mySchedulesEmpty ? (
           <View style={styles.emptyContainer}>
-            <Calendar size={IconSize.xxlarge} color={Colors.light.grayLight} strokeWidth={IconStroke.regular} />
+            <Calendar size={IconSize.xxlarge} color={Colors.light.grayLight} strokeWidth={IconStroke.thin} />
             <Text style={styles.emptyTitle}>일정이 없습니다.</Text>
             <Text style={styles.emptySubtitle}>일정을 추가해보세요.</Text>
           </View>
@@ -259,7 +259,7 @@ export default function ScheduleScreen() {
       {selectedIndex === 1 && (
         pastEmpty ? (
           <View style={styles.emptyContainer}>
-            <Calendar size={IconSize.xxlarge} color={Colors.light.grayLight} strokeWidth={IconStroke.regular} />
+            <Calendar size={IconSize.xxlarge} color={Colors.light.grayLight} strokeWidth={IconStroke.thin} />
             <Text style={styles.emptyTitle}>일정이 없습니다.</Text>
             <Text style={styles.emptySubtitle}>일정을 추가해보세요.</Text>
           </View>
@@ -274,7 +274,7 @@ export default function ScheduleScreen() {
       {selectedIndex === 2 && (
         savedEmpty ? (
           <View style={styles.emptyContainer}>
-            <Heart size={IconSize.xxlarge} color={Colors.light.grayLight} strokeWidth={IconStroke.regular} />
+            <Heart size={IconSize.xxlarge} color={Colors.light.grayLight} strokeWidth={IconStroke.thin} />
             <Text style={styles.emptyTitle}>저장소가 비어있습니다.</Text>
             <Text style={styles.emptySubtitle}>마음에 드는 걸 추가해보세요.</Text>
           </View>

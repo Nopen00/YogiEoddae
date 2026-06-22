@@ -1,6 +1,6 @@
 //components\make_component\ScheduleAlert.tsx
 import { Colors } from '@/constants/Colors';
-import { IconSize } from '@/constants/IconSize';
+import { IconSize, IconStroke } from '@/constants/IconSize';
 import { Typography } from '@/constants/Typography';
 import type { Schedule } from '@/services/types';
 import { Calendar, X } from 'lucide-react-native';
@@ -180,7 +180,7 @@ export const ScheduleAlert = ({ visible, onClose, schedules }: ScheduleAlertProp
           onPress={() => setResultPopup({ ...resultPopup, visible: false })}
         >
           <View style={styles.resultPopupBox}>
-            <Calendar size={IconSize.xxlarge} color={Colors.light.primary} style={styles.resultIcon} />
+            <Calendar size={IconSize.xxlarge} color={Colors.light.primary} strokeWidth={IconStroke.thin} style={styles.resultIcon} />
             <Text style={styles.resultText}>
               {resultPopup.isSuccess ? '일정에 성공적으로 추가했습니다!' : '일정에 추가를 실패했습니다.'}
             </Text>

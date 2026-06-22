@@ -268,7 +268,7 @@ const CourseDetailScreen = () => {
                           {mp.place.like_count != null && (
                             <>
                               <Text style={styles.photoSpotSeparator}>|</Text>
-                              <Heart size={IconSize.xxsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
+                              <Heart size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
                               <Text style={styles.photoSpotLikes}>{formatLikeCount(mp.place.like_count)}</Text>
                             </>
                           )}

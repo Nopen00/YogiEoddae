@@ -2,10 +2,10 @@ import { IconSize, IconStroke } from '@/constants/IconSize';
 import { Heart } from 'lucide-react-native';
 import React from 'react';
 
-export const SaveHeart18 = () => {
+export const SaveHeart16 = () => {
   return (
     <Heart
-      size={IconSize.small}
+      size={IconSize.xsmall}
       color="#F24C54"
       fill="#F24C54"
       strokeWidth={IconStroke.regular}

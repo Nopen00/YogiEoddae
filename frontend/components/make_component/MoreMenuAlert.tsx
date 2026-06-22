@@ -14,8 +14,8 @@ import {
   Star,
 } from 'lucide-react-native';
 
-import { SaveHeart18 } from '@/components/make_component/icons/SaveHeart';
-import { UnSaveHeart18 } from '@/components/make_component/icons/UnSaveHeart';
+import { SaveHeart16 } from '@/components/make_component/icons/SaveHeart';
+import { UnSaveHeart16 } from '@/components/make_component/icons/UnSaveHeart';
 
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
@@ -40,9 +40,9 @@ export const MoreMenuAlert = ({ isSaved, onSavePress, onSchedulePress }: MoreMen
         activeOpacity={0.7}
       >
         {isSaved ? (
-          <SaveHeart18 />
+          <SaveHeart16 />
         ) : (
-          <UnSaveHeart18 />
+          <UnSaveHeart16 />
         )}
         <Text style={styles.menuText}>
           {isSaved ? '저장취소' : '저장하기'}
@@ -58,7 +58,7 @@ export const MoreMenuAlert = ({ isSaved, onSavePress, onSchedulePress }: MoreMen
         onPress={onSchedulePress}
       >
         <Calendar
-          size={IconSize.small}
+          size={IconSize.xsmall}
           color={Colors.light.black}
           strokeWidth={IconStroke.regular}
         />
@@ -75,7 +75,7 @@ export const MoreMenuAlert = ({ isSaved, onSavePress, onSchedulePress }: MoreMen
         activeOpacity={0.7}
       >
         <Star
-          size={IconSize.small}
+          size={IconSize.xsmall}
           color={Colors.light.black}
           strokeWidth={IconStroke.regular}
         />

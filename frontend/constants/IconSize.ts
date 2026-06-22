@@ -1,9 +1,7 @@
 // constants/IconSize.ts
 
 export const IconSize = {
-  xxsmall: 14,  // 카드 메타정보 인라인 아이콘 (평점/좋아요)
-  xsmall: 16,   // 리스트·카드 보조 아이콘
-  small: 18,    // 작은 토글/메뉴 아이콘
+  xsmall: 16,   // 인라인/보조 아이콘 (평점·좋아요·드롭다운 메뉴 항목 등)
   medium: 20,   // 보조 버튼 아이콘
   large: 24,    // 기본 아이콘 (헤더/버튼)
   xlarge: 32,   // 상세화면 헤더 강조 아이콘
@@ -11,7 +9,7 @@ export const IconSize = {
 };
 
 export const IconStroke = {
-  thin: 1.5,
-  regular: 2,
-  bold: 2.5,
+  thin: 1.5,    // large(24px) 초과 아이콘
+  regular: 2,   // large(24px) 이하 아이콘
+  bold: 2.5,    // 강조가 필요한 단일 예외 (뒤로가기 화살표)
 };

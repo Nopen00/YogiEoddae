@@ -155,14 +155,14 @@ const PlaceDetailScreen = () => {
               {place?.rating != null && (
                 <>
                   <Text style={styles.separator}>|</Text>
-                  <Star size={IconSize.xxsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
+                  <Star size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
                   <Text style={[styles.metaText, { marginLeft: 3 }]}>{place.rating.toFixed(1)}</Text>
                 </>
               )}
               {place?.like_count != null && (
                 <>
                   <Text style={styles.separator}>|</Text>
-                  <Heart size={IconSize.xxsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
+                  <Heart size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
                   <Text style={[styles.metaText, { marginLeft: 3 }]}>{formatLikeCount(place.like_count)}</Text>
                 </>
               )}
