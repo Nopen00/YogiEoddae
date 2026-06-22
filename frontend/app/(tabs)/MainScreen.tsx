@@ -18,6 +18,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
 import { Colors } from '@/constants/Colors';
+import { IconSize } from '@/constants/IconSize';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { mediaApi } from '../../services/api';
@@ -116,7 +117,7 @@ const MainScreen = () => {
             params: { from: '/MainScreen' }
           })}
         >
-          <Search size={24} color={Colors.light.primary} />
+          <Search size={IconSize.large} color={Colors.light.primary} />
           <View style={styles.searchPlaceholderWrapper}>
             <Text style={styles.searchPlaceholderText}>어디로 떠나볼까요?</Text>
           </View>

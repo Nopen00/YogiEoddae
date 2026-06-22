@@ -5,6 +5,7 @@ import { ScheduleAlert } from '@/components/make_component/ScheduleAlert';
 import { SaveHeart32 } from '@/components/make_component/icons/SaveHeart';
 import { UnSaveHeart32 } from '@/components/make_component/icons/UnSaveHeart';
 import { Colors } from '@/constants/Colors';
+import { IconSize, IconStroke } from '@/constants/IconSize';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -154,14 +155,14 @@ const PlaceDetailScreen = () => {
               {place?.rating != null && (
                 <>
                   <Text style={styles.separator}>|</Text>
-                  <Star size={14} color={Colors.light.grayDark} strokeWidth={2} />
+                  <Star size={IconSize.xxsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
                   <Text style={[styles.metaText, { marginLeft: 3 }]}>{place.rating.toFixed(1)}</Text>
                 </>
               )}
               {place?.like_count != null && (
                 <>
                   <Text style={styles.separator}>|</Text>
-                  <Heart size={14} color={Colors.light.grayDark} strokeWidth={2} />
+                  <Heart size={IconSize.xxsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
                   <Text style={[styles.metaText, { marginLeft: 3 }]}>{formatLikeCount(place.like_count)}</Text>
                 </>
               )}
@@ -181,11 +182,11 @@ const PlaceDetailScreen = () => {
                 <Text style={styles.actionButtonText}>{isSaved ? '저장취소' : '저장하기'}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.actionButton} onPress={() => setIsScheduleVisible(true)} activeOpacity={0.7}>
-                <Calendar size={32} color={Colors.light.grayDark} strokeWidth={1.5} />
+                <Calendar size={IconSize.xlarge} color={Colors.light.grayDark} strokeWidth={IconStroke.thin} />
                 <Text style={styles.actionButtonText}>일정추가</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.actionButton} onPress={() => {}} activeOpacity={0.7}>
-                <Star size={32} color={Colors.light.grayDark} strokeWidth={1.5} />
+                <Star size={IconSize.xlarge} color={Colors.light.grayDark} strokeWidth={IconStroke.thin} />
                 <Text style={styles.actionButtonText}>리뷰쓰기</Text>
               </TouchableOpacity>
             </View>
@@ -264,10 +265,10 @@ const PlaceDetailScreen = () => {
                     <Image source={{ uri: nearby.image_url ?? undefined }} style={styles.nearbyImage} resizeMode="cover" />
                     <TouchableOpacity style={styles.nearbyHeart} onPress={(e) => { e.stopPropagation(); toggleNearby(i); }} activeOpacity={0.8}>
                       <Heart
-                        size={24}
+                        size={IconSize.large}
                         color={savedNearby[i] ? Colors.light.heart : Colors.light.white}
                         fill={savedNearby[i] ? Colors.light.heart : 'transparent'}
-                        strokeWidth={1.5}
+                        strokeWidth={IconStroke.thin}
                       />
                     </TouchableOpacity>
                   </View>

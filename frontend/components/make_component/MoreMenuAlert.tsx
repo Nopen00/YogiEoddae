@@ -18,6 +18,7 @@ import { SaveHeart18 } from '@/components/make_component/icons/SaveHeart';
 import { UnSaveHeart18 } from '@/components/make_component/icons/UnSaveHeart';
 
 import { Colors } from '@/constants/Colors';
+import { IconSize, IconStroke } from '@/constants/IconSize';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 
@@ -57,9 +58,9 @@ export const MoreMenuAlert = ({ isSaved, onSavePress, onSchedulePress }: MoreMen
         onPress={onSchedulePress}
       >
         <Calendar
-          size={18}
+          size={IconSize.small}
           color={Colors.light.black}
-          strokeWidth={2}
+          strokeWidth={IconStroke.regular}
         />
         <Text style={styles.menuText}>
           일정추가
@@ -74,9 +75,9 @@ export const MoreMenuAlert = ({ isSaved, onSavePress, onSchedulePress }: MoreMen
         activeOpacity={0.7}
       >
         <Star
-          size={18}
+          size={IconSize.small}
           color={Colors.light.black}
-          strokeWidth={2}
+          strokeWidth={IconStroke.regular}
         />
         <Text style={styles.menuText}>
           리뷰쓰기

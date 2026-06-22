@@ -1,5 +1,6 @@
 // components\make_component\SearchBar.tsx
 import { Colors } from '@/constants/Colors';
+import { IconSize } from '@/constants/IconSize';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { X } from 'lucide-react-native';
@@ -24,7 +25,7 @@ const SearchBar = ({ onBackPress, onClearPress, value, ...props }: SearchBarProp
       />
       {value && value.length > 0 && (
         <TouchableOpacity onPress={onClearPress} activeOpacity={0.7}>
-          <X size={20} color={Colors.light.grayDark} />
+          <X size={IconSize.medium} color={Colors.light.grayDark} />
         </TouchableOpacity>
       )}
     </View>

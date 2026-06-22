@@ -1,6 +1,8 @@
 //components\make_component\BackButton.tsx
 import { Colors } from '@/constants/Colors';
 
+import { IconSize, IconStroke } from '@/constants/IconSize';
+
 import { Spacing } from '@/constants/Spacing';
 
 import { ArrowLeft } from 'lucide-react-native';
@@ -43,13 +45,13 @@ export const BackButton = ({ onPress, color = Colors.light.black }: BackButtonPr
 
     >
 
-      <ArrowLeft 
+      <ArrowLeft
 
-        size={24} 
+        size={IconSize.large}
 
-        color={color} 
+        color={color}
 
-        strokeWidth={2.5} 
+        strokeWidth={IconStroke.bold}
 
       />
 

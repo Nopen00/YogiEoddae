@@ -1,5 +1,6 @@
 ///components\make_component\MoreButton.tsx
 import { Colors } from '@/constants/Colors'; // 색상 상수
+import { IconSize } from '@/constants/IconSize';
 import { MoreVertical } from 'lucide-react-native'; // 아이콘 임포트
 import React from 'react'; // React 라이브러리 임포트
 import { StyleSheet, TouchableOpacity } from 'react-native'; // Native 컴포넌트 임포트
@@ -17,7 +18,7 @@ export const MoreButton = ({ onPress, color = Colors.light.black }: MoreButtonPr
       style={styles.button} 
       activeOpacity={0.7} // 클릭 피드백
     >
-      <MoreVertical size={24} color={color} />
+      <MoreVertical size={IconSize.large} color={color} />
     </TouchableOpacity>
   );
 };

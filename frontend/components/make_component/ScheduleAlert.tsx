@@ -1,5 +1,6 @@
 //components\make_component\ScheduleAlert.tsx
 import { Colors } from '@/constants/Colors';
+import { IconSize } from '@/constants/IconSize';
 import { Typography } from '@/constants/Typography';
 import type { Schedule } from '@/services/types';
 import { Calendar, X } from 'lucide-react-native';
@@ -149,7 +150,7 @@ export const ScheduleAlert = ({ visible, onClose, schedules }: ScheduleAlertProp
             <View style={styles.header}>
               <Text style={styles.headerTitle}>예정된 일정</Text>
               <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                <X size={24} color={Colors.light.grayLight} />
+                <X size={IconSize.large} color={Colors.light.grayLight} />
               </TouchableOpacity>
             </View>
             {renderScheduleList(plannedSchedules)}
@@ -179,7 +180,7 @@ export const ScheduleAlert = ({ visible, onClose, schedules }: ScheduleAlertProp
           onPress={() => setResultPopup({ ...resultPopup, visible: false })}
         >
           <View style={styles.resultPopupBox}>
-            <Calendar size={48} color={Colors.light.primary} style={styles.resultIcon} />
+            <Calendar size={IconSize.xxlarge} color={Colors.light.primary} style={styles.resultIcon} />
             <Text style={styles.resultText}>
               {resultPopup.isSuccess ? '일정에 성공적으로 추가했습니다!' : '일정에 추가를 실패했습니다.'}
             </Text>

@@ -1,5 +1,6 @@
 import { BackButton } from '@/components/make_component/BackButton';
 import { Colors } from '@/constants/Colors';
+import { IconSize } from '@/constants/IconSize';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { useRouter } from 'expo-router';
@@ -20,7 +21,7 @@ const SettingScreen = () => {
 
       <TouchableOpacity style={styles.menuItem} activeOpacity={0.7} onPress={() => router.push('/AccountScreen')}>
         <Text style={styles.menuLabel}>계정</Text>
-        <ChevronRight size={24} color={Colors.light.grayDark} />
+        <ChevronRight size={IconSize.large} color={Colors.light.grayDark} />
       </TouchableOpacity>
       <View style={styles.divider} />
     </SafeAreaView>

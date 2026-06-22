@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 // 디자인 시스템 임포트
 import SearchBar from '@/components/make_component/SearchBar';
 import { Colors } from '@/constants/Colors';
+import { IconSize, IconStroke } from '@/constants/IconSize';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { mediaApi, placeApi } from '../services/api';
@@ -147,7 +148,7 @@ const SearchResultScreen = () => {
                           <View style={styles.metaChip}>
                             {course.rating != null && (
                               <>
-                                <Star size={16} color={Colors.light.grayDark} strokeWidth={2} />
+                                <Star size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
                                 <Text style={styles.metadataText}> {course.rating.toFixed(1)}</Text>
                               </>
                             )}
@@ -156,7 +157,7 @@ const SearchResultScreen = () => {
                             )}
                             {course.like_count != null && (
                               <>
-                                <Heart size={16} color={Colors.light.grayDark} strokeWidth={2} />
+                                <Heart size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
                                 <Text style={styles.metadataText}> {formatLikeCount(course.like_count)}</Text>
                               </>
                             )}
@@ -220,7 +221,7 @@ const SearchResultScreen = () => {
                           <View style={styles.metaChip}>
                             {attr.rating != null && (
                               <>
-                                <Star size={16} color={Colors.light.grayDark} strokeWidth={2} />
+                                <Star size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
                                 <Text style={styles.metadataText}> {attr.rating.toFixed(1)}</Text>
                               </>
                             )}
@@ -229,7 +230,7 @@ const SearchResultScreen = () => {
                             )}
                             {attr.like_count != null && (
                               <>
-                                <Heart size={16} color={Colors.light.grayDark} strokeWidth={2} />
+                                <Heart size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
                                 <Text style={styles.metadataText}> {formatLikeCount(attr.like_count)}</Text>
                               </>
                             )}
@@ -285,7 +286,7 @@ const SearchResultScreen = () => {
                         </View>
                         {spot.like_count != null && (
                           <View style={styles.metaChip}>
-                            <Heart size={16} color={Colors.light.grayDark} strokeWidth={2} />
+                            <Heart size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
                             <Text style={styles.metadataText}> {formatLikeCount(spot.like_count)}</Text>
                           </View>
                         )}

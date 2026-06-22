@@ -1,6 +1,7 @@
 //app\(tabs)\ScheduleScreen.tsx
 import { BackButton } from '@/components/make_component/BackButton';
 import { Colors } from '@/constants/Colors';
+import { IconSize, IconStroke } from '@/constants/IconSize';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { useRouter } from 'expo-router';
@@ -79,7 +80,7 @@ const SectionWrapper = ({
     {showAdd && (
       <TouchableOpacity style={styles.addScheduleButton} activeOpacity={0.8}>
         <View style={styles.addCircle}>
-          <Plus size={20} color={Colors.light.black} strokeWidth={2} />
+          <Plus size={IconSize.medium} color={Colors.light.black} strokeWidth={IconStroke.regular} />
         </View>
       </TouchableOpacity>
     )}
@@ -120,7 +121,7 @@ const ScheduleCard = ({ schedule }: { schedule: Schedule }) => {
         )}
       </View>
       <View style={styles.moreIconWrapper}>
-        <MoreVertical size={24} color={Colors.light.black} />
+        <MoreVertical size={IconSize.large} color={Colors.light.black} />
       </View>
     </TouchableOpacity>
   );
@@ -229,7 +230,7 @@ export default function ScheduleScreen() {
       {showAddButton && (
         <TouchableOpacity style={styles.addScheduleButton} activeOpacity={0.8}>
           <View style={styles.addCircle}>
-            <Plus size={20} color={Colors.light.black} strokeWidth={2} />
+            <Plus size={IconSize.medium} color={Colors.light.black} strokeWidth={IconStroke.regular} />
           </View>
         </TouchableOpacity>
       )}
@@ -238,7 +239,7 @@ export default function ScheduleScreen() {
       {selectedIndex === 0 && (
         mySchedulesEmpty ? (
           <View style={styles.emptyContainer}>
-            <Calendar size={48} color={Colors.light.grayLight} strokeWidth={2} />
+            <Calendar size={IconSize.xxlarge} color={Colors.light.grayLight} strokeWidth={IconStroke.regular} />
             <Text style={styles.emptyTitle}>일정이 없습니다.</Text>
             <Text style={styles.emptySubtitle}>일정을 추가해보세요.</Text>
           </View>
@@ -258,7 +259,7 @@ export default function ScheduleScreen() {
       {selectedIndex === 1 && (
         pastEmpty ? (
           <View style={styles.emptyContainer}>
-            <Calendar size={48} color={Colors.light.grayLight} strokeWidth={2} />
+            <Calendar size={IconSize.xxlarge} color={Colors.light.grayLight} strokeWidth={IconStroke.regular} />
             <Text style={styles.emptyTitle}>일정이 없습니다.</Text>
             <Text style={styles.emptySubtitle}>일정을 추가해보세요.</Text>
           </View>
@@ -273,7 +274,7 @@ export default function ScheduleScreen() {
       {selectedIndex === 2 && (
         savedEmpty ? (
           <View style={styles.emptyContainer}>
-            <Heart size={48} color={Colors.light.grayLight} strokeWidth={2} />
+            <Heart size={IconSize.xxlarge} color={Colors.light.grayLight} strokeWidth={IconStroke.regular} />
             <Text style={styles.emptyTitle}>저장소가 비어있습니다.</Text>
             <Text style={styles.emptySubtitle}>마음에 드는 걸 추가해보세요.</Text>
           </View>

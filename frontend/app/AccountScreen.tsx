@@ -1,5 +1,6 @@
 import { BackButton } from '@/components/make_component/BackButton';
 import { Colors } from '@/constants/Colors';
+import { IconSize } from '@/constants/IconSize';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import * as Clipboard from 'expo-clipboard';
@@ -35,16 +36,16 @@ const AccountScreen = () => {
               <Text style={styles.codeText}>{RECOVERY_CODE}</Text>
               <View style={styles.codeActions}>
                 <TouchableOpacity activeOpacity={0.7} onPress={() => Clipboard.setStringAsync(RECOVERY_CODE)}>
-                  <Copy size={24} color={Colors.light.grayDark} />
+                  <Copy size={IconSize.large} color={Colors.light.grayDark} />
                 </TouchableOpacity>
                 <TouchableOpacity activeOpacity={0.7} onPress={() => setCodeVisible(false)} style={styles.eyeButton}>
-                  <EyeOff size={24} color={Colors.light.grayDark} />
+                  <EyeOff size={IconSize.large} color={Colors.light.grayDark} />
                 </TouchableOpacity>
               </View>
             </>
           ) : (
             <TouchableOpacity activeOpacity={0.7} onPress={() => setCodeVisible(true)}>
-              <Eye size={24} color={Colors.light.grayDark} />
+              <Eye size={IconSize.large} color={Colors.light.grayDark} />
             </TouchableOpacity>
           )}
         </View>
@@ -63,7 +64,7 @@ const AccountScreen = () => {
             />
             {inputValue.length > 0 && (
               <TouchableOpacity activeOpacity={0.7} onPress={() => setInputValue('')} style={styles.clearButton}>
-                <X size={24} color={Colors.light.black} />
+                <X size={IconSize.large} color={Colors.light.black} />
               </TouchableOpacity>
             )}
           </View>
@@ -76,7 +77,7 @@ const AccountScreen = () => {
 
         {inputValue.length > 0 && (
           <View style={styles.warningRow}>
-            <AlertCircle size={16} color={Colors.light.heart} />
+            <AlertCircle size={IconSize.xsmall} color={Colors.light.heart} />
             <Text style={styles.warningText}>복구 코드를 입력하면 되돌릴 수 없습니다.</Text>
           </View>
         )}

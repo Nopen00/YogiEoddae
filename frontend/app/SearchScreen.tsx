@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 // 컴포넌트 및 디자인 시스템 임포트
 import SearchBar from '@/components/make_component/SearchBar';
 import { Colors } from '@/constants/Colors';
+import { IconSize } from '@/constants/IconSize';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 
@@ -84,13 +85,13 @@ const SearchScreen = () => {
         activeOpacity={0.6}
         onPress={() => handleSearch(item.keyword)}
       >
-        <Clock size={16} color={Colors.light.grayDark} />
+        <Clock size={IconSize.xsmall} color={Colors.light.grayDark} />
         <Text style={styles.keywordText}>{item.keyword}</Text>
       </TouchableOpacity>
       <View style={styles.rightGroup}>
         <Text style={styles.dateText}>{item.date}</Text>
         <TouchableOpacity onPress={() => setRecentList(recentList.filter(i => i.id !== item.id))}>
-          <X size={16} color={Colors.light.grayDark} />
+          <X size={IconSize.xsmall} color={Colors.light.grayDark} />
         </TouchableOpacity>
       </View>
     </View>
