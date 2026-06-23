@@ -1,12 +1,15 @@
 //app\(tabs)\ScheduleScreen.tsx
 import { BackButton } from '@/components/make_component/BackButton';
+import { CourseSelectPopup } from '@/components/make_component/CourseSelectPopup';
+import { type DateRange, NewScheduleAlert } from '@/components/make_component/NewScheduleAlert';
+import { NewScheduleStep3Alert } from '@/components/make_component/NewScheduleStep3Alert';
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { Calendar, Heart, MoreVertical, Plus } from 'lucide-react-native';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
   Animated,
   Dimensions,
@@ -63,6 +66,7 @@ const SectionWrapper = ({
   isEmpty = false,
   emptyTitle,
   emptySubtitle,
+  onAddPress,
   children,
 }: {
   title: string;
@@ -71,6 +75,7 @@ const SectionWrapper = ({
   isEmpty?: boolean;
   emptyTitle?: string;
   emptySubtitle?: string;
+  onAddPress?: () => void;
   children: React.ReactNode;
 }) => (
   <View style={style}>
@@ -78,7 +83,7 @@ const SectionWrapper = ({
     <View style={styles.divider} />
     {!isEmpty && children}
     {showAdd && (
-      <TouchableOpacity style={styles.addScheduleButton} activeOpacity={0.8}>
+      <TouchableOpacity style={styles.addScheduleButton} activeOpacity={0.8} onPress={onAddPress}>
         <View style={styles.addCircle}>
           <Plus size={IconSize.medium} color={Colors.light.black} strokeWidth={IconStroke.regular} />
         </View>
@@ -169,16 +174,29 @@ export default function ScheduleScreen() {
   const [savedCourses, setSavedCourses] = useState<Media[]>([]);
   const [savedPlaces, setSavedPlaces] = useState<Place[]>([]);
   const [savedSpots] = useState<MediaPlace[]>([]);
+  const [isNewScheduleVisible, setIsNewScheduleVisible] = useState(false);
+  const [newScheduleKey, setNewScheduleKey] = useState(0);
+  const [isCourseSelectVisible, setIsCourseSelectVisible] = useState(false);
+  const [isStep3Visible, setIsStep3Visible] = useState(false);
+  const [selectedCourseMedia, setSelectedCourseMedia] = useState<Media | null>(null);
+  const [scheduleData, setScheduleData] = useState<{ name: string; range: DateRange } | null>(null);
 
-  useEffect(() => {
-    scheduleApi.getList().then(res => {
-      const all = res.data;
-      setMySchedules(all.filter(s => !isExpired(s.end_date)));
-      setPastSchedules(all.filter(s => isExpired(s.end_date)));
-    }).catch(() => {});
-    mediaApi.getBookmarked().then(res => setSavedCourses(res.data)).catch(() => {});
-    placeApi.getBookmarked().then(res => setSavedPlaces(res.data)).catch(() => {});
-  }, []);
+  const openNewScheduleFresh = () => {
+    setNewScheduleKey(k => k + 1);
+    setIsNewScheduleVisible(true);
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      scheduleApi.getList().then(res => {
+        const all = res.data;
+        setMySchedules(all.filter(s => !isExpired(s.end_date)));
+        setPastSchedules(all.filter(s => isExpired(s.end_date)));
+      }).catch(() => {});
+      mediaApi.getBookmarked().then(res => setSavedCourses(res.data)).catch(() => {});
+      placeApi.getBookmarked().then(res => setSavedPlaces(res.data)).catch(() => {});
+    }, [])
+  );
 
   const handleTabPress = (index: number) => {
     setSelectedIndex(index);
@@ -228,7 +246,7 @@ export default function ScheduleScreen() {
       </View>
 
       {showAddButton && (
-        <TouchableOpacity style={styles.addScheduleButton} activeOpacity={0.8}>
+        <TouchableOpacity style={styles.addScheduleButton} activeOpacity={0.8} onPress={openNewScheduleFresh}>
           <View style={styles.addCircle}>
             <Plus size={IconSize.medium} color={Colors.light.black} strokeWidth={IconStroke.regular} />
           </View>
@@ -245,10 +263,10 @@ export default function ScheduleScreen() {
           </View>
         ) : (
           <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-            <SectionWrapper title="현재 진행 중인 일정" isEmpty={currentSchedules.length === 0} emptyTitle="현재 진행 중인 일정이 비어있습니다." emptySubtitle="일정을 추가해보세요.">
+            <SectionWrapper title="현재 진행 중인 일정" isEmpty={currentSchedules.length === 0} emptyTitle="현재 진행 중인 일정이 비어있습니다." emptySubtitle="일정을 추가해보세요." onAddPress={openNewScheduleFresh}>
               {currentSchedules.map(s => <ScheduleCard key={s.id} schedule={s} />)}
             </SectionWrapper>
-            <SectionWrapper title="예정된 일정" style={styles.secondSection} isEmpty={plannedSchedules.length === 0} emptyTitle="예정된 일정이 비어있습니다." emptySubtitle="일정을 추가해보세요.">
+            <SectionWrapper title="예정된 일정" style={styles.secondSection} isEmpty={plannedSchedules.length === 0} emptyTitle="예정된 일정이 비어있습니다." emptySubtitle="일정을 추가해보세요." onAddPress={openNewScheduleFresh}>
               {plannedSchedules.map(s => <ScheduleCard key={s.id} schedule={s} />)}
             </SectionWrapper>
           </ScrollView>
@@ -285,7 +303,15 @@ export default function ScheduleScreen() {
                 <CourseCard
                   key={m.id}
                   media={m}
-                  onPress={() => router.push({ pathname: '/CourseDetailScreen', params: { id: m.id } })}
+                  onPress={() => {
+                    if (isCourseSelectVisible) {
+                      setSelectedCourseMedia(m);
+                      setIsCourseSelectVisible(false);
+                      setIsStep3Visible(true);
+                    } else {
+                      router.push({ pathname: '/CourseDetailScreen', params: { id: m.id } });
+                    }
+                  }}
                 />
               ))}
             </SectionWrapper>
@@ -342,6 +368,57 @@ export default function ScheduleScreen() {
             </SectionWrapper>
           </ScrollView>
         )
+      )}
+
+      <NewScheduleAlert
+        key={newScheduleKey}
+        visible={isNewScheduleVisible}
+        onClose={() => setIsNewScheduleVisible(false)}
+        onConfirm={(courseType, name, range) => {
+          if (courseType === 'import') {
+            setScheduleData({ name, range });
+            setIsNewScheduleVisible(false);
+            handleTabPress(2);
+            setIsCourseSelectVisible(true);
+          }
+        }}
+      />
+      <CourseSelectPopup
+        visible={isCourseSelectVisible}
+        onClose={() => setIsCourseSelectVisible(false)}
+        onBack={() => {
+          setIsCourseSelectVisible(false);
+          setIsNewScheduleVisible(true);
+        }}
+      />
+      {selectedCourseMedia && (
+        <NewScheduleStep3Alert
+          visible={isStep3Visible}
+          onClose={() => setIsStep3Visible(false)}
+          onBack={() => {
+            setIsStep3Visible(false);
+            setIsCourseSelectVisible(true);
+          }}
+          onConfirm={async () => {
+            if (!scheduleData) return;
+            const { name, range } = scheduleData;
+            const fmt = (n: number) => String(n).padStart(2, '0');
+            const startDate = `${range.year}-${fmt(range.month + 1)}-${fmt(range.startDay)}`;
+            const endDate = `${range.year}-${fmt(range.month + 1)}-${fmt(range.endDay)}`;
+            try {
+              const res = await scheduleApi.create({ title: name, start_date: startDate, end_date: endDate });
+              const created = res.data;
+              if (isExpired(created.end_date)) {
+                setPastSchedules(prev => [...prev, created]);
+              } else {
+                setMySchedules(prev => [...prev, created]);
+              }
+              setIsStep3Visible(false);
+              router.push({ pathname: '/ScheduleDetailScreen', params: { id: created.id } });
+            } catch {}
+          }}
+          media={selectedCourseMedia}
+        />
       )}
     </SafeAreaView>
   );
