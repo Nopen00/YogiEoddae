@@ -1,4 +1,4 @@
-// components/make_component/MoreMenuAlert.tsx
+﻿// components/modals/MoreMenuAlert.tsx
 
 import React from 'react';
 import {
@@ -14,8 +14,8 @@ import {
   Star,
 } from 'lucide-react-native';
 
-import { SaveHeart16 } from '@/components/make_component/icons/SaveHeart';
-import { UnSaveHeart16 } from '@/components/make_component/icons/UnSaveHeart';
+import { SaveHeart16 } from '@/components/icons/SaveHeart';
+import { UnSaveHeart16 } from '@/components/icons/UnSaveHeart';
 
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';

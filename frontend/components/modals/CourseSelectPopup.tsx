@@ -1,4 +1,4 @@
-// components/make_component/CourseSelectPopup.tsx
+﻿// components/modals/CourseSelectPopup.tsx
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
 import { Spacing } from '@/constants/Spacing';

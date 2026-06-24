@@ -1,4 +1,4 @@
-// components/make_component/NewScheduleAlert.tsx
+﻿// components/modals/NewScheduleAlert.tsx
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
 import { Spacing } from '@/constants/Spacing';
