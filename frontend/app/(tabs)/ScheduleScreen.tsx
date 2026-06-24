@@ -1,10 +1,10 @@
-//app\(tabs)\ScheduleScreen.tsx
-import { BackButton } from '@/components/make_component/BackButton';
-import { Divider } from '@/components/make_component/Divider';
-import { TextSeparator } from '@/components/make_component/TextSeparator';
-import { CourseSelectPopup } from '@/components/make_component/CourseSelectPopup';
-import { type DateRange, NewScheduleAlert } from '@/components/make_component/NewScheduleAlert';
-import { NewScheduleStep3Alert } from '@/components/make_component/NewScheduleStep3Alert';
+﻿//app\(tabs)\ScheduleScreen.tsx
+import { Divider } from '@/components/ui/Divider';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { TextSeparator } from '@/components/ui/TextSeparator';
+import { CourseSelectPopup } from '@/components/modals/CourseSelectPopup';
+import { type DateRange, NewScheduleAlert } from '@/components/modals/NewScheduleAlert';
+import { NewScheduleStep3Alert } from '@/components/modals/NewScheduleStep3Alert';
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
 import { Spacing } from '@/constants/Spacing';
@@ -224,10 +224,7 @@ export default function ScheduleScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       {/* 상단 바 */}
-      <View style={styles.header}>
-        <BackButton onPress={() => router.back()} />
-        <Text style={styles.headerTitle}>일정</Text>
-      </View>
+      <ScreenHeader onBack={() => router.back()} title="일정" style={{ zIndex: 10 }} />
 
       {/* 탭 분류 */}
       <View style={styles.tabContainer}>
@@ -428,8 +425,6 @@ export default function ScheduleScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.light.background },
-  header: { flexDirection: 'row', alignItems: 'center', marginTop: Spacing.v.small, paddingHorizontal: Spacing.h.medium, height: 56, zIndex: 10 },
-  headerTitle: { ...Typography.HeadLine5, color: Colors.light.black, position: 'absolute', left: 0, right: 0, textAlign: 'center' },
   tabContainer: { flexDirection: 'row', height: 32, position: 'relative' },
   backgroundLine: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 1, backgroundColor: Colors.light.grayLight },
   tabItem: { flex: 1, justifyContent: 'center', alignItems: 'center' },

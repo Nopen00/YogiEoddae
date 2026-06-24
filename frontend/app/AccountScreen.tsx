@@ -1,5 +1,5 @@
-import { BackButton } from '@/components/make_component/BackButton';
-import { Divider } from '@/components/make_component/Divider';
+﻿import { Divider } from '@/components/ui/Divider';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { Colors } from '@/constants/Colors';
 import { IconSize } from '@/constants/IconSize';
 import { Spacing } from '@/constants/Spacing';
@@ -23,10 +23,7 @@ const AccountScreen = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <BackButton onPress={() => router.back()} />
-        <Text style={styles.headerTitle}>계정</Text>
-      </View>
+      <ScreenHeader onBack={() => router.back()} title="계정" />
 
       <View style={styles.body}>
         <Text style={styles.sectionLabel}>계정 복구 코드</Text>
@@ -127,21 +124,6 @@ const AccountScreen = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.light.background },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: Spacing.v.small,
-    paddingHorizontal: Spacing.h.medium,
-    height: 56,
-  },
-  headerTitle: {
-    ...Typography.HeadLine5,
-    color: Colors.light.black,
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    textAlign: 'center',
-  },
   body: {
     marginTop: 16,
     paddingHorizontal: 16,

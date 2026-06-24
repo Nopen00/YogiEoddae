@@ -1,11 +1,11 @@
-import { BackButton } from '@/components/make_component/BackButton';
-import { Divider } from '@/components/make_component/Divider';
-import { TextSeparator } from '@/components/make_component/TextSeparator';
-import { MoreButton } from '@/components/make_component/MoreButton';
-import { MoreMenuAlert } from '@/components/make_component/MoreMenuAlert';
-import { ScheduleAlert } from '@/components/make_component/ScheduleAlert';
-import { SaveHeart32 } from '@/components/make_component/icons/SaveHeart'; // 기존 저장 아이콘 가정
-import { UnSaveHeart32 } from '@/components/make_component/icons/UnSaveHeart'; // 기존 저장 아이콘 가정
+﻿import { Divider } from '@/components/ui/Divider';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { TextSeparator } from '@/components/ui/TextSeparator';
+import { MoreButton } from '@/components/ui/MoreButton';
+import { MoreMenuAlert } from '@/components/modals/MoreMenuAlert';
+import { ScheduleAlert } from '@/components/modals/ScheduleAlert';
+import { SaveHeart32 } from '@/components/icons/SaveHeart'; // 기존 저장 아이콘 가정
+import { UnSaveHeart32 } from '@/components/icons/UnSaveHeart'; // 기존 저장 아이콘 가정
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
 import { Spacing } from '@/constants/Spacing';
@@ -108,14 +108,16 @@ const CourseDetailScreen = () => {
     <TouchableWithoutFeedback onPress={closeMenu}>
       <SafeAreaView style={styles.container} edges={['top']}>
         {/* 헤더 */}
-        <View style={styles.header}>
-          <BackButton onPress={() => router.back()} />
-          <View style={styles.flexFill} />
-          <View style={styles.moreButtonWrapper}>
-            <MoreButton onPress={() => setIsMenuVisible(!isMenuVisible)} />
-            {isMenuVisible && <MoreMenuAlert isSaved={isSaved} onSavePress={handleSaveToggle} onSchedulePress={handleSchedulePress} />}
-          </View>
-        </View>
+        <ScreenHeader
+          onBack={() => router.back()}
+          style={{ zIndex: 10 }}
+          right={
+            <View style={styles.moreButtonWrapper}>
+              <MoreButton onPress={() => setIsMenuVisible(!isMenuVisible)} />
+              {isMenuVisible && <MoreMenuAlert isSaved={isSaved} onSavePress={handleSaveToggle} onSchedulePress={handleSchedulePress} />}
+            </View>
+          }
+        />
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
           {/* 메인 이미지 */}
@@ -301,15 +303,6 @@ const CourseDetailScreen = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.light.background },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: Spacing.v.small,
-    paddingHorizontal: Spacing.h.medium,
-    height: 56,
-    zIndex: 10,
-  },
-  flexFill: { flex: 1 },
   moreButtonWrapper: { position: 'relative', alignItems: 'flex-end' },
   imageContainer: {
     marginTop: 8,

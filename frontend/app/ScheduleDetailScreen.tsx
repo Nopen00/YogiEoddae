@@ -1,6 +1,6 @@
-// app/ScheduleDetailScreen.tsx
-import { BackButton } from '@/components/make_component/BackButton';
-import { Divider } from '@/components/make_component/Divider';
+﻿// app/ScheduleDetailScreen.tsx
+import { Divider } from '@/components/ui/Divider';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
 import { Spacing } from '@/constants/Spacing';
@@ -220,11 +220,9 @@ export default function ScheduleDetailScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <View style={styles.header}>
-        <BackButton onPress={() => router.back()} />
+      <ScreenHeader onBack={() => router.back()}>
         <MarqueeText text={displayTitle} style={styles.headerTitle} />
-        <View style={styles.headerSpacer} />
-      </View>
+      </ScreenHeader>
 
       <View
         style={styles.content}
@@ -300,18 +298,10 @@ export default function ScheduleDetailScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.light.background },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: Spacing.v.small,
-    paddingHorizontal: Spacing.h.medium,
-    height: 56,
-  },
   headerTitle: {
     ...Typography.HeadLine5,
     color: Colors.light.black,
   },
-  headerSpacer: { width: 48 },
   content: {
     flex: 1,
     overflow: 'hidden',

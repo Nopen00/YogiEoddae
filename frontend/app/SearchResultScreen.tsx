@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+﻿import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Heart, Star } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import {
@@ -13,9 +13,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // 디자인 시스템 임포트
-import { Divider } from '@/components/make_component/Divider';
-import { TextSeparator } from '@/components/make_component/TextSeparator';
-import SearchBar from '@/components/make_component/SearchBar';
+import { Divider } from '@/components/ui/Divider';
+import { TextSeparator } from '@/components/ui/TextSeparator';
+import SearchBar from '@/components/ui/SearchBar';
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
 import { Spacing } from '@/constants/Spacing';

@@ -1,11 +1,11 @@
-import { useRouter } from 'expo-router'; // navigation 대신 router 사용 권장
+﻿import { useRouter } from 'expo-router'; // navigation 대신 router 사용 권장
 import { Clock, X } from 'lucide-react-native';
 import React, { useRef, useState } from 'react';
 import { Animated, Dimensions, Easing, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // 컴포넌트 및 디자인 시스템 임포트
-import SearchBar from '@/components/make_component/SearchBar';
+import SearchBar from '@/components/ui/SearchBar';
 import { Colors } from '@/constants/Colors';
 import { IconSize } from '@/constants/IconSize';
 import { Spacing } from '@/constants/Spacing';

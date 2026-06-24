@@ -1,4 +1,4 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+﻿import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
@@ -6,7 +6,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { View } from 'react-native';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import BottomTabBar from '@/components/make_component/BottomTabBar';
+import BottomTabBar from '@/components/navigation/BottomTabBar';
 
 export const unstable_settings = {
   anchor: '(tabs)',
