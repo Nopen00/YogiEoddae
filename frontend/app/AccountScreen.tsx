@@ -1,4 +1,5 @@
 import { BackButton } from '@/components/make_component/BackButton';
+import { Divider } from '@/components/make_component/Divider';
 import { Colors } from '@/constants/Colors';
 import { IconSize } from '@/constants/IconSize';
 import { Spacing } from '@/constants/Spacing';
@@ -50,7 +51,7 @@ const AccountScreen = () => {
           )}
         </View>
 
-        <View style={styles.divider} />
+        <Divider />
 
         <Text style={styles.inputLabel}>계정 복구 코드 입력</Text>
         <View style={styles.inputRow}>
@@ -154,11 +155,6 @@ const styles = StyleSheet.create({
   codeText: { ...Typography.body3, color: Colors.light.grayDark, flex: 1 },
   codeActions: { flexDirection: 'row', alignItems: 'center' },
   eyeButton: { marginLeft: 8 },
-  divider: {
-    height: 1,
-    backgroundColor: Colors.light.grayLight,
-    marginTop: 16,
-  },
   inputLabel: { ...Typography.title1, color: Colors.light.black, marginTop: 16 },
   inputRow: {
     flexDirection: 'row',

@@ -1,4 +1,5 @@
 import { BackButton } from '@/components/make_component/BackButton';
+import { Divider } from '@/components/make_component/Divider';
 import { Colors } from '@/constants/Colors';
 import { IconSize } from '@/constants/IconSize';
 import { Spacing } from '@/constants/Spacing';
@@ -23,7 +24,7 @@ const SettingScreen = () => {
         <Text style={styles.menuLabel}>계정</Text>
         <ChevronRight size={IconSize.large} color={Colors.light.grayDark} />
       </TouchableOpacity>
-      <View style={styles.divider} />
+      <Divider style={{ marginHorizontal: 16 }} />
     </SafeAreaView>
   );
 };
@@ -53,12 +54,6 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   menuLabel: { ...Typography.title1, color: Colors.light.black },
-  divider: {
-    height: 1,
-    backgroundColor: Colors.light.grayLight,
-    marginHorizontal: 16,
-    marginTop: 16,
-  },
 });
 
 export default SettingScreen;

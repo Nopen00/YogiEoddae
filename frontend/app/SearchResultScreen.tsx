@@ -13,6 +13,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // 디자인 시스템 임포트
+import { Divider } from '@/components/make_component/Divider';
+import { TextSeparator } from '@/components/make_component/TextSeparator';
 import SearchBar from '@/components/make_component/SearchBar';
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
@@ -113,7 +115,7 @@ const SearchResultScreen = () => {
             {selectedIndex === 0 && (
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>코스</Text>
-                <View style={styles.titleBottomLine} />
+                <Divider marginTop={0} />
               </View>
             )}
             {(selectedIndex === 0 ? courses.slice(0, 3) : courses).map((course) => {
@@ -133,14 +135,14 @@ const SearchResultScreen = () => {
                         <View style={styles.metaChip}>
                           <Text style={styles.metadataText}>{MEDIA_TYPE_LABEL[course.media_type] ?? course.media_type}</Text>
                           {(course.place_count != null || course.rating != null || course.like_count != null) && (
-                            <Text style={styles.divider}>|</Text>
+                            <TextSeparator />
                           )}
                         </View>
                         {course.place_count != null && (
                           <View style={styles.metaChip}>
                             <Text style={styles.metadataText}>{course.place_count}개 장소</Text>
                             {(course.rating != null || course.like_count != null) && (
-                              <Text style={styles.divider}>|</Text>
+                              <TextSeparator />
                             )}
                           </View>
                         )}
@@ -153,7 +155,7 @@ const SearchResultScreen = () => {
                               </>
                             )}
                             {course.rating != null && course.like_count != null && (
-                              <Text style={styles.divider}>|</Text>
+                              <TextSeparator />
                             )}
                             {course.like_count != null && (
                               <>
@@ -187,7 +189,7 @@ const SearchResultScreen = () => {
             {selectedIndex === 0 && (
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>명소</Text>
-                <View style={styles.titleBottomLine} />
+                <Divider marginTop={0} />
               </View>
             )}
             {(selectedIndex === 0 ? attractions.slice(0, 3) : attractions).map((attr) => {
@@ -209,12 +211,12 @@ const SearchResultScreen = () => {
                       <View style={styles.metadataRow}>
                         <View style={styles.metaChip}>
                           <Text style={styles.metadataText}>{CATEGORY_LABEL[attr.category] ?? attr.category}</Text>
-                          <Text style={styles.divider}>|</Text>
+                          <TextSeparator />
                         </View>
                         <View style={styles.metaChip}>
                           <Text style={styles.metadataText}>{shortAddr}</Text>
                           {(attr.rating != null || attr.like_count != null) && (
-                            <Text style={styles.divider}>|</Text>
+                            <TextSeparator />
                           )}
                         </View>
                         {(attr.rating != null || attr.like_count != null) && (
@@ -226,7 +228,7 @@ const SearchResultScreen = () => {
                               </>
                             )}
                             {attr.rating != null && attr.like_count != null && (
-                              <Text style={styles.divider}>|</Text>
+                              <TextSeparator />
                             )}
                             {attr.like_count != null && (
                               <>
@@ -260,7 +262,7 @@ const SearchResultScreen = () => {
             {selectedIndex === 0 && (
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>포토스팟</Text>
-                <View style={styles.titleBottomLine} />
+                <Divider marginTop={0} />
               </View>
             )}
             {(selectedIndex === 0 ? attractions.slice(0, 3) : attractions).map((spot) => {
@@ -282,7 +284,7 @@ const SearchResultScreen = () => {
                       <View style={styles.metadataRow}>
                         <View style={styles.metaChip}>
                           <Text style={styles.metadataText}>{spotShortAddr}</Text>
-                          {spot.like_count != null && <Text style={styles.divider}>|</Text>}
+                          {spot.like_count != null && <TextSeparator />}
                         </View>
                         {spot.like_count != null && (
                           <View style={styles.metaChip}>
@@ -342,7 +344,6 @@ const styles = StyleSheet.create({
 
   sectionHeader: { paddingHorizontal: Spacing.h.medium, marginBottom: Spacing.v.medium },
   sectionTitle: { ...Typography.HeadLine7, color: Colors.light.black, marginBottom: Spacing.v.small },
-  titleBottomLine: { height: 1, backgroundColor: Colors.light.grayLight },
   cardButton: {
     minHeight: 106,
     marginHorizontal: Spacing.h.medium,
@@ -360,7 +361,6 @@ const styles = StyleSheet.create({
   courseTitle: { ...Typography.title1, color: Colors.light.black, marginBottom: 4 },
   metadataRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', rowGap: 4, marginBottom: 4 },
   metadataText: { ...Typography.subtitle1, color: Colors.light.grayDark },
-  divider: { marginHorizontal: 4, color: Colors.light.grayLight },
   iconGroup: { flexDirection: 'row', alignItems: 'center' },
   metaChip: { flexDirection: 'row', alignItems: 'center' },
   iconValue: { ...Typography.subtitle1, color: Colors.light.grayDark, marginLeft: 2 },

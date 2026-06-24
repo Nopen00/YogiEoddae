@@ -1,12 +1,13 @@
 // app/ScheduleDetailScreen.tsx
 import { BackButton } from '@/components/make_component/BackButton';
+import { Divider } from '@/components/make_component/Divider';
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ChevronDown, ChevronUp } from 'lucide-react-native';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated as RNAnimated,
   Dimensions,
@@ -24,6 +25,17 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { scheduleApi } from '../services/api';
 import type { Schedule } from '../services/types';
+
+const WEEKDAY_KO = ['일', '월', '화', '수', '목', '금', '토'];
+
+const formatDayDate = (startDate: string, dayIndex: number): string => {
+  const date = new Date(startDate);
+  date.setDate(date.getDate() + dayIndex);
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const weekday = WEEKDAY_KO[date.getDay()];
+  return `${month}/${day} ${weekday}`;
+};
 
 const MARQUEE_GAP = 48;
 const MARQUEE_SPEED = 40;
@@ -60,7 +72,7 @@ const MarqueeText = ({ text, style }: { text: string; style?: object }) => {
     );
     animRef.current.start();
     return () => animRef.current?.stop();
-  }, [shouldScroll, textW, containerW]);
+  }, [shouldScroll, textW, containerW, translateX]);
 
   return (
     <View style={{ flex: 1 }} onLayout={e => setContainerW(e.nativeEvent.layout.width)}>
@@ -127,6 +139,17 @@ export default function ScheduleDetailScreen() {
   }, [contentHeight, mapCardHeight, panelHeight, mapHeightAnim]);
 
   const displayTitle = schedule?.title ?? paramTitle ?? '';
+
+  const dayEntries = useMemo(() => {
+    if (!schedule?.start_date || !schedule?.end_date) return [];
+    const start = new Date(schedule.start_date);
+    const end = new Date(schedule.end_date);
+    const totalDays = Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    return Array.from({ length: totalDays }, (_, i) => ({
+      dayNum: i + 1,
+      dateStr: formatDayDate(schedule.start_date!, i),
+    }));
+  }, [schedule]);
 
   const snapTo = (state: PanelState) => {
     const isMapMain = state === -1;
@@ -253,7 +276,21 @@ export default function ScheduleDetailScreen() {
             onScroll={handleScroll}
             scrollEventThrottle={16}
           >
-            {/* 패널 콘텐츠 */}
+            <View style={styles.panelContent}>
+              <View style={styles.panelContentHeader}>
+                <Text style={styles.panelContentTitle}>일정</Text>
+                <TouchableOpacity activeOpacity={0.7}>
+                  <Text style={styles.panelContentAction}>편집</Text>
+                </TouchableOpacity>
+              </View>
+              <Divider style={{ marginHorizontal: Spacing.h.medium }} />
+              {dayEntries.map(({ dayNum, dateStr }) => (
+                <View key={dayNum} style={styles.dayRow}>
+                  <Text style={styles.dayLabel}>Day {dayNum}</Text>
+                  <Text style={styles.dayDate}>{dateStr}</Text>
+                </View>
+              ))}
+            </View>
           </ScrollView>
         </RNAnimated.View>
       </View>
@@ -313,6 +350,38 @@ const styles = StyleSheet.create({
   },
   panelScroll: {
     flex: 1,
-    marginTop: Spacing.v.small,
+  },
+  panelContent: {
+    paddingTop: 24,
+  },
+  panelContentHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingLeft: Spacing.h.medium,
+    paddingRight: 32,
+  },
+  panelContentTitle: {
+    ...Typography.HeadLine5,
+    color: Colors.light.black,
+  },
+  panelContentAction: {
+    ...Typography.button4,
+    color: Colors.light.primary,
+  },
+  dayRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 32,
+    paddingHorizontal: Spacing.h.medium,
+  },
+  dayLabel: {
+    ...Typography.title2,
+    color: Colors.light.black,
+  },
+  dayDate: {
+    ...Typography.subtitle1,
+    color: Colors.light.grayDark,
+    marginLeft: 8,
   },
 });

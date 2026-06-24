@@ -1,4 +1,6 @@
 import { BackButton } from '@/components/make_component/BackButton';
+import { Divider } from '@/components/make_component/Divider';
+import { TextSeparator } from '@/components/make_component/TextSeparator';
 import { MoreButton } from '@/components/make_component/MoreButton';
 import { MoreMenuAlert } from '@/components/make_component/MoreMenuAlert';
 import { ScheduleAlert } from '@/components/make_component/ScheduleAlert';
@@ -127,18 +129,18 @@ const CourseDetailScreen = () => {
 
             <View style={styles.metaRow}>
               <Text style={styles.metaText}>{mediaPlaces.length}개 장소</Text>
-              <Text style={styles.separator}>|</Text>
+              <TextSeparator />
               <Text style={styles.metaText}>{MEDIA_TYPE_LABEL[media?.media_type ?? ''] ?? media?.media_type}</Text>
               {media?.rating != null && (
                 <>
-                  <Text style={styles.separator}>|</Text>
+                  <TextSeparator />
                   <Star size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
                   <Text style={styles.metaText}> {media.rating.toFixed(1)}</Text>
                 </>
               )}
               {media?.like_count != null && (
                 <>
-                  <Text style={styles.separator}>|</Text>
+                  <TextSeparator />
                   <Heart size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
                   <Text style={styles.metaText}> {media.like_count.toLocaleString()}</Text>
                 </>
@@ -167,7 +169,7 @@ const CourseDetailScreen = () => {
               </TouchableOpacity>
             </View>
 
-            <View style={styles.divider} />
+            <Divider />
 
             {/* 미디어 정보 */}
             <Text style={styles.mediaTitleText}>{media?.title}</Text>
@@ -176,7 +178,7 @@ const CourseDetailScreen = () => {
             </View>
             <Text style={styles.mediaDescText}>{media?.description}</Text>
 
-            <View style={styles.dividerBottom} />
+            <Divider marginTop={32} />
 
             {/* 촬영지 섹션 타이틀 */}
             <Text style={styles.locationSectionTitle}>{media?.title} 속 촬영지</Text>
@@ -197,7 +199,7 @@ const CourseDetailScreen = () => {
           </ScrollView>
 
           <View style={styles.infoContainer}>
-            <View style={styles.dividerBottom} />
+            <Divider marginTop={32} />
 
             {/* 코스 섹션 */}
             <Text style={styles.courseSectionTitle}>코스</Text>
@@ -236,7 +238,7 @@ const CourseDetailScreen = () => {
                             </View>
                             <View style={styles.cardSubRow}>
                               <Text style={styles.cardSubText}>{CATEGORY_LABEL[mp.place.category] ?? mp.place.category}</Text>
-                              <Text style={styles.cardSeparator}>|</Text>
+                              <TextSeparator />
                               <Text style={styles.cardSubText} numberOfLines={1}>{shortAddress(mp.place.address)}</Text>
                             </View>
                             <TouchableOpacity style={styles.routeButton} activeOpacity={0.7}>
@@ -254,7 +256,7 @@ const CourseDetailScreen = () => {
             {/* 포토스팟 섹션 */}
             {mediaPlaces.length > 0 && (
               <>
-                <View style={styles.dividerBottom} />
+                <Divider marginTop={32} />
                 <Text style={styles.photoSpotTitle}>포토스팟</Text>
                 {mediaPlaces.map((mp, index) => (
                   <View key={mp.id} style={[styles.photoSpotBox, index > 0 && { marginTop: 8 }]}>
@@ -267,7 +269,7 @@ const CourseDetailScreen = () => {
                           <Text style={styles.photoSpotAddress}>{shortAddress(mp.place.address)}</Text>
                           {mp.place.like_count != null && (
                             <>
-                              <Text style={styles.photoSpotSeparator}>|</Text>
+                              <TextSeparator />
                               <Heart size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
                               <Text style={styles.photoSpotLikes}>{formatLikeCount(mp.place.like_count)}</Text>
                             </>
@@ -321,7 +323,6 @@ const styles = StyleSheet.create({
   titleText: { ...Typography.HeadLine5, color: Colors.light.black },
   metaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8 },
   metaText: { ...Typography.body2, color: Colors.light.grayDark },
-  separator: { ...Typography.body2, color: Colors.light.grayDark, marginHorizontal: 4 },
   iconTextRow: { flexDirection: 'row', alignItems: 'center' },
   tagRow: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 8 },
   tagText: { ...Typography.body2, color: Colors.light.primary, marginRight: 4 },
@@ -342,11 +343,6 @@ const styles = StyleSheet.create({
     color: Colors.light.grayDark,
     marginTop: 8,
   },
-  divider: {
-    marginTop: 16,
-    height: 1,
-    backgroundColor: Colors.light.grayLight,
-  },
   mediaTitleText: {
     ...Typography.title1,
     color: Colors.light.black,
@@ -364,11 +360,6 @@ const styles = StyleSheet.create({
     ...Typography.body2,
     color: Colors.light.black,
     marginTop: 16,
-  },
-  dividerBottom: {
-    marginTop: 32,
-    height: 1,
-    backgroundColor: Colors.light.grayLight,
   },
   locationSectionTitle: {
     ...Typography.title1,
@@ -469,11 +460,6 @@ const styles = StyleSheet.create({
     ...Typography.body2,
     color: Colors.light.grayDark,
   },
-  cardSeparator: {
-    ...Typography.body2,
-    color: Colors.light.grayDark,
-    marginHorizontal: 8,
-  },
   placeNameText: {
     ...Typography.subtitle2,
     color: Colors.light.black,
@@ -541,11 +527,6 @@ const styles = StyleSheet.create({
   photoSpotAddress: {
     ...Typography.subtitle1,
     color: Colors.light.grayDark,
-  },
-  photoSpotSeparator: {
-    ...Typography.subtitle1,
-    color: Colors.light.grayDark,
-    marginHorizontal: 4,
   },
   photoSpotLikes: {
     ...Typography.subtitle1,

@@ -1,5 +1,7 @@
 //app\(tabs)\ScheduleScreen.tsx
 import { BackButton } from '@/components/make_component/BackButton';
+import { Divider } from '@/components/make_component/Divider';
+import { TextSeparator } from '@/components/make_component/TextSeparator';
 import { CourseSelectPopup } from '@/components/make_component/CourseSelectPopup';
 import { type DateRange, NewScheduleAlert } from '@/components/make_component/NewScheduleAlert';
 import { NewScheduleStep3Alert } from '@/components/make_component/NewScheduleStep3Alert';
@@ -80,7 +82,7 @@ const SectionWrapper = ({
 }) => (
   <View style={style}>
     <Text style={styles.sectionTitle}>{title}</Text>
-    <View style={styles.divider} />
+    <Divider marginTop={8} style={{ marginHorizontal: 16 }} />
     {!isEmpty && children}
     {showAdd && (
       <TouchableOpacity style={styles.addScheduleButton} activeOpacity={0.8} onPress={onAddPress}>
@@ -148,7 +150,7 @@ const CourseCard = ({ media, onPress }: { media: Media; onPress: () => void }) =
         <Text style={styles.cardTitle} numberOfLines={1}>{media.title}</Text>
         <View style={styles.infoRow}>
           <Text style={styles.infoText}>{media.place_count ?? 0}개 장소</Text>
-          <Text style={styles.infoSep}>|</Text>
+          <TextSeparator />
           <Text style={styles.infoText}>{typeLabel}</Text>
         </View>
         {media.tags.length > 0 && (
@@ -442,7 +444,6 @@ const styles = StyleSheet.create({
   scrollContent: { paddingTop: 16, paddingBottom: Spacing.v.large },
   scrollContentOther: { paddingTop: 0, paddingBottom: Spacing.v.large },
   sectionTitle: { ...Typography.title1, color: Colors.light.black, paddingLeft: 16 },
-  divider: { height: 1, backgroundColor: Colors.light.grayLight, marginTop: 8, marginHorizontal: 16 },
   secondSection: { marginTop: 32 },
   card: { flexDirection: 'row', alignItems: 'flex-start', marginHorizontal: 16, marginTop: 16, borderRadius: 8, borderWidth: 1, borderColor: Colors.light.grayLight, padding: 16, backgroundColor: Colors.light.white },
   imageWrapper: { width: 48, height: 48, borderRadius: 24, overflow: 'hidden', flexShrink: 0 },

@@ -1,4 +1,6 @@
 import { BackButton } from '@/components/make_component/BackButton';
+import { Divider } from '@/components/make_component/Divider';
+import { TextSeparator } from '@/components/make_component/TextSeparator';
 import { MoreButton } from '@/components/make_component/MoreButton';
 import { MoreMenuAlert } from '@/components/make_component/MoreMenuAlert';
 import { ScheduleAlert } from '@/components/make_component/ScheduleAlert';
@@ -148,20 +150,20 @@ const PlaceDetailScreen = () => {
               <Text style={styles.metaText}>{CATEGORY_LABEL[place?.category ?? ''] ?? place?.category}</Text>
               {place?.address && (
                 <>
-                  <Text style={styles.separator}>|</Text>
+                  <TextSeparator />
                   <Text style={styles.metaText}>{shortAddress(place.address)}</Text>
                 </>
               )}
               {place?.rating != null && (
                 <>
-                  <Text style={styles.separator}>|</Text>
+                  <TextSeparator />
                   <Star size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
                   <Text style={[styles.metaText, { marginLeft: 3 }]}>{place.rating.toFixed(1)}</Text>
                 </>
               )}
               {place?.like_count != null && (
                 <>
-                  <Text style={styles.separator}>|</Text>
+                  <TextSeparator />
                   <Heart size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
                   <Text style={[styles.metaText, { marginLeft: 3 }]}>{formatLikeCount(place.like_count)}</Text>
                 </>
@@ -191,7 +193,7 @@ const PlaceDetailScreen = () => {
               </TouchableOpacity>
             </View>
 
-            <View style={styles.divider} />
+            <Divider />
 
             {/* 기본 정보 */}
             <Text style={styles.basicInfoTitle}>기본 정보</Text>
@@ -215,7 +217,7 @@ const PlaceDetailScreen = () => {
               </Shadow>
             </View>
 
-            <View style={styles.dividerBottom} />
+            <Divider marginTop={32} />
 
             {/* 소개 / 카카오 리뷰 */}
             <Text style={styles.placeTitle}>{isToggled ? '이용자 리뷰' : place?.name}</Text>
@@ -234,7 +236,7 @@ const PlaceDetailScreen = () => {
             {/* 포토스팟 */}
             {photos.length > 0 && (
               <>
-                <View style={styles.dividerBottom} />
+                <Divider marginTop={32} />
                 <Text style={styles.nearbyTitle}>포토스팟</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 16 }}
                   contentContainerStyle={{ gap: 8 }}>
@@ -247,7 +249,7 @@ const PlaceDetailScreen = () => {
               </>
             )}
 
-            <View style={styles.dividerBottom} />
+            <Divider marginTop={32} />
             <Text style={styles.nearbyTitle}>근처 추천 장소</Text>
           </View>
 
@@ -334,7 +336,6 @@ const styles = StyleSheet.create({
   titleText: { ...Typography.HeadLine5, color: Colors.light.black },
   metaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8 },
   metaText: { ...Typography.body2, color: Colors.light.grayDark },
-  separator: { ...Typography.body2, color: Colors.light.grayDark, marginHorizontal: 4 },
   iconTextRow: { flexDirection: 'row', alignItems: 'center' },
   tagRow: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 8 },
   tagText: { ...Typography.body2, color: Colors.light.primary, marginRight: 4 },
@@ -349,16 +350,6 @@ const styles = StyleSheet.create({
     ...Typography.button4,
     color: Colors.light.grayDark,
     marginTop: 8,
-  },
-  divider: {
-    marginTop: 16,
-    height: 1,
-    backgroundColor: Colors.light.grayLight,
-  },
-  dividerBottom: {
-    marginTop: 32,
-    height: 1,
-    backgroundColor: Colors.light.grayLight,
   },
   basicInfoTitle: {
     ...Typography.title1,
