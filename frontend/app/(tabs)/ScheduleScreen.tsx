@@ -1,6 +1,7 @@
 ﻿//app\(tabs)\ScheduleScreen.tsx
 import { Divider } from '@/components/ui/Divider';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { TagRow } from '@/components/ui/TagRow';
 import { TextSeparator } from '@/components/ui/TextSeparator';
 import { CourseSelectPopup } from '@/components/modals/CourseSelectPopup';
 import { type DateRange, NewScheduleAlert } from '@/components/modals/NewScheduleAlert';
@@ -120,11 +121,11 @@ const ScheduleCard = ({ schedule, onPress }: { schedule: Schedule; onPress?: () 
           <Text style={styles.infoText}>{formatDate(schedule.end_date)}</Text>
         </View>
         {tags.length > 0 && (
-          <View style={styles.tagRow}>
+          <TagRow>
             {tags.map(tag => (
               <Text key={tag.id} style={styles.tagText}>#{tag.name}</Text>
             ))}
-          </View>
+          </TagRow>
         )}
       </View>
       <View style={styles.moreIconWrapper}>
@@ -154,11 +155,11 @@ const CourseCard = ({ media, onPress }: { media: Media; onPress: () => void }) =
           <Text style={styles.infoText}>{typeLabel}</Text>
         </View>
         {media.tags.length > 0 && (
-          <View style={styles.tagRow}>
+          <TagRow>
             {media.tags.map(tag => (
               <Text key={tag.id} style={styles.tagText}>#{tag.name}</Text>
             ))}
-          </View>
+          </TagRow>
         )}
       </View>
     </TouchableOpacity>
@@ -332,11 +333,11 @@ export default function ScheduleScreen() {
                   <View style={styles.cardContent}>
                     <Text style={styles.cardTitle} numberOfLines={1}>{p.name}</Text>
                     {p.tags.length > 0 && (
-                      <View style={styles.tagRow}>
+                      <TagRow>
                         {p.tags.map(tag => (
                           <Text key={tag.id} style={styles.tagText}>#{tag.name}</Text>
                         ))}
-                      </View>
+                      </TagRow>
                     )}
                   </View>
                 </TouchableOpacity>
@@ -355,11 +356,11 @@ export default function ScheduleScreen() {
                   <View style={styles.cardContent}>
                     <Text style={styles.cardTitle} numberOfLines={1}>{sp.place.name}</Text>
                     {sp.place.tags.length > 0 && (
-                      <View style={styles.tagRow}>
+                      <TagRow>
                         {sp.place.tags.map(tag => (
                           <Text key={tag.id} style={styles.tagText}>#{tag.name}</Text>
                         ))}
-                      </View>
+                      </TagRow>
                     )}
                   </View>
                 </TouchableOpacity>
@@ -448,7 +449,6 @@ const styles = StyleSheet.create({
   infoRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 4 },
   infoText: { ...Typography.subtitle1, color: Colors.light.grayDark },
   infoSep: { ...Typography.subtitle1, color: Colors.light.grayDark },
-  tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 8 },
   tagText: { ...Typography.body2, color: Colors.light.dark },
   moreIconWrapper: { alignSelf: 'center', marginLeft: 16 },
   sectionEmpty: { alignItems: 'center', marginTop: 16, paddingVertical: 16 },

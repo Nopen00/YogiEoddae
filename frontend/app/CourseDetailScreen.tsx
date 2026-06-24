@@ -1,5 +1,7 @@
 ﻿import { Divider } from '@/components/ui/Divider';
+import { MetaRow } from '@/components/ui/MetaRow';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { TagRow } from '@/components/ui/TagRow';
 import { TextSeparator } from '@/components/ui/TextSeparator';
 import { MoreButton } from '@/components/ui/MoreButton';
 import { MoreMenuAlert } from '@/components/modals/MoreMenuAlert';
@@ -129,7 +131,7 @@ const CourseDetailScreen = () => {
           <View style={styles.infoContainer}>
             <Text style={styles.titleText}>{media?.title ?? '로딩 중...'}</Text>
 
-            <View style={styles.metaRow}>
+            <MetaRow>
               <Text style={styles.metaText}>{mediaPlaces.length}개 장소</Text>
               <TextSeparator />
               <Text style={styles.metaText}>{MEDIA_TYPE_LABEL[media?.media_type ?? ''] ?? media?.media_type}</Text>
@@ -147,13 +149,13 @@ const CourseDetailScreen = () => {
                   <Text style={styles.metaText}> {media.like_count.toLocaleString()}</Text>
                 </>
               )}
-            </View>
+            </MetaRow>
 
-            <View style={styles.tagRow}>
+            <TagRow>
               {media?.tags.map((tag) => (
                 <Text key={tag.id} style={styles.tagText}>#{tag.name}</Text>
               ))}
-            </View>
+            </TagRow>
 
             {/* 버튼 그룹 */}
             <View style={styles.actionButtonGroup}>
@@ -314,11 +316,9 @@ const styles = StyleSheet.create({
   mainImage: { width: '100%', height: '100%' },
   infoContainer: { paddingHorizontal: Spacing.h.medium, marginTop: 16 },
   titleText: { ...Typography.HeadLine5, color: Colors.light.black },
-  metaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8 },
   metaText: { ...Typography.body2, color: Colors.light.grayDark },
   iconTextRow: { flexDirection: 'row', alignItems: 'center' },
-  tagRow: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 8 },
-  tagText: { ...Typography.body2, color: Colors.light.primary, marginRight: 4 },
+  tagText: { ...Typography.body2, color: Colors.light.primary },
   
   // 버튼 그룹 스타일
   actionButtonGroup: {

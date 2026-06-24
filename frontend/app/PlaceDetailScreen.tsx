@@ -1,5 +1,7 @@
 ﻿import { Divider } from '@/components/ui/Divider';
+import { MetaRow } from '@/components/ui/MetaRow';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { TagRow } from '@/components/ui/TagRow';
 import { TextSeparator } from '@/components/ui/TextSeparator';
 import { MoreButton } from '@/components/ui/MoreButton';
 import { MoreMenuAlert } from '@/components/modals/MoreMenuAlert';
@@ -150,7 +152,7 @@ const PlaceDetailScreen = () => {
             <Text style={styles.titleText}>{place?.name ?? '로딩 중...'}</Text>
 
             {/* 카테고리 | 주소 | 별점 | 좋아요 */}
-            <View style={styles.metaRow}>
+            <MetaRow>
               <Text style={styles.metaText}>{CATEGORY_LABEL[place?.category ?? ''] ?? place?.category}</Text>
               {place?.address && (
                 <>
@@ -172,14 +174,14 @@ const PlaceDetailScreen = () => {
                   <Text style={[styles.metaText, { marginLeft: 3 }]}>{formatLikeCount(place.like_count)}</Text>
                 </>
               )}
-            </View>
+            </MetaRow>
 
             {/* 태그 */}
-            <View style={styles.tagRow}>
+            <TagRow>
               {place?.tags.map((tag) => (
                 <Text key={tag.id} style={styles.tagText}>#{tag.name}</Text>
               ))}
-            </View>
+            </TagRow>
 
             {/* 액션 버튼 그룹 */}
             <View style={styles.actionButtonGroup}>
@@ -329,11 +331,9 @@ const styles = StyleSheet.create({
   mainImage: { width: '100%', height: '100%' },
   infoContainer: { paddingHorizontal: Spacing.h.medium, marginTop: 16 },
   titleText: { ...Typography.HeadLine5, color: Colors.light.black },
-  metaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8 },
   metaText: { ...Typography.body2, color: Colors.light.grayDark },
   iconTextRow: { flexDirection: 'row', alignItems: 'center' },
-  tagRow: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 8 },
-  tagText: { ...Typography.body2, color: Colors.light.primary, marginRight: 4 },
+  tagText: { ...Typography.body2, color: Colors.light.primary },
   actionButtonGroup: {
     flexDirection: 'row',
     justifyContent: 'space-between',
