@@ -20,6 +20,7 @@ export const Spacing = {
   // 둥근 모서리 (radius)
   r: {
     small: 8,
+    medium: 16,
   },
   // 라인 두께 (lineWeight)
   lw: {

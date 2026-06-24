@@ -99,10 +99,10 @@ const SectionWrapper = ({
 );
 
 // ─── 일정 카드 ────────────────────────────────────────────────
-const ScheduleCard = ({ schedule }: { schedule: Schedule }) => {
+const ScheduleCard = ({ schedule, onPress }: { schedule: Schedule; onPress?: () => void }) => {
   const tags = schedule.media?.tags ?? [];
   return (
-    <TouchableOpacity style={styles.card} activeOpacity={0.85}>
+    <TouchableOpacity style={styles.card} activeOpacity={0.85} onPress={onPress}>
       <View style={styles.imageWrapper}>
         {schedule.media?.thumbnail_url ? (
           <Image source={{ uri: schedule.media.thumbnail_url }} style={styles.cardImage} />
@@ -264,10 +264,10 @@ export default function ScheduleScreen() {
         ) : (
           <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
             <SectionWrapper title="현재 진행 중인 일정" isEmpty={currentSchedules.length === 0} emptyTitle="현재 진행 중인 일정이 비어있습니다." emptySubtitle="일정을 추가해보세요." onAddPress={openNewScheduleFresh}>
-              {currentSchedules.map(s => <ScheduleCard key={s.id} schedule={s} />)}
+              {currentSchedules.map(s => <ScheduleCard key={s.id} schedule={s} onPress={() => router.push({ pathname: '/ScheduleDetailScreen', params: { id: s.id, title: s.title } })} />)}
             </SectionWrapper>
             <SectionWrapper title="예정된 일정" style={styles.secondSection} isEmpty={plannedSchedules.length === 0} emptyTitle="예정된 일정이 비어있습니다." emptySubtitle="일정을 추가해보세요." onAddPress={openNewScheduleFresh}>
-              {plannedSchedules.map(s => <ScheduleCard key={s.id} schedule={s} />)}
+              {plannedSchedules.map(s => <ScheduleCard key={s.id} schedule={s} onPress={() => router.push({ pathname: '/ScheduleDetailScreen', params: { id: s.id, title: s.title } })} />)}
             </SectionWrapper>
           </ScrollView>
         )
@@ -283,7 +283,7 @@ export default function ScheduleScreen() {
           </View>
         ) : (
           <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContentOther} showsVerticalScrollIndicator={false}>
-            {pastSchedules.map(s => <ScheduleCard key={s.id} schedule={s} />)}
+            {pastSchedules.map(s => <ScheduleCard key={s.id} schedule={s} onPress={() => router.push({ pathname: '/ScheduleDetailScreen', params: { id: s.id, title: s.title } })} />)}
           </ScrollView>
         )
       )}
@@ -414,7 +414,7 @@ export default function ScheduleScreen() {
                 setMySchedules(prev => [...prev, created]);
               }
               setIsStep3Visible(false);
-              router.push({ pathname: '/ScheduleDetailScreen', params: { id: created.id } });
+              router.push({ pathname: '/ScheduleDetailScreen', params: { id: created.id, title: name } });
             } catch {}
           }}
           media={selectedCourseMedia}

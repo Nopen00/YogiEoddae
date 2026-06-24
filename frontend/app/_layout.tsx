@@ -2,6 +2,7 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { Stack, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { View } from 'react-native';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -33,6 +34,7 @@ function RootLayoutNav() {
             <Stack.Screen name="CourseDetailScreen" options={{ headerShown: false }} />
             <Stack.Screen name="PlaceDetailScreen" options={{ headerShown: false }} />
             <Stack.Screen name="AccountScreen" options={{ headerShown: false }} />
+            <Stack.Screen name="ScheduleDetailScreen" options={{ headerShown: false }} />
           </Stack>
         </View>
         {showTabBar && <BottomTabBar />}
@@ -43,5 +45,9 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
-  return <RootLayoutNav />;
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <RootLayoutNav />
+    </GestureHandlerRootView>
+  );
 }
