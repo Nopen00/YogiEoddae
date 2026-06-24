@@ -1,4 +1,4 @@
-# hakgyo Frontend
+#  Frontend
 
 React Native (Expo) 기반 모바일 앱 프론트엔드입니다.
 
