@@ -93,7 +93,7 @@ const PlaceDetailScreen = () => {
       <SafeAreaView style={styles.container} edges={['top']}>
         {/* 헤더 */}
         <ScreenHeader
-          onBack={() => router.back()}
+          onBack={() => router.dismiss()}
           style={{ zIndex: 10 }}
           right={
             <>

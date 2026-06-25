@@ -142,7 +142,7 @@ const PlaceImageCluster = ({ dailyPlaces }: { dailyPlaces: DailyPlace[] }) => {
   }
 
   // 4개 이상: 2×2 그리드, 5개 이상이면 우측 하단에 +n 뱃지
-  const extra = count - 3;
+  const extra = count - 4;
   return (
     <View style={{ width: CLUSTER, height: CLUSTER }}>
       <SmallCircle uri={dailyPlaces[0].place.image_url} size={SMALL} style={abs(0, 0)} />
@@ -280,7 +280,7 @@ export default function ScheduleScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       {/* 상단 바 */}
-      <ScreenHeader onBack={() => router.back()} title="일정" style={{ zIndex: 10 }} />
+      <ScreenHeader onBack={() => router.navigate('/(tabs)/MainScreen')} title="일정" style={{ zIndex: 10 }} />
 
       {/* 탭 분류 */}
       <View style={styles.tabContainer}>
@@ -455,13 +455,13 @@ export default function ScheduleScreen() {
             setIsCourseSelectVisible(true);
           }}
           onConfirm={async () => {
-            if (!scheduleData) return;
+            if (!scheduleData || !selectedCourseMedia) return;
             const { name, range } = scheduleData;
             const fmt = (n: number) => String(n).padStart(2, '0');
             const startDate = `${range.year}-${fmt(range.month + 1)}-${fmt(range.startDay)}`;
             const endDate = `${range.year}-${fmt(range.month + 1)}-${fmt(range.endDay)}`;
             try {
-              const res = await scheduleApi.create({ title: name, start_date: startDate, end_date: endDate });
+              const res = await mediaApi.importToSchedule(selectedCourseMedia.id, { title: name, start_date: startDate, end_date: endDate });
               const created = res.data;
               if (isExpired(created.end_date)) {
                 setPastSchedules(prev => [...prev, created]);

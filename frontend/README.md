@@ -66,7 +66,7 @@ components/
 
 | Prop | 타입 | 설명 |
 |------|------|------|
-| `onBack` | `() => void` | 뒤로가기 콜백 (필수) |
+| `onBack` | `() => void` | 뒤로가기 콜백. 생략하면 백버튼이 표시되지 않음 (탭 화면 등) |
 | `title` | `string` | 중앙 텍스트 타이틀 |
 | `right` | `ReactNode` | 우측 커스텀 요소 (MoreButton 등) |
 | `children` | `ReactNode` | 커스텀 중앙 요소 (MarqueeText 등) |

@@ -30,7 +30,7 @@ export default function BottomTabBar() {
           key={index}
           style={styles.tab}
           activeOpacity={0.7}
-          onPress={() => href && router.push(href)}
+          onPress={() => href && router.navigate(href)}
         >
           <Icon size={ICON_SIZE} color={ICON_COLOR} strokeWidth={ICON_STROKE} />
           <Text style={styles.label}>{label}</Text>

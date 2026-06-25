@@ -233,7 +233,7 @@ export default function ScheduleDetailScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <ScreenHeader onBack={() => router.back()}>
+      <ScreenHeader onBack={() => router.dismiss()}>
         <MarqueeText text={displayTitle} style={styles.headerTitle} />
       </ScreenHeader>
 

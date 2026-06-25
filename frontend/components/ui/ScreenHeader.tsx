@@ -7,7 +7,7 @@ import React, { ReactNode } from 'react';
 import { StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
 
 interface ScreenHeaderProps {
-  onBack: () => void;
+  onBack?: () => void;
   title?: string;
   right?: ReactNode;
   style?: StyleProp<ViewStyle>;
@@ -18,7 +18,7 @@ export function ScreenHeader({ onBack, title, right, style, children }: ScreenHe
   const hasFlexContent = !!(children || right);
   return (
     <View style={[styles.header, style]}>
-      <BackButton onPress={onBack} />
+      {onBack ? <BackButton onPress={onBack} /> : <View style={styles.rightBalance} />}
       {title && <Text style={styles.title}>{title}</Text>}
       {hasFlexContent && <View style={styles.fill}>{children}</View>}
       {right && <View style={styles.rightSlot}>{right}</View>}

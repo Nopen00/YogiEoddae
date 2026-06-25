@@ -1,6 +1,7 @@
-﻿import { useRouter } from 'expo-router'; // navigation 대신 router 사용 권장
+﻿import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
 import { Clock, X } from 'lucide-react-native';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Dimensions, Easing, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -13,17 +14,26 @@ import { Typography } from '@/constants/Typography';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-const INITIAL_DATA = [
-  { id: '1', keyword: '최근 검색어', date: '04.03' },
-  { id: '2', keyword: '국밥', date: '04.03' },
-  { id: '3', keyword: '최근', date: '04.03' },
-];
+const STORAGE_KEY = '@recent_searches';
+
+type RecentItem = { id: string; keyword: string; date: string };
 
 const SearchScreen = () => {
   const router = useRouter();
   const [text, setText] = useState('');
-  const [recentList, setRecentList] = useState(INITIAL_DATA);
+  const [recentList, setRecentList] = useState<RecentItem[]>([]);
   const [isAutoSaveOn, setIsAutoSaveOn] = useState(true);
+
+  useEffect(() => {
+    AsyncStorage.getItem(STORAGE_KEY).then(raw => {
+      if (raw) setRecentList(JSON.parse(raw));
+    });
+  }, []);
+
+  const saveList = (list: RecentItem[]) => {
+    setRecentList(list);
+    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+  };
 
   const toggleAnimation = useRef(new Animated.Value(isAutoSaveOn ? 1 : 0)).current;
 
@@ -34,17 +44,16 @@ const SearchScreen = () => {
 
     // 자동저장이 켜져 있을 때만 저장
     if (isAutoSaveOn) {
+      const now = new Date();
+      const date = `${String(now.getMonth() + 1).padStart(2, '0')}.${String(now.getDate()).padStart(2, '0')}`;
       const newItem = {
-        id: Date.now().toString(), // 고유 ID
+        id: Date.now().toString(),
         keyword: trimmedKeyword,
-        date: '04.29', // 실제 날짜를 사용하려면 별도 포맷팅 함수 필요
+        date,
       };
 
-      setRecentList((prev) => {
-        // 중복 검색어 제거 후 맨 앞에 추가
-        const filtered = prev.filter((item) => item.keyword !== trimmedKeyword);
-        return [newItem, ...filtered];
-      });
+      const filtered = recentList.filter((item) => item.keyword !== trimmedKeyword);
+      saveList([newItem, ...filtered]);
     }
 
     // 검색 결과창으로 이동
@@ -90,7 +99,7 @@ const SearchScreen = () => {
       </TouchableOpacity>
       <View style={styles.rightGroup}>
         <Text style={styles.dateText}>{item.date}</Text>
-        <TouchableOpacity onPress={() => setRecentList(recentList.filter(i => i.id !== item.id))}>
+        <TouchableOpacity onPress={() => saveList(recentList.filter(i => i.id !== item.id))}>
           <X size={IconSize.xsmall} color={Colors.light.grayDark} />
         </TouchableOpacity>
       </View>
@@ -129,7 +138,7 @@ const SearchScreen = () => {
         <>
           <View style={styles.recentHeaderRow}>
             <Text style={styles.recentTitle}>최근 검색어</Text>
-            <TouchableOpacity onPress={() => setRecentList([])}>
+            <TouchableOpacity onPress={() => saveList([])}>
               <Text style={styles.deleteAllText}>전체 삭제</Text>
             </TouchableOpacity>
           </View>

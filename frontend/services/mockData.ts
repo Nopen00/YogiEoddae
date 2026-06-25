@@ -248,6 +248,29 @@ export const MOCK_MEDIA_PLACES: MediaPlace[] = [
   },
 ];
 
+// 미디어 ID별 장소 목록 — importToSchedule 시 daily_places 생성에 사용
+export const MOCK_MEDIA_PLACES_MAP: Record<number, MediaPlace[]> = {
+  1: [ // 도깨비
+    { id: 1, place: MOCK_PLACE,    day: 1, scene_description: '', confidence_score: 0.95, is_confirmed: true, created_at: '' },
+    { id: 2, place: MOCK_PLACE_4,  day: 1, scene_description: '', confidence_score: 0.90, is_confirmed: true, created_at: '' },
+    { id: 3, place: MOCK_PLACE_5,  day: 1, scene_description: '', confidence_score: 0.88, is_confirmed: true, created_at: '' },
+    { id: 4, place: MOCK_PLACE_2,  day: 2, scene_description: '', confidence_score: 0.85, is_confirmed: true, created_at: '' },
+    { id: 5, place: MOCK_PLACE_6,  day: 2, scene_description: '', confidence_score: 0.82, is_confirmed: true, created_at: '' },
+  ],
+  2: [ // 이상한 변호사 우영우
+    { id: 6, place: MOCK_PLACE_3,  day: 1, scene_description: '', confidence_score: 0.93, is_confirmed: true, created_at: '' },
+    { id: 7, place: MOCK_PLACE_6,  day: 1, scene_description: '', confidence_score: 0.88, is_confirmed: true, created_at: '' },
+    { id: 8, place: MOCK_PLACE,    day: 2, scene_description: '', confidence_score: 0.85, is_confirmed: true, created_at: '' },
+    { id: 9, place: MOCK_PLACE_5,  day: 2, scene_description: '', confidence_score: 0.80, is_confirmed: true, created_at: '' },
+    { id: 10, place: MOCK_PLACE_4, day: 3, scene_description: '', confidence_score: 0.78, is_confirmed: true, created_at: '' },
+  ],
+  6: [ // 사랑의 불시착
+    { id: 11, place: MOCK_PLACE_5, day: 1, scene_description: '', confidence_score: 0.91, is_confirmed: true, created_at: '' },
+    { id: 12, place: MOCK_PLACE,   day: 2, scene_description: '', confidence_score: 0.87, is_confirmed: true, created_at: '' },
+    { id: 13, place: MOCK_PLACE_3, day: 2, scene_description: '', confidence_score: 0.84, is_confirmed: true, created_at: '' },
+  ],
+};
+
 export const MOCK_PHOTOS: Photo[] = [
   {
     id: 1,
@@ -337,6 +360,14 @@ export const MOCK_SCHEDULES: Schedule[] = [
     ],
     created_at: '2024-01-07T00:00:00Z',
   },
+];
+
+// 런타임에 생성된 일정을 포함하는 mutable store — getList/getDetail/importToSchedule이 공유
+export const mockScheduleStore: Schedule[] = [...MOCK_SCHEDULES];
+
+// 전체 장소 mutable store — bookmark/unbookmark 시 is_bookmarked를 실제로 변경
+export const mockPlaceStore: Place[] = [
+  MOCK_PLACE, MOCK_PLACE_2, MOCK_PLACE_3, MOCK_PLACE_4, MOCK_PLACE_5, MOCK_PLACE_6,
 ];
 
 export function paginatedOf<T>(results: T[]): PaginatedResponse<T> {
