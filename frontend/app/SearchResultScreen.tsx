@@ -78,7 +78,7 @@ const SearchResultScreen = () => {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.headerWrapper}>
-        <SearchBar value={inputText} onChangeText={setInputText} onBackPress={() => router.back()} onClearPress={() => setInputText('')} onSubmitEditing={handleSearch} returnKeyType="search" />
+        <SearchBar value={inputText} onChangeText={setInputText} onBackPress={() => router.back()} onClearPress={() => router.back()} onSubmitEditing={handleSearch} returnKeyType="search" />
       </View>
 
       <View style={styles.tabContainer}>
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
   tabText: { ...Typography.subtitle1 },
   indicator: { position: 'absolute', bottom: 0, left: 0, height: Spacing.lw.small, backgroundColor: Colors.light.black, zIndex: 1 },
   mainContent: { flex: 1, paddingTop: Spacing.v.medium },
-  scrollContainer: { paddingBottom: 64 },
+  scrollContainer: { paddingBottom: Spacing.v.screenBottom },
   nextSectionWrapper: { marginTop: Spacing.v.large },
   sectionHeader: { paddingHorizontal: Spacing.h.medium, marginBottom: Spacing.v.medium },
   sectionTitle: { ...Typography.title1, color: Colors.light.black, marginBottom: Spacing.v.small },

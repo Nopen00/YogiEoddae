@@ -1,6 +1,8 @@
 ﻿// app/ScheduleDetailScreen.tsx
 import { Divider } from '@/components/ui/Divider';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { TextSeparator } from '@/components/ui/TextSeparator';
+import { CATEGORY_LABEL, shortAddress } from '@/constants/labels';
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
 import { Spacing } from '@/constants/Spacing';
@@ -11,6 +13,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated as RNAnimated,
   Dimensions,
+  Image,
   NativeScrollEvent,
   NativeSyntheticEvent,
   PanResponder,
@@ -24,7 +27,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { scheduleApi } from '../services/api';
-import type { Schedule } from '../services/types';
+import type { DailyPlace, Schedule } from '../services/types';
 
 const WEEKDAY_KO = ['일', '월', '화', '수', '목', '금', '토'];
 
@@ -140,6 +143,16 @@ export default function ScheduleDetailScreen() {
 
   const displayTitle = schedule?.title ?? paramTitle ?? '';
 
+  const dayGroups = useMemo(() => {
+    const places = schedule?.daily_places ?? [];
+    return places.reduce<Record<number, DailyPlace[]>>((acc, dp) => {
+      const key = dp.day_number;
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(dp);
+      return acc;
+    }, {});
+  }, [schedule]);
+
   const dayEntries = useMemo(() => {
     if (!schedule?.start_date || !schedule?.end_date) return [];
     const start = new Date(schedule.start_date);
@@ -241,7 +254,11 @@ export default function ScheduleDetailScreen() {
               top: mapTopAnim,
             },
           ]}
-        />
+        >
+          <View style={styles.mapPlaceholder}>
+            <Text style={styles.mapPlaceholderText}>지도</Text>
+          </View>
+        </RNAnimated.View>
 
         {/* 슬라이딩 패널 */}
         <RNAnimated.View
@@ -283,9 +300,38 @@ export default function ScheduleDetailScreen() {
               </View>
               <Divider style={{ marginHorizontal: Spacing.h.medium }} />
               {dayEntries.map(({ dayNum, dateStr }) => (
-                <View key={dayNum} style={styles.dayRow}>
-                  <Text style={styles.dayLabel}>Day {dayNum}</Text>
-                  <Text style={styles.dayDate}>{dateStr}</Text>
+                <View key={dayNum}>
+                  <View style={styles.dayRow}>
+                    <Text style={styles.dayLabel}>Day {dayNum}</Text>
+                    <Text style={styles.dayDate}>{dateStr}</Text>
+                  </View>
+                  {(dayGroups[dayNum] ?? []).map((dp, idx) => (
+                    <View key={dp.id} style={styles.placeRow}>
+                      <View style={styles.placeNumberCol}>
+                        <View style={styles.placeCircle}>
+                          <Text style={styles.placeCircleText}>{idx + 1}</Text>
+                        </View>
+                      </View>
+                      <TouchableOpacity style={styles.placeCard} activeOpacity={0.8}>
+                        <Image
+                          source={{ uri: dp.place.image_url ?? undefined }}
+                          style={styles.placeCardImage}
+                          resizeMode="cover"
+                        />
+                        <View style={styles.placeCardContent}>
+                          <Text style={styles.placeNameText}>{dp.place.name}</Text>
+                          <View style={styles.placeSubRow}>
+                            <Text style={styles.placeSubText}>{CATEGORY_LABEL[dp.place.category] ?? dp.place.category}</Text>
+                            <TextSeparator />
+                            <Text style={styles.placeSubText} numberOfLines={1}>{shortAddress(dp.place.address)}</Text>
+                          </View>
+                          <TouchableOpacity style={styles.routeButton} activeOpacity={0.7}>
+                            <Text style={styles.routeButtonText}>경로 확인</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </TouchableOpacity>
+                    </View>
+                  ))}
                 </View>
               ))}
             </View>
@@ -312,6 +358,15 @@ const styles = StyleSheet.create({
     borderRadius: Spacing.r.small,
     overflow: 'hidden',
     backgroundColor: Colors.light.grayLight,
+  },
+  mapPlaceholder: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  mapPlaceholderText: {
+    ...Typography.title1,
+    color: Colors.light.grayDark,
   },
   panel: {
     position: 'absolute',
@@ -343,6 +398,7 @@ const styles = StyleSheet.create({
   },
   panelContent: {
     paddingTop: Spacing.v.large24,
+    paddingBottom: Spacing.v.screenBottom,
   },
   panelContentHeader: {
     flexDirection: 'row',
@@ -373,5 +429,80 @@ const styles = StyleSheet.create({
     ...Typography.subtitle1,
     color: Colors.light.grayDark,
     marginLeft: Spacing.h.small,
+  },
+  placeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: Spacing.v.small,
+    paddingRight: Spacing.h.medium,
+  },
+  placeNumberCol: {
+    width: 48,
+    paddingLeft: Spacing.h.medium,
+    alignItems: 'flex-start',
+  },
+  placeCircle: {
+    width: Spacing.h.medium,
+    height: Spacing.h.medium,
+    borderRadius: Spacing.r.small,
+    backgroundColor: Colors.light.grayLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  placeCircleText: {
+    ...Typography.body2,
+    color: Colors.light.black,
+  },
+  placeCard: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: Colors.light.white,
+    borderRadius: Spacing.r.small,
+    borderWidth: Spacing.lw.small,
+    borderColor: Colors.light.grayLight,
+    paddingVertical: Spacing.v.small,
+    paddingLeft: Spacing.h.small,
+  },
+  placeCardImage: {
+    width: 86,
+    height: 86,
+    borderRadius: Spacing.r.xsmall,
+    backgroundColor: Colors.light.grayLight,
+  },
+  placeCardContent: {
+    flex: 1,
+    marginLeft: Spacing.h.small,
+    alignSelf: 'stretch',
+  },
+  placeNameText: {
+    ...Typography.subtitle2,
+    color: Colors.light.black,
+  },
+  placeSubRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: Spacing.v.small,
+  },
+  placeSubText: {
+    ...Typography.body2,
+    color: Colors.light.grayDark,
+  },
+  routeButton: {
+    position: 'absolute',
+    bottom: 0,
+    right: Spacing.h.small,
+    height: 24,
+    paddingHorizontal: Spacing.h.medium,
+    backgroundColor: Colors.light.white,
+    borderWidth: Spacing.lw.small,
+    borderColor: Colors.light.grayLight,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  routeButtonText: {
+    ...Typography.button4,
+    color: Colors.light.grayDark,
   },
 });

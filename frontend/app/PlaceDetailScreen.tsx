@@ -121,7 +121,7 @@ const PlaceDetailScreen = () => {
           }
         />
 
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Spacing.v.large }}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Spacing.v.screenBottom }}>
           {/* 대표 이미지 */}
           <View style={[styles.imageContainer, { width: imageWidth, height: imageHeight }]}>
             <Image source={{ uri: place?.image_url ?? undefined }} style={styles.mainImage} resizeMode="cover" />

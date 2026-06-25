@@ -55,6 +55,54 @@ const MOCK_PLACE_3: Place = {
   created_at: '2024-01-01T00:00:00Z',
 };
 
+const MOCK_PLACE_4: Place = {
+  id: 4,
+  name: '북촌 한옥마을',
+  address: '서울특별시 종로구 계동길 37',
+  latitude: '37.5824',
+  longitude: '126.9851',
+  image_url: 'https://picsum.photos/seed/place4/400/300',
+  category: '14',
+  is_verified: true,
+  is_bookmarked: false,
+  rating: 4.2,
+  like_count: 5600,
+  tags: [MOCK_TAGS[0], MOCK_TAGS[2]],
+  created_at: '2024-01-01T00:00:00Z',
+};
+
+const MOCK_PLACE_5: Place = {
+  id: 5,
+  name: '남산타워',
+  address: '서울특별시 용산구 남산공원길 105',
+  latitude: '37.5512',
+  longitude: '126.9882',
+  image_url: 'https://picsum.photos/seed/place5/400/300',
+  category: '14',
+  is_verified: true,
+  is_bookmarked: false,
+  rating: 4.6,
+  like_count: 12300,
+  tags: [MOCK_TAGS[1], MOCK_TAGS[2]],
+  created_at: '2024-01-01T00:00:00Z',
+};
+
+const MOCK_PLACE_6: Place = {
+  id: 6,
+  name: '인사동 거리',
+  address: '서울특별시 종로구 인사동길 44',
+  latitude: '37.5744',
+  longitude: '126.9855',
+  image_url: 'https://picsum.photos/seed/place6/400/300',
+  category: '15',
+  is_verified: true,
+  is_bookmarked: false,
+  rating: 4.0,
+  like_count: 3200,
+  tags: [MOCK_TAGS[0], MOCK_TAGS[2]],
+  created_at: '2024-01-01T00:00:00Z',
+};
+
 export const MOCK_MEDIA_LIST: Media[] = [
   {
     id: 1,
@@ -229,7 +277,12 @@ export const MOCK_SCHEDULES: Schedule[] = [
     is_bookmarked: true,
     daily_places: [
       { id: 1, day_number: 1, order: 1, memo: '', place: MOCK_PLACE },
-      { id: 2, day_number: 2, order: 1, memo: '', place: MOCK_PLACE_2 },
+      { id: 2, day_number: 1, order: 2, memo: '', place: MOCK_PLACE_4 },
+      { id: 3, day_number: 1, order: 3, memo: '', place: MOCK_PLACE_5 },
+      { id: 4, day_number: 2, order: 1, memo: '', place: MOCK_PLACE_2 },
+      { id: 5, day_number: 2, order: 2, memo: '', place: MOCK_PLACE_6 },
+      { id: 6, day_number: 3, order: 1, memo: '', place: MOCK_PLACE_3 },
+      { id: 7, day_number: 3, order: 2, memo: '', place: MOCK_PLACE_4 },
     ],
     created_at: '2024-01-01T00:00:00Z',
   },
@@ -241,7 +294,11 @@ export const MOCK_SCHEDULES: Schedule[] = [
     end_date: '2026-07-07',
     is_bookmarked: false,
     daily_places: [
-      { id: 3, day_number: 1, order: 1, memo: '', place: MOCK_PLACE_3 },
+      { id: 8,  day_number: 1, order: 1, memo: '', place: MOCK_PLACE_3 },
+      { id: 9,  day_number: 1, order: 2, memo: '', place: MOCK_PLACE_6 },
+      { id: 10, day_number: 2, order: 1, memo: '', place: MOCK_PLACE },
+      { id: 11, day_number: 2, order: 2, memo: '', place: MOCK_PLACE_5 },
+      { id: 12, day_number: 3, order: 1, memo: '', place: MOCK_PLACE_4 },
     ],
     created_at: '2024-01-02T00:00:00Z',
   },

@@ -9,6 +9,7 @@ export const Spacing = {
     large: 32,
     xlarge: 48,
     xxlarge: 56,
+    screenBottom: 32,
   },
   // 좌우 간격 (Horizontal)
   h: {

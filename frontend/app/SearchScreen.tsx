@@ -190,9 +190,10 @@ const styles = StyleSheet.create({
   },
 
   // 3. 리스트 및 아이템 영역
-  listContent: { 
-    paddingHorizontal: Spacing.h.medium, 
-    paddingTop: Spacing.v.small 
+  listContent: {
+    paddingHorizontal: Spacing.h.medium,
+    paddingTop: Spacing.v.small,
+    paddingBottom: Spacing.v.screenBottom,
   },
   recentItemContainer: { 
     flexDirection: 'row', 

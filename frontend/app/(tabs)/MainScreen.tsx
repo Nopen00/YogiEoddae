@@ -121,7 +121,7 @@ const MainScreen = () => {
 
       <ScrollView 
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 32 }}
+        contentContainerStyle={{ paddingBottom: Spacing.v.screenBottom }}
       >
         {/* 2. 메인 캐러셀 */}
         <View style={styles.imageBox}>

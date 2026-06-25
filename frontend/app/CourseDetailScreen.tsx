@@ -98,7 +98,7 @@ const CourseDetailScreen = () => {
           }
         />
 
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Spacing.v.large }}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Spacing.v.screenBottom }}>
           {/* 메인 이미지 */}
           <View style={[styles.imageContainer, { width: imageWidth, height: imageHeight }]}>
             <Image source={{ uri: media?.thumbnail_url ?? undefined }} style={styles.mainImage} resizeMode="cover" />
@@ -198,8 +198,6 @@ const CourseDetailScreen = () => {
                         <Text style={styles.placeCircleText}>{placeIndex + 1}</Text>
                       </View>
                     </View>
-
-                    <View style={{ width: Spacing.h.medium }} />
 
                     <TouchableOpacity
                       style={{ flex: 1 }}
@@ -368,14 +366,13 @@ const styles = StyleSheet.create({
   },
   placeRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     marginTop: Spacing.v.small,
   },
   placeNumberColumn: {
-    width: Spacing.h.medium,
-    alignItems: 'center',
+    width: 32,
+    alignItems: 'flex-start',
     justifyContent: 'center',
-    alignSelf: 'stretch',
   },
   placeCircle: {
     width: Spacing.h.medium,
@@ -397,11 +394,9 @@ const styles = StyleSheet.create({
   courseCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    height: 102,
     backgroundColor: Colors.light.white,
     borderRadius: Spacing.r.small,
-    paddingTop: Spacing.v.small,
-    paddingBottom: Spacing.v.small,
+    paddingVertical: Spacing.v.small,
     paddingLeft: Spacing.h.small,
   },
   courseCardImage: {

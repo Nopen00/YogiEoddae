@@ -121,17 +121,20 @@ components/
 요소 **사이의 간격**(margin, padding, gap)에만 사용합니다. UI 요소 자체의 높이·너비는 `Size`를 사용합니다.
 
 ```
-수직 (v)            수평 (h)             모서리 (r)
-v.small   =  8     h.xsmall =  4       r.xsmall =  4
-v.medium  = 16     h.small  =  8       r.small  =  8
-v.large24 = 24     h.medium = 16       r.medium = 16
-v.large   = 32     h.large  = 24
-v.xlarge  = 48     h.xlarge = 32
-v.xxlarge = 56
+수직 (v)                  수평 (h)             모서리 (r)
+v.small       =  8       h.xsmall =  4       r.xsmall =  4
+v.medium      = 16       h.small  =  8       r.small  =  8
+v.large24     = 24       h.medium = 16       r.medium = 16
+v.large       = 32       h.large  = 24
+v.xlarge      = 48       h.xlarge = 32
+v.xxlarge     = 56
+v.screenBottom = 32  ← 스크롤 가능한 화면의 하단 패딩 전용
 
 선 두께 (lw)
 lw.small  =  1
 ```
+
+> **규칙:** 스크롤 가능한 화면(`ScrollView`, `FlatList`)의 `contentContainerStyle`에는 반드시 `paddingBottom: Spacing.v.screenBottom`을 적용합니다. 숫자 리터럴(`32`, `64` 등) 직접 사용 금지.
 
 ### Size (`constants/Size.ts`)
 
