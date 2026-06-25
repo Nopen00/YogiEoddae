@@ -27,7 +27,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { mediaApi, placeApi, scheduleApi } from '../../services/api';
-import type { Media, MediaPlace, Place, Schedule } from '../../services/types';
+import type { DailyPlace, Media, MediaPlace, Place, Schedule } from '../../services/types';
 
 const TABS = ['내 일정', '과거 일정', '저장소'];
 const { width } = Dimensions.get('window');
@@ -99,18 +99,75 @@ const SectionWrapper = ({
   </View>
 );
 
+// ─── 장소 이미지 클러스터 ─────────────────────────────────────
+const CLUSTER = Size.circleMd;  // 48
+const SMALL   = 22;
+const GAP     = Spacing.r.xsmall; // 4
+
+const SmallCircle = ({ uri, size, style }: { uri: string | null; size: number; style?: object }) => {
+  const base = { width: size, height: size, borderRadius: size / 2 };
+  if (uri) return <Image source={{ uri }} style={[base, style]} />;
+  return <View style={[base, { backgroundColor: Colors.light.grayLight }, style]} />;
+};
+
+const PlaceImageCluster = ({ dailyPlaces }: { dailyPlaces: DailyPlace[] }) => {
+  const count = dailyPlaces.length;
+  const abs = (left: number, top: number) => ({ position: 'absolute' as const, left, top });
+
+  if (count === 0) {
+    return <View style={{ width: CLUSTER, height: CLUSTER, borderRadius: CLUSTER / 2, backgroundColor: Colors.light.grayLight }} />;
+  }
+  if (count === 1) {
+    return <SmallCircle uri={dailyPlaces[0].place.image_url} size={CLUSTER} />;
+  }
+
+  const midY = (CLUSTER - SMALL) / 2; // 13 — 2개일 때 수직 중앙
+
+  if (count === 2) {
+    return (
+      <View style={{ width: CLUSTER, height: CLUSTER }}>
+        <SmallCircle uri={dailyPlaces[0].place.image_url} size={SMALL} style={abs(0, midY)} />
+        <SmallCircle uri={dailyPlaces[1].place.image_url} size={SMALL} style={abs(SMALL + GAP, midY)} />
+      </View>
+    );
+  }
+  if (count === 3) {
+    return (
+      <View style={{ width: CLUSTER, height: CLUSTER }}>
+        <SmallCircle uri={dailyPlaces[0].place.image_url} size={SMALL} style={abs((CLUSTER - SMALL) / 2, 0)} />
+        <SmallCircle uri={dailyPlaces[1].place.image_url} size={SMALL} style={abs(0, SMALL + GAP)} />
+        <SmallCircle uri={dailyPlaces[2].place.image_url} size={SMALL} style={abs(SMALL + GAP, SMALL + GAP)} />
+      </View>
+    );
+  }
+
+  // 4개 이상: 2×2 그리드, 5개 이상이면 우측 하단에 +n 뱃지
+  const extra = count - 3;
+  return (
+    <View style={{ width: CLUSTER, height: CLUSTER }}>
+      <SmallCircle uri={dailyPlaces[0].place.image_url} size={SMALL} style={abs(0, 0)} />
+      <SmallCircle uri={dailyPlaces[1].place.image_url} size={SMALL} style={abs(SMALL + GAP, 0)} />
+      <SmallCircle uri={dailyPlaces[2].place.image_url} size={SMALL} style={abs(0, SMALL + GAP)} />
+      {count >= 5 ? (
+        <View style={[styles.extraBadgeContainer, abs(SMALL + GAP, SMALL + GAP)]}>
+          <SmallCircle uri={dailyPlaces[3].place.image_url} size={SMALL} />
+          <View style={styles.extraBadgeOverlay}>
+            <Text style={styles.extraBadgeText}>+{extra}</Text>
+          </View>
+        </View>
+      ) : (
+        <SmallCircle uri={dailyPlaces[3].place.image_url} size={SMALL} style={abs(SMALL + GAP, SMALL + GAP)} />
+      )}
+    </View>
+  );
+};
+
 // ─── 일정 카드 ────────────────────────────────────────────────
 const ScheduleCard = ({ schedule, onPress }: { schedule: Schedule; onPress?: () => void }) => {
   const tags = schedule.media?.tags ?? [];
   return (
     <TouchableOpacity style={styles.card} activeOpacity={0.85} onPress={onPress}>
-      <View style={styles.imageWrapper}>
-        {schedule.media?.thumbnail_url ? (
-          <Image source={{ uri: schedule.media.thumbnail_url }} style={styles.cardImage} />
-        ) : (
-          <View style={[styles.cardImage, { backgroundColor: Colors.light.grayLight }]} />
-        )}
-      </View>
+      <PlaceImageCluster dailyPlaces={schedule.daily_places} />
       <View style={styles.cardContent}>
         <Text style={styles.cardTitle} numberOfLines={1}>{schedule.title}</Text>
         <View style={styles.infoRow}>
@@ -449,6 +506,9 @@ const styles = StyleSheet.create({
   infoSep: { ...Typography.subtitle1, color: Colors.light.grayDark },
   tagText: { ...Typography.body2, color: Colors.light.primary },
   moreIconWrapper: { alignSelf: 'center', marginLeft: Spacing.h.medium },
+  extraBadgeContainer: { width: SMALL, height: SMALL, borderRadius: SMALL / 2, overflow: 'hidden' },
+  extraBadgeOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: Colors.light.overlay, justifyContent: 'center', alignItems: 'center' },
+  extraBadgeText: { ...Typography.button3, color: Colors.light.white },
   sectionEmpty: { alignItems: 'center', marginTop: Spacing.v.medium, paddingVertical: Spacing.v.medium },
   sectionEmptyTitle: { ...Typography.subtitle2, color: Colors.light.black },
   sectionEmptySubtitle: { ...Typography.body2, color: Colors.light.grayLight, marginTop: Spacing.v.small },
