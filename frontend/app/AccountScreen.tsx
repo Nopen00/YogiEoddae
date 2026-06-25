@@ -75,7 +75,7 @@ const AccountScreen = () => {
 
         {inputValue.length > 0 && (
           <View style={styles.warningRow}>
-            <AlertCircle size={IconSize.xsmall} color={Colors.light.heart} />
+            <AlertCircle size={IconSize.xsmall} color={Colors.light.error} />
             <Text style={styles.warningText}>복구 코드를 입력하면 되돌릴 수 없습니다.</Text>
           </View>
         )}
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 16,
   },
-  warningText: { ...Typography.body2, color: Colors.light.heart, marginLeft: 4 },
+  warningText: { ...Typography.body2, color: Colors.light.error, marginLeft: 4 },
 
   // 팝업
   overlay: {
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
   },
   popupDesc: {
     ...Typography.body2,
-    color: Colors.light.heart,
+    color: Colors.light.error,
     marginTop: 16,
     textAlign: 'center',
   },
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 40,
     borderRadius: 8,
-    backgroundColor: Colors.light.heart,
+    backgroundColor: Colors.light.error,
     justifyContent: 'center',
     alignItems: 'center',
   },

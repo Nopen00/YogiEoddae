@@ -533,7 +533,7 @@ const styles = StyleSheet.create({
   },
   photoSpotTag: {
     ...Typography.body2,
-    color: '#41737c',
+    color: Colors.light.primary,
   },
 });
 

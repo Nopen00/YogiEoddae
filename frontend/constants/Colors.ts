@@ -26,6 +26,7 @@ export const Colors = {
     tabIconSelected: tintColorLight,
 
     heart: '#F24C54',
+    error: '#F24C54',
     skyBlue: '#33A7EA',
   },
   dark: {

@@ -449,7 +449,7 @@ const styles = StyleSheet.create({
   infoRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 4 },
   infoText: { ...Typography.subtitle1, color: Colors.light.grayDark },
   infoSep: { ...Typography.subtitle1, color: Colors.light.grayDark },
-  tagText: { ...Typography.body2, color: Colors.light.dark },
+  tagText: { ...Typography.body2, color: Colors.light.primary },
   moreIconWrapper: { alignSelf: 'center', marginLeft: 16 },
   sectionEmpty: { alignItems: 'center', marginTop: 16, paddingVertical: 16 },
   sectionEmptyTitle: { ...Typography.subtitle2, color: Colors.light.black },
