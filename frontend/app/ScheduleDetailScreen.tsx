@@ -342,14 +342,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   panelContent: {
-    paddingTop: 24,
+    paddingTop: Spacing.v.large24,
   },
   panelContentHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingLeft: Spacing.h.medium,
-    paddingRight: 32,
+    paddingRight: Spacing.h.xlarge,
   },
   panelContentTitle: {
     ...Typography.HeadLine5,
@@ -362,7 +362,7 @@ const styles = StyleSheet.create({
   dayRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 32,
+    marginTop: Spacing.v.large,
     paddingHorizontal: Spacing.h.medium,
   },
   dayLabel: {
@@ -372,6 +372,6 @@ const styles = StyleSheet.create({
   dayDate: {
     ...Typography.subtitle1,
     color: Colors.light.grayDark,
-    marginLeft: 8,
+    marginLeft: Spacing.h.small,
   },
 });

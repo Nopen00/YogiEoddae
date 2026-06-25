@@ -1,6 +1,8 @@
 //components\make_component\ScheduleAlert.tsx
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
+import { Size } from '@/constants/Size';
+import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import type { Schedule } from '@/services/types';
 import { Calendar, X } from 'lucide-react-native';
@@ -192,37 +194,37 @@ export const ScheduleAlert = ({ visible, onClose, schedules }: ScheduleAlertProp
 };
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.25)', justifyContent: 'center', paddingHorizontal: 16 },
-  alertContainer: { backgroundColor: Colors.light.white, borderRadius: 8, borderWidth: 1, borderColor: Colors.light.grayLight, paddingBottom: 24 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16 },
+  overlay: { flex: 1, backgroundColor: Colors.light.overlay, justifyContent: 'center', paddingHorizontal: Spacing.h.medium },
+  alertContainer: { backgroundColor: Colors.light.white, borderRadius: Spacing.r.small, borderWidth: Spacing.lw.small, borderColor: Colors.light.grayLight, paddingBottom: 24 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: Spacing.h.medium },
   headerTitle: { ...Typography.title1, color: Colors.light.black },
-  currentSectionWrapper: { marginTop: 16 },
-  emptyContainer: { alignItems: 'center', paddingVertical: 16 },
-  emptyTitle: { ...Typography.subtitle2, color: Colors.light.black, marginBottom: 16 },
+  currentSectionWrapper: { marginTop: Spacing.v.medium },
+  emptyContainer: { alignItems: 'center', paddingVertical: Spacing.v.medium },
+  emptyTitle: { ...Typography.subtitle2, color: Colors.light.black, marginBottom: Spacing.v.medium },
   emptySubtitle: { ...Typography.body2, color: Colors.light.grayLight },
-  accordionButton: { marginHorizontal: 16, marginTop: 8, borderRadius: 8, borderWidth: 1, borderColor: Colors.light.grayLight, padding: 16, backgroundColor: Colors.light.white },
+  accordionButton: { marginHorizontal: Spacing.h.medium, marginTop: Spacing.v.small, borderRadius: Spacing.r.small, borderWidth: Spacing.lw.small, borderColor: Colors.light.grayLight, padding: Spacing.h.medium, backgroundColor: Colors.light.white },
   expandedButton: {},
   infoRow: { flexDirection: 'row' },
-  imageWrapper: { width: 48, height: 48, borderRadius: 24, overflow: 'hidden' },
+  imageWrapper: { width: Size.circleMd, height: Size.circleMd, borderRadius: Size.circleMd / 2, overflow: 'hidden' },
   image: { width: '100%', height: '100%' },
-  infoTextWrapper: { marginLeft: 16, flex: 1, justifyContent: 'center' },
+  infoTextWrapper: { marginLeft: Spacing.h.medium, flex: 1, justifyContent: 'center' },
   scheduleName: { ...Typography.title1, color: Colors.light.black },
-  periodText: { marginTop: 4, ...Typography.body2, color: Colors.light.grayDark },
-  dayListSection: { marginTop: 16 },
-  dayScrollContent: { gap: 8 },
-  dayButton: { width: 139, height: 78, borderRadius: 8, borderWidth: 1, alignItems: 'center', paddingTop: 16, paddingHorizontal: 32 },
+  periodText: { marginTop: Spacing.h.xsmall, ...Typography.body2, color: Colors.light.grayDark },
+  dayListSection: { marginTop: Spacing.v.medium },
+  dayScrollContent: { gap: Spacing.v.small },
+  dayButton: { width: 139, height: 78, borderRadius: Spacing.r.small, borderWidth: Spacing.lw.small, alignItems: 'center', paddingTop: Spacing.v.medium, paddingHorizontal: Spacing.h.xlarge },
   dayButtonUnselected: { backgroundColor: Colors.light.white, borderColor: Colors.light.grayLight },
   dayButtonSelected: { backgroundColor: Colors.light.primary, borderColor: Colors.light.primary },
-  dayLabel: { ...Typography.title2, marginBottom: 8 },
+  dayLabel: { ...Typography.title2, marginBottom: Spacing.v.small },
   dateText: { ...Typography.body2 },
-  addButton: { height: 48, marginHorizontal: 16, marginTop: 32, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
+  addButton: { height: Size.buttonMd, marginHorizontal: Spacing.h.medium, marginTop: Spacing.v.large, borderRadius: Spacing.r.small, justifyContent: 'center', alignItems: 'center' },
   addButtonInactive: { backgroundColor: Colors.light.grayLight },
   addButtonActive: { backgroundColor: Colors.light.primary },
   addButtonText: { ...Typography.button2, color: Colors.light.white },
-  resultOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.25)', justifyContent: 'center', paddingHorizontal: 32 },
-  resultPopupBox: { height: 116, backgroundColor: Colors.light.white, borderRadius: 8, borderWidth: 1, borderColor: Colors.light.grayLight, alignItems: 'center' },
-  resultIcon: { marginTop: 16, width: 48, height: 48 },
-  resultText: { marginTop: 16, ...Typography.subtitle2, color: Colors.light.black },
+  resultOverlay: { flex: 1, backgroundColor: Colors.light.overlay, justifyContent: 'center', paddingHorizontal: Spacing.h.xlarge },
+  resultPopupBox: { height: 116, backgroundColor: Colors.light.white, borderRadius: Spacing.r.small, borderWidth: Spacing.lw.small, borderColor: Colors.light.grayLight, alignItems: 'center' },
+  resultIcon: { marginTop: Spacing.v.medium, width: 48, height: 48 },
+  resultText: { marginTop: Spacing.v.medium, ...Typography.subtitle2, color: Colors.light.black },
   textWhite: { color: Colors.light.white },
   textBlack: { color: Colors.light.black },
   textLightGray: { color: Colors.light.grayLight },

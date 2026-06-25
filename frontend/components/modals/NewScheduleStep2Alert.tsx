@@ -1,6 +1,7 @@
 ﻿// components/modals/NewScheduleStep2Alert.tsx
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
+import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { ArrowLeft, X } from 'lucide-react-native';
@@ -103,7 +104,7 @@ export const NewScheduleStep2Alert = ({ visible, onClose, onBack, onConfirm, ran
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.25)',
+    backgroundColor: Colors.light.overlay,
     justifyContent: 'center',
     paddingHorizontal: Spacing.h.medium,
   },
@@ -206,7 +207,7 @@ const styles = StyleSheet.create({
   nextButton: {
     marginTop: Spacing.v.large,
     marginHorizontal: Spacing.h.medium,
-    height: 48,
+    height: Size.buttonMd,
     backgroundColor: Colors.light.dark,
     borderRadius: Spacing.r.small,
     alignItems: 'center',

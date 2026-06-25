@@ -30,27 +30,7 @@ import { placeApi, scheduleApi } from '../services/api';
 import type { Photo, Place, Schedule } from '../services/types';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Shadow } from 'react-native-shadow-2';
-
-const CATEGORY_LABEL: Record<string, string> = {
-  '12': '관광지', '14': '문화시설', '15': '축제/행사',
-  '25': '여행코스', '28': '레포츠', '32': '숙박', '38': '쇼핑', '39': '음식점',
-};
-
-const CITY_SHORT: Record<string, string> = {
-  '서울특별시': '서울', '부산광역시': '부산', '대구광역시': '대구',
-  '인천광역시': '인천', '광주광역시': '광주', '대전광역시': '대전',
-  '울산광역시': '울산', '세종특별자치시': '세종', '경기도': '경기',
-  '강원특별자치도': '강원', '강원도': '강원', '충청북도': '충북',
-  '충청남도': '충남', '전라북도': '전북', '전북특별자치도': '전북',
-  '전라남도': '전남', '경상북도': '경북', '경상남도': '경남',
-  '제주특별자치도': '제주',
-};
-
-const shortAddress = (address: string) => {
-  const parts = address.split(' ');
-  if (parts[0] && CITY_SHORT[parts[0]]) parts[0] = CITY_SHORT[parts[0]];
-  return parts.slice(0, 2).join(' ');
-};
+import { CATEGORY_LABEL, shortAddress } from '@/constants/labels';
 
 const formatLikeCount = (count: number): string => {
   if (count < 100) return count.toString();
@@ -127,7 +107,7 @@ const PlaceDetailScreen = () => {
                 </TouchableOpacity>
                 <Text style={styles.toggleLabel}>{isToggled ? '카카오' : '관광공사'}</Text>
               </View>
-              <View style={[styles.moreButtonWrapper, { marginLeft: 16 }]}>
+              <View style={[styles.moreButtonWrapper, { marginLeft: Spacing.h.medium }]}>
                 <MoreButton onPress={() => setIsMenuVisible(!isMenuVisible)} />
                 {isMenuVisible && (
                   <MoreMenuAlert
@@ -141,7 +121,7 @@ const PlaceDetailScreen = () => {
           }
         />
 
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Spacing.v.large }}>
           {/* 대표 이미지 */}
           <View style={[styles.imageContainer, { width: imageWidth, height: imageHeight }]}>
             <Image source={{ uri: place?.image_url ?? undefined }} style={styles.mainImage} resizeMode="cover" />
@@ -164,14 +144,14 @@ const PlaceDetailScreen = () => {
                 <>
                   <TextSeparator />
                   <Star size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
-                  <Text style={[styles.metaText, { marginLeft: 3 }]}>{place.rating.toFixed(1)}</Text>
+                  <Text style={[styles.metaText, { marginLeft: Spacing.h.xsmall }]}>{place.rating.toFixed(1)}</Text>
                 </>
               )}
               {place?.like_count != null && (
                 <>
                   <TextSeparator />
                   <Heart size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
-                  <Text style={[styles.metaText, { marginLeft: 3 }]}>{formatLikeCount(place.like_count)}</Text>
+                  <Text style={[styles.metaText, { marginLeft: Spacing.h.xsmall }]}>{formatLikeCount(place.like_count)}</Text>
                 </>
               )}
             </MetaRow>
@@ -204,18 +184,18 @@ const PlaceDetailScreen = () => {
             {/* 기본 정보 */}
             <Text style={styles.basicInfoTitle}>기본 정보</Text>
             <View style={[styles.mapContainer, { height: imageHeight }]} />
-            <View style={{ marginTop: 16 }}>
+            <View style={{ marginTop: Spacing.v.medium }}>
               <Shadow distance={4} startColor="rgba(0, 0, 0, 0.15)" offset={[0, 0]} stretch>
                 <View style={styles.infoGroup}>
                   <View style={styles.infoGroupRow}>
                     <Text style={styles.infoLabel}>주소</Text>
                     <Text style={styles.infoValue}>{place?.address ?? '-'}</Text>
                   </View>
-                  <View style={[styles.infoGroupRow, { marginTop: 16 }]}>
+                  <View style={[styles.infoGroupRow, { marginTop: Spacing.v.medium }]}>
                     <Text style={styles.infoLabel}>영업시간</Text>
                     <Text style={styles.infoValue}>-</Text>
                   </View>
-                  <View style={[styles.infoGroupRow, { marginTop: 16 }]}>
+                  <View style={[styles.infoGroupRow, { marginTop: Spacing.v.medium }]}>
                     <Text style={styles.infoLabel}>전화</Text>
                     <Text style={styles.infoValue}>-</Text>
                   </View>
@@ -223,7 +203,7 @@ const PlaceDetailScreen = () => {
               </Shadow>
             </View>
 
-            <Divider marginTop={32} />
+            <Divider marginTop={Spacing.v.large} />
 
             {/* 소개 / 카카오 리뷰 */}
             <Text style={styles.placeTitle}>{isToggled ? '이용자 리뷰' : place?.name}</Text>
@@ -242,10 +222,10 @@ const PlaceDetailScreen = () => {
             {/* 포토스팟 */}
             {photos.length > 0 && (
               <>
-                <Divider marginTop={32} />
+                <Divider marginTop={Spacing.v.large} />
                 <Text style={styles.nearbyTitle}>포토스팟</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 16 }}
-                  contentContainerStyle={{ gap: 8 }}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: Spacing.v.medium }}
+                  contentContainerStyle={{ gap: Spacing.v.small }}>
                   {photos.map((photo) => (
                     <View key={photo.id} style={[styles.nearbyImageBox, { width: smallImageWidth, height: smallImageHeight }]}>
                       <Image source={{ uri: photo.image_url }} style={styles.nearbyImage} resizeMode="cover" />
@@ -255,12 +235,12 @@ const PlaceDetailScreen = () => {
               </>
             )}
 
-            <Divider marginTop={32} />
+            <Divider marginTop={Spacing.v.large} />
             <Text style={styles.nearbyTitle}>근처 추천 장소</Text>
           </View>
 
           {/* 근처 추천 장소 */}
-          <View style={{ marginTop: 16, marginHorizontal: Spacing.h.medium }}>
+          <View style={{ marginTop: Spacing.v.medium, marginHorizontal: Spacing.h.medium }}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.nearbyScrollContent}>
               {nearbyPlaces.map((nearby, i) => (
                 <TouchableOpacity
@@ -319,17 +299,17 @@ const styles = StyleSheet.create({
   toggleLabel: {
     ...Typography.button3,
     color: Colors.light.black,
-    marginLeft: 8,
+    marginLeft: Spacing.h.small,
   },
   imageContainer: {
-    marginTop: 8,
+    marginTop: Spacing.v.small,
     marginHorizontal: Spacing.h.medium,
     borderRadius: Spacing.r.small,
     overflow: 'hidden',
     backgroundColor: Colors.light.grayLight,
   },
   mainImage: { width: '100%', height: '100%' },
-  infoContainer: { paddingHorizontal: Spacing.h.medium, marginTop: 16 },
+  infoContainer: { paddingHorizontal: Spacing.h.medium, marginTop: Spacing.v.medium },
   titleText: { ...Typography.HeadLine5, color: Colors.light.black },
   metaText: { ...Typography.body2, color: Colors.light.grayDark },
   iconTextRow: { flexDirection: 'row', alignItems: 'center' },
@@ -337,30 +317,30 @@ const styles = StyleSheet.create({
   actionButtonGroup: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 16,
-    paddingHorizontal: 16,
+    marginTop: Spacing.v.medium,
+    paddingHorizontal: Spacing.h.medium,
   },
   actionButton: { alignItems: 'center', width: 64 },
   actionButtonText: {
     ...Typography.button4,
     color: Colors.light.grayDark,
-    marginTop: 8,
+    marginTop: Spacing.v.small,
   },
   basicInfoTitle: {
     ...Typography.title1,
     color: Colors.light.black,
-    marginTop: 16,
+    marginTop: Spacing.v.medium,
   },
   mapContainer: {
-    marginTop: 16,
+    marginTop: Spacing.v.medium,
     width: '100%',
     borderRadius: Spacing.r.small,
     backgroundColor: Colors.light.grayLight,
   },
   infoGroup: {
     borderRadius: Spacing.r.small,
-    paddingVertical: 16,
-    paddingHorizontal: 16,
+    paddingVertical: Spacing.v.medium,
+    paddingHorizontal: Spacing.h.medium,
     backgroundColor: Colors.light.white,
   },
   infoGroupRow: {
@@ -374,40 +354,40 @@ const styles = StyleSheet.create({
   infoValue: {
     ...Typography.body2,
     color: Colors.light.grayDark,
-    marginLeft: 16,
+    marginLeft: Spacing.h.medium,
     flex: 1,
   },
   placeTitle: {
     ...Typography.title1,
     color: Colors.light.black,
-    marginTop: 32,
+    marginTop: Spacing.v.large,
   },
   placeDesc: {
     ...Typography.body2,
     color: Colors.light.black,
-    marginTop: 16,
+    marginTop: Spacing.v.medium,
   },
   nearbyTitle: {
     ...Typography.title1,
     color: Colors.light.black,
-    marginTop: 32,
+    marginTop: Spacing.v.large,
   },
   reviewCard: {
     flexDirection: 'row',
     height: 102,
-    borderRadius: 8,
+    borderRadius: Spacing.r.small,
     backgroundColor: Colors.light.white,
-    padding: 8,
+    padding: Spacing.v.small,
   },
   reviewImageBox: {
     width: 86,
     height: 86,
-    borderRadius: 8,
+    borderRadius: Spacing.r.small,
     backgroundColor: Colors.light.grayLight,
   },
   reviewContent: {
     flex: 1,
-    marginLeft: 8,
+    marginLeft: Spacing.h.small,
   },
   reviewNickname: {
     ...Typography.subtitle2,
@@ -429,20 +409,20 @@ const styles = StyleSheet.create({
     ...Typography.body2,
     color: Colors.light.grayDark,
   },
-  reviewMoreButton: { alignSelf: 'flex-end', paddingVertical: 8 },
+  reviewMoreButton: { alignSelf: 'flex-end', paddingVertical: Spacing.v.small },
   reviewMoreText: { ...Typography.button4, color: Colors.light.primary },
   kakaoLinkButton: {
-    marginTop: 16,
+    marginTop: Spacing.v.medium,
     paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingHorizontal: Spacing.h.medium,
     borderRadius: Spacing.r.small,
-    borderWidth: 1,
+    borderWidth: Spacing.lw.small,
     borderColor: Colors.light.primary,
     alignSelf: 'flex-start',
   },
   kakaoLinkText: { ...Typography.button3, color: Colors.light.primary },
   nearbyScrollContent: {
-    gap: 8,
+    gap: Spacing.v.small,
   },
   nearbyImageBox: {
     borderRadius: Spacing.r.small,
@@ -452,13 +432,13 @@ const styles = StyleSheet.create({
   nearbyImage: { width: '100%', height: '100%' },
   nearbyHeart: {
     position: 'absolute',
-    top: 8,
-    right: 8,
+    top: Spacing.v.small,
+    right: Spacing.h.small,
   },
   nearbyPlaceName: {
     ...Typography.subtitle2,
     color: Colors.light.black,
-    marginTop: 8,
+    marginTop: Spacing.v.small,
   },
   nearbyCategory: {
     ...Typography.body2,

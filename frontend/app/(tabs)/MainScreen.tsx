@@ -19,6 +19,8 @@ import { useRouter } from 'expo-router';
 
 import { Colors } from '@/constants/Colors';
 import { IconSize } from '@/constants/IconSize';
+import { MEDIA_TYPE_LABEL } from '@/constants/labels';
+import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { mediaApi } from '../../services/api';
@@ -62,13 +64,6 @@ const MainScreen = () => {
     if (currentIndex >= 0 && currentIndex < carouselData.length) {
       if (currentIndex !== activeIndex) setActiveIndex(currentIndex);
     }
-  };
-
-  const MEDIA_TYPE_LABEL: Record<string, string> = {
-    drama: '드라마',
-    movie: '영화',
-    youtube: '유튜브',
-    etc: '기타',
   };
 
   const renderCarouselItem = ({ item }: { item: Media }) => (
@@ -204,7 +199,7 @@ const styles = StyleSheet.create({
   searchBarContainer: {
     marginTop: Spacing.v.small,
     marginHorizontal: Spacing.h.medium,
-    height: 56,
+    height: Size.header,
 
     flexDirection: 'row',
     alignItems: 'center',
@@ -212,7 +207,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.white,
     borderWidth: Spacing.lw.small,
     borderColor: Colors.light.grayLight,
-    borderRadius: 56,
+    borderRadius: Size.header,
 
     paddingHorizontal: Spacing.h.medium,
   },
@@ -292,7 +287,7 @@ const styles = StyleSheet.create({
   dot: {
     width: 8,
     height: 8,
-    borderRadius: 4,
+    borderRadius: Spacing.r.xsmall,
     marginHorizontal: Spacing.h.xsmall,
   },
 
@@ -355,7 +350,7 @@ const styles = StyleSheet.create({
   },
 
   courseTitleText: {
-    marginTop: 8,
+    marginTop: Spacing.v.small,
     ...Typography.body3,
     color: Colors.light.grayDark,
     textAlign: 'left',

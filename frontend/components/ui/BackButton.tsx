@@ -1,5 +1,6 @@
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
+import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
 import { ArrowLeft } from 'lucide-react-native';
 import React from 'react';
@@ -20,8 +21,8 @@ export const BackButton = ({ onPress, color = Colors.light.black }: BackButtonPr
 
 const styles = StyleSheet.create({
   button: {
-    width: 40,
-    height: 40,
+    width: Size.buttonSm,
+    height: Size.buttonSm,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: Spacing.h.small,

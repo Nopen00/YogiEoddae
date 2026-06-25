@@ -18,6 +18,8 @@ import { TextSeparator } from '@/components/ui/TextSeparator';
 import SearchBar from '@/components/ui/SearchBar';
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
+import { CATEGORY_LABEL, MEDIA_TYPE_LABEL, shortAddress } from '@/constants/labels';
+import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { mediaApi, placeApi } from '../services/api';
@@ -30,15 +32,6 @@ const formatLikeCount = (count: number): string => {
   return (Math.floor(count / 100) * 100).toLocaleString() + '+';
 };
 
-const CITY_SHORT: Record<string, string> = {
-  '서울특별시': '서울', '부산광역시': '부산', '대구광역시': '대구',
-  '인천광역시': '인천', '광주광역시': '광주', '대전광역시': '대전',
-  '울산광역시': '울산', '세종특별자치시': '세종', '경기도': '경기',
-  '강원특별자치도': '강원', '강원도': '강원', '충청북도': '충북',
-  '충청남도': '충남', '전라북도': '전북', '전북특별자치도': '전북',
-  '전라남도': '전남', '경상북도': '경북', '경상남도': '경남',
-  '제주특별자치도': '제주',
-};
 const { width } = Dimensions.get('window');
 const TAB_WIDTH = width / CATEGORIES.length;
 
@@ -73,15 +66,6 @@ const SearchResultScreen = () => {
       friction: 8,
       tension: 50,
     }).start();
-  };
-
-  const MEDIA_TYPE_LABEL: Record<string, string> = {
-    drama: '드라마', movie: '영화', youtube: '유튜브', etc: '기타',
-  };
-
-  const CATEGORY_LABEL: Record<string, string> = {
-    '12': '관광지', '14': '문화시설', '15': '축제/행사',
-    '25': '여행코스', '28': '레포츠', '32': '숙박', '38': '쇼핑', '39': '음식점',
   };
 
   const getProcessedTags = (tags: Tag[] = []) => {
@@ -194,9 +178,7 @@ const SearchResultScreen = () => {
             )}
             {(selectedIndex === 0 ? attractions.slice(0, 3) : attractions).map((attr) => {
               const { visibleTags: attrTags, extraCount: attrExtra } = getProcessedTags(attr.tags);
-              const addrParts = attr.address.split(' ');
-              if (addrParts[0] && CITY_SHORT[addrParts[0]]) addrParts[0] = CITY_SHORT[addrParts[0]];
-              const shortAddr = addrParts.slice(0, 2).join(' ');
+              const shortAddr = shortAddress(attr.address);
               return (
                 <TouchableOpacity
                   key={`attr-${attr.id}`}
@@ -267,9 +249,7 @@ const SearchResultScreen = () => {
             )}
             {(selectedIndex === 0 ? attractions.slice(0, 3) : attractions).map((spot) => {
               const { visibleTags: spotTags, extraCount: spotExtra } = getProcessedTags(spot.tags);
-              const spotAddrParts = spot.address.split(' ');
-              if (spotAddrParts[0] && CITY_SHORT[spotAddrParts[0]]) spotAddrParts[0] = CITY_SHORT[spotAddrParts[0]];
-              const spotShortAddr = spotAddrParts.slice(0, 2).join(' ');
+              const spotShortAddr = shortAddress(spot.address);
               return (
                 <TouchableOpacity
                   key={`spot-${spot.id}`}
@@ -330,47 +310,39 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.light.background },
   headerWrapper: { paddingBottom: Spacing.v.small },
   tabContainer: { flexDirection: 'row', height: 32, position: 'relative' },
-  backgroundLine: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 1, backgroundColor: Colors.light.grayLight },
+  backgroundLine: { position: 'absolute', bottom: 0, left: 0, right: 0, height: Spacing.lw.small, backgroundColor: Colors.light.grayLight },
   tabItem: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   tabText: { ...Typography.subtitle1 },
-  indicator: { position: 'absolute', bottom: 0, left: 0, height: 1, backgroundColor: Colors.light.black, zIndex: 1 },
+  indicator: { position: 'absolute', bottom: 0, left: 0, height: Spacing.lw.small, backgroundColor: Colors.light.black, zIndex: 1 },
   mainContent: { flex: 1, paddingTop: Spacing.v.medium },
-  
-  // 🚀 최하단 여백 64pt 설정
   scrollContainer: { paddingBottom: 64 },
-
-  // 🚀 타이틀(하단 항목)의 32pt 위에 위치하도록 설정
-  nextSectionWrapper: { marginTop: 32 },
-
+  nextSectionWrapper: { marginTop: Spacing.v.large },
   sectionHeader: { paddingHorizontal: Spacing.h.medium, marginBottom: Spacing.v.medium },
   sectionTitle: { ...Typography.title1, color: Colors.light.black, marginBottom: Spacing.v.small },
   cardButton: {
     minHeight: 106,
     marginHorizontal: Spacing.h.medium,
-    marginBottom: 16, // 카드 하단 16pt 여백
+    marginBottom: Spacing.v.medium,
     backgroundColor: Colors.light.white,
     borderRadius: Spacing.r.small,
     borderWidth: Spacing.lw.small,
     borderColor: Colors.light.grayLight,
-    padding: 16,
+    padding: Spacing.h.medium,
     justifyContent: 'center',
   },
   cardInner: { flexDirection: 'row', alignItems: 'flex-start' },
-  imageCircle: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#D9D9D9' },
-  infoContent: { flex: 1, marginLeft: 16 },
-  courseTitle: { ...Typography.title1, color: Colors.light.black, marginBottom: 4 },
-  metadataRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', rowGap: 4, marginBottom: 4 },
+  imageCircle: { width: Size.circleMd, height: Size.circleMd, borderRadius: Size.circleMd / 2, backgroundColor: Colors.light.grayLight },
+  infoContent: { flex: 1, marginLeft: Spacing.h.medium },
+  courseTitle: { ...Typography.title1, color: Colors.light.black, marginBottom: Spacing.h.xsmall },
+  metadataRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', rowGap: Spacing.h.xsmall, marginBottom: Spacing.h.xsmall },
   metadataText: { ...Typography.subtitle1, color: Colors.light.grayDark },
   iconGroup: { flexDirection: 'row', alignItems: 'center' },
   metaChip: { flexDirection: 'row', alignItems: 'center' },
-  iconValue: { ...Typography.subtitle1, color: Colors.light.grayDark, marginLeft: 2 },
+  iconValue: { ...Typography.subtitle1, color: Colors.light.grayDark, marginLeft: Spacing.h.xsmall },
   tagRow: { flexDirection: 'row', alignItems: 'center' },
-  tagText: { ...Typography.body2, color: Colors.light.primary, marginRight: 4 },
-  
-  // 🚀 상단 항목(카드)에서 16pt 떨어지도록 설정
-  // 카드의 marginBottom(16)과 moreButton의 marginTop(0)이 합쳐져 16pt 유지
+  tagText: { ...Typography.body2, color: Colors.light.primary, marginRight: Spacing.h.xsmall },
   emptyState: {
-    paddingTop: 16,
+    paddingTop: Spacing.v.medium,
     alignItems: 'center',
   },
   emptyTitle: {
@@ -380,9 +352,9 @@ const styles = StyleSheet.create({
   emptyDesc: {
     ...Typography.body2,
     color: Colors.light.grayLight,
-    marginTop: 16,
+    marginTop: Spacing.v.medium,
   },
-  moreButton: { marginTop: 0, alignSelf: 'flex-end', marginRight: 16, paddingVertical: 8 },
+  moreButton: { marginTop: 0, alignSelf: 'flex-end', marginRight: Spacing.h.medium, paddingVertical: Spacing.v.small },
   moreButtonText: { ...Typography.button4, color: Colors.light.primary }
 });
 

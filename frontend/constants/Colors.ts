@@ -28,6 +28,7 @@ export const Colors = {
     heart: '#F24C54',
     error: '#F24C54',
     skyBlue: '#33A7EA',
+    overlay: 'rgba(0, 0, 0, 0.25)',
   },
   dark: {
     // 다크모드는 현재 배경과 텍스트를 반전시킨 기본값입니다.

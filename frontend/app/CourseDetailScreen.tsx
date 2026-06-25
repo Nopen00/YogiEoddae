@@ -20,35 +20,12 @@ import type { Media, MediaPlace, Schedule } from '../services/types';
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Shadow } from 'react-native-shadow-2';
-
-const MEDIA_TYPE_LABEL: Record<string, string> = {
-  drama: '드라마', movie: '영화', youtube: '유튜브', etc: '기타',
-};
-
-const CITY_SHORT: Record<string, string> = {
-  '서울특별시': '서울', '부산광역시': '부산', '대구광역시': '대구',
-  '인천광역시': '인천', '광주광역시': '광주', '대전광역시': '대전',
-  '울산광역시': '울산', '세종특별자치시': '세종', '경기도': '경기',
-  '강원특별자치도': '강원', '강원도': '강원', '충청북도': '충북',
-  '충청남도': '충남', '전라북도': '전북', '전북특별자치도': '전북',
-  '전라남도': '전남', '경상북도': '경북', '경상남도': '경남',
-  '제주특별자치도': '제주',
-};
-
-const shortAddress = (address: string) => {
-  const parts = address.split(' ');
-  if (parts[0] && CITY_SHORT[parts[0]]) parts[0] = CITY_SHORT[parts[0]];
-  return parts.slice(0, 2).join(' ');
-};
+import { CATEGORY_LABEL, MEDIA_TYPE_LABEL, shortAddress } from '@/constants/labels';
+import { Size } from '@/constants/Size';
 
 const formatLikeCount = (count: number): string => {
   if (count < 100) return count.toString();
   return (Math.floor(count / 100) * 100).toLocaleString() + '+';
-};
-
-const CATEGORY_LABEL: Record<string, string> = {
-  '12': '관광지', '14': '문화시설', '15': '축제/행사',
-  '25': '여행코스', '28': '레포츠', '32': '숙박', '38': '쇼핑', '39': '음식점',
 };
 
 const CourseDetailScreen = () => {
@@ -121,7 +98,7 @@ const CourseDetailScreen = () => {
           }
         />
 
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Spacing.v.large }}>
           {/* 메인 이미지 */}
           <View style={[styles.imageContainer, { width: imageWidth, height: imageHeight }]}>
             <Image source={{ uri: media?.thumbnail_url ?? undefined }} style={styles.mainImage} resizeMode="cover" />
@@ -182,7 +159,7 @@ const CourseDetailScreen = () => {
             </View>
             <Text style={styles.mediaDescText}>{media?.description}</Text>
 
-            <Divider marginTop={32} />
+            <Divider marginTop={Spacing.v.large} />
 
             {/* 촬영지 섹션 타이틀 */}
             <Text style={styles.locationSectionTitle}>{media?.title} 속 촬영지</Text>
@@ -193,7 +170,7 @@ const CourseDetailScreen = () => {
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={[styles.locationScrollContent, { paddingHorizontal: Spacing.h.medium }]}
-            style={{ marginTop: 16 }}
+            style={{ marginTop: Spacing.v.medium }}
           >
             {mediaPlaces.map((mp) => (
               <View key={mp.id} style={[styles.locationImageBox, { width: smallImageWidth, height: smallImageHeight }]}>
@@ -203,13 +180,13 @@ const CourseDetailScreen = () => {
           </ScrollView>
 
           <View style={styles.infoContainer}>
-            <Divider marginTop={32} />
+            <Divider marginTop={Spacing.v.large} />
 
             {/* 코스 섹션 */}
             <Text style={styles.courseSectionTitle}>코스</Text>
 
             {sortedDays.map((dayNum, dayIndex) => (
-              <View key={dayNum} style={dayIndex > 0 ? { marginTop: 32 } : undefined}>
+              <View key={dayNum} style={dayIndex > 0 ? { marginTop: Spacing.v.large } : undefined}>
                 <View style={styles.dayRow}>
                   <Text style={styles.dayText}>Day {dayNum}</Text>
                 </View>
@@ -222,7 +199,7 @@ const CourseDetailScreen = () => {
                       </View>
                     </View>
 
-                    <View style={{ width: 16 }} />
+                    <View style={{ width: Spacing.h.medium }} />
 
                     <TouchableOpacity
                       style={{ flex: 1 }}
@@ -260,13 +237,13 @@ const CourseDetailScreen = () => {
             {/* 포토스팟 섹션 */}
             {mediaPlaces.length > 0 && (
               <>
-                <Divider marginTop={32} />
+                <Divider marginTop={Spacing.v.large} />
                 <Text style={styles.photoSpotTitle}>포토스팟</Text>
                 {mediaPlaces.map((mp, index) => (
-                  <View key={mp.id} style={[styles.photoSpotBox, index > 0 && { marginTop: 8 }]}>
+                  <View key={mp.id} style={[styles.photoSpotBox, index > 0 && { marginTop: Spacing.v.small }]}>
                     <View style={styles.photoSpotItem}>
                       <Image source={{ uri: mp.place.image_url ?? undefined }} style={styles.photoSpotImage} />
-                      <View style={{ width: 16 }} />
+                      <View style={{ width: Spacing.h.medium }} />
                       <View style={styles.photoSpotContent}>
                         <Text style={styles.photoSpotItemTitle}>{mp.place.name}</Text>
                         <View style={styles.photoSpotMetaRow}>
@@ -307,44 +284,42 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.light.background },
   moreButtonWrapper: { position: 'relative', alignItems: 'flex-end' },
   imageContainer: {
-    marginTop: 8,
+    marginTop: Spacing.v.small,
     marginHorizontal: Spacing.h.medium,
     borderRadius: Spacing.r.small,
     overflow: 'hidden',
     backgroundColor: Colors.light.grayLight,
   },
   mainImage: { width: '100%', height: '100%' },
-  infoContainer: { paddingHorizontal: Spacing.h.medium, marginTop: 16 },
+  infoContainer: { paddingHorizontal: Spacing.h.medium, marginTop: Spacing.v.medium },
   titleText: { ...Typography.HeadLine5, color: Colors.light.black },
   metaText: { ...Typography.body2, color: Colors.light.grayDark },
   iconTextRow: { flexDirection: 'row', alignItems: 'center' },
   tagText: { ...Typography.body2, color: Colors.light.primary },
-  
-  // 버튼 그룹 스타일
   actionButtonGroup: {
     flexDirection: 'row',
-    justifyContent: 'space-between', // 화면 길이에 따라 간격 자동 조절
-    marginTop: 16, // 태그 16pt 아래
-    paddingHorizontal: 16, // 부모 컨테이너(16) + 이 패딩(16) = 전체화면 32pt 여백
+    justifyContent: 'space-between',
+    marginTop: Spacing.v.medium,
+    paddingHorizontal: Spacing.h.medium,
   },
   actionButton: {
-    alignItems: 'center', // 아이콘과 텍스트 한 그룹으로 정렬
-    width: 64, // 텍스트 너비 고려
+    alignItems: 'center',
+    width: 64,
   },
   actionButtonText: {
     ...Typography.button4,
     color: Colors.light.grayDark,
-    marginTop: 8,
+    marginTop: Spacing.v.small,
   },
   mediaTitleText: {
     ...Typography.title1,
     color: Colors.light.black,
-    marginTop: 16,
+    marginTop: Spacing.v.medium,
   },
   mediaImageContainer: {
-    marginTop: 16,
+    marginTop: Spacing.v.medium,
     width: '100%',
-    borderRadius: 8,
+    borderRadius: Spacing.r.small,
     overflow: 'hidden',
     backgroundColor: Colors.light.grayLight,
   },
@@ -352,18 +327,18 @@ const styles = StyleSheet.create({
   mediaDescText: {
     ...Typography.body2,
     color: Colors.light.black,
-    marginTop: 16,
+    marginTop: Spacing.v.medium,
   },
   locationSectionTitle: {
     ...Typography.title1,
     color: Colors.light.black,
-    marginTop: 32,
+    marginTop: Spacing.v.large,
   },
   locationScrollContent: {
-    gap: 8,
+    gap: Spacing.v.small,
   },
   locationImageBox: {
-    borderRadius: 8,
+    borderRadius: Spacing.r.small,
     overflow: 'hidden',
     backgroundColor: Colors.light.grayLight,
   },
@@ -375,12 +350,12 @@ const styles = StyleSheet.create({
   courseSectionTitle: {
     ...Typography.title1,
     color: Colors.light.black,
-    marginTop: 32,
+    marginTop: Spacing.v.large,
   },
   dayRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: Spacing.v.small,
   },
   dayText: {
     ...Typography.title2,
@@ -389,23 +364,23 @@ const styles = StyleSheet.create({
   dayDateText: {
     ...Typography.subtitle1,
     color: Colors.light.grayDark,
-    marginLeft: 8,
+    marginLeft: Spacing.h.small,
   },
   placeRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginTop: 8,
+    marginTop: Spacing.v.small,
   },
   placeNumberColumn: {
-    width: 16,
+    width: Spacing.h.medium,
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'stretch',
   },
   placeCircle: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    width: Spacing.h.medium,
+    height: Spacing.h.medium,
+    borderRadius: Spacing.r.small,
     backgroundColor: Colors.light.grayLight,
     justifyContent: 'center',
     alignItems: 'center',
@@ -416,7 +391,7 @@ const styles = StyleSheet.create({
   },
   connectingLine: {
     flex: 1,
-    width: 1,
+    width: Spacing.lw.small,
     backgroundColor: Colors.light.grayLight,
   },
   courseCard: {
@@ -424,20 +399,20 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     height: 102,
     backgroundColor: Colors.light.white,
-    borderRadius: 8,
-    paddingTop: 8,
-    paddingBottom: 8,
-    paddingLeft: 8,
+    borderRadius: Spacing.r.small,
+    paddingTop: Spacing.v.small,
+    paddingBottom: Spacing.v.small,
+    paddingLeft: Spacing.h.small,
   },
   courseCardImage: {
     width: 86,
     height: 86,
-    borderRadius: 4,
+    borderRadius: Spacing.r.xsmall,
     backgroundColor: Colors.light.grayLight,
   },
   cardContent: {
     flex: 1,
-    marginLeft: 8,
+    marginLeft: Spacing.h.small,
     alignSelf: 'stretch',
   },
   cardNameRow: {
@@ -447,7 +422,7 @@ const styles = StyleSheet.create({
   cardSubRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: Spacing.v.small,
   },
   cardSubText: {
     ...Typography.body2,
@@ -456,16 +431,16 @@ const styles = StyleSheet.create({
   placeNameText: {
     ...Typography.subtitle2,
     color: Colors.light.black,
-    marginRight: 8,
+    marginRight: Spacing.h.small,
   },
   routeButton: {
     position: 'absolute',
     bottom: 0,
-    right: 8,
+    right: Spacing.h.small,
     height: 24,
-    paddingHorizontal: 16,
+    paddingHorizontal: Spacing.h.medium,
     backgroundColor: Colors.light.white,
-    borderWidth: 1,
+    borderWidth: Spacing.lw.small,
     borderColor: Colors.light.grayLight,
     borderRadius: 12,
     justifyContent: 'center',
@@ -478,31 +453,31 @@ const styles = StyleSheet.create({
   ratingText: {
     ...Typography.body1,
     color: Colors.light.grayDark,
-    marginLeft: 2,
+    marginLeft: Spacing.h.xsmall,
   },
   photoSpotTitle: {
     ...Typography.title1,
     color: Colors.light.black,
-    marginTop: 32,
+    marginTop: Spacing.v.large,
   },
   photoSpotBox: {
-    marginTop: 16,
+    marginTop: Spacing.v.medium,
     backgroundColor: Colors.light.white,
-    borderWidth: 1,
+    borderWidth: Spacing.lw.small,
     borderColor: Colors.light.grayLight,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 16,
+    borderRadius: Spacing.r.small,
+    paddingHorizontal: Spacing.h.medium,
+    paddingTop: Spacing.v.medium,
+    paddingBottom: Spacing.v.medium,
   },
   photoSpotItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
   },
   photoSpotImage: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: Size.circleMd,
+    height: Size.circleMd,
+    borderRadius: Size.circleMd / 2,
     backgroundColor: Colors.light.grayLight,
   },
   photoSpotContent: {
@@ -515,7 +490,7 @@ const styles = StyleSheet.create({
   photoSpotMetaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: Spacing.v.small,
   },
   photoSpotAddress: {
     ...Typography.subtitle1,
@@ -524,12 +499,12 @@ const styles = StyleSheet.create({
   photoSpotLikes: {
     ...Typography.subtitle1,
     color: Colors.light.grayDark,
-    marginLeft: 2,
+    marginLeft: Spacing.h.xsmall,
   },
   photoSpotTags: {
     flexDirection: 'row',
-    marginTop: 8,
-    gap: 4,
+    marginTop: Spacing.v.small,
+    gap: Spacing.h.xsmall,
   },
   photoSpotTag: {
     ...Typography.body2,

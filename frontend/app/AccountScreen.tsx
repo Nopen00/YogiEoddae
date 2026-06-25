@@ -2,6 +2,7 @@
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { Colors } from '@/constants/Colors';
 import { IconSize } from '@/constants/IconSize';
+import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import * as Clipboard from 'expo-clipboard';
@@ -125,47 +126,47 @@ const AccountScreen = () => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.light.background },
   body: {
-    marginTop: 16,
-    paddingHorizontal: 16,
+    marginTop: Spacing.v.medium,
+    paddingHorizontal: Spacing.h.medium,
   },
   sectionLabel: { ...Typography.title1, color: Colors.light.black },
   codeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 16,
+    marginTop: Spacing.v.medium,
   },
   codeText: { ...Typography.body3, color: Colors.light.grayDark, flex: 1 },
   codeActions: { flexDirection: 'row', alignItems: 'center' },
-  eyeButton: { marginLeft: 8 },
-  inputLabel: { ...Typography.title1, color: Colors.light.black, marginTop: 16 },
+  eyeButton: { marginLeft: Spacing.h.small },
+  inputLabel: { ...Typography.title1, color: Colors.light.black, marginTop: Spacing.v.medium },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 16,
+    marginTop: Spacing.v.medium,
   },
   inputBox: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    height: 40,
-    borderRadius: 8,
-    borderWidth: 1,
+    height: Size.buttonSm,
+    borderRadius: Spacing.r.small,
+    borderWidth: Spacing.lw.small,
     borderColor: Colors.light.grayLight,
     backgroundColor: Colors.light.white,
   },
   textInput: {
     flex: 1,
-    paddingLeft: 16,
+    paddingLeft: Spacing.h.medium,
     paddingVertical: 0,
     textAlignVertical: 'center',
     ...Typography.body3,
   },
-  clearButton: { marginLeft: 8, marginRight: 16 },
+  clearButton: { marginLeft: Spacing.h.small, marginRight: Spacing.h.medium },
   submitButton: {
     width: 80,
-    height: 40,
-    marginLeft: 16,
-    borderRadius: 8,
+    height: Size.buttonSm,
+    marginLeft: Spacing.h.medium,
+    borderRadius: Spacing.r.small,
     backgroundColor: Colors.light.dark,
     justifyContent: 'center',
     alignItems: 'center',
@@ -174,26 +175,26 @@ const styles = StyleSheet.create({
   warningRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 16,
+    marginTop: Spacing.v.medium,
   },
-  warningText: { ...Typography.body2, color: Colors.light.error, marginLeft: 4 },
+  warningText: { ...Typography.body2, color: Colors.light.error, marginLeft: Spacing.h.xsmall },
 
   // 팝업
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.25)',
+    backgroundColor: Colors.light.overlay,
     justifyContent: 'center',
     alignItems: 'center',
   },
   popup: {
     width: SCREEN_WIDTH - 64,
     height: 142,
-    borderRadius: 8,
-    borderWidth: 1,
+    borderRadius: Spacing.r.small,
+    borderWidth: Spacing.lw.small,
     borderColor: Colors.light.grayLight,
     backgroundColor: Colors.light.white,
-    paddingTop: 16,
-    paddingHorizontal: 16,
+    paddingTop: Spacing.v.medium,
+    paddingHorizontal: Spacing.h.medium,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.25,
@@ -208,19 +209,19 @@ const styles = StyleSheet.create({
   popupDesc: {
     ...Typography.body2,
     color: Colors.light.error,
-    marginTop: 16,
+    marginTop: Spacing.v.medium,
     textAlign: 'center',
   },
   popupButtons: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 16,
-    marginTop: 16,
+    gap: Spacing.h.medium,
+    marginTop: Spacing.v.medium,
   },
   btnComplete: {
     width: 80,
-    height: 40,
-    borderRadius: 8,
+    height: Size.buttonSm,
+    borderRadius: Spacing.r.small,
     backgroundColor: Colors.light.grayLight,
     justifyContent: 'center',
     alignItems: 'center',
@@ -228,8 +229,8 @@ const styles = StyleSheet.create({
   btnCompleteText: { ...Typography.button2, color: Colors.light.grayDark },
   btnCancel: {
     width: 80,
-    height: 40,
-    borderRadius: 8,
+    height: Size.buttonSm,
+    borderRadius: Spacing.r.small,
     backgroundColor: Colors.light.error,
     justifyContent: 'center',
     alignItems: 'center',
@@ -237,12 +238,12 @@ const styles = StyleSheet.create({
   btnCancelText: { ...Typography.button2, color: Colors.light.white },
   resultPopup: {
     width: SCREEN_WIDTH - 64,
-    borderRadius: 8,
-    borderWidth: 1,
+    borderRadius: Spacing.r.small,
+    borderWidth: Spacing.lw.small,
     borderColor: Colors.light.grayLight,
     backgroundColor: Colors.light.white,
-    paddingVertical: 16,
-    paddingHorizontal: 16,
+    paddingVertical: Spacing.v.medium,
+    paddingHorizontal: Spacing.h.medium,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.25,
@@ -251,7 +252,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   resultTitle: { ...Typography.subtitle2, color: Colors.light.black, textAlign: 'center' },
-  resultDesc: { ...Typography.body2, color: Colors.light.grayDark, textAlign: 'center', marginTop: 16 },
+  resultDesc: { ...Typography.body2, color: Colors.light.grayDark, textAlign: 'center', marginTop: Spacing.v.medium },
 });
 
 export default AccountScreen;

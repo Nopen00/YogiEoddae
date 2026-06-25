@@ -1,6 +1,7 @@
 // components\make_component\SearchBar.tsx
 import { Colors } from '@/constants/Colors';
 import { IconSize } from '@/constants/IconSize';
+import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { X } from 'lucide-react-native';
@@ -41,13 +42,13 @@ const styles = StyleSheet.create({
   },
   searchBarContainer: {
     flex: 1,
-    height: 56,
+    height: Size.header,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.light.white,
     borderWidth: Spacing.lw.small,
     borderColor: Colors.light.grayLight,
-    borderRadius: 56,
+    borderRadius: Size.header,
     paddingHorizontal: Spacing.h.medium,
   },
   searchInput: {

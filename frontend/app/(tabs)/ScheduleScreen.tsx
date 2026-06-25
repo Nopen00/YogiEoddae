@@ -8,6 +8,8 @@ import { type DateRange, NewScheduleAlert } from '@/components/modals/NewSchedul
 import { NewScheduleStep3Alert } from '@/components/modals/NewScheduleStep3Alert';
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
+import { MEDIA_TYPE_LABEL } from '@/constants/labels';
+import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -30,10 +32,6 @@ import type { Media, MediaPlace, Place, Schedule } from '../../services/types';
 const TABS = ['내 일정', '과거 일정', '저장소'];
 const { width } = Dimensions.get('window');
 const TAB_WIDTH = width / TABS.length;
-
-const MEDIA_TYPE_LABEL: Record<string, string> = {
-  drama: '드라마', movie: '영화', youtube: '유튜브', etc: '기타',
-};
 
 const formatDate = (dateStr: string | null) => {
   if (!dateStr) return '';
@@ -83,7 +81,7 @@ const SectionWrapper = ({
 }) => (
   <View style={style}>
     <Text style={styles.sectionTitle}>{title}</Text>
-    <Divider marginTop={8} style={{ marginHorizontal: 16 }} />
+    <Divider marginTop={Spacing.v.small} style={{ marginHorizontal: Spacing.h.medium }} />
     {!isEmpty && children}
     {showAdd && (
       <TouchableOpacity style={styles.addScheduleButton} activeOpacity={0.8} onPress={onAddPress}>
@@ -427,31 +425,31 @@ export default function ScheduleScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.light.background },
   tabContainer: { flexDirection: 'row', height: 32, position: 'relative' },
-  backgroundLine: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 1, backgroundColor: Colors.light.grayLight },
+  backgroundLine: { position: 'absolute', bottom: 0, left: 0, right: 0, height: Spacing.lw.small, backgroundColor: Colors.light.grayLight },
   tabItem: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   tabText: { ...Typography.subtitle1 },
-  indicator: { position: 'absolute', bottom: 0, left: 0, height: 1, backgroundColor: Colors.light.black, zIndex: 1 },
-  addScheduleButton: { marginTop: Spacing.v.medium, marginHorizontal: Spacing.h.medium, height: 48, borderRadius: Spacing.r.small, backgroundColor: Colors.light.grayLight, justifyContent: 'center', alignItems: 'center' },
+  indicator: { position: 'absolute', bottom: 0, left: 0, height: Spacing.lw.small, backgroundColor: Colors.light.black, zIndex: 1 },
+  addScheduleButton: { marginTop: Spacing.v.medium, marginHorizontal: Spacing.h.medium, height: Size.buttonMd, borderRadius: Spacing.r.small, backgroundColor: Colors.light.grayLight, justifyContent: 'center', alignItems: 'center' },
   addCircle: { width: 30, height: 30, borderRadius: 15, backgroundColor: Colors.light.white, justifyContent: 'center', alignItems: 'center' },
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: Spacing.v.medium },
   emptyTitle: { ...Typography.subtitle2, color: Colors.light.black },
   emptySubtitle: { ...Typography.body2, color: Colors.light.grayLight },
   scrollView: { flex: 1 },
-  scrollContent: { paddingTop: 16, paddingBottom: Spacing.v.large },
+  scrollContent: { paddingTop: Spacing.v.medium, paddingBottom: Spacing.v.large },
   scrollContentOther: { paddingTop: 0, paddingBottom: Spacing.v.large },
-  sectionTitle: { ...Typography.title1, color: Colors.light.black, paddingLeft: 16 },
-  secondSection: { marginTop: 32 },
-  card: { flexDirection: 'row', alignItems: 'flex-start', marginHorizontal: 16, marginTop: 16, borderRadius: 8, borderWidth: 1, borderColor: Colors.light.grayLight, padding: 16, backgroundColor: Colors.light.white },
-  imageWrapper: { width: 48, height: 48, borderRadius: 24, overflow: 'hidden', flexShrink: 0 },
+  sectionTitle: { ...Typography.title1, color: Colors.light.black, paddingLeft: Spacing.h.medium },
+  secondSection: { marginTop: Spacing.v.large },
+  card: { flexDirection: 'row', alignItems: 'flex-start', marginHorizontal: Spacing.h.medium, marginTop: Spacing.v.medium, borderRadius: Spacing.r.small, borderWidth: Spacing.lw.small, borderColor: Colors.light.grayLight, padding: Spacing.h.medium, backgroundColor: Colors.light.white },
+  imageWrapper: { width: Size.circleMd, height: Size.circleMd, borderRadius: Size.circleMd / 2, overflow: 'hidden', flexShrink: 0 },
   cardImage: { width: '100%', height: '100%' },
-  cardContent: { flex: 1, marginLeft: 16 },
+  cardContent: { flex: 1, marginLeft: Spacing.h.medium },
   cardTitle: { ...Typography.title1, color: Colors.light.black },
-  infoRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 4 },
+  infoRow: { flexDirection: 'row', alignItems: 'center', marginTop: Spacing.v.small, gap: Spacing.h.xsmall },
   infoText: { ...Typography.subtitle1, color: Colors.light.grayDark },
   infoSep: { ...Typography.subtitle1, color: Colors.light.grayDark },
   tagText: { ...Typography.body2, color: Colors.light.primary },
-  moreIconWrapper: { alignSelf: 'center', marginLeft: 16 },
-  sectionEmpty: { alignItems: 'center', marginTop: 16, paddingVertical: 16 },
+  moreIconWrapper: { alignSelf: 'center', marginLeft: Spacing.h.medium },
+  sectionEmpty: { alignItems: 'center', marginTop: Spacing.v.medium, paddingVertical: Spacing.v.medium },
   sectionEmptyTitle: { ...Typography.subtitle2, color: Colors.light.black },
-  sectionEmptySubtitle: { ...Typography.body2, color: Colors.light.grayLight, marginTop: 8 },
+  sectionEmptySubtitle: { ...Typography.body2, color: Colors.light.grayLight, marginTop: Spacing.v.small },
 });

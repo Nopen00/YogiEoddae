@@ -5,6 +5,7 @@ export const Spacing = {
   v: {
     small: 8,
     medium: 16,
+    large24: 24,
     large: 32,
     xlarge: 48,
     xxlarge: 56,
@@ -19,6 +20,7 @@ export const Spacing = {
   },
   // 둥근 모서리 (radius)
   r: {
+    xsmall: 4,
     small: 8,
     medium: 16,
   },

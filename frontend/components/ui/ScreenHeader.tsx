@@ -1,5 +1,6 @@
 ﻿import { BackButton } from '@/components/ui/BackButton';
 import { Colors } from '@/constants/Colors';
+import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import React, { ReactNode } from 'react';
@@ -32,7 +33,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: Spacing.v.small,
     paddingHorizontal: Spacing.h.medium,
-    height: 56,
+    height: Size.header,
   },
   title: {
     ...Typography.HeadLine5,
