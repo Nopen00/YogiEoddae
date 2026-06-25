@@ -89,19 +89,17 @@ export const MoreMenuAlert = ({ isSaved, onSavePress, onSchedulePress }: MoreMen
 
 const styles = StyleSheet.create({
   alertContainer: {
-    width: 107,
-    height: 122,
-
     backgroundColor: Colors.light.white,
-    borderRadius: 8,
-    borderWidth: 1,
+    borderRadius: Spacing.r.small,
+    borderWidth: Spacing.lw.small,
     borderColor: Colors.light.grayLight,
 
     position: 'absolute',
-    top: 48,
+    top: Spacing.v.xlarge,
     right: Spacing.h.medium,
 
-    paddingTop: 8,
+    paddingVertical: Spacing.v.small,
+    paddingRight: Spacing.h.medium,
     zIndex: 9999,
 
     ...Platform.select({
@@ -123,20 +121,20 @@ const styles = StyleSheet.create({
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingLeft: 16,
-    height: 24,
+    paddingLeft: Spacing.h.medium,
+    height: IconSize.large,
   },
 
   menuText: {
-    marginLeft: 8,
+    marginLeft: Spacing.h.small,
     ...Typography.button4,
     color: Colors.light.black,
   },
 
   separator: {
-    height: 1,
+    height: Spacing.lw.small,
     width: '100%',
-    marginVertical: 8,
+    marginVertical: Spacing.v.small,
     backgroundColor: Colors.light.grayLight,
   },
 });

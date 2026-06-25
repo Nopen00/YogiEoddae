@@ -3,10 +3,12 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Home, MapPin, Settings, Calendar } from 'lucide-react-native';
-import { Typography } from '@/constants/Typography';
+import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
+import { Spacing } from '@/constants/Spacing';
+import { Typography } from '@/constants/Typography';
 
-const ICON_COLOR = '#0C0C0C';
+const ICON_COLOR = Colors.light.black;
 const ICON_SIZE = IconSize.large;
 const ICON_STROKE = IconStroke.regular;
 
@@ -41,17 +43,17 @@ export default function BottomTabBar() {
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    backgroundColor: '#D6D6D6',
-    paddingTop: 8,
-    paddingHorizontal: 32,
+    backgroundColor: Colors.light.grayLight,
+    paddingTop: Spacing.v.small,
+    paddingHorizontal: Spacing.h.xlarge,
     justifyContent: 'space-between',
   },
   tab: {
     alignItems: 'center',
-    gap: 8,
+    gap: Spacing.v.small,
   },
   label: {
     ...Typography.button4,
-    color: '#0C0C0C',
+    color: Colors.light.black,
   },
 });

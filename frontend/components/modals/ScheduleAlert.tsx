@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.25)', justifyContent: 'center', paddingHorizontal: 16 },
   alertContainer: { backgroundColor: Colors.light.white, borderRadius: 8, borderWidth: 1, borderColor: Colors.light.grayLight, paddingBottom: 24 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16 },
-  headerTitle: { ...Typography.HeadLine7, color: Colors.light.black },
+  headerTitle: { ...Typography.title1, color: Colors.light.black },
   currentSectionWrapper: { marginTop: 16 },
   emptyContainer: { alignItems: 'center', paddingVertical: 16 },
   emptyTitle: { ...Typography.subtitle2, color: Colors.light.black, marginBottom: 16 },

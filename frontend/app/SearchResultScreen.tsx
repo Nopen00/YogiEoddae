@@ -343,7 +343,7 @@ const styles = StyleSheet.create({
   nextSectionWrapper: { marginTop: 32 },
 
   sectionHeader: { paddingHorizontal: Spacing.h.medium, marginBottom: Spacing.v.medium },
-  sectionTitle: { ...Typography.HeadLine7, color: Colors.light.black, marginBottom: Spacing.v.small },
+  sectionTitle: { ...Typography.title1, color: Colors.light.black, marginBottom: Spacing.v.small },
   cardButton: {
     minHeight: 106,
     marginHorizontal: Spacing.h.medium,

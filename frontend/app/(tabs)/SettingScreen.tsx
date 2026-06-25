@@ -2,6 +2,7 @@
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { Colors } from '@/constants/Colors';
 import { IconSize } from '@/constants/IconSize';
+import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { useRouter } from 'expo-router';
 import { ChevronRight } from 'lucide-react-native';
@@ -20,7 +21,7 @@ const SettingScreen = () => {
         <Text style={styles.menuLabel}>계정</Text>
         <ChevronRight size={IconSize.large} color={Colors.light.grayDark} />
       </TouchableOpacity>
-      <Divider style={{ marginHorizontal: 16 }} />
+      <Divider style={{ marginHorizontal: Spacing.h.medium }} />
     </SafeAreaView>
   );
 };
@@ -31,8 +32,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    marginTop: 16,
+    paddingHorizontal: Spacing.h.medium,
+    marginTop: Spacing.v.medium,
   },
   menuLabel: { ...Typography.title1, color: Colors.light.black },
 });
