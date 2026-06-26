@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, usePathname } from 'expo-router';
 import { Home, MapPin, Settings, Calendar } from 'lucide-react-native';
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
@@ -15,13 +15,25 @@ const ICON_STROKE = IconStroke.regular;
 const TAB_ITEMS = [
   { label: '홈',  Icon: Home,     href: '/(tabs)/MainScreen' as const },
   { label: '코스', Icon: MapPin,   href: null },
-  { label: '일정', Icon: Calendar, href: '/(tabs)/ScheduleScreen' as const },
-  { label: '설정', Icon: Settings,  href: '/(tabs)/SettingScreen' as const },
+  { label: '일정', Icon: Calendar, href: '/ScheduleScreen' as const },
+  { label: '설정', Icon: Settings,  href: '/SettingScreen' as const },
 ];
 
 export default function BottomTabBar() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const pathname = usePathname();
+
+  const handleTabPress = (href: string) => {
+    if (href === '/(tabs)/MainScreen') {
+      router.navigate(href);
+      return;
+    }
+    const routeName = href.split('/').pop()!;
+    if (pathname !== `/${routeName}`) {
+      router.push(href as any);
+    }
+  };
 
   return (
     <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, 16) }]}>
@@ -30,7 +42,7 @@ export default function BottomTabBar() {
           key={index}
           style={styles.tab}
           activeOpacity={0.7}
-          onPress={() => href && router.navigate(href)}
+          onPress={() => href && handleTabPress(href)}
         >
           <Icon size={ICON_SIZE} color={ICON_COLOR} strokeWidth={ICON_STROKE} />
           <Text style={styles.label}>{label}</Text>

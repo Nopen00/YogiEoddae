@@ -26,8 +26,8 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { mediaApi, placeApi, scheduleApi } from '../../services/api';
-import type { DailyPlace, Media, MediaPlace, Place, Schedule } from '../../services/types';
+import { mediaApi, placeApi, scheduleApi } from '../services/api';
+import type { DailyPlace, Media, MediaPlace, Place, Schedule } from '../services/types';
 
 const TABS = ['내 일정', '과거 일정', '저장소'];
 const { width } = Dimensions.get('window');
@@ -280,7 +280,7 @@ export default function ScheduleScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       {/* 상단 바 */}
-      <ScreenHeader onBack={() => router.navigate('/(tabs)/MainScreen')} title="일정" style={{ zIndex: 10 }} />
+      <ScreenHeader onBack={() => router.back()} title="일정" />
 
       {/* 탭 분류 */}
       <View style={styles.tabContainer}>

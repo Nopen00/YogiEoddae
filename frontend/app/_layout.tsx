@@ -33,6 +33,8 @@ function RootLayoutNav() {
             <Stack.Screen name="SearchResultScreen" options={{ headerShown: false }} />
             <Stack.Screen name="CourseDetailScreen" options={{ headerShown: false }} />
             <Stack.Screen name="PlaceDetailScreen" options={{ headerShown: false }} />
+            <Stack.Screen name="ScheduleScreen" options={{ headerShown: false }} />
+            <Stack.Screen name="SettingScreen" options={{ headerShown: false }} />
             <Stack.Screen name="AccountScreen" options={{ headerShown: false }} />
             <Stack.Screen name="ScheduleDetailScreen" options={{ headerShown: false }} />
           </Stack>

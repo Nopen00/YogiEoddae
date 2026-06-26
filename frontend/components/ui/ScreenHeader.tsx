@@ -19,7 +19,11 @@ export function ScreenHeader({ onBack, title, right, style, children }: ScreenHe
   return (
     <View style={[styles.header, style]}>
       {onBack ? <BackButton onPress={onBack} /> : <View style={styles.rightBalance} />}
-      {title && <Text style={styles.title}>{title}</Text>}
+      {title && (
+        <View style={styles.titleContainer} pointerEvents="none">
+          <Text style={styles.title}>{title}</Text>
+        </View>
+      )}
       {hasFlexContent && <View style={styles.fill}>{children}</View>}
       {right && <View style={styles.rightSlot}>{right}</View>}
       {children && !right && <View style={styles.rightBalance} />}
@@ -35,12 +39,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.h.medium,
     height: Size.header,
   },
-  title: {
-    ...Typography.HeadLine5,
-    color: Colors.light.black,
+  titleContainer: {
     position: 'absolute',
     left: 0,
     right: 0,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  title: {
+    ...Typography.HeadLine5,
+    color: Colors.light.black,
     textAlign: 'center',
   },
   fill: {

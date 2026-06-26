@@ -4,12 +4,10 @@ React Native (Expo) 기반 모바일 앱 프론트엔드입니다.
 
 ---
 
-## 알려진 버그
+## TODO
 
-| 화면 | 증상 | 비고 |
-|------|------|------|
-| ScheduleScreen / SettingScreen | 상단 뒤로가기 버튼 눌러도 이전 화면으로 미이동 | BottomTabBar `router.navigate()` 전환 후에도 미해결 |
-| AccountScreen | 상단 뒤로가기 버튼 눌러도 설정 화면으로 미복귀 | `router.back()` / `router.navigate()` 모두 미작동 |
+하단탭 디자인 변경
+일정 화면 완성(디자인은 계속 만드는중~)
 
 ---
 

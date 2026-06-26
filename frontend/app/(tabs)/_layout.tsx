@@ -29,19 +29,6 @@ export default function TabLayout() {
           title: 'Home',
         }}
       />
-      <Tabs.Screen
-        name="ScheduleScreen"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="SettingScreen"
-        options={{
-          href: null,
-        }}
-      />
-
     </Tabs>
   );
 }
