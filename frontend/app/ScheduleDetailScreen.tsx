@@ -1,8 +1,10 @@
 ﻿// app/ScheduleDetailScreen.tsx
 import { Divider } from '@/components/ui/Divider';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { TagRow } from '@/components/ui/TagRow';
 import { TextSeparator } from '@/components/ui/TextSeparator';
-import { CATEGORY_LABEL, shortAddress } from '@/constants/labels';
+import { CATEGORY_LABEL, MEDIA_TYPE_LABEL, shortAddress } from '@/constants/labels';
+import { Size } from '@/constants/Size';
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
 import { Spacing } from '@/constants/Spacing';
@@ -334,6 +336,42 @@ export default function ScheduleDetailScreen() {
                   ))}
                 </View>
               ))}
+              {schedule?.media && (
+                <>
+                  <Divider style={styles.importedCourseDivider} />
+                  <View style={styles.importedCourseSection}>
+                    <Text style={styles.importedCourseLabel}>가져온 코스</Text>
+                    <TouchableOpacity
+                      style={styles.importedCourseCard}
+                      activeOpacity={0.85}
+                      onPress={() => router.push({ pathname: '/CourseDetailScreen', params: { id: schedule.media!.id } })}
+                    >
+                      <View style={styles.importedCourseImageWrapper}>
+                        <Image
+                          source={{ uri: schedule.media.thumbnail_url ?? undefined }}
+                          style={styles.importedCourseImage}
+                          resizeMode="cover"
+                        />
+                      </View>
+                      <View style={styles.importedCourseContent}>
+                        <Text style={styles.importedCourseTitle} numberOfLines={1}>{schedule.media.title}</Text>
+                        <View style={styles.importedCourseInfoRow}>
+                          <Text style={styles.importedCourseInfoText}>{schedule.media.place_count ?? 0}개 장소</Text>
+                          <TextSeparator />
+                          <Text style={styles.importedCourseInfoText}>{MEDIA_TYPE_LABEL[schedule.media.media_type] ?? schedule.media.media_type}</Text>
+                        </View>
+                        {schedule.media.tags.length > 0 && (
+                          <TagRow>
+                            {schedule.media.tags.map(tag => (
+                              <Text key={tag.id} style={styles.importedCourseTagText}>#{tag.name}</Text>
+                            ))}
+                          </TagRow>
+                        )}
+                      </View>
+                    </TouchableOpacity>
+                  </View>
+                </>
+              )}
             </View>
           </ScrollView>
         </RNAnimated.View>
@@ -413,6 +451,61 @@ const styles = StyleSheet.create({
   },
   panelContentAction: {
     ...Typography.button4,
+    color: Colors.light.primary,
+  },
+  importedCourseDivider: {
+    marginHorizontal: Spacing.h.medium,
+    marginTop: Spacing.v.large,
+  },
+  importedCourseSection: {
+    marginTop: Spacing.v.large,
+    marginHorizontal: Spacing.h.medium,
+  },
+  importedCourseLabel: {
+    ...Typography.title2,
+    color: Colors.light.black,
+  },
+  importedCourseCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginTop: Spacing.v.medium,
+    borderRadius: Spacing.r.small,
+    borderWidth: Spacing.lw.small,
+    borderColor: Colors.light.grayLight,
+    padding: Spacing.h.medium,
+    backgroundColor: Colors.light.white,
+  },
+  importedCourseImageWrapper: {
+    width: Size.circleMd,
+    height: Size.circleMd,
+    borderRadius: Size.circleMd / 2,
+    overflow: 'hidden',
+    flexShrink: 0,
+  },
+  importedCourseImage: {
+    width: '100%',
+    height: '100%',
+  },
+  importedCourseContent: {
+    flex: 1,
+    marginLeft: Spacing.h.medium,
+  },
+  importedCourseTitle: {
+    ...Typography.title1,
+    color: Colors.light.black,
+  },
+  importedCourseInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: Spacing.v.small,
+    gap: Spacing.h.xsmall,
+  },
+  importedCourseInfoText: {
+    ...Typography.subtitle1,
+    color: Colors.light.grayDark,
+  },
+  importedCourseTagText: {
+    ...Typography.body2,
     color: Colors.light.primary,
   },
   dayRow: {

@@ -66,7 +66,7 @@ export interface DailyPlace {
 export interface Schedule {
   id: number;
   title: string;
-  media: Pick<Media, 'id' | 'title' | 'thumbnail_url' | 'media_type' | 'tags'> | null;
+  media: Pick<Media, 'id' | 'title' | 'thumbnail_url' | 'media_type' | 'tags' | 'place_count'> | null;
   start_date: string | null;
   end_date: string | null;
   is_bookmarked: boolean;

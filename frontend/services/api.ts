@@ -73,7 +73,7 @@ export const mediaApi = {
       const newSchedule: Schedule = {
         id: Date.now(),
         title: data?.title ?? media?.title ?? '새 일정',
-        media: media ? { id: media.id, title: media.title, thumbnail_url: media.thumbnail_url, media_type: media.media_type, tags: media.tags } : null,
+        media: media ? { id: media.id, title: media.title, thumbnail_url: media.thumbnail_url, media_type: media.media_type, tags: media.tags, place_count: media.place_count } : null,
         start_date: data?.start_date ?? null,
         end_date: data?.end_date ?? null,
         is_bookmarked: false,
@@ -150,20 +150,44 @@ export const scheduleApi = {
     }
     return apiClient.post<Schedule>('/api/schedules/', data);
   },
-  update: (id: number, data: { title?: string; start_date?: string; end_date?: string }) =>
-    USE_MOCK ? mock({ ...mockScheduleStore[0], ...data }) : apiClient.patch<Schedule>(`/api/schedules/${id}/`, data),
-  remove: (id: number) =>
-    USE_MOCK ? mock({}) : apiClient.delete(`/api/schedules/${id}/`),
+  update: (id: number, data: { title?: string; start_date?: string; end_date?: string }) => {
+    if (USE_MOCK) {
+      const idx = mockScheduleStore.findIndex(s => s.id === id);
+      if (idx !== -1) mockScheduleStore[idx] = { ...mockScheduleStore[idx], ...data };
+      return mock(mockScheduleStore[idx] ?? mockScheduleStore[0]);
+    }
+    return apiClient.patch<Schedule>(`/api/schedules/${id}/`, data);
+  },
+  remove: (id: number) => {
+    if (USE_MOCK) {
+      const idx = mockScheduleStore.findIndex(s => s.id === id);
+      if (idx !== -1) mockScheduleStore.splice(idx, 1);
+      return mock({});
+    }
+    return apiClient.delete(`/api/schedules/${id}/`);
+  },
   addPlace: (id: number, data: { place_id: number; day_number: number; order: number; memo?: string }) =>
     USE_MOCK ? mock({}) : apiClient.post(`/api/schedules/${id}/places/`, data),
   removePlace: (id: number, dpId: number) =>
     USE_MOCK ? mock({}) : apiClient.delete(`/api/schedules/${id}/places/${dpId}/`),
   importSchedule: (id: number, data?: { title?: string; start_date?: string; end_date?: string }) =>
     USE_MOCK ? mock(mockScheduleStore[0]) : apiClient.post<Schedule>(`/api/schedules/${id}/import/`, data),
-  bookmark: (id: number) =>
-    USE_MOCK ? mock({}) : apiClient.post(`/api/schedules/${id}/bookmark/`),
-  unbookmark: (id: number) =>
-    USE_MOCK ? mock({}) : apiClient.delete(`/api/schedules/${id}/bookmark/`),
+  bookmark: (id: number) => {
+    if (USE_MOCK) {
+      const item = mockScheduleStore.find(s => s.id === id);
+      if (item) item.is_bookmarked = true;
+      return mock({});
+    }
+    return apiClient.post(`/api/schedules/${id}/bookmark/`);
+  },
+  unbookmark: (id: number) => {
+    if (USE_MOCK) {
+      const item = mockScheduleStore.find(s => s.id === id);
+      if (item) item.is_bookmarked = false;
+      return mock({});
+    }
+    return apiClient.delete(`/api/schedules/${id}/bookmark/`);
+  },
 };
 
 export const bookmarkApi = {

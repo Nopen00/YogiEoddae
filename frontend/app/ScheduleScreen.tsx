@@ -429,12 +429,27 @@ export default function ScheduleScreen() {
         key={newScheduleKey}
         visible={isNewScheduleVisible}
         onClose={() => setIsNewScheduleVisible(false)}
-        onConfirm={(courseType, name, range) => {
+        onConfirm={async (courseType, name, range) => {
+          const fmt = (n: number) => String(n).padStart(2, '0');
+          const startDate = `${range.year}-${fmt(range.month + 1)}-${fmt(range.startDay)}`;
+          const endDate = `${range.year}-${fmt(range.month + 1)}-${fmt(range.endDay)}`;
           if (courseType === 'import') {
             setScheduleData({ name, range });
             setIsNewScheduleVisible(false);
             handleTabPress(2);
             setIsCourseSelectVisible(true);
+          } else {
+            try {
+              const res = await scheduleApi.create({ title: name, start_date: startDate, end_date: endDate });
+              const created = res.data;
+              if (isExpired(created.end_date)) {
+                setPastSchedules(prev => [...prev, created]);
+              } else {
+                setMySchedules(prev => [...prev, created]);
+              }
+              setIsNewScheduleVisible(false);
+              router.push({ pathname: '/ScheduleDetailScreen', params: { id: created.id, title: name } });
+            } catch {}
           }
         }}
       />
