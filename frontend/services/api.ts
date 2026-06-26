@@ -168,8 +168,36 @@ export const scheduleApi = {
   },
   addPlace: (id: number, data: { place_id: number; day_number: number; order: number; memo?: string }) =>
     USE_MOCK ? mock({}) : apiClient.post(`/api/schedules/${id}/places/`, data),
-  removePlace: (id: number, dpId: number) =>
-    USE_MOCK ? mock({}) : apiClient.delete(`/api/schedules/${id}/places/${dpId}/`),
+  removePlace: (id: number, dpId: number) => {
+    if (USE_MOCK) {
+      const idx = mockScheduleStore.findIndex(s => s.id === id);
+      if (idx !== -1) {
+        mockScheduleStore[idx] = {
+          ...mockScheduleStore[idx],
+          daily_places: mockScheduleStore[idx].daily_places.filter(dp => dp.id !== dpId),
+        };
+      }
+      return mock({});
+    }
+    return apiClient.delete(`/api/schedules/${id}/places/${dpId}/`);
+  },
+  reorderPlaces: (id: number, places: { id: number; day_number: number; order: number }[]) => {
+    if (USE_MOCK) {
+      const idx = mockScheduleStore.findIndex(s => s.id === id);
+      if (idx !== -1) {
+        const orig = mockScheduleStore[idx];
+        const placeMap = new Map(orig.daily_places.map(dp => [dp.id, dp]));
+        mockScheduleStore[idx] = {
+          ...orig,
+          daily_places: places
+            .map(p => { const dp = placeMap.get(p.id); return dp ? { ...dp, day_number: p.day_number, order: p.order } : null; })
+            .filter(Boolean) as typeof orig.daily_places,
+        };
+      }
+      return mock({});
+    }
+    return mock({});
+  },
   importSchedule: (id: number, data?: { title?: string; start_date?: string; end_date?: string }) =>
     USE_MOCK ? mock(mockScheduleStore[0]) : apiClient.post<Schedule>(`/api/schedules/${id}/import/`, data),
   bookmark: (id: number) => {

@@ -10,8 +10,8 @@ import { IconSize, IconStroke } from '@/constants/IconSize';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ChevronDown, ChevronUp } from 'lucide-react-native';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { ChevronDown, ChevronUp, Equal, Plus, Trash2 } from 'lucide-react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated as RNAnimated,
   Dimensions,
@@ -20,13 +20,14 @@ import {
   NativeSyntheticEvent,
   PanResponder,
   Platform,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
   useWindowDimensions,
 } from 'react-native';
+import { Gesture, GestureDetector, ScrollView } from 'react-native-gesture-handler';
+import { runOnJS } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { scheduleApi } from '../services/api';
 import type { DailyPlace, Schedule } from '../services/types';
@@ -98,6 +99,53 @@ const MarqueeText = ({ text, style }: { text: string; style?: object }) => {
   );
 };
 
+// ─── 드래그 핸들 아이콘 (시각 표시 전용) ──────────────────────────────────────
+const GripIcon = () => (
+  <View style={gripIconStyle.col}>
+    <Equal size={IconSize.medium} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
+  </View>
+);
+const gripIconStyle = StyleSheet.create({
+  col: { width: 32, alignItems: 'flex-start', justifyContent: 'center' },
+});
+
+// 드래그 가능한 카드 행 — 전체 행에 pan 제스처 부착
+const DRAG_ROW_BASE: object = {
+  flexDirection: 'row',
+  alignItems: 'center',
+  marginTop: Spacing.v.small,
+  paddingHorizontal: Spacing.h.medium,
+};
+const DRAG_ROW_ACTIVE: object = { opacity: 0.5, transform: [{ scale: 0.8 }] };
+
+const DraggableRow = React.memo(({ id, dragging, onBegin, onChange, onEnd, children }: {
+  id: number;
+  dragging: boolean;
+  onBegin: (id: number) => void;
+  onChange: (id: number, dy: number) => void;
+  onEnd: () => void;
+  children: React.ReactNode;
+}) => {
+  const beginRef = useRef(onBegin); beginRef.current = onBegin;
+  const changeRef = useRef(onChange); changeRef.current = onChange;
+  const endRef = useRef(onEnd); endRef.current = onEnd;
+
+  const gesture = useMemo(() => Gesture.Pan()
+    .activateAfterLongPress(400)
+    .onStart(() => { runOnJS(beginRef.current)(id); })
+    .onChange(e => { runOnJS(changeRef.current)(id, e.translationY); })
+    .onFinalize(() => { runOnJS(endRef.current)(); })
+  , [id]);
+
+  return (
+    <GestureDetector gesture={gesture}>
+      <View style={[DRAG_ROW_BASE, dragging && DRAG_ROW_ACTIVE]}>
+        {children}
+      </View>
+    </GestureDetector>
+  );
+});
+
 // ─── 메인 화면 ────────────────────────────────────────────────────────────────
 type PanelState = -1 | 0 | 1;
 
@@ -106,6 +154,25 @@ export default function ScheduleDetailScreen() {
   const { width: screenWidth } = useWindowDimensions();
   const { id, title: paramTitle } = useLocalSearchParams<{ id: string; title: string }>();
   const [schedule, setSchedule] = useState<Schedule | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [pendingRemovals, setPendingRemovals] = useState<Set<number>>(new Set());
+  const [localPlaces, setLocalPlaces] = useState<DailyPlace[]>([]);
+  const [draggingId, setDraggingId] = useState<number | null>(null);
+  const localPlacesRef = useRef<DailyPlace[]>([]);
+  localPlacesRef.current = localPlaces;
+  // 드래그용 레이아웃 상수 (대략적인 섹션 높이)
+  const DAY_HEADER_H = 52;
+  const ADD_BTN_H = 80;
+  const CARD_H = 110;
+  const dragStartIndexRef = useRef(0);
+  const lastTargetIndexRef = useRef(-1);
+  const lastTargetDayNumRef = useRef(-1);
+  // 드래그 시작 시점의 섹션 경계 및 카드 절대 Y 위치
+  const sectionBoundsRef = useRef<{ dayNum: number; top: number }[]>([]);
+  const draggingStartAbsoluteY = useRef(0);
+  // editableGroups / dayEntries 의 최신값을 드래그 핸들러(useCallback)에서 쓰기 위한 ref
+  const editableGroupsRef = useRef<Record<number, DailyPlace[]>>({});
+  const dayEntriesRef = useRef<{ dayNum: number; dateStr: string }[]>([]);
   const [contentHeight, setContentHeight] = useState(INITIAL_CONTENT_HEIGHT);
   const [panelState, setPanelState] = useState<PanelState>(0);
   const panelStateRef = useRef<PanelState>(0);
@@ -143,6 +210,126 @@ export default function ScheduleDetailScreen() {
     }
   }, [contentHeight, mapCardHeight, panelHeight, mapHeightAnim]);
 
+  const handleEditSave = async () => {
+    if (!isEditing) {
+      const sorted = [...(schedule?.daily_places ?? [])]
+        .sort((a, b) => a.day_number !== b.day_number ? a.day_number - b.day_number : a.order - b.order);
+      setLocalPlaces(sorted);
+      setIsEditing(true);
+      return;
+    }
+    try {
+      for (const dpId of pendingRemovals) {
+        await scheduleApi.removePlace(Number(id), dpId);
+      }
+      const reordered = localPlaces
+        .map((dp, idx) => ({ id: dp.id, day_number: dp.day_number, order: idx + 1 }));
+      if (reordered.length > 0) {
+        await scheduleApi.reorderPlaces(Number(id), reordered);
+      }
+      const res = await scheduleApi.getDetail(Number(id));
+      setSchedule(res.data);
+    } catch {}
+    setPendingRemovals(new Set());
+    setLocalPlaces([]);
+    setIsEditing(false);
+  };
+
+  const handleRemovePlace = (dpId: number) => {
+    setPendingRemovals(prev => new Set([...prev, dpId]));
+    setLocalPlaces(prev => prev.filter(p => p.id !== dpId));
+  };
+
+  const onDragBegin = useCallback((dpId: number) => {
+    // 섹션 경계 계산 (드래그 시작 시 스냅샷)
+    let y = 0;
+    const bounds = dayEntriesRef.current.map(({ dayNum }) => {
+      const top = y;
+      y += DAY_HEADER_H;
+      y += (editableGroupsRef.current[dayNum]?.length ?? 0) * CARD_H;
+      y += ADD_BTN_H;
+      return { dayNum, top };
+    });
+    sectionBoundsRef.current = bounds;
+
+    // 드래그 카드의 절대 Y 계산
+    const places = localPlacesRef.current;
+    let itemAbsY = 0;
+    outer: for (const { dayNum, top } of bounds) {
+      let cardY = top + DAY_HEADER_H;
+      for (const dp of editableGroupsRef.current[dayNum] ?? []) {
+        if (dp.id === dpId) { itemAbsY = cardY; break outer; }
+        cardY += CARD_H;
+      }
+    }
+    draggingStartAbsoluteY.current = itemAbsY;
+
+    const idx = places.findIndex(p => p.id === dpId);
+    dragStartIndexRef.current = idx;
+    lastTargetIndexRef.current = idx;
+    lastTargetDayNumRef.current = places[idx]?.day_number ?? -1;
+    setDraggingId(dpId);
+  }, []);
+
+  const onDragChange = useCallback((dpId: number, dy: number) => {
+    const places = localPlacesRef.current;
+    const fromIndex = places.findIndex(p => p.id === dpId);
+    if (fromIndex === -1) return;
+
+    // 절대 Y 기준으로 대상 Day 결정 (빈 Day 포함)
+    const currentAbsY = draggingStartAbsoluteY.current + dy;
+    const bounds = sectionBoundsRef.current;
+    let targetDayNum = bounds[0]?.dayNum ?? 1;
+    for (const b of bounds) {
+      if (currentAbsY >= b.top) targetDayNum = b.dayNum;
+    }
+
+    // 대상 Day 내 아이템 인덱스 목록 (드래그 중인 카드 제외)
+    const dayIndices = places.reduce<number[]>((acc, p, i) => {
+      if (p.day_number === targetDayNum && i !== fromIndex) acc.push(i);
+      return acc;
+    }, []);
+
+    let targetIndex: number;
+    if (dayIndices.length === 0) {
+      // 빈 Day: 다음 Day의 첫 아이템 앞에 삽입
+      const firstAfter = places.findIndex((p, i) => i !== fromIndex && p.day_number > targetDayNum);
+      if (firstAfter !== -1) {
+        targetIndex = fromIndex < firstAfter ? firstAfter - 1 : firstAfter;
+      } else {
+        targetIndex = places.length - 1;
+      }
+    } else {
+      // Day 내 Y 위치로 정밀 위치 계산
+      const dayBound = bounds.find(b => b.dayNum === targetDayNum);
+      const withinDayY = currentAbsY - (dayBound?.top ?? 0) - DAY_HEADER_H;
+      const slot = Math.max(0, Math.min(dayIndices.length, Math.round(withinDayY / CARD_H)));
+      const rawTarget = slot < dayIndices.length
+        ? dayIndices[slot]
+        : dayIndices[dayIndices.length - 1] + 1;
+      targetIndex = Math.max(0, Math.min(places.length - 1,
+        fromIndex < rawTarget ? rawTarget - 1 : rawTarget));
+    }
+
+    // 위치도 Day도 동일하면 스킵
+    if (targetIndex === lastTargetIndexRef.current && targetDayNum === lastTargetDayNumRef.current) return;
+    lastTargetIndexRef.current = targetIndex;
+    lastTargetDayNumRef.current = targetDayNum;
+
+    setLocalPlaces(prev => {
+      const next = [...prev];
+      const [item] = next.splice(fromIndex, 1);
+      next.splice(Math.min(targetIndex, next.length), 0, { ...item, day_number: targetDayNum });
+      return next;
+    });
+  }, []);
+
+  const onDragEnd = useCallback(() => {
+    setDraggingId(null);
+    lastTargetIndexRef.current = -1;
+    lastTargetDayNumRef.current = -1;
+  }, []);
+
   const displayTitle = schedule?.title ?? paramTitle ?? '';
 
   const dayGroups = useMemo(() => {
@@ -155,6 +342,15 @@ export default function ScheduleDetailScreen() {
     }, {});
   }, [schedule]);
 
+  const editableGroups = useMemo(() =>
+    localPlaces.reduce<Record<number, DailyPlace[]>>((acc, dp) => {
+      if (!acc[dp.day_number]) acc[dp.day_number] = [];
+      acc[dp.day_number].push(dp);
+      return acc;
+    }, {})
+  , [localPlaces]);
+  editableGroupsRef.current = editableGroups;
+
   const dayEntries = useMemo(() => {
     if (!schedule?.start_date || !schedule?.end_date) return [];
     const start = new Date(schedule.start_date);
@@ -165,6 +361,7 @@ export default function ScheduleDetailScreen() {
       dateStr: formatDayDate(schedule.start_date!, i),
     }));
   }, [schedule]);
+  dayEntriesRef.current = dayEntries;
 
   const snapTo = (state: PanelState) => {
     const isMapMain = state === -1;
@@ -285,6 +482,14 @@ export default function ScheduleDetailScreen() {
             }
           </TouchableOpacity>
 
+          <View style={styles.panelContentHeader}>
+            <Text style={styles.panelContentTitle}>일정</Text>
+            <TouchableOpacity activeOpacity={0.7} onPress={handleEditSave}>
+              <Text style={styles.panelContentAction}>{isEditing ? '저장' : '편집'}</Text>
+            </TouchableOpacity>
+          </View>
+          <Divider style={{ marginHorizontal: Spacing.h.medium }} />
+
           <ScrollView
             ref={scrollRef}
             style={styles.panelScroll}
@@ -294,48 +499,85 @@ export default function ScheduleDetailScreen() {
             scrollEventThrottle={16}
           >
             <View style={styles.panelContent}>
-              <View style={styles.panelContentHeader}>
-                <Text style={styles.panelContentTitle}>일정</Text>
-                <TouchableOpacity activeOpacity={0.7}>
-                  <Text style={styles.panelContentAction}>편집</Text>
-                </TouchableOpacity>
-              </View>
-              <Divider style={{ marginHorizontal: Spacing.h.medium }} />
-              {dayEntries.map(({ dayNum, dateStr }) => (
-                <View key={dayNum}>
-                  <View style={styles.dayRow}>
-                    <Text style={styles.dayLabel}>Day {dayNum}</Text>
-                    <Text style={styles.dayDate}>{dateStr}</Text>
-                  </View>
-                  {(dayGroups[dayNum] ?? []).map((dp, idx) => (
-                    <View key={dp.id} style={styles.placeRow}>
-                      <View style={styles.placeNumberCol}>
-                        <View style={styles.placeCircle}>
-                          <Text style={styles.placeCircleText}>{idx + 1}</Text>
-                        </View>
-                      </View>
-                      <TouchableOpacity style={styles.placeCard} activeOpacity={0.8}>
-                        <Image
-                          source={{ uri: dp.place.image_url ?? undefined }}
-                          style={styles.placeCardImage}
-                          resizeMode="cover"
-                        />
-                        <View style={styles.placeCardContent}>
-                          <Text style={styles.placeNameText}>{dp.place.name}</Text>
-                          <View style={styles.placeSubRow}>
-                            <Text style={styles.placeSubText}>{CATEGORY_LABEL[dp.place.category] ?? dp.place.category}</Text>
-                            <TextSeparator />
-                            <Text style={styles.placeSubText} numberOfLines={1}>{shortAddress(dp.place.address)}</Text>
+              {dayEntries.map(({ dayNum, dateStr }) => {
+                const places = isEditing
+                  ? (editableGroups[dayNum] ?? [])
+                  : (dayGroups[dayNum] ?? []).filter(dp => !pendingRemovals.has(dp.id));
+                return (
+                  <View key={dayNum}>
+                    <View style={styles.dayRow}>
+                      <Text style={styles.dayLabel}>Day {dayNum}</Text>
+                      <Text style={styles.dayDate}>{dateStr}</Text>
+                    </View>
+                    {places.map((dp, idx) => {
+                      const card = (
+                        <TouchableOpacity style={styles.placeCard} activeOpacity={isEditing ? 1 : 0.8}>
+                          <Image
+                            source={{ uri: dp.place.image_url ?? undefined }}
+                            style={styles.placeCardImage}
+                            resizeMode="cover"
+                          />
+                          <View style={styles.placeCardContent}>
+                            <Text style={styles.placeNameText}>{dp.place.name}</Text>
+                            <View style={styles.placeSubRow}>
+                              <Text style={styles.placeSubText}>{CATEGORY_LABEL[dp.place.category] ?? dp.place.category}</Text>
+                              <TextSeparator />
+                              <Text style={styles.placeSubText} numberOfLines={1}>{shortAddress(dp.place.address)}</Text>
+                            </View>
+                            {!isEditing && (
+                              <TouchableOpacity style={styles.routeButton} activeOpacity={0.7}>
+                                <Text style={styles.routeButtonText}>경로 확인</Text>
+                              </TouchableOpacity>
+                            )}
                           </View>
-                          <TouchableOpacity style={styles.routeButton} activeOpacity={0.7}>
-                            <Text style={styles.routeButtonText}>경로 확인</Text>
-                          </TouchableOpacity>
+                          {isEditing && (
+                            <TouchableOpacity
+                              style={styles.trashButton}
+                              activeOpacity={0.7}
+                              onPress={() => handleRemovePlace(dp.id)}
+                            >
+                              <Trash2 size={IconSize.medium} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
+                            </TouchableOpacity>
+                          )}
+                        </TouchableOpacity>
+                      );
+
+                      if (isEditing) {
+                        return (
+                          <DraggableRow
+                            key={dp.id}
+                            id={dp.id}
+                            dragging={draggingId === dp.id}
+                            onBegin={onDragBegin}
+                            onChange={onDragChange}
+                            onEnd={onDragEnd}
+                          >
+                            <GripIcon />
+                            {card}
+                          </DraggableRow>
+                        );
+                      }
+                      return (
+                        <View key={dp.id} style={styles.placeRow}>
+                          <View style={styles.placeNumberCol}>
+                            <View style={styles.placeCircle}>
+                              <Text style={styles.placeCircleText}>{idx + 1}</Text>
+                            </View>
+                          </View>
+                          {card}
+                        </View>
+                      );
+                    })}
+                    {isEditing && (
+                      <TouchableOpacity style={styles.addPlaceButton} activeOpacity={0.8}>
+                        <View style={styles.addPlaceCircle}>
+                          <Plus size={IconSize.medium} color={Colors.light.black} strokeWidth={IconStroke.regular} />
                         </View>
                       </TouchableOpacity>
-                    </View>
-                  ))}
-                </View>
-              ))}
+                    )}
+                  </View>
+                );
+              })}
               {schedule?.media && (
                 <>
                   <Divider style={styles.importedCourseDivider} />
@@ -435,13 +677,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   panelContent: {
-    paddingTop: Spacing.v.large24,
     paddingBottom: Spacing.v.screenBottom,
   },
   panelContentHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingTop: Spacing.v.large24,
+    paddingBottom: Spacing.v.small,
     paddingLeft: Spacing.h.medium,
     paddingRight: Spacing.h.xlarge,
   },
@@ -527,12 +770,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: Spacing.v.small,
-    paddingRight: Spacing.h.medium,
+    paddingHorizontal: Spacing.h.medium,
   },
   placeNumberCol: {
-    width: 48,
-    paddingLeft: Spacing.h.medium,
+    width: 32,
     alignItems: 'flex-start',
+    justifyContent: 'center',
   },
   placeCircle: {
     width: Spacing.h.medium,
@@ -543,7 +786,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   placeCircleText: {
-    ...Typography.body2,
+    ...Typography.body1,
     color: Colors.light.black,
   },
   placeCard: {
@@ -580,6 +823,28 @@ const styles = StyleSheet.create({
   placeSubText: {
     ...Typography.body2,
     color: Colors.light.grayDark,
+  },
+  trashButton: {
+    marginLeft: Spacing.h.medium,
+    marginRight: Spacing.h.medium,
+    alignSelf: 'center',
+  },
+  addPlaceButton: {
+    marginTop: Spacing.v.large,
+    marginHorizontal: Spacing.h.medium,
+    height: Size.buttonMd,
+    borderRadius: Spacing.r.small,
+    backgroundColor: Colors.light.grayLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  addPlaceCircle: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: Colors.light.white,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   routeButton: {
     position: 'absolute',
