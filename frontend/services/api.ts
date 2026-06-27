@@ -2,7 +2,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Media, Place, Photo, MediaPlace, Schedule, PaginatedResponse } from './types';
 import {
-  MOCK_MEDIA_LIST, MOCK_MEDIA_PLACES, MOCK_MEDIA_PLACES_MAP, MOCK_PHOTOS, mockScheduleStore, mockPlaceStore, paginatedOf,
+  MOCK_MEDIA_LIST, MOCK_MEDIA_PLACES_MAP, MOCK_PHOTOS, mockScheduleStore, mockPlaceStore, paginatedOf,
 } from './mockData';
 
 // 서버 없이 UI 테스트할 때 true로 설정
@@ -47,7 +47,7 @@ export const mediaApi = {
       ? mock(MOCK_MEDIA_LIST.find(m => m.id === id) ?? MOCK_MEDIA_LIST[0])
       : apiClient.get<Media>(`/api/media/${id}/`),
   getPlaces: (id: number) =>
-    USE_MOCK ? mock(MOCK_MEDIA_PLACES) : apiClient.get<MediaPlace[]>(`/api/media/${id}/places/`),
+    USE_MOCK ? mock(MOCK_MEDIA_PLACES_MAP[id] ?? []) : apiClient.get<MediaPlace[]>(`/api/media/${id}/places/`),
   getBookmarked: () =>
     USE_MOCK ? mock(MOCK_MEDIA_LIST.filter(m => m.is_bookmarked)) : apiClient.get<Media[]>('/api/media/bookmarked/'),
   bookmark: (id: number) => {

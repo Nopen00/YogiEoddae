@@ -264,6 +264,12 @@ export const MOCK_MEDIA_PLACES_MAP: Record<number, MediaPlace[]> = {
     { id: 9, place: MOCK_PLACE_5,  day: 2, scene_description: '', confidence_score: 0.80, is_confirmed: true, created_at: '' },
     { id: 10, place: MOCK_PLACE_4, day: 3, scene_description: '', confidence_score: 0.78, is_confirmed: true, created_at: '' },
   ],
+  5: [ // 부산행
+    { id: 14, place: MOCK_PLACE_2, day: 1, scene_description: '', confidence_score: 0.92, is_confirmed: true, created_at: '' },
+    { id: 15, place: MOCK_PLACE_5, day: 1, scene_description: '', confidence_score: 0.88, is_confirmed: true, created_at: '' },
+    { id: 16, place: MOCK_PLACE_3, day: 2, scene_description: '', confidence_score: 0.85, is_confirmed: true, created_at: '' },
+    { id: 17, place: MOCK_PLACE_6, day: 2, scene_description: '', confidence_score: 0.80, is_confirmed: true, created_at: '' },
+  ],
   6: [ // 사랑의 불시착
     { id: 11, place: MOCK_PLACE_5, day: 1, scene_description: '', confidence_score: 0.91, is_confirmed: true, created_at: '' },
     { id: 12, place: MOCK_PLACE,   day: 2, scene_description: '', confidence_score: 0.87, is_confirmed: true, created_at: '' },
