@@ -127,7 +127,7 @@ export const MOCK_MEDIA_LIST: Media[] = [
     description: '자폐 스펙트럼 장애를 가진 천재 변호사 우영우의 성장 이야기.',
     tags: [MOCK_TAGS[0], MOCK_TAGS[2]],
     is_bookmarked: true,
-    place_count: 3,
+    place_count: 5,
     rating: 4.6,
     like_count: 2187,
     created_at: '2024-01-02T00:00:00Z',
@@ -294,7 +294,7 @@ export const MOCK_SCHEDULES: Schedule[] = [
   {
     id: 1,
     title: '도깨비 여행코스',
-    media: { id: 1, title: '도깨비', thumbnail_url: 'https://picsum.photos/seed/media1/400/300', media_type: 'drama', tags: [MOCK_TAGS[0], MOCK_TAGS[1]], place_count: 7 },
+    media: { id: 1, title: '도깨비', thumbnail_url: 'https://picsum.photos/seed/media1/400/300', media_type: 'drama', tags: [MOCK_TAGS[0], MOCK_TAGS[1]], place_count: 5 },
     start_date: '2026-06-13',
     end_date: '2026-06-15',
     is_bookmarked: true,
@@ -328,7 +328,7 @@ export const MOCK_SCHEDULES: Schedule[] = [
   {
     id: 3,
     title: '부산 영화 투어',
-    media: { id: 5, title: '부산행', thumbnail_url: 'https://picsum.photos/seed/media5/400/300', media_type: 'movie', tags: [MOCK_TAGS[3]], place_count: 3 },
+    media: { id: 5, title: '부산행', thumbnail_url: 'https://picsum.photos/seed/media5/400/300', media_type: 'movie', tags: [MOCK_TAGS[3]], place_count: 4 },
     start_date: '2026-08-10',
     end_date: '2026-08-11',
     is_bookmarked: false,
@@ -338,7 +338,7 @@ export const MOCK_SCHEDULES: Schedule[] = [
   {
     id: 4,
     title: '응답하라 1988 성지순례',
-    media: { id: 4, title: '응답하라 1988', thumbnail_url: 'https://picsum.photos/seed/media4/400/300', media_type: 'drama', tags: [MOCK_TAGS[0], MOCK_TAGS[1]], place_count: 2 },
+    media: { id: 4, title: '응답하라 1988', thumbnail_url: 'https://picsum.photos/seed/media4/400/300', media_type: 'drama', tags: [MOCK_TAGS[0], MOCK_TAGS[1]], place_count: 6 },
     start_date: '2026-05-01',
     end_date: '2026-05-03',
     is_bookmarked: false,
@@ -351,7 +351,7 @@ export const MOCK_SCHEDULES: Schedule[] = [
   {
     id: 5,
     title: '기생충 촬영지 투어',
-    media: { id: 7, title: '기생충', thumbnail_url: 'https://picsum.photos/seed/media7/400/300', media_type: 'movie', tags: [MOCK_TAGS[0], MOCK_TAGS[2]], place_count: 1 },
+    media: { id: 7, title: '기생충', thumbnail_url: 'https://picsum.photos/seed/media7/400/300', media_type: 'movie', tags: [MOCK_TAGS[0], MOCK_TAGS[2]], place_count: 9 },
     start_date: '2026-04-10',
     end_date: '2026-04-11',
     is_bookmarked: true,

@@ -16,6 +16,7 @@ import {
   Animated as RNAnimated,
   Dimensions,
   Image,
+  Modal,
   NativeScrollEvent,
   NativeSyntheticEvent,
   PanResponder,
@@ -51,6 +52,7 @@ const HANDLE_HEIGHT = Spacing.v.small + 24 + Spacing.v.small; // 40px
 const INITIAL_CONTENT_HEIGHT = Dimensions.get('window').height - 64;
 
 const SPRING = { useNativeDriver: false, tension: 60, friction: 12 } as const;
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // ─── 마키 텍스트 ──────────────────────────────────────────────────────────────
 const MarqueeText = ({ text, style }: { text: string; style?: object }) => {
@@ -157,6 +159,8 @@ export default function ScheduleDetailScreen() {
   const [isEditing, setIsEditing] = useState(false);
   const [pendingRemovals, setPendingRemovals] = useState<Set<number>>(new Set());
   const [localPlaces, setLocalPlaces] = useState<DailyPlace[]>([]);
+  const [isUnsavedWarningVisible, setIsUnsavedWarningVisible] = useState(false);
+  const originalPlacesRef = useRef<DailyPlace[]>([]);
   const [draggingId, setDraggingId] = useState<number | null>(null);
   const localPlacesRef = useRef<DailyPlace[]>([]);
   localPlacesRef.current = localPlaces;
@@ -210,11 +214,25 @@ export default function ScheduleDetailScreen() {
     }
   }, [contentHeight, mapCardHeight, panelHeight, mapHeightAnim]);
 
+  const hasUnsavedChanges =
+    isEditing &&
+    (pendingRemovals.size > 0 ||
+      localPlaces.map(p => p.id).join() !== originalPlacesRef.current.map(p => p.id).join());
+
+  const handleBack = () => {
+    if (hasUnsavedChanges) {
+      setIsUnsavedWarningVisible(true);
+    } else {
+      router.dismiss();
+    }
+  };
+
   const handleEditSave = async () => {
     if (!isEditing) {
       const sorted = [...(schedule?.daily_places ?? [])]
         .sort((a, b) => a.day_number !== b.day_number ? a.day_number - b.day_number : a.order - b.order);
       setLocalPlaces(sorted);
+      originalPlacesRef.current = sorted;
       setIsEditing(true);
       return;
     }
@@ -432,7 +450,7 @@ export default function ScheduleDetailScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <ScreenHeader onBack={() => router.dismiss()}>
+      <ScreenHeader onBack={handleBack}>
         <MarqueeText text={displayTitle} style={styles.headerTitle} />
       </ScreenHeader>
 
@@ -618,6 +636,36 @@ export default function ScheduleDetailScreen() {
           </ScrollView>
         </RNAnimated.View>
       </View>
+      <Modal visible={isUnsavedWarningVisible} transparent animationType="fade">
+        <View style={styles.overlay}>
+          <View style={styles.unsavedPopup}>
+            <Text style={styles.unsavedTitle}>일정이 아직 저장되지 않았습니다.</Text>
+            <Text style={styles.unsavedDesc}>저장되지 않은 변동사항은 반영되지 않습니다.</Text>
+            <View style={styles.unsavedButtons}>
+              <TouchableOpacity
+                style={styles.btnDiscard}
+                activeOpacity={0.8}
+                onPress={() => {
+                  setIsUnsavedWarningVisible(false);
+                  setPendingRemovals(new Set());
+                  setLocalPlaces([]);
+                  setIsEditing(false);
+                  router.dismiss();
+                }}
+              >
+                <Text style={styles.btnDiscardText}>무시</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.btnStay}
+                activeOpacity={0.8}
+                onPress={() => setIsUnsavedWarningVisible(false)}
+              >
+                <Text style={styles.btnStayText}>취소</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -863,4 +911,60 @@ const styles = StyleSheet.create({
     ...Typography.button4,
     color: Colors.light.grayDark,
   },
+  overlay: {
+    flex: 1,
+    backgroundColor: Colors.light.overlay,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  unsavedPopup: {
+    width: SCREEN_WIDTH - 64,
+    borderRadius: Spacing.r.small,
+    borderWidth: Spacing.lw.small,
+    borderColor: Colors.light.grayLight,
+    backgroundColor: Colors.light.white,
+    paddingTop: Spacing.v.medium,
+    paddingHorizontal: Spacing.h.medium,
+    paddingBottom: Spacing.v.medium,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  unsavedTitle: {
+    ...Typography.subtitle2,
+    color: Colors.light.black,
+    textAlign: 'center',
+  },
+  unsavedDesc: {
+    ...Typography.body2,
+    color: Colors.light.primary,
+    marginTop: Spacing.v.medium,
+    textAlign: 'center',
+  },
+  unsavedButtons: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: Spacing.h.medium,
+    marginTop: Spacing.v.medium,
+  },
+  btnDiscard: {
+    width: 80,
+    height: Size.buttonSm,
+    borderRadius: Spacing.r.small,
+    backgroundColor: Colors.light.grayLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  btnDiscardText: { ...Typography.button2, color: Colors.light.grayDark },
+  btnStay: {
+    width: 80,
+    height: Size.buttonSm,
+    borderRadius: Spacing.r.small,
+    backgroundColor: Colors.light.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  btnStayText: { ...Typography.button2, color: Colors.light.white },
 });
