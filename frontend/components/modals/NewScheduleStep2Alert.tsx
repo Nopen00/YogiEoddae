@@ -41,11 +41,11 @@ export const NewScheduleStep2Alert = ({ visible, onClose, onBack, onConfirm, ran
             <View style={styles.alertContainer}>
               <View style={styles.header}>
                 <TouchableOpacity onPress={onBack} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                  <ArrowLeft size={IconSize.large} color={Colors.light.black} strokeWidth={IconStroke.regular} />
+                  <ArrowLeft size={IconSize.large} color={Colors.light.grayLight} strokeWidth={IconStroke.regular} />
                 </TouchableOpacity>
                 <Text style={styles.title}>일정 만들기</Text>
                 <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                  <X size={IconSize.large} color={Colors.light.black} strokeWidth={IconStroke.regular} />
+                  <X size={IconSize.large} color={Colors.light.grayLight} strokeWidth={IconStroke.regular} />
                 </TouchableOpacity>
               </View>
               <View style={styles.dateRow}>

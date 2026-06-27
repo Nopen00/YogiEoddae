@@ -32,7 +32,7 @@ export const AddPlaceAlert = ({ visible, onClose, onConfirm }: AddPlaceAlertProp
             <View style={styles.header}>
               <Text style={styles.title}>장소 추가하기</Text>
               <TouchableOpacity onPress={handleClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                <X size={IconSize.large} color={Colors.light.black} strokeWidth={IconStroke.regular} />
+                <X size={IconSize.large} color={Colors.light.grayLight} strokeWidth={IconStroke.regular} />
               </TouchableOpacity>
             </View>
             <View style={styles.buttonRow}>

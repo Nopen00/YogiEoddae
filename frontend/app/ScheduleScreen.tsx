@@ -9,7 +9,7 @@ import { type DateRange, NewScheduleAlert } from '@/components/modals/NewSchedul
 import { NewScheduleStep3Alert } from '@/components/modals/NewScheduleStep3Alert';
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
-import { CATEGORY_LABEL, MEDIA_TYPE_LABEL, shortAddress } from '@/constants/labels';
+import { CATEGORY_LABEL, CITY_SHORT, MEDIA_TYPE_LABEL, shortAddress } from '@/constants/labels';
 import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
@@ -163,9 +163,25 @@ const PlaceImageCluster = ({ dailyPlaces }: { dailyPlaces: DailyPlace[] }) => {
   );
 };
 
+// ─── 일정 태그 생성 ───────────────────────────────────────────
+const getScheduleTags = (schedule: Schedule): string[] => {
+  const tags: string[] = [];
+  if (schedule.media) {
+    const typeLabel = MEDIA_TYPE_LABEL[schedule.media.media_type];
+    if (typeLabel) tags.push(typeLabel);
+  }
+  const cities = new Set<string>();
+  for (const dp of schedule.daily_places) {
+    const city = CITY_SHORT[dp.place.address.split(' ')[0]];
+    if (city) cities.add(city);
+  }
+  cities.forEach(c => tags.push(c));
+  return tags;
+};
+
 // ─── 일정 카드 ────────────────────────────────────────────────
 const ScheduleCard = ({ schedule, onPress }: { schedule: Schedule; onPress?: () => void }) => {
-  const tags = schedule.media?.tags ?? [];
+  const tags = getScheduleTags(schedule);
   return (
     <TouchableOpacity style={styles.card} activeOpacity={0.85} onPress={onPress}>
       <PlaceImageCluster dailyPlaces={schedule.daily_places} />
@@ -178,8 +194,8 @@ const ScheduleCard = ({ schedule, onPress }: { schedule: Schedule; onPress?: () 
         </View>
         {tags.length > 0 && (
           <TagRow>
-            {tags.map(tag => (
-              <Text key={tag.id} style={styles.tagText}>#{tag.name}</Text>
+            {tags.map((tag, i) => (
+              <Text key={i} style={styles.tagText}>#{tag}</Text>
             ))}
           </TagRow>
         )}
@@ -259,9 +275,9 @@ export default function ScheduleScreen() {
   useFocusEffect(
     useCallback(() => {
       scheduleApi.getList().then(res => {
-        const all = res.data;
-        setMySchedules(all.filter(s => !isExpired(s.end_date)));
-        setPastSchedules(all.filter(s => isExpired(s.end_date)));
+        const all = [...new Map(res.data.map((s: Schedule) => [s.id, s])).values()];
+        setMySchedules(all.filter((s: Schedule) => !isExpired(s.end_date)));
+        setPastSchedules(all.filter((s: Schedule) => isExpired(s.end_date)));
       }).catch(() => {});
       mediaApi.getBookmarked().then(res => setSavedCourses(res.data)).catch(() => {});
       placeApi.getBookmarked().then(res => setSavedPlaces(res.data)).catch(() => {});

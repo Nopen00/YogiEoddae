@@ -273,6 +273,16 @@ const PlaceDetailScreen = () => {
           visible={isScheduleVisible}
           onClose={() => setIsScheduleVisible(false)}
           schedules={schedules}
+          onConfirm={async (scheduleId, dayNumber) => {
+            if (!place) return;
+            try {
+              await scheduleApi.addPlace(scheduleId, {
+                place_id: place.id,
+                day_number: dayNumber,
+                order: 999,
+              });
+            } catch {}
+          }}
         />
       </SafeAreaView>
     </TouchableWithoutFeedback>

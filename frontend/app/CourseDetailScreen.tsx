@@ -272,6 +272,16 @@ const CourseDetailScreen = () => {
           visible={isScheduleVisible}
           onClose={() => setIsScheduleVisible(false)}
           schedules={schedules}
+          checkMedia
+          onConfirm={async (scheduleId, dayNumber) => {
+            for (let i = 0; i < mediaPlaces.length; i++) {
+              await scheduleApi.addPlace(scheduleId, {
+                place_id: mediaPlaces[i].place.id,
+                day_number: dayNumber,
+                order: i + 1,
+              });
+            }
+          }}
         />
       </SafeAreaView>
     </TouchableWithoutFeedback>

@@ -313,7 +313,7 @@ export const NewScheduleAlert = ({ visible, onClose, onConfirm }: NewScheduleAle
                 <View style={styles.header}>
                   <Text style={styles.title}>일정 만들기</Text>
                   <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                    <X size={IconSize.large} color={Colors.light.black} strokeWidth={IconStroke.regular} />
+                    <X size={IconSize.large} color={Colors.light.grayLight} strokeWidth={IconStroke.regular} />
                   </TouchableOpacity>
                 </View>
                 
