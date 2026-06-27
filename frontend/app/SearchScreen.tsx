@@ -1,11 +1,12 @@
 ﻿import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Clock, X } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Dimensions, Easing, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // 컴포넌트 및 디자인 시스템 임포트
+import { CourseSelectPopup } from '@/components/modals/CourseSelectPopup';
 import SearchBar from '@/components/ui/SearchBar';
 import { Colors } from '@/constants/Colors';
 import { IconSize } from '@/constants/IconSize';
@@ -20,6 +21,9 @@ type RecentItem = { id: string; keyword: string; date: string };
 
 const SearchScreen = () => {
   const router = useRouter();
+  const { bottom: bottomInset } = useSafeAreaInsets();
+  const params = useLocalSearchParams<{ mode?: string; scheduleId?: string }>();
+  const isAddPlaceMode = params.mode === 'addPlace';
   const [text, setText] = useState('');
   const [recentList, setRecentList] = useState<RecentItem[]>([]);
   const [isAutoSaveOn, setIsAutoSaveOn] = useState(true);
@@ -59,7 +63,10 @@ const SearchScreen = () => {
     // 검색 결과창으로 이동
     router.push({
       pathname: '/SearchResultScreen',
-      params: { keyword: trimmedKeyword }
+      params: {
+        keyword: trimmedKeyword,
+        ...(isAddPlaceMode ? { mode: 'addPlace', scheduleId: params.scheduleId } : {}),
+      },
     });
     
     setText(''); // 입력창 비우기
@@ -161,6 +168,13 @@ const SearchScreen = () => {
           <AutoSaveFooter />
         </View>
       )}
+      <CourseSelectPopup
+        visible={isAddPlaceMode}
+        label="일정으로 가져올 장소를 선택하세요."
+        bottomOffset={bottomInset}
+        onClose={() => router.back()}
+        onBack={() => router.back()}
+      />
     </SafeAreaView>
   );
 };

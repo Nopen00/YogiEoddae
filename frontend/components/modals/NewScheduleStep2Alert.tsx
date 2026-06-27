@@ -73,14 +73,14 @@ export const NewScheduleStep2Alert = ({ visible, onClose, onBack, onConfirm, ran
               <View style={styles.courseButtonRow}>
                 <TouchableOpacity
                   style={[styles.courseButton, selectedCourse === 'import' && styles.courseButtonSelected]}
-                  onPress={() => setSelectedCourse('import')}
+                  onPress={() => setSelectedCourse(prev => prev === 'import' ? null : 'import')}
                 >
                   <Text style={[styles.courseButtonTitle, selectedCourse === 'import' && styles.courseButtonTitleSelected]}>코스 가져오기</Text>
                   <Text style={[styles.courseButtonSubtitle, selectedCourse === 'import' && styles.courseButtonSubtitleSelected]}>저장소에서 가져오기</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.courseButton, selectedCourse === 'create' && styles.courseButtonSelected]}
-                  onPress={() => setSelectedCourse('create')}
+                  onPress={() => setSelectedCourse(prev => prev === 'create' ? null : 'create')}
                 >
                   <Text style={[styles.courseButtonTitle, selectedCourse === 'create' && styles.courseButtonTitleSelected]}>직접 만들기</Text>
                   <Text style={[styles.courseButtonSubtitle, selectedCourse === 'create' && styles.courseButtonSubtitleSelected]}>자유롭게 만들어보기</Text>

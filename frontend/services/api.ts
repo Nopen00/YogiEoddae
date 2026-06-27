@@ -166,8 +166,27 @@ export const scheduleApi = {
     }
     return apiClient.delete(`/api/schedules/${id}/`);
   },
-  addPlace: (id: number, data: { place_id: number; day_number: number; order: number; memo?: string }) =>
-    USE_MOCK ? mock({}) : apiClient.post(`/api/schedules/${id}/places/`, data),
+  addPlace: (id: number, data: { place_id: number; day_number: number; order: number; memo?: string }) => {
+    if (USE_MOCK) {
+      const schedIdx = mockScheduleStore.findIndex(s => s.id === id);
+      const place = mockPlaceStore.find(p => p.id === data.place_id);
+      if (schedIdx !== -1 && place) {
+        const newDp = {
+          id: Date.now(),
+          day_number: data.day_number,
+          order: data.order,
+          memo: data.memo ?? '',
+          place,
+        };
+        mockScheduleStore[schedIdx] = {
+          ...mockScheduleStore[schedIdx],
+          daily_places: [...mockScheduleStore[schedIdx].daily_places, newDp],
+        };
+      }
+      return mock({});
+    }
+    return apiClient.post(`/api/schedules/${id}/places/`, data);
+  },
   removePlace: (id: number, dpId: number) => {
     if (USE_MOCK) {
       const idx = mockScheduleStore.findIndex(s => s.id === id);

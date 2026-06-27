@@ -1,4 +1,6 @@
 ﻿import { useLocalSearchParams, useRouter } from 'expo-router';
+import { AddPlaceConfirmAlert } from '@/components/modals/AddPlaceConfirmAlert';
+import { CourseSelectPopup } from '@/components/modals/CourseSelectPopup';
 import { Heart, Star } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import {
@@ -22,7 +24,7 @@ import { CATEGORY_LABEL, MEDIA_TYPE_LABEL, shortAddress } from '@/constants/labe
 import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
-import { mediaApi, placeApi } from '../services/api';
+import { mediaApi, placeApi, scheduleApi } from '../services/api';
 import type { Media, Place, Tag } from '../services/types';
 
 const CATEGORIES = ["전체", "코스", "명소", "포토스팟"];
@@ -37,7 +39,11 @@ const TAB_WIDTH = width / CATEGORIES.length;
 
 const SearchResultScreen = () => {
   const router = useRouter();
-  const { keyword: initialKeyword } = useLocalSearchParams<{ keyword: string }>();
+  const { keyword: initialKeyword, mode, scheduleId, dayNumber } = useLocalSearchParams<{ keyword: string; mode?: string; scheduleId?: string; dayNumber?: string }>();
+  const isAddPlaceMode = mode === 'addPlace';
+  const [placePopupVisible, setPlacePopupVisible] = useState(isAddPlaceMode);
+  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
+  const [isPlaceConfirmVisible, setIsPlaceConfirmVisible] = useState(false);
   
   const [inputText, setInputText] = useState(initialKeyword || '');
   const [searchKeyword, setSearchKeyword] = useState(initialKeyword || '');
@@ -184,7 +190,15 @@ const SearchResultScreen = () => {
                   key={`attr-${attr.id}`}
                   style={styles.cardButton}
                   activeOpacity={0.9}
-                  onPress={() => router.push({ pathname: '/PlaceDetailScreen', params: { id: attr.id, name: attr.name } })}
+                  onPress={() => {
+                    if (isAddPlaceMode) {
+                      setSelectedPlace(attr);
+                      setPlacePopupVisible(false);
+                      setIsPlaceConfirmVisible(true);
+                    } else {
+                      router.push({ pathname: '/PlaceDetailScreen', params: { id: attr.id, name: attr.name } });
+                    }
+                  }}
                 >
                   <View style={styles.cardInner}>
                     <View style={styles.imageCircle} />
@@ -302,6 +316,37 @@ const SearchResultScreen = () => {
           </View>
         )}
       </ScrollView>
+      <CourseSelectPopup
+        visible={placePopupVisible}
+        label="일정으로 가져올 장소를 선택하세요."
+        onClose={() => setPlacePopupVisible(false)}
+        onBack={() => router.back()}
+      />
+      {selectedPlace && (
+        <AddPlaceConfirmAlert
+          visible={isPlaceConfirmVisible}
+          place={selectedPlace}
+          onClose={() => setIsPlaceConfirmVisible(false)}
+          onBack={() => {
+            setIsPlaceConfirmVisible(false);
+            setPlacePopupVisible(true);
+          }}
+          onConfirm={async () => {
+            if (!scheduleId) return;
+            const dayNum = Number(dayNumber ?? 1);
+            try {
+              await scheduleApi.addPlace(Number(scheduleId), {
+                place_id: selectedPlace.id,
+                day_number: dayNum,
+                order: 999,
+              });
+            } catch {}
+            setIsPlaceConfirmVisible(false);
+            router.back();
+            router.back();
+          }}
+        />
+      )}
     </SafeAreaView>
   );
 };

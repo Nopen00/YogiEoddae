@@ -11,17 +11,19 @@ interface CourseSelectPopupProps {
   visible: boolean;
   onClose: () => void;
   onBack: () => void;
+  label?: string;
+  bottomOffset?: number;
 }
 
-export const CourseSelectPopup = ({ visible, onClose, onBack }: CourseSelectPopupProps) => {
+export const CourseSelectPopup = ({ visible, onClose, onBack, label, bottomOffset = 0 }: CourseSelectPopupProps) => {
   if (!visible) return null;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { bottom: Spacing.v.large + bottomOffset }]}>
       <TouchableOpacity onPress={onBack} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
         <ArrowLeft size={IconSize.medium} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
       </TouchableOpacity>
-      <Text style={styles.text}>일정으로 가져올 코스를 선택하세요.</Text>
+      <Text style={styles.text}>{label ?? '일정으로 가져올 코스를 선택하세요.'}</Text>
       <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
         <X size={IconSize.medium} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
       </TouchableOpacity>
@@ -34,7 +36,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: Spacing.h.medium,
     right: Spacing.h.medium,
-    bottom: Spacing.v.large,
     backgroundColor: Colors.light.grayLight,
     borderRadius: 999,
     borderWidth: Spacing.lw.small,

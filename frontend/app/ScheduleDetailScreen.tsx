@@ -1,4 +1,5 @@
 ﻿// app/ScheduleDetailScreen.tsx
+import { AddPlaceAlert } from '@/components/modals/AddPlaceAlert';
 import { Divider } from '@/components/ui/Divider';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { TagRow } from '@/components/ui/TagRow';
@@ -9,7 +10,7 @@ import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { ChevronDown, ChevronUp, Equal, Plus, Trash2 } from 'lucide-react-native';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -160,10 +161,16 @@ export default function ScheduleDetailScreen() {
   const [pendingRemovals, setPendingRemovals] = useState<Set<number>>(new Set());
   const [localPlaces, setLocalPlaces] = useState<DailyPlace[]>([]);
   const [isUnsavedWarningVisible, setIsUnsavedWarningVisible] = useState(false);
+  const [isAddPlaceVisible, setIsAddPlaceVisible] = useState(false);
+  const [activeDayNum, setActiveDayNum] = useState(1);
   const originalPlacesRef = useRef<DailyPlace[]>([]);
   const [draggingId, setDraggingId] = useState<number | null>(null);
   const localPlacesRef = useRef<DailyPlace[]>([]);
   localPlacesRef.current = localPlaces;
+  const isEditingRef = useRef(isEditing);
+  isEditingRef.current = isEditing;
+  const pendingRemovalsRef = useRef(pendingRemovals);
+  pendingRemovalsRef.current = pendingRemovals;
   // 드래그용 레이아웃 상수 (대략적인 섹션 높이)
   const DAY_HEADER_H = 52;
   const ADD_BTN_H = 80;
@@ -198,10 +205,25 @@ export default function ScheduleDetailScreen() {
   const mapTopAnim = useRef(new RNAnimated.Value(Spacing.v.small)).current;
   const panelRadiusAnim = useRef(new RNAnimated.Value(Spacing.r.medium)).current;
 
-  useEffect(() => {
-    if (!id) return;
-    scheduleApi.getDetail(Number(id)).then(res => setSchedule(res.data)).catch(() => {});
-  }, [id]);
+  useFocusEffect(
+    useCallback(() => {
+      if (!id) return;
+      scheduleApi.getDetail(Number(id)).then(res => {
+        const fresh = res.data;
+        setSchedule(fresh);
+        if (isEditingRef.current) {
+          const localIds = new Set(localPlacesRef.current.map(p => p.id));
+          const newPlaces = fresh.daily_places.filter(
+            dp => !localIds.has(dp.id) && !pendingRemovalsRef.current.has(dp.id)
+          );
+          if (newPlaces.length > 0) {
+            setLocalPlaces(prev => [...prev, ...newPlaces]);
+            originalPlacesRef.current = [...originalPlacesRef.current, ...newPlaces];
+          }
+        }
+      }).catch(() => {});
+    }, [id])
+  );
 
   // 실제 콘텐츠 높이가 측정되면 현재 패널 상태에 맞게 즉시 재조정
   useEffect(() => {
@@ -593,7 +615,7 @@ export default function ScheduleDetailScreen() {
                       );
                     })}
                     {isEditing && (
-                      <TouchableOpacity style={styles.addPlaceButton} activeOpacity={0.8}>
+                      <TouchableOpacity style={styles.addPlaceButton} activeOpacity={0.8} onPress={() => { setActiveDayNum(dayNum); setIsAddPlaceVisible(true); }}>
                         <View style={styles.addPlaceCircle}>
                           <Plus size={IconSize.medium} color={Colors.light.black} strokeWidth={IconStroke.regular} />
                         </View>
@@ -642,6 +664,18 @@ export default function ScheduleDetailScreen() {
           </ScrollView>
         </RNAnimated.View>
       </View>
+      <AddPlaceAlert
+        visible={isAddPlaceVisible}
+        onClose={() => setIsAddPlaceVisible(false)}
+        onConfirm={(type) => {
+          setIsAddPlaceVisible(false);
+          if (type === 'import') {
+            router.push({ pathname: '/ScheduleScreen', params: { mode: 'addPlace', scheduleId: id, dayNumber: String(activeDayNum) } });
+          } else {
+            router.push({ pathname: '/SearchScreen', params: { mode: 'addPlace', scheduleId: id, dayNumber: String(activeDayNum) } });
+          }
+        }}
+      />
       <Modal visible={isUnsavedWarningVisible} transparent animationType="fade">
         <View style={styles.overlay}>
           <View style={styles.unsavedPopup}>

@@ -3,18 +3,19 @@ import { Divider } from '@/components/ui/Divider';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { TagRow } from '@/components/ui/TagRow';
 import { TextSeparator } from '@/components/ui/TextSeparator';
+import { AddPlaceConfirmAlert } from '@/components/modals/AddPlaceConfirmAlert';
 import { CourseSelectPopup } from '@/components/modals/CourseSelectPopup';
 import { type DateRange, NewScheduleAlert } from '@/components/modals/NewScheduleAlert';
 import { NewScheduleStep3Alert } from '@/components/modals/NewScheduleStep3Alert';
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
-import { MEDIA_TYPE_LABEL } from '@/constants/labels';
+import { CATEGORY_LABEL, MEDIA_TYPE_LABEL, shortAddress } from '@/constants/labels';
 import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Calendar, Heart, MoreVertical, Plus } from 'lucide-react-native';
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Dimensions,
@@ -224,6 +225,7 @@ const CourseCard = ({ media, onPress }: { media: Media; onPress: () => void }) =
 // ─── 메인 컴포넌트 ────────────────────────────────────────────
 export default function ScheduleScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ mode?: string; scheduleId?: string; dayNumber?: string }>();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const translateX = useRef(new Animated.Value(0)).current;
 
@@ -235,6 +237,9 @@ export default function ScheduleScreen() {
   const [isNewScheduleVisible, setIsNewScheduleVisible] = useState(false);
   const [newScheduleKey, setNewScheduleKey] = useState(0);
   const [isCourseSelectVisible, setIsCourseSelectVisible] = useState(false);
+  const [isPlaceSelectVisible, setIsPlaceSelectVisible] = useState(false);
+  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
+  const [isPlaceConfirmVisible, setIsPlaceConfirmVisible] = useState(false);
   const [isStep3Visible, setIsStep3Visible] = useState(false);
   const [selectedCourseMedia, setSelectedCourseMedia] = useState<Media | null>(null);
   const [scheduleData, setScheduleData] = useState<{ name: string; range: DateRange } | null>(null);
@@ -243,6 +248,13 @@ export default function ScheduleScreen() {
     setNewScheduleKey(k => k + 1);
     setIsNewScheduleVisible(true);
   };
+
+  useEffect(() => {
+    if (params.mode === 'addPlace') {
+      handleTabPress(2);
+      setIsPlaceSelectVisible(true);
+    }
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -376,7 +388,15 @@ export default function ScheduleScreen() {
                   key={p.id}
                   style={styles.card}
                   activeOpacity={0.85}
-                  onPress={() => router.push({ pathname: '/PlaceDetailScreen', params: { id: p.id } })}
+                  onPress={() => {
+                    if (isPlaceSelectVisible) {
+                      setSelectedPlace(p);
+                      setIsPlaceSelectVisible(false);
+                      setIsPlaceConfirmVisible(true);
+                    } else {
+                      router.push({ pathname: '/PlaceDetailScreen', params: { id: p.id } });
+                    }
+                  }}
                 >
                   <View style={styles.imageWrapper}>
                     {p.image_url ? (
@@ -387,6 +407,11 @@ export default function ScheduleScreen() {
                   </View>
                   <View style={styles.cardContent}>
                     <Text style={styles.cardTitle} numberOfLines={1}>{p.name}</Text>
+                    <View style={styles.infoRow}>
+                      <Text style={styles.infoText}>{CATEGORY_LABEL[p.category] ?? p.category}</Text>
+                      <TextSeparator />
+                      <Text style={styles.infoText} numberOfLines={1}>{shortAddress(p.address)}</Text>
+                    </View>
                     {p.tags.length > 0 && (
                       <TagRow>
                         {p.tags.map(tag => (
@@ -461,6 +486,40 @@ export default function ScheduleScreen() {
           setIsNewScheduleVisible(true);
         }}
       />
+      <CourseSelectPopup
+        visible={isPlaceSelectVisible}
+        label="일정으로 가져올 장소를 선택하세요."
+        onClose={() => { setIsPlaceSelectVisible(false); router.back(); }}
+        onBack={() => { setIsPlaceSelectVisible(false); router.back(); }}
+      />
+      {selectedPlace && (
+        <AddPlaceConfirmAlert
+          visible={isPlaceConfirmVisible}
+          place={selectedPlace}
+          onClose={() => setIsPlaceConfirmVisible(false)}
+          onBack={() => {
+            setIsPlaceConfirmVisible(false);
+            setIsPlaceSelectVisible(true);
+          }}
+          onConfirm={async () => {
+            if (!params.scheduleId) return;
+            const scheduleId = Number(params.scheduleId);
+            const dayNum = Number(params.dayNumber ?? 1);
+            const allSchedules = [...mySchedules, ...pastSchedules];
+            const schedule = allSchedules.find(s => s.id === scheduleId);
+            const existingCount = schedule?.daily_places.filter(dp => dp.day_number === dayNum).length ?? 0;
+            try {
+              await scheduleApi.addPlace(scheduleId, {
+                place_id: selectedPlace.id,
+                day_number: dayNum,
+                order: existingCount + 1,
+              });
+            } catch {}
+            setIsPlaceConfirmVisible(false);
+            router.back();
+          }}
+        />
+      )}
       {selectedCourseMedia && (
         <NewScheduleStep3Alert
           visible={isStep3Visible}
