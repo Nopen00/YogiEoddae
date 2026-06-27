@@ -527,6 +527,12 @@ export default function ScheduleDetailScreen() {
                       <Text style={styles.dayLabel}>Day {dayNum}</Text>
                       <Text style={styles.dayDate}>{dateStr}</Text>
                     </View>
+                    {places.length === 0 && !isEditing && (
+                      <View style={styles.emptyDayContainer}>
+                        <Text style={styles.emptyDayTitle}>장소가 존재하지 않습니다.</Text>
+                        <Text style={styles.emptyDayDesc}>편집을 통해 장소를 추가하여 주세요.</Text>
+                      </View>
+                    )}
                     {places.map((dp, idx) => {
                       const card = (
                         <TouchableOpacity style={styles.placeCard} activeOpacity={isEditing ? 1 : 0.8}>
@@ -876,6 +882,22 @@ const styles = StyleSheet.create({
     marginLeft: Spacing.h.medium,
     marginRight: Spacing.h.medium,
     alignSelf: 'center',
+  },
+  emptyDayContainer: {
+    marginTop: Spacing.v.small,
+    paddingHorizontal: Spacing.h.medium,
+    alignItems: 'center',
+  },
+  emptyDayTitle: {
+    ...Typography.subtitle2,
+    color: Colors.light.black,
+    textAlign: 'center',
+  },
+  emptyDayDesc: {
+    ...Typography.body2,
+    color: Colors.light.grayLight,
+    marginTop: Spacing.v.medium,
+    textAlign: 'center',
   },
   addPlaceButton: {
     marginTop: Spacing.v.large,
