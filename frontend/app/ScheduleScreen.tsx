@@ -7,6 +7,7 @@ import { AddPlaceConfirmAlert } from '@/components/modals/AddPlaceConfirmAlert';
 import { CourseSelectPopup } from '@/components/modals/CourseSelectPopup';
 import { type DateRange, NewScheduleAlert } from '@/components/modals/NewScheduleAlert';
 import { NewScheduleStep3Alert } from '@/components/modals/NewScheduleStep3Alert';
+import { ScheduleMoreMenuAlert } from '@/components/modals/ScheduleMoreMenuAlert';
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
 import { CATEGORY_LABEL, CITY_SHORT, MEDIA_TYPE_LABEL, shortAddress } from '@/constants/labels';
@@ -20,6 +21,7 @@ import {
   Animated,
   Dimensions,
   Image,
+  Modal,
   ScrollView,
   StyleSheet,
   Text,
@@ -180,7 +182,21 @@ const getScheduleTags = (schedule: Schedule): string[] => {
 };
 
 // ─── 일정 카드 ────────────────────────────────────────────────
-const ScheduleCard = ({ schedule, onPress }: { schedule: Schedule; onPress?: () => void }) => {
+const ScheduleCard = ({
+  schedule,
+  onPress,
+  isMenuOpen,
+  onMorePress,
+  onEditPress,
+  onDeletePress,
+}: {
+  schedule: Schedule;
+  onPress?: () => void;
+  isMenuOpen?: boolean;
+  onMorePress?: () => void;
+  onEditPress?: () => void;
+  onDeletePress?: () => void;
+}) => {
   const tags = getScheduleTags(schedule);
   return (
     <TouchableOpacity style={styles.card} activeOpacity={0.85} onPress={onPress}>
@@ -201,7 +217,15 @@ const ScheduleCard = ({ schedule, onPress }: { schedule: Schedule; onPress?: () 
         )}
       </View>
       <View style={styles.moreIconWrapper}>
-        <MoreVertical size={IconSize.large} color={Colors.light.black} />
+        <TouchableOpacity onPress={onMorePress} activeOpacity={0.7} hitSlop={8}>
+          <MoreVertical size={IconSize.large} color={Colors.light.black} />
+        </TouchableOpacity>
+        {isMenuOpen && (
+          <ScheduleMoreMenuAlert
+            onEditPress={onEditPress ?? (() => {})}
+            onDeletePress={onDeletePress ?? (() => {})}
+          />
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -259,6 +283,8 @@ export default function ScheduleScreen() {
   const [isStep3Visible, setIsStep3Visible] = useState(false);
   const [selectedCourseMedia, setSelectedCourseMedia] = useState<Media | null>(null);
   const [scheduleData, setScheduleData] = useState<{ name: string; range: DateRange } | null>(null);
+  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Schedule | null>(null);
 
   const openNewScheduleFresh = () => {
     setNewScheduleKey(k => k + 1);
@@ -347,10 +373,30 @@ export default function ScheduleScreen() {
         ) : (
           <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
             <SectionWrapper title="현재 진행 중인 일정" isEmpty={currentSchedules.length === 0} emptyTitle="현재 진행 중인 일정이 비어있습니다." emptySubtitle="일정을 추가해보세요." onAddPress={openNewScheduleFresh}>
-              {currentSchedules.map(s => <ScheduleCard key={s.id} schedule={s} onPress={() => router.push({ pathname: '/ScheduleDetailScreen', params: { id: s.id, title: s.title } })} />)}
+              {currentSchedules.map(s => (
+                <ScheduleCard
+                  key={s.id}
+                  schedule={s}
+                  onPress={() => { if (openMenuId !== null) { setOpenMenuId(null); return; } router.push({ pathname: '/ScheduleDetailScreen', params: { id: s.id, title: s.title } }); }}
+                  isMenuOpen={openMenuId === s.id}
+                  onMorePress={() => setOpenMenuId(prev => prev === s.id ? null : s.id)}
+                  onEditPress={() => { setOpenMenuId(null); router.push({ pathname: '/ScheduleDetailScreen', params: { id: s.id, title: s.title, autoEdit: 'true' } }); }}
+                  onDeletePress={() => { setOpenMenuId(null); setDeleteTarget(s); }}
+                />
+              ))}
             </SectionWrapper>
             <SectionWrapper title="예정된 일정" style={styles.secondSection} isEmpty={plannedSchedules.length === 0} emptyTitle="예정된 일정이 비어있습니다." emptySubtitle="일정을 추가해보세요." onAddPress={openNewScheduleFresh}>
-              {plannedSchedules.map(s => <ScheduleCard key={s.id} schedule={s} onPress={() => router.push({ pathname: '/ScheduleDetailScreen', params: { id: s.id, title: s.title } })} />)}
+              {plannedSchedules.map(s => (
+                <ScheduleCard
+                  key={s.id}
+                  schedule={s}
+                  onPress={() => { if (openMenuId !== null) { setOpenMenuId(null); return; } router.push({ pathname: '/ScheduleDetailScreen', params: { id: s.id, title: s.title } }); }}
+                  isMenuOpen={openMenuId === s.id}
+                  onMorePress={() => setOpenMenuId(prev => prev === s.id ? null : s.id)}
+                  onEditPress={() => { setOpenMenuId(null); router.push({ pathname: '/ScheduleDetailScreen', params: { id: s.id, title: s.title, autoEdit: 'true' } }); }}
+                  onDeletePress={() => { setOpenMenuId(null); setDeleteTarget(s); }}
+                />
+              ))}
             </SectionWrapper>
           </ScrollView>
         )
@@ -366,7 +412,17 @@ export default function ScheduleScreen() {
           </View>
         ) : (
           <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContentOther} showsVerticalScrollIndicator={false}>
-            {pastSchedules.map(s => <ScheduleCard key={s.id} schedule={s} onPress={() => router.push({ pathname: '/ScheduleDetailScreen', params: { id: s.id, title: s.title } })} />)}
+            {pastSchedules.map(s => (
+              <ScheduleCard
+                key={s.id}
+                schedule={s}
+                onPress={() => { if (openMenuId !== null) { setOpenMenuId(null); return; } router.push({ pathname: '/ScheduleDetailScreen', params: { id: s.id, title: s.title } }); }}
+                isMenuOpen={openMenuId === s.id}
+                onMorePress={() => setOpenMenuId(prev => prev === s.id ? null : s.id)}
+                onEditPress={() => { setOpenMenuId(null); router.push({ pathname: '/ScheduleDetailScreen', params: { id: s.id, title: s.title, autoEdit: 'true' } }); }}
+                onDeletePress={() => { setOpenMenuId(null); setDeleteTarget(s); }}
+              />
+            ))}
           </ScrollView>
         )
       )}
@@ -465,6 +521,40 @@ export default function ScheduleScreen() {
           </ScrollView>
         )
       )}
+
+      <Modal visible={deleteTarget !== null} transparent animationType="fade">
+        <View style={styles.deleteOverlay}>
+          <View style={styles.deletePopup}>
+            <Text style={styles.deleteTitle}>일정을 삭제하시겠습니까?</Text>
+            <Text style={styles.deleteDesc}>삭제된 일정은 되돌릴 수 없습니다.</Text>
+            <View style={styles.deleteButtons}>
+              <TouchableOpacity
+                style={styles.btnConfirm}
+                activeOpacity={0.8}
+                onPress={async () => {
+                  if (!deleteTarget) return;
+                  const target = deleteTarget;
+                  setDeleteTarget(null);
+                  try {
+                    await scheduleApi.remove(target.id);
+                    setMySchedules(prev => prev.filter(s => s.id !== target.id));
+                    setPastSchedules(prev => prev.filter(s => s.id !== target.id));
+                  } catch {}
+                }}
+              >
+                <Text style={styles.btnConfirmText}>확인</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.btnCancel}
+                activeOpacity={0.8}
+                onPress={() => setDeleteTarget(null)}
+              >
+                <Text style={styles.btnCancelText}>취소</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       <NewScheduleAlert
         key={newScheduleKey}
@@ -595,7 +685,30 @@ const styles = StyleSheet.create({
   infoText: { ...Typography.subtitle1, color: Colors.light.grayDark },
   infoSep: { ...Typography.subtitle1, color: Colors.light.grayDark },
   tagText: { ...Typography.body2, color: Colors.light.primary },
-  moreIconWrapper: { alignSelf: 'center', marginLeft: Spacing.h.medium },
+  moreIconWrapper: { alignSelf: 'center', marginLeft: Spacing.h.medium, zIndex: 1 },
+  deleteOverlay: { flex: 1, backgroundColor: Colors.light.overlay, justifyContent: 'center', alignItems: 'center' },
+  deletePopup: {
+    width: width - 64,
+    borderRadius: Spacing.r.small,
+    borderWidth: Spacing.lw.small,
+    borderColor: Colors.light.grayLight,
+    backgroundColor: Colors.light.white,
+    paddingTop: Spacing.v.medium,
+    paddingHorizontal: Spacing.h.medium,
+    paddingBottom: Spacing.v.medium,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  deleteTitle: { ...Typography.subtitle2, color: Colors.light.black, textAlign: 'center' },
+  deleteDesc: { ...Typography.body2, color: Colors.light.primary, marginTop: Spacing.v.medium, textAlign: 'center' },
+  deleteButtons: { flexDirection: 'row', justifyContent: 'center', gap: Spacing.h.medium, marginTop: Spacing.v.medium },
+  btnConfirm: { width: 80, height: Size.buttonSm, borderRadius: Spacing.r.small, backgroundColor: Colors.light.grayLight, justifyContent: 'center', alignItems: 'center' },
+  btnConfirmText: { ...Typography.button2, color: Colors.light.grayDark },
+  btnCancel: { width: 80, height: Size.buttonSm, borderRadius: Spacing.r.small, backgroundColor: Colors.light.primary, justifyContent: 'center', alignItems: 'center' },
+  btnCancelText: { ...Typography.button2, color: Colors.light.white },
   extraBadgeContainer: { width: SMALL, height: SMALL, borderRadius: SMALL / 2, overflow: 'hidden' },
   extraBadgeOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: Colors.light.overlay, justifyContent: 'center', alignItems: 'center' },
   extraBadgeText: { ...Typography.button3, color: Colors.light.white },

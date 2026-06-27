@@ -155,7 +155,7 @@ type PanelState = -1 | 0 | 1;
 export default function ScheduleDetailScreen() {
   const router = useRouter();
   const { width: screenWidth } = useWindowDimensions();
-  const { id, title: paramTitle } = useLocalSearchParams<{ id: string; title: string }>();
+  const { id, title: paramTitle, autoEdit } = useLocalSearchParams<{ id: string; title: string; autoEdit?: string }>();
   const [schedule, setSchedule] = useState<Schedule | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [pendingRemovals, setPendingRemovals] = useState<Set<number>>(new Set());
@@ -224,6 +224,16 @@ export default function ScheduleDetailScreen() {
       }).catch(() => {});
     }, [id])
   );
+
+  // autoEdit 파라미터가 있으면 일정 로드 후 즉시 편집 모드 진입
+  useEffect(() => {
+    if (autoEdit !== 'true' || !schedule || isEditing) return;
+    const sorted = [...(schedule.daily_places ?? [])]
+      .sort((a, b) => a.day_number !== b.day_number ? a.day_number - b.day_number : a.order - b.order);
+    setLocalPlaces(sorted);
+    originalPlacesRef.current = sorted;
+    setIsEditing(true);
+  }, [schedule, autoEdit]);
 
   // 실제 콘텐츠 높이가 측정되면 현재 패널 상태에 맞게 즉시 재조정
   useEffect(() => {
