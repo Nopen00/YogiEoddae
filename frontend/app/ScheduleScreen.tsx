@@ -609,7 +609,10 @@ export default function ScheduleScreen() {
         <AddPlaceConfirmAlert
           visible={isPlaceConfirmVisible}
           place={selectedPlace}
-          onClose={() => setIsPlaceConfirmVisible(false)}
+          onClose={() => {
+            setIsPlaceConfirmVisible(false);
+            setIsPlaceSelectVisible(true);
+          }}
           onBack={() => {
             setIsPlaceConfirmVisible(false);
             setIsPlaceSelectVisible(true);
@@ -636,7 +639,10 @@ export default function ScheduleScreen() {
       {selectedCourseMedia && (
         <NewScheduleStep3Alert
           visible={isStep3Visible}
-          onClose={() => setIsStep3Visible(false)}
+          onClose={() => {
+            setIsStep3Visible(false);
+            setIsCourseSelectVisible(true);
+          }}
           onBack={() => {
             setIsStep3Visible(false);
             setIsCourseSelectVisible(true);

@@ -1,5 +1,6 @@
 ﻿// app/ScheduleDetailScreen.tsx
 import { AddPlaceAlert } from '@/components/modals/AddPlaceAlert';
+import { ScheduleEditNameAlert } from '@/components/modals/ScheduleEditNameAlert';
 import { Divider } from '@/components/ui/Divider';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { TagRow } from '@/components/ui/TagRow';
@@ -158,6 +159,7 @@ export default function ScheduleDetailScreen() {
   const [localPlaces, setLocalPlaces] = useState<DailyPlace[]>([]);
   const [isUnsavedWarningVisible, setIsUnsavedWarningVisible] = useState(false);
   const [isAddPlaceVisible, setIsAddPlaceVisible] = useState(false);
+  const [isEditNameVisible, setIsEditNameVisible] = useState(false);
   const [activeDayNum, setActiveDayNum] = useState(1);
   const originalPlacesRef = useRef<DailyPlace[]>([]);
   const [draggingId, setDraggingId] = useState<number | null>(null);
@@ -282,6 +284,14 @@ export default function ScheduleDetailScreen() {
     setPendingRemovals(new Set());
     setLocalPlaces([]);
     setIsEditing(false);
+  };
+
+  const handleRenameConfirm = async (newTitle: string) => {
+    try {
+      const res = await scheduleApi.update(Number(id), { title: newTitle });
+      setSchedule(res.data);
+    } catch {}
+    setIsEditNameVisible(false);
   };
 
   const handleRemovePlace = (dpId: number) => {
@@ -482,7 +492,17 @@ export default function ScheduleDetailScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <ScreenHeader onBack={handleBack}>
-        <MarqueeText text={displayTitle} style={styles.headerTitle} />
+        {isEditing ? (
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => setIsEditNameVisible(true)}
+            style={{ flex: 1 }}
+          >
+            <MarqueeText text={displayTitle} style={styles.headerTitle} />
+          </TouchableOpacity>
+        ) : (
+          <MarqueeText text={displayTitle} style={styles.headerTitle} />
+        )}
       </ScreenHeader>
 
       <View
@@ -566,7 +586,11 @@ export default function ScheduleDetailScreen() {
                     )}
                     {places.map((dp, idx) => {
                       const card = (
-                        <TouchableOpacity style={styles.placeCard} activeOpacity={isEditing ? 1 : 0.8}>
+                        <TouchableOpacity
+                          style={styles.placeCard}
+                          activeOpacity={isEditing ? 1 : 0.8}
+                          onPress={isEditing ? undefined : () => router.push({ pathname: '/PlaceDetailScreen', params: { id: dp.place.id, name: dp.place.name } })}
+                        >
                           <Image
                             source={{ uri: dp.place.image_url ?? undefined }}
                             style={styles.placeCardImage}
@@ -673,6 +697,12 @@ export default function ScheduleDetailScreen() {
           </ScrollView>
         </RNAnimated.View>
       </View>
+      <ScheduleEditNameAlert
+        visible={isEditNameVisible}
+        currentTitle={displayTitle}
+        onConfirm={handleRenameConfirm}
+        onClose={() => setIsEditNameVisible(false)}
+      />
       <AddPlaceAlert
         visible={isAddPlaceVisible}
         onClose={() => setIsAddPlaceVisible(false)}

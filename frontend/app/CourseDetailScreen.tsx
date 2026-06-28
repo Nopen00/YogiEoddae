@@ -17,7 +17,7 @@ import { Calendar, Heart, Star } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { mediaApi, scheduleApi } from '../services/api';
 import type { Media, MediaPlace, Schedule } from '../services/types';
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View, useWindowDimensions } from 'react-native';
+import { Image, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Shadow } from 'react-native-shadow-2';
 import { CATEGORY_LABEL, MEDIA_TYPE_LABEL, shortAddress } from '@/constants/labels';
@@ -68,6 +68,11 @@ const CourseDetailScreen = () => {
   const sortedDays = Object.keys(dayGroups).map(Number).sort((a, b) => a - b);
 
   const closeMenu = () => { if (isMenuVisible) setIsMenuVisible(false); };
+
+  const handleRoutePress = (place: { name: string; latitude: string; longitude: string }) => {
+    const url = `https://map.kakao.com/link/to/${encodeURIComponent(place.name)},${place.latitude},${place.longitude}`;
+    Linking.openURL(url);
+  };
 
   const handleSaveToggle = async () => {
     if (!id) return;
@@ -220,7 +225,7 @@ const CourseDetailScreen = () => {
                               <TextSeparator />
                               <Text style={styles.cardSubText} numberOfLines={1}>{shortAddress(mp.place.address)}</Text>
                             </View>
-                            <TouchableOpacity style={styles.routeButton} activeOpacity={0.7}>
+                            <TouchableOpacity style={styles.routeButton} activeOpacity={0.7} onPress={() => handleRoutePress(mp.place)}>
                               <Text style={styles.routeButtonText}>경로 확인</Text>
                             </TouchableOpacity>
                           </View>

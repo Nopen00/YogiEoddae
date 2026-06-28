@@ -1,6 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { Search } from 'lucide-react-native';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Dimensions,
   FlatList,
@@ -38,6 +38,15 @@ const MainScreen = () => {
   const [popularCourses, setPopularCourses] = useState<Media[]>([]);
   const [recommendedCourses, setRecommendedCourses] = useState<Media[]>([]);
 
+  // 루프 캐러셀용: [마지막, ...원본, 첫번째]
+  const extendedCarouselData = useMemo(() =>
+    carouselData.length > 0
+      ? [carouselData[carouselData.length - 1], ...carouselData, carouselData[0]]
+      : [],
+    [carouselData]
+  );
+  const currentExtendedIndexRef = useRef(1);
+
   useEffect(() => {
     mediaApi.getList({ type: 'drama' }).then(res => setCarouselData(res.data.results)).catch((e) => console.error('carousel error:', e));
     mediaApi.getList().then(res => {
@@ -47,22 +56,51 @@ const MainScreen = () => {
     }).catch((e) => console.error('courses error:', e));
   }, []);
 
-  // 캐러셀 자동 슬라이드
+  // 데이터 로드 후 실제 첫 번째 아이템(index 1)으로 순간이동
   useEffect(() => {
-    if (carouselData.length === 0) return;
+    if (extendedCarouselData.length < 3) return;
+    const t = setTimeout(() => {
+      flatListRef.current?.scrollToIndex({ index: 1, animated: false });
+      currentExtendedIndexRef.current = 1;
+    }, 0);
+    return () => clearTimeout(t);
+  }, [extendedCarouselData.length]);
+
+  // 자동 슬라이드 — 클론 끝에 닿으면 실제 위치로 순간이동
+  useEffect(() => {
+    if (carouselData.length < 2) return;
+    const total = extendedCarouselData.length;
     const timer = setInterval(() => {
-      const nextIndex = (activeIndex + 1) % carouselData.length;
-      flatListRef.current?.scrollToIndex({ index: nextIndex, animated: true });
-      setActiveIndex(nextIndex);
+      const next = currentExtendedIndexRef.current + 1;
+      flatListRef.current?.scrollToIndex({ index: next, animated: true });
+      currentExtendedIndexRef.current = next;
+      setActiveIndex(next === total - 1 ? 0 : next - 1);
+      if (next === total - 1) {
+        setTimeout(() => {
+          flatListRef.current?.scrollToIndex({ index: 1, animated: false });
+          currentExtendedIndexRef.current = 1;
+        }, 350);
+      }
     }, 3000);
     return () => clearInterval(timer);
-  }, [activeIndex, carouselData.length]);
+  }, [carouselData.length, extendedCarouselData.length]);
 
-  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const contentOffsetX = event.nativeEvent.contentOffset.x;
-    const currentIndex = Math.round(contentOffsetX / CAROUSEL_WIDTH);
-    if (currentIndex >= 0 && currentIndex < carouselData.length) {
-      if (currentIndex !== activeIndex) setActiveIndex(currentIndex);
+  // 사용자가 직접 스와이프했을 때 클론 위치 → 실제 위치로 순간이동
+  const handleMomentumScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const index = Math.round(event.nativeEvent.contentOffset.x / CAROUSEL_WIDTH);
+    const total = extendedCarouselData.length;
+    if (index === 0) {
+      const realLast = total - 2;
+      flatListRef.current?.scrollToIndex({ index: realLast, animated: false });
+      currentExtendedIndexRef.current = realLast;
+      setActiveIndex(carouselData.length - 1);
+    } else if (index === total - 1) {
+      flatListRef.current?.scrollToIndex({ index: 1, animated: false });
+      currentExtendedIndexRef.current = 1;
+      setActiveIndex(0);
+    } else {
+      currentExtendedIndexRef.current = index;
+      setActiveIndex(index - 1);
     }
   };
 
@@ -127,14 +165,19 @@ const MainScreen = () => {
         <View style={styles.imageBox}>
           <FlatList
             ref={flatListRef}
-            data={carouselData}
+            data={extendedCarouselData}
             renderItem={renderCarouselItem}
-            keyExtractor={(item) => String(item.id)}
+            keyExtractor={(_, index) => String(index)}
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
-            onScroll={handleScroll}
+            onMomentumScrollEnd={handleMomentumScrollEnd}
             scrollEventThrottle={16}
+            getItemLayout={(_, index) => ({
+              length: CAROUSEL_WIDTH,
+              offset: CAROUSEL_WIDTH * index,
+              index,
+            })}
           />
           <View style={styles.indicatorContainer}>
             {carouselData.map((_, index) => (
@@ -148,7 +191,7 @@ const MainScreen = () => {
 
         {/* 3. 국내 여행 버튼 */}
         <TouchableOpacity style={styles.domesticButton} activeOpacity={0.8}>
-          <Text style={styles.domesticButtonText}>국내 여행</Text>
+          <Text style={styles.domesticButtonText}>여행하러 가기</Text>
         </TouchableOpacity>
 
         {/* 4. 실시간 인기 코스 섹션 */}

@@ -66,15 +66,26 @@ const PlaceDetailScreen = () => {
       .then(res => setPhotos(res.data))
       .catch(() => {});
     placeApi.getList()
-      .then(res => setNearbyPlaces(res.data.results.filter(p => String(p.id) !== id).slice(0, 4)))
+      .then(res => {
+        const nearby = res.data.results.filter(p => String(p.id) !== id).slice(0, 4);
+        setNearbyPlaces(nearby);
+        const map: Record<number, boolean> = {};
+        nearby.forEach(p => { map[p.id] = p.is_bookmarked; });
+        setSavedNearby(map);
+      })
       .catch(() => {});
     scheduleApi.getList()
       .then(res => setSchedules(res.data))
       .catch(() => {});
   }, [id]);
 
-  const toggleNearby = (index: number) => {
-    setSavedNearby(prev => ({ ...prev, [index]: !prev[index] }));
+  const toggleNearby = async (placeId: number) => {
+    const isSavedNow = savedNearby[placeId];
+    try {
+      if (isSavedNow) await placeApi.unbookmark(placeId);
+      else await placeApi.bookmark(placeId);
+      setSavedNearby(prev => ({ ...prev, [placeId]: !prev[placeId] }));
+    } catch {}
   };
 
   const closeMenu = () => { if (isMenuVisible) setIsMenuVisible(false); };
@@ -251,11 +262,11 @@ const PlaceDetailScreen = () => {
                 >
                   <View style={[styles.nearbyImageBox, { height: smallImageHeight }]}>
                     <Image source={{ uri: nearby.image_url ?? undefined }} style={styles.nearbyImage} resizeMode="cover" />
-                    <TouchableOpacity style={styles.nearbyHeart} onPress={(e) => { e.stopPropagation(); toggleNearby(i); }} activeOpacity={0.8}>
+                    <TouchableOpacity style={styles.nearbyHeart} onPress={(e) => { e.stopPropagation(); toggleNearby(nearby.id); }} activeOpacity={0.8}>
                       <Heart
                         size={IconSize.large}
-                        color={savedNearby[i] ? Colors.light.heart : Colors.light.white}
-                        fill={savedNearby[i] ? Colors.light.heart : 'transparent'}
+                        color={savedNearby[nearby.id] ? Colors.light.heart : Colors.light.white}
+                        fill={savedNearby[nearby.id] ? Colors.light.heart : 'transparent'}
                         strokeWidth={IconStroke.thin}
                       />
                     </TouchableOpacity>

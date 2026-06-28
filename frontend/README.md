@@ -3,10 +3,10 @@
 React Native (Expo) 기반 모바일 앱 프론트엔드입니다.
 
 ## TODO
-일정 화면 완성(디자인은 계속 만드는중~)
-일정 편집에서 이름 변경 기능 추가
-전체 애니메이션 개편을 할지 말지 고민
----
+
+- 코스/여행하러가기 화면 구현 (코스 탭·MainScreen 여행하러가기 버튼이 동일 화면으로 연결 예정, 미구현)
+- 리뷰쓰기 기능 기획 및 구현 (CourseDetailScreen·PlaceDetailScreen 버튼에 onPress 없음, 화면 기획 필요)
+- PlaceDetailScreen 지도 구현 (현재 빈 회색 박스, lat/lng 데이터는 존재)
 
 ---
 
@@ -27,15 +27,16 @@ npm run web      # 웹 실행
 ```
 app/
 ├── (tabs)/
+│   ├── index.tsx              # 온보딩 (4페이지 슬라이드 + 시작하기)
 │   ├── MainScreen.tsx         # 메인 홈 (추천 코스·명소)
-│   ├── ScheduleScreen.tsx     # 내 일정 / 과거 일정 / 저장소
-│   ├── SettingScreen.tsx      # 설정
 │   └── _layout.tsx            # 탭 네비게이션 레이아웃
 ├── SearchScreen.tsx           # 검색 진입
 ├── SearchResultScreen.tsx     # 검색 결과 (코스·명소·포토스팟 탭)
 ├── CourseDetailScreen.tsx     # 코스 상세
 ├── PlaceDetailScreen.tsx      # 명소 상세
 ├── ScheduleDetailScreen.tsx   # 일정 상세 (슬라이딩 패널 + 지도)
+├── ScheduleScreen.tsx         # 내 일정 / 과거 일정 / 저장소
+├── SettingScreen.tsx          # 설정
 └── AccountScreen.tsx          # 계정 관리
 ```
 
@@ -60,7 +61,8 @@ components/
 │   ├── NewScheduleAlert       # 일정 만들기 스텝 1 (제목·날짜)
 │   ├── NewScheduleStep2Alert  # 일정 만들기 스텝 2 (코스 선택)
 │   ├── NewScheduleStep3Alert  # 일정 만들기 스텝 3 (최종 확인)
-│   └── CourseSelectPopup      # 코스 선택 팝업
+│   ├── CourseSelectPopup      # 코스 선택 팝업
+│   └── ScheduleEditNameAlert  # 일정 이름 수정 팝업 (편집 모드에서 제목 탭)
 ├── navigation/          # 네비게이션
 │   └── BottomTabBar     # 커스텀 하단 탭 바
 └── icons/               # 커스텀 아이콘
