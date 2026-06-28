@@ -1,5 +1,5 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { Search } from 'lucide-react-native';
+import { HelpCircle, Search } from 'lucide-react-native';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Dimensions,
@@ -18,7 +18,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
 import { Colors } from '@/constants/Colors';
-import { IconSize } from '@/constants/IconSize';
+import { IconSize, IconStroke } from '@/constants/IconSize';
 import { MEDIA_TYPE_LABEL } from '@/constants/labels';
 import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
@@ -189,7 +189,13 @@ const MainScreen = () => {
           </View>
         </View>
 
-        {/* 3. 국내 여행 버튼 */}
+        {/* 3. 퀴즈 버튼 */}
+        <TouchableOpacity style={styles.quizButton} activeOpacity={0.8}>
+          <HelpCircle size={IconSize.large} color={Colors.light.black} strokeWidth={IconStroke.regular} />
+          <Text style={styles.quizButtonText}>퀴즈</Text>
+        </TouchableOpacity>
+
+        {/* 4. 여행하러 가기 버튼 */}
         <TouchableOpacity style={styles.domesticButton} activeOpacity={0.8}>
           <Text style={styles.domesticButtonText}>여행하러 가기</Text>
         </TouchableOpacity>
@@ -334,7 +340,27 @@ const styles = StyleSheet.create({
     marginHorizontal: Spacing.h.xsmall,
   },
 
-  // 4. 국내 여행 버튼
+  // 4. 퀴즈 버튼
+  quizButton: {
+    marginTop: Spacing.v.medium,
+    marginHorizontal: Spacing.h.medium,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.light.white,
+    borderWidth: Spacing.lw.small,
+    borderColor: Colors.light.grayLight,
+    borderRadius: 999,
+    paddingVertical: Spacing.v.medium,
+    paddingHorizontal: Spacing.h.medium,
+  },
+
+  quizButtonText: {
+    ...Typography.title1,
+    color: Colors.light.black,
+    marginLeft: Spacing.h.small,
+  },
+
+  // 5. 여행하러 가기 버튼
   domesticButton: {
     marginTop: Spacing.v.medium,
     marginHorizontal: Spacing.h.medium,
@@ -354,7 +380,7 @@ const styles = StyleSheet.create({
     color: Colors.light.black,
   },
 
-  // 5. 섹션 타이틀
+  // 6. 섹션 타이틀
   sectionTitleContainer: {
     marginTop: Spacing.v.large,
     paddingLeft: Spacing.h.medium,
@@ -365,7 +391,7 @@ const styles = StyleSheet.create({
     color: Colors.light.black,
   },
 
-  // 6. 코스 리스트
+  // 7. 코스 리스트
   courseList: {
     marginTop: Spacing.v.medium,
   },

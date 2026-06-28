@@ -5,6 +5,7 @@ React Native (Expo) 기반 모바일 앱 프론트엔드입니다.
 ## TODO
 
 - 코스/여행하러가기 화면 구현 (코스 탭·MainScreen 여행하러가기 버튼이 동일 화면으로 연결 예정, 미구현)
+- 퀴즈 화면 구현 (MainScreen 퀴즈 버튼 연결 예정, 미구현)
 - 리뷰쓰기 기능 기획 및 구현 (CourseDetailScreen·PlaceDetailScreen 버튼에 onPress 없음, 화면 기획 필요)
 - PlaceDetailScreen 지도 구현 (현재 빈 회색 박스, lat/lng 데이터는 존재)
 
