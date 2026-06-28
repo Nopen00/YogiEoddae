@@ -129,16 +129,12 @@ const DraggableRow = React.memo(({ id, dragging, onBegin, onChange, onEnd, child
   onEnd: () => void;
   children: React.ReactNode;
 }) => {
-  const beginRef = useRef(onBegin); beginRef.current = onBegin;
-  const changeRef = useRef(onChange); changeRef.current = onChange;
-  const endRef = useRef(onEnd); endRef.current = onEnd;
-
   const gesture = useMemo(() => Gesture.Pan()
     .activateAfterLongPress(400)
-    .onStart(() => { runOnJS(beginRef.current)(id); })
-    .onChange(e => { runOnJS(changeRef.current)(id, e.translationY); })
-    .onFinalize(() => { runOnJS(endRef.current)(); })
-  , [id]);
+    .onStart(() => { runOnJS(onBegin)(id); })
+    .onChange(e => { runOnJS(onChange)(id, e.translationY); })
+    .onFinalize(() => { runOnJS(onEnd)(); })
+  , [id, onBegin, onChange, onEnd]);
 
   return (
     <GestureDetector gesture={gesture}>
@@ -189,6 +185,7 @@ export default function ScheduleDetailScreen() {
   const panelStateRef = useRef<PanelState>(0);
   const scrollRef = useRef<ScrollView>(null);
   const scrollYRef = useRef(0);
+  const autoEditProcessedRef = useRef(false);
 
   // 지도 카드 크기: CourseDetailScreen 이미지와 동일 규격 (좌우 16pt 여백, 3:4 비율)
   const mapCardWidth = screenWidth - Spacing.h.medium * 2;
@@ -225,9 +222,11 @@ export default function ScheduleDetailScreen() {
     }, [id])
   );
 
-  // autoEdit 파라미터가 있으면 일정 로드 후 즉시 편집 모드 진입
+  // autoEdit 파라미터가 있으면 일정 최초 로드 후 즉시 편집 모드 진입
+  // ref로 처리 여부를 추적해 저장 후 schedule 갱신 시 재진입 방지
   useEffect(() => {
-    if (autoEdit !== 'true' || !schedule || isEditing) return;
+    if (autoEdit !== 'true' || !schedule || isEditing || autoEditProcessedRef.current) return;
+    autoEditProcessedRef.current = true;
     const sorted = [...(schedule.daily_places ?? [])]
       .sort((a, b) => a.day_number !== b.day_number ? a.day_number - b.day_number : a.order - b.order);
     setLocalPlaces(sorted);

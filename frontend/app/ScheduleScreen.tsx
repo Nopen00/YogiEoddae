@@ -23,10 +23,12 @@ import {
   Image,
   Modal,
   ScrollView,
+  StyleProp,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
+  ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { mediaApi, placeApi, scheduleApi } from '../services/api';
@@ -189,6 +191,7 @@ const ScheduleCard = ({
   onMorePress,
   onEditPress,
   onDeletePress,
+  style,
 }: {
   schedule: Schedule;
   onPress?: () => void;
@@ -196,10 +199,11 @@ const ScheduleCard = ({
   onMorePress?: () => void;
   onEditPress?: () => void;
   onDeletePress?: () => void;
+  style?: StyleProp<ViewStyle>;
 }) => {
   const tags = getScheduleTags(schedule);
   return (
-    <TouchableOpacity style={styles.card} activeOpacity={0.85} onPress={onPress}>
+    <TouchableOpacity style={[styles.card, style]} activeOpacity={0.85} onPress={onPress}>
       <PlaceImageCluster dailyPlaces={schedule.daily_places} />
       <View style={styles.cardContent}>
         <Text style={styles.cardTitle} numberOfLines={1}>{schedule.title}</Text>
@@ -382,6 +386,7 @@ export default function ScheduleScreen() {
                   onMorePress={() => setOpenMenuId(prev => prev === s.id ? null : s.id)}
                   onEditPress={() => { setOpenMenuId(null); router.push({ pathname: '/ScheduleDetailScreen', params: { id: s.id, title: s.title, autoEdit: 'true' } }); }}
                   onDeletePress={() => { setOpenMenuId(null); setDeleteTarget(s); }}
+                  style={openMenuId === s.id ? { zIndex: 100 } : undefined}
                 />
               ))}
             </SectionWrapper>
@@ -395,6 +400,7 @@ export default function ScheduleScreen() {
                   onMorePress={() => setOpenMenuId(prev => prev === s.id ? null : s.id)}
                   onEditPress={() => { setOpenMenuId(null); router.push({ pathname: '/ScheduleDetailScreen', params: { id: s.id, title: s.title, autoEdit: 'true' } }); }}
                   onDeletePress={() => { setOpenMenuId(null); setDeleteTarget(s); }}
+                  style={openMenuId === s.id ? { zIndex: 100 } : undefined}
                 />
               ))}
             </SectionWrapper>
@@ -421,6 +427,7 @@ export default function ScheduleScreen() {
                 onMorePress={() => setOpenMenuId(prev => prev === s.id ? null : s.id)}
                 onEditPress={() => { setOpenMenuId(null); router.push({ pathname: '/ScheduleDetailScreen', params: { id: s.id, title: s.title, autoEdit: 'true' } }); }}
                 onDeletePress={() => { setOpenMenuId(null); setDeleteTarget(s); }}
+                style={openMenuId === s.id ? { zIndex: 100 } : undefined}
               />
             ))}
           </ScrollView>
