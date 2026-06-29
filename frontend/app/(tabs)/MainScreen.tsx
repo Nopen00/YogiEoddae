@@ -196,7 +196,7 @@ const MainScreen = () => {
         </TouchableOpacity>
 
         {/* 4. 여행하러 가기 버튼 */}
-        <TouchableOpacity style={styles.domesticButton} activeOpacity={0.8}>
+        <TouchableOpacity style={styles.domesticButton} activeOpacity={0.8} onPress={() => router.push('/CourseScreen')}>
           <Text style={styles.domesticButtonText}>여행하러 가기</Text>
         </TouchableOpacity>
 

@@ -354,9 +354,9 @@ const SearchResultScreen = () => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.light.background },
   headerWrapper: { paddingBottom: Spacing.v.small },
-  tabContainer: { flexDirection: 'row', height: 32, position: 'relative' },
+  tabContainer: { flexDirection: 'row', position: 'relative' },
   backgroundLine: { position: 'absolute', bottom: 0, left: 0, right: 0, height: Spacing.lw.small, backgroundColor: Colors.light.grayLight },
-  tabItem: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  tabItem: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: Spacing.v.small },
   tabText: { ...Typography.subtitle1 },
   indicator: { position: 'absolute', bottom: 0, left: 0, height: Spacing.lw.small, backgroundColor: Colors.light.black, zIndex: 1 },
   mainContent: { flex: 1, paddingTop: Spacing.v.medium },

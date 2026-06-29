@@ -37,6 +37,7 @@ function RootLayoutNav() {
             <Stack.Screen name="SettingScreen" options={{ headerShown: false }} />
             <Stack.Screen name="AccountScreen" options={{ headerShown: false }} />
             <Stack.Screen name="ScheduleDetailScreen" options={{ headerShown: false }} />
+            <Stack.Screen name="CourseScreen" options={{ headerShown: false }} />
           </Stack>
         </View>
         {showTabBar && <BottomTabBar />}

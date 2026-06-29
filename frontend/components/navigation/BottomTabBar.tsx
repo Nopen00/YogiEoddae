@@ -37,8 +37,8 @@ const TAB_ITEMS: Array<{
   {
     label: '코스',
     Icon: MapPin,
-    href: null,
-    activePatterns: [],
+    href: '/CourseScreen',
+    activePatterns: ['/CourseScreen'],
   },
   {
     label: '일정',
