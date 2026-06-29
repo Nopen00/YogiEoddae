@@ -362,7 +362,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   themeInfoText: {
-    ...Typography.body3,
+    ...Typography.body2,
     color: Colors.light.white,
   },
   card: {
