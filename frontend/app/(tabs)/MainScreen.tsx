@@ -28,6 +28,9 @@ import type { Media } from '../../services/types';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CAROUSEL_WIDTH = SCREEN_WIDTH - (Spacing.h.medium * 2);
+const CAROUSEL_HEIGHT = Math.round(CAROUSEL_WIDTH * 9 / 16);
+const COURSE_ITEM_WIDTH = Math.round(SCREEN_WIDTH * 0.4);
+const COURSE_ITEM_HEIGHT = Math.round(COURSE_ITEM_WIDTH * 3 / 4);
 
 const MainScreen = () => {
   const router = useRouter();
@@ -275,13 +278,13 @@ const styles = StyleSheet.create({
   imageBox: {
     marginTop: Spacing.v.small,
     marginHorizontal: Spacing.h.medium,
-    height: 240,
+    height: CAROUSEL_HEIGHT,
     position: 'relative',
   },
 
   carouselWrapper: {
     width: CAROUSEL_WIDTH,
-    height: 240,
+    height: CAROUSEL_HEIGHT,
     paddingHorizontal: Spacing.h.xsmall,
   },
 
@@ -402,12 +405,12 @@ const styles = StyleSheet.create({
   },
 
   courseItemContainer: {
-    width: 160,
+    width: COURSE_ITEM_WIDTH,
   },
 
   courseImageWrapper: {
-    width: 160,
-    height: 120,
+    width: COURSE_ITEM_WIDTH,
+    height: COURSE_ITEM_HEIGHT,
     borderRadius: Spacing.r.small,
     overflow: 'hidden',
     backgroundColor: Colors.light.grayLight,
