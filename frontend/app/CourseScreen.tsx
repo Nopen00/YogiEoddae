@@ -1,3 +1,4 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import SearchBar from '@/components/ui/SearchBar';
 import { TextSeparator } from '@/components/ui/TextSeparator';
 import { Colors } from '@/constants/Colors';
@@ -10,6 +11,8 @@ import { Heart, Star } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated,
+  Dimensions,
+  Image,
   LayoutChangeEvent,
   ScrollView,
   StyleSheet,
@@ -21,6 +24,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { mediaApi, placeApi } from '../services/api';
 import type { Media, Place, Tag } from '../services/types';
 import { Size } from '@/constants/Size';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const THEME_IMAGE_WIDTH = SCREEN_WIDTH - Spacing.h.medium * 4;
+const THEME_IMAGE_HEIGHT = Math.round(THEME_IMAGE_WIDTH * 3 / 4);
 
 const CATEGORIES = ['전체', '유튜브 PICK', '드라마 PICK', '영화 PICK', '포토스팟'];
 
@@ -248,15 +255,54 @@ const CourseScreen = () => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContainer}
       >
-        {selectedIndex < 4
-          ? currentMedia.map(renderMediaCard)
-          : places.map(renderPlaceCard)
-        }
-
-        {((selectedIndex < 4 && currentMedia.length === 0) || (selectedIndex === 4 && places.length === 0)) && (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyTitle}>항목이 없습니다.</Text>
-          </View>
+        {/* 이 달의 테마 박스 */}
+        {allMedia[0] && (
+          <TouchableOpacity
+            style={styles.themeBox}
+            activeOpacity={0.9}
+            onPress={() => router.push({ pathname: '/CourseDetailScreen', params: { id: allMedia[0].id, title: allMedia[0].title } })}
+          >
+            <Text style={styles.themeTitle}>이 달의 코스 : {allMedia[0].title}</Text>
+            <View style={styles.themeImageWrapper}>
+              <Image
+                source={{ uri: allMedia[0].thumbnail_url ?? undefined }}
+                style={styles.themeImage}
+                resizeMode="cover"
+              />
+              <LinearGradient
+                colors={['transparent', 'rgba(0,0,0,0.75)']}
+                style={styles.themeGradient}
+              >
+                <View style={styles.themeInfoOverlay}>
+                  <View style={styles.themeInfoRow}>
+                    <Text style={styles.themeInfoText}>
+                      {MEDIA_TYPE_LABEL[allMedia[0].media_type] ?? allMedia[0].media_type}
+                    </Text>
+                    {allMedia[0].place_count != null && (
+                      <>
+                        <TextSeparator color={Colors.light.white} />
+                        <Text style={styles.themeInfoText}>{allMedia[0].place_count}개 장소</Text>
+                      </>
+                    )}
+                    {allMedia[0].rating != null && (
+                      <>
+                        <TextSeparator color={Colors.light.white} />
+                        <Star size={IconSize.xsmall} color={Colors.light.white} strokeWidth={IconStroke.regular} />
+                        <Text style={styles.themeInfoText}> {allMedia[0].rating.toFixed(1)}</Text>
+                      </>
+                    )}
+                    {allMedia[0].like_count != null && (
+                      <>
+                        <TextSeparator color={Colors.light.white} />
+                        <Heart size={IconSize.xsmall} color={Colors.light.white} strokeWidth={IconStroke.regular} />
+                        <Text style={styles.themeInfoText}> {formatLikeCount(allMedia[0].like_count)}</Text>
+                      </>
+                    )}
+                  </View>
+                </View>
+              </LinearGradient>
+            </View>
+          </TouchableOpacity>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -272,8 +318,53 @@ const styles = StyleSheet.create({
   tabItem: { justifyContent: 'center', alignItems: 'center', paddingVertical: Spacing.v.small, paddingHorizontal: Spacing.h.medium },
   tabText: { ...Typography.subtitle1 },
   indicator: { position: 'absolute', bottom: 0, left: 0, height: Spacing.lw.small, backgroundColor: Colors.light.black, zIndex: 1 },
-  mainContent: { flex: 1, paddingTop: Spacing.v.medium },
+  mainContent: { flex: 1 },
   scrollContainer: { paddingBottom: Spacing.v.screenBottom },
+  themeBox: {
+    marginTop: Spacing.v.medium,
+    marginHorizontal: Spacing.h.medium,
+    paddingTop: Spacing.v.medium,
+    paddingBottom: Spacing.v.medium,
+    borderRadius: Spacing.r.small,
+    borderWidth: Spacing.lw.small,
+    borderColor: Colors.light.grayLight,
+  },
+  themeTitle: {
+    paddingLeft: Spacing.h.medium,
+    ...Typography.title1,
+    color: Colors.light.black,
+  },
+  themeImageWrapper: {
+    marginTop: Spacing.h.small,
+    marginHorizontal: Spacing.h.medium,
+    height: THEME_IMAGE_HEIGHT,
+    borderRadius: Spacing.r.small,
+    overflow: 'hidden',
+    backgroundColor: Colors.light.grayLight,
+  },
+  themeImage: {
+    width: '100%',
+    height: '100%',
+  },
+  themeGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '50%',
+    justifyContent: 'flex-end',
+  },
+  themeInfoOverlay: {
+    padding: Spacing.h.small,
+  },
+  themeInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  themeInfoText: {
+    ...Typography.body3,
+    color: Colors.light.white,
+  },
   card: {
     minHeight: 106,
     marginHorizontal: Spacing.h.medium,
