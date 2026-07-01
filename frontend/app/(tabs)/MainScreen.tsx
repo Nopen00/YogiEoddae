@@ -390,7 +390,7 @@ const styles = StyleSheet.create({
   },
 
   sectionTitleText: {
-    ...Typography.HeadLine5,
+    ...Typography.title1,
     color: Colors.light.black,
   },
 
@@ -401,7 +401,7 @@ const styles = StyleSheet.create({
 
   courseListContent: {
     paddingHorizontal: Spacing.h.medium,
-    gap: Spacing.h.small,
+    gap: Spacing.h.medium,
   },
 
   courseItemContainer: {

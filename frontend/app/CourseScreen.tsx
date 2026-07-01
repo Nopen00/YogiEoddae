@@ -3,7 +3,7 @@ import SearchBar from '@/components/ui/SearchBar';
 import { TextSeparator } from '@/components/ui/TextSeparator';
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
-import { CATEGORY_LABEL, MEDIA_TYPE_LABEL, shortAddress } from '@/constants/labels';
+import { CATEGORY_LABEL, CITY_SHORT, MEDIA_TYPE_LABEL, shortAddress } from '@/constants/labels';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { useRouter } from 'expo-router';
@@ -12,6 +12,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Dimensions,
+  FlatList,
   Image,
   LayoutChangeEvent,
   ScrollView,
@@ -31,8 +32,11 @@ const THEME_IMAGE_HEIGHT = Math.round(THEME_IMAGE_WIDTH * 3 / 4);
 const THEME_CARD_CONTENT_WIDTH = SCREEN_WIDTH - Spacing.h.medium * 4;
 const THEME_CARD_IMAGE_WIDTH = Math.round(THEME_CARD_CONTENT_WIDTH * 0.42);
 const THEME_CARD_IMAGE_HEIGHT = Math.round(THEME_CARD_IMAGE_WIDTH * 3 / 4);
+const COURSE_ITEM_WIDTH = Math.round(SCREEN_WIDTH * 0.4);
+const COURSE_ITEM_HEIGHT = Math.round(COURSE_ITEM_WIDTH * 3 / 4);
 
-const CATEGORIES = ['전체', '유튜브 PICK', '드라마 PICK', '영화 PICK', '포토스팟'];
+const CATEGORIES = ['추천', '유튜브 PICK', '드라마 PICK', '영화 PICK', '포토스팟'];
+const PHOTO_THEMES = ['자연', '음식', '풍경', '야경', '감성', '카페', '도심', '계절'];
 
 const formatLikeCount = (count: number): string => {
   if (count < 100) return count.toString();
@@ -46,13 +50,12 @@ const getProcessedTags = (tags: Tag[] = []) => {
   return { visibleTags, extraCount };
 };
 
-const getThemeCardTitle = (media: Media): string => {
+const getThemeCardTitle = (media: Media, region?: string): string => {
   const label = MEDIA_TYPE_LABEL[media.media_type] ?? media.media_type;
   const lastCode = label.charCodeAt(label.length - 1);
   const hasBatchim = (lastCode - 0xAC00) % 28 !== 0;
   const particle = hasBatchim ? '으로' : '로';
-  const placeTag = media.tags.find(t => t.category === 'place_type');
-  const place = placeTag?.name ?? '';
+  const place = region ?? media.tags.find(t => t.category === 'place_type')?.name ?? '';
   return place ? `${label}${particle} 보는 ${place}` : `${label}${particle} 보는 코스`;
 };
 
@@ -90,6 +93,7 @@ const CourseScreen = () => {
   const [dramaMedia, setDramaMedia] = useState<Media[]>([]);
   const [movieMedia, setMovieMedia] = useState<Media[]>([]);
   const [places, setPlaces] = useState<Place[]>([]);
+  const [themeRegions, setThemeRegions] = useState<Record<number, string>>({});
 
   useEffect(() => {
     mediaApi.getList().then(res => setAllMedia(res.data.results)).catch(() => {});
@@ -98,6 +102,18 @@ const CourseScreen = () => {
     mediaApi.getList({ type: 'movie' }).then(res => setMovieMedia(res.data.results)).catch(() => {});
     placeApi.getList().then(res => setPlaces(res.data.results)).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    [allMedia[1], allMedia[5]].forEach(media => {
+      if (!media) return;
+      mediaApi.getPlaces(media.id).then(res => {
+        if (res.data.length > 0) {
+          const city = res.data[0].place.address.split(' ')[0];
+          setThemeRegions(prev => ({ ...prev, [media.id]: CITY_SHORT[city] ?? city }));
+        }
+      }).catch(() => {});
+    });
+  }, [allMedia]);
 
   const handleTabPress = (index: number) => {
     setSelectedIndex(index);
@@ -186,7 +202,7 @@ const CourseScreen = () => {
         activeOpacity={0.9}
         onPress={() => router.push({ pathname: '/CourseDetailScreen', params: { id: item.id, title: item.title } })}
       >
-        <Text style={styles.themeCourseBoxTitle}>{getThemeCardTitle(item)}</Text>
+        <Text style={styles.themeCourseBoxTitle}>{getThemeCardTitle(item, themeRegions[item.id])}</Text>
         <View style={styles.themeCourseRow}>
           <View style={styles.themeCourseImageBox}>
             <Image
@@ -235,6 +251,26 @@ const CourseScreen = () => {
       </TouchableOpacity>
     );
   };
+
+  const renderPhotoThemeItem = ({ item }: { item: string }) => (
+    <View style={styles.photoThemeItemContainer}>
+      <View style={styles.photoThemeCircle} />
+      <Text style={styles.photoThemeTitleText} numberOfLines={1}>{item}</Text>
+    </View>
+  );
+
+  const renderCourseItem = ({ item }: { item: Media }) => (
+    <TouchableOpacity
+      style={styles.courseItemContainer}
+      activeOpacity={0.8}
+      onPress={() => router.push({ pathname: '/CourseDetailScreen', params: { id: item.id, title: item.title } })}
+    >
+      <View style={styles.courseImageWrapper}>
+        <Image source={{ uri: item.thumbnail_url ?? undefined }} style={styles.courseImage} />
+      </View>
+      <Text style={styles.courseTitleText} numberOfLines={1}>{item.title}</Text>
+    </TouchableOpacity>
+  );
 
   const renderPlaceCard = (item: Place) => {
     const { visibleTags, extraCount } = getProcessedTags(item.tags);
@@ -381,7 +417,49 @@ const CourseScreen = () => {
 
         {/* 테마 코스 카드 2개 */}
         {allMedia[1] && renderThemeCourseCard(allMedia[1])}
-        {allMedia[2] && renderThemeCourseCard(allMedia[2])}
+        {allMedia[5] && renderThemeCourseCard(allMedia[5])}
+
+        {/* 실시간 인기 코스 */}
+        <View style={styles.sectionTitleContainer}>
+          <Text style={styles.sectionTitleText}>실시간 인기 코스</Text>
+        </View>
+        <FlatList
+          data={allMedia.slice(0, 4)}
+          renderItem={renderCourseItem}
+          keyExtractor={(item) => `popular-${item.id}`}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.courseListContent}
+          style={styles.courseList}
+        />
+
+        {/* 맞춤형 여행 코스 */}
+        <View style={[styles.sectionTitleContainer, { marginTop: Spacing.v.large }]}>
+          <Text style={styles.sectionTitleText}>맞춤형 여행 코스</Text>
+        </View>
+        <FlatList
+          data={allMedia.slice(4, 8)}
+          renderItem={renderCourseItem}
+          keyExtractor={(item) => `recommended-${item.id}`}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.courseListContent}
+          style={styles.courseList}
+        />
+
+        {/* 포토테마 */}
+        <View style={[styles.sectionTitleContainer, { marginTop: Spacing.v.large }]}>
+          <Text style={styles.sectionTitleText}>포토테마</Text>
+        </View>
+        <FlatList
+          data={PHOTO_THEMES}
+          renderItem={renderPhotoThemeItem}
+          keyExtractor={(item) => `photo-${item}`}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.courseListContent}
+          style={styles.courseList}
+        />
         </>}
 
         {/* ── 유튜브 / 드라마 / 영화 탭 ── */}
@@ -537,6 +615,58 @@ const styles = StyleSheet.create({
     ...Typography.body2,
     color: Colors.light.primary,
     marginRight: Spacing.h.xsmall,
+  },
+  sectionTitleContainer: {
+    marginTop: Spacing.v.large,
+    paddingLeft: Spacing.h.medium,
+  },
+  sectionTitleText: {
+    ...Typography.title1,
+    color: Colors.light.black,
+  },
+  courseList: {
+    marginTop: Spacing.v.medium,
+  },
+  courseListContent: {
+    paddingHorizontal: Spacing.h.medium,
+    gap: Spacing.h.medium,
+  },
+  courseItemContainer: {
+    width: COURSE_ITEM_WIDTH,
+  },
+  courseImageWrapper: {
+    width: COURSE_ITEM_WIDTH,
+    height: COURSE_ITEM_HEIGHT,
+    borderRadius: Spacing.r.small,
+    overflow: 'hidden',
+    backgroundColor: Colors.light.grayLight,
+  },
+  courseImage: {
+    width: '100%',
+    height: '100%',
+  },
+  courseTitleText: {
+    marginTop: Spacing.v.small,
+    ...Typography.body3,
+    color: Colors.light.grayDark,
+    textAlign: 'left',
+  },
+  photoThemeItemContainer: {
+    alignItems: 'center',
+    width: Size.circleMd,
+  },
+  photoThemeCircle: {
+    width: Size.circleMd,
+    height: Size.circleMd,
+    borderRadius: Size.circleMd / 2,
+    overflow: 'hidden',
+    backgroundColor: Colors.light.grayLight,
+  },
+  photoThemeTitleText: {
+    marginTop: Spacing.v.small,
+    ...Typography.button4,
+    color: Colors.light.grayDark,
+    textAlign: 'center',
   },
 });
 

@@ -4,11 +4,10 @@ React Native (Expo) 기반 모바일 앱 프론트엔드입니다.
 
 ## TODO
 
-- **CourseScreen 전체 탭 섹션명 재검토** — `전체` 탭은 "이 달의 코스" 박스 등 홈 화면과 유사한 특수 레이아웃으로 구성 중. 하단 리스트 섹션 구성이 확정되면 탭 레이블(`CATEGORIES[0]`)을 실제 콘텐츠에 맞게 변경 필요. (`app/CourseScreen.tsx`)
-- CourseScreen 하단 리스트 리디자인 (현재 비어 있음, 재설계 예정)
 - 퀴즈 화면 구현 (MainScreen 퀴즈 버튼 연결 예정, 미구현)
 - 리뷰쓰기 기능 기획 및 구현 (CourseDetailScreen·PlaceDetailScreen 버튼에 onPress 없음, 화면 기획 필요)
 - PlaceDetailScreen 지도 구현 (현재 빈 회색 박스, lat/lng 데이터는 존재)
+- CourseScreen 포토테마 탭 연결 — 테마 카드 클릭 시 포토스팟 탭으로 이동 + 해당 태그 필터링 (연결 보류 중, `app/CourseScreen.tsx`)
 
 ---
 
