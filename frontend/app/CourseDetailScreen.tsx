@@ -114,9 +114,9 @@ const CourseDetailScreen = () => {
             <Text style={styles.titleText}>{media?.title ?? '로딩 중...'}</Text>
 
             <MetaRow>
-              <Text style={styles.metaText}>{mediaPlaces.length}개 장소</Text>
-              <TextSeparator />
               <Text style={styles.metaText}>{MEDIA_TYPE_LABEL[media?.media_type ?? ''] ?? media?.media_type}</Text>
+              <TextSeparator />
+              <Text style={styles.metaText}>{mediaPlaces.length}개 장소</Text>
               {media?.rating != null && (
                 <>
                   <TextSeparator />

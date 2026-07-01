@@ -28,6 +28,9 @@ import { Size } from '@/constants/Size';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const THEME_IMAGE_WIDTH = SCREEN_WIDTH - Spacing.h.medium * 4;
 const THEME_IMAGE_HEIGHT = Math.round(THEME_IMAGE_WIDTH * 3 / 4);
+const THEME_CARD_CONTENT_WIDTH = SCREEN_WIDTH - Spacing.h.medium * 4;
+const THEME_CARD_IMAGE_WIDTH = Math.round(THEME_CARD_CONTENT_WIDTH * 0.42);
+const THEME_CARD_IMAGE_HEIGHT = Math.round(THEME_CARD_IMAGE_WIDTH * 3 / 4);
 
 const CATEGORIES = ['전체', '유튜브 PICK', '드라마 PICK', '영화 PICK', '포토스팟'];
 
@@ -41,6 +44,16 @@ const getProcessedTags = (tags: Tag[] = []) => {
   const visibleTags = names.slice(0, 3);
   const extraCount = names.length - 3;
   return { visibleTags, extraCount };
+};
+
+const getThemeCardTitle = (media: Media): string => {
+  const label = MEDIA_TYPE_LABEL[media.media_type] ?? media.media_type;
+  const lastCode = label.charCodeAt(label.length - 1);
+  const hasBatchim = (lastCode - 0xAC00) % 28 !== 0;
+  const particle = hasBatchim ? '으로' : '로';
+  const placeTag = media.tags.find(t => t.category === 'place_type');
+  const place = placeTag?.name ?? '';
+  return place ? `${label}${particle} 보는 ${place}` : `${label}${particle} 보는 코스`;
 };
 
 const CourseScreen = () => {
@@ -164,6 +177,65 @@ const CourseScreen = () => {
     );
   };
 
+  const renderThemeCourseCard = (item: Media) => {
+    const { visibleTags, extraCount } = getProcessedTags(item.tags);
+    return (
+      <TouchableOpacity
+        key={`theme-course-${item.id}`}
+        style={styles.themeCourseBox}
+        activeOpacity={0.9}
+        onPress={() => router.push({ pathname: '/CourseDetailScreen', params: { id: item.id, title: item.title } })}
+      >
+        <Text style={styles.themeCourseBoxTitle}>{getThemeCardTitle(item)}</Text>
+        <View style={styles.themeCourseRow}>
+          <View style={styles.themeCourseImageBox}>
+            <Image
+              source={{ uri: item.thumbnail_url ?? undefined }}
+              style={styles.themeCourseImageFill}
+              resizeMode="cover"
+            />
+          </View>
+          <View style={styles.themeCourseContent}>
+            <Text style={styles.themeCourseTitle} numberOfLines={2}>{item.title}</Text>
+            <View style={styles.themeCourseMetaRow}>
+              <View style={styles.metaChip}>
+                <Text style={styles.themeCourseMetaText}>{MEDIA_TYPE_LABEL[item.media_type] ?? item.media_type}</Text>
+                {(item.place_count != null || item.rating != null || item.like_count != null) && <TextSeparator />}
+              </View>
+              {item.place_count != null && (
+                <View style={styles.metaChip}>
+                  <Text style={styles.themeCourseMetaText}>{item.place_count}개 장소</Text>
+                  {(item.rating != null || item.like_count != null) && <TextSeparator />}
+                </View>
+              )}
+              {(item.rating != null || item.like_count != null) && (
+                <View style={styles.metaChip}>
+                  {item.rating != null && (
+                    <>
+                      <Star size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
+                      <Text style={styles.themeCourseMetaText}> {item.rating.toFixed(1)}</Text>
+                    </>
+                  )}
+                  {item.rating != null && item.like_count != null && <TextSeparator />}
+                  {item.like_count != null && (
+                    <>
+                      <Heart size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
+                      <Text style={styles.themeCourseMetaText}> {formatLikeCount(item.like_count)}</Text>
+                    </>
+                  )}
+                </View>
+              )}
+            </View>
+            <View style={styles.themeCourseTagRow}>
+              {visibleTags.map((tag, idx) => <Text key={idx} style={styles.themeCourseTagText}>#{tag}</Text>)}
+              {extraCount > 0 && <Text style={styles.themeCourseTagText}>+{extraCount}</Text>}
+            </View>
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
   const renderPlaceCard = (item: Place) => {
     const { visibleTags, extraCount } = getProcessedTags(item.tags);
     const shortAddr = shortAddress(item.address);
@@ -255,6 +327,8 @@ const CourseScreen = () => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContainer}
       >
+        {/* ── 전체 탭 ── */}
+        {selectedIndex === 0 && <>
         {/* 이 달의 테마 박스 */}
         {allMedia[0] && (
           <TouchableOpacity
@@ -303,6 +377,25 @@ const CourseScreen = () => {
               </LinearGradient>
             </View>
           </TouchableOpacity>
+        )}
+
+        {/* 테마 코스 카드 2개 */}
+        {allMedia[1] && renderThemeCourseCard(allMedia[1])}
+        {allMedia[2] && renderThemeCourseCard(allMedia[2])}
+        </>}
+
+        {/* ── 유튜브 / 드라마 / 영화 탭 ── */}
+        {(selectedIndex === 1 || selectedIndex === 2 || selectedIndex === 3) && (
+          <View style={{ paddingTop: Spacing.v.medium }}>
+            {currentMedia.map(item => renderMediaCard(item))}
+          </View>
+        )}
+
+        {/* ── 포토스팟 탭 ── */}
+        {selectedIndex === 4 && (
+          <View style={{ paddingTop: Spacing.v.medium }}>
+            {places.map(item => renderPlaceCard(item))}
+          </View>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -387,6 +480,64 @@ const styles = StyleSheet.create({
   tagText: { ...Typography.body2, color: Colors.light.primary, marginRight: Spacing.h.xsmall },
   emptyState: { paddingTop: Spacing.v.medium, alignItems: 'center' },
   emptyTitle: { ...Typography.subtitle2, color: Colors.light.black },
+  themeCourseBox: {
+    marginTop: Spacing.v.medium,
+    marginHorizontal: Spacing.h.medium,
+    borderRadius: Spacing.r.small,
+    borderWidth: Spacing.lw.small,
+    borderColor: Colors.light.grayLight,
+    padding: Spacing.v.medium,
+  },
+  themeCourseBoxTitle: {
+    ...Typography.title1,
+    color: Colors.light.black,
+  },
+  themeCourseRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginTop: Spacing.v.small,
+  },
+  themeCourseImageBox: {
+    width: THEME_CARD_IMAGE_WIDTH,
+    height: THEME_CARD_IMAGE_HEIGHT,
+    borderRadius: Spacing.r.small,
+    overflow: 'hidden',
+    backgroundColor: Colors.light.grayLight,
+  },
+  themeCourseImageFill: {
+    width: '100%',
+    height: '100%',
+  },
+  themeCourseContent: {
+    flex: 1,
+    marginLeft: Spacing.h.small,
+  },
+  themeCourseTitle: {
+    ...Typography.title2,
+    color: Colors.light.black,
+  },
+  themeCourseMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    rowGap: Spacing.h.xsmall,
+    marginTop: Spacing.v.small,
+  },
+  themeCourseMetaText: {
+    ...Typography.subtitle1,
+    color: Colors.light.grayDark,
+  },
+  themeCourseTagRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    marginTop: Spacing.v.small,
+  },
+  themeCourseTagText: {
+    ...Typography.body2,
+    color: Colors.light.primary,
+    marginRight: Spacing.h.xsmall,
+  },
 });
 
 export default CourseScreen;
