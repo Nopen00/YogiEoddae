@@ -44,7 +44,7 @@ const TAB_BAR_HEIGHT = Typography.subtitle1.lineHeight + Spacing.v.small * 2;
 const CATEGORIES = ['추천', '유튜브 PICK', '드라마 PICK', '영화 PICK', '포토스팟'];
 const COURSE_SORT_OPTIONS = SORT_OPTIONS.filter(option => option !== '관련도 높은 순');
 const PLACE_COUNT_SORT_OPTIONS: SortOption[] = ['장소 많은 순', '장소 적은 순'];
-const PHOTO_THEMES = ['자연', '음식', '풍경', '야경', '감성', '카페', '도심', '계절'];
+const PHOTO_TAGS = ['자연', '음식', '풍경', '야경', '감성', '카페', '도심', '계절'];
 
 const formatLikeCount = (count: number): string => {
   if (count < 100) return count.toString();
@@ -111,7 +111,7 @@ const CourseScreen = () => {
   const [pickCardImages, setPickCardImages] = useState<Record<number, string[]>>({});
   const [pickCardPlaceCounts, setPickCardPlaceCounts] = useState<Record<number, number>>({});
   const [savedPlaces, setSavedPlaces] = useState<Record<number, boolean>>({});
-  const [selectedPhotoTheme, setSelectedPhotoTheme] = useState<string | null>(null);
+  const [selectedPhotoTag, setSelectedPhotoTag] = useState<string | null>(null);
 
   useEffect(() => {
     mediaApi.getList().then(res => setAllMedia(res.data.results)).catch(() => {});
@@ -197,8 +197,8 @@ const CourseScreen = () => {
   const sortedDramaMedia = sortByOption(dramaMedia, sortOption, m => m.title, getPickCardPlaceCount);
   const sortedMovieMedia = sortByOption(movieMedia, sortOption, m => m.title, getPickCardPlaceCount);
   const sortedPlaces = sortByOption(places, sortOption, p => p.name);
-  const filteredPlaces = selectedPhotoTheme
-    ? sortedPlaces.filter(p => p.tags.some(t => t.name === selectedPhotoTheme))
+  const filteredPlaces = selectedPhotoTag
+    ? sortedPlaces.filter(p => p.tags.some(t => t.name === selectedPhotoTag))
     : sortedPlaces;
 
   const renderThemeCourseCard = (item: Media) => {
@@ -392,41 +392,41 @@ const CourseScreen = () => {
     );
   };
 
-  const renderPhotoThemeItem = ({ item }: { item: string }) => (
+  const renderPhotoTagItem = ({ item }: { item: string }) => (
     <TouchableOpacity
-      style={styles.photoThemeItemContainer}
+      style={styles.photoTagItemContainer}
       activeOpacity={0.7}
-      onPress={() => setSelectedPhotoTheme(item)}
+      onPress={() => setSelectedPhotoTag(item)}
     >
-      <View style={styles.photoThemeCircle} />
-      <Text style={styles.photoThemeTitleText} numberOfLines={1}>{item}</Text>
+      <View style={styles.photoTagCircle} />
+      <Text style={styles.photoTagTitleText} numberOfLines={1}>{item}</Text>
     </TouchableOpacity>
   );
 
-  const renderPhotoThemeSection = (marginTop: number, keyPrefix: string) =>
-    selectedPhotoTheme ? (
-      <View style={[styles.photoThemePillBox, { marginTop }]}>
-        <View style={styles.photoThemePillLeftGroup}>
-          <Text style={styles.photoThemePillTitle} numberOfLines={1}>{selectedPhotoTheme}</Text>
-          <View style={styles.photoThemePillImageBox}>
-            <Image source={{ uri: undefined }} style={styles.photoThemePillImage} resizeMode="cover" />
+  const renderPhotoTagSection = (marginTop: number, keyPrefix: string) =>
+    selectedPhotoTag ? (
+      <View style={[styles.photoTagPillBox, { marginTop }]}>
+        <View style={styles.photoTagPillLeftGroup}>
+          <Text style={styles.photoTagPillTitle} numberOfLines={1}>{selectedPhotoTag}</Text>
+          <View style={styles.photoTagPillImageBox}>
+            <Image source={{ uri: undefined }} style={styles.photoTagPillImage} resizeMode="cover" />
           </View>
-          <Text style={styles.photoThemePillSubtitle} numberOfLines={1}>테마 선택</Text>
+          <Text style={styles.photoTagPillSubtitle} numberOfLines={1}>태그 선택</Text>
         </View>
-        <TouchableOpacity onPress={() => setSelectedPhotoTheme(null)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+        <TouchableOpacity onPress={() => setSelectedPhotoTag(null)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <X size={IconSize.large} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
         </TouchableOpacity>
       </View>
     ) : (
-      <View style={[styles.photoThemeBox, { marginTop }]}>
-        <Text style={styles.sectionTitleText}>포토테마</Text>
+      <View style={[styles.photoTagBox, { marginTop }]}>
+        <Text style={styles.sectionTitleText}>포토태그</Text>
         <FlatList
-          data={PHOTO_THEMES}
-          renderItem={renderPhotoThemeItem}
+          data={PHOTO_TAGS}
+          renderItem={renderPhotoTagItem}
           keyExtractor={(item) => `${keyPrefix}-${item}`}
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.photoThemeListContent}
+          contentContainerStyle={styles.photoTagListContent}
           style={styles.courseList}
         />
       </View>
@@ -605,8 +605,8 @@ const CourseScreen = () => {
         {allMedia[1] && renderThemeCourseCard(allMedia[1])}
         {allMedia[5] && renderThemeCourseCard(allMedia[5])}
 
-        {/* 포토테마 */}
-        {renderPhotoThemeSection(Spacing.v.large, 'photo')}
+        {/* 포토태그 */}
+        {renderPhotoTagSection(Spacing.v.large, 'photo')}
 
         {/* 실시간 인기 코스 */}
         <View style={[styles.sectionTitleContainer, { marginTop: Spacing.v.large }]}>
@@ -681,17 +681,17 @@ const CourseScreen = () => {
 
         {/* ── 포토스팟 탭 ── */}
         <ScrollView key="4" showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContainer}>
-          {renderPhotoThemeSection(Spacing.v.medium, 'photo-spot-theme')}
+          {renderPhotoTagSection(Spacing.v.medium, 'photo-spot-theme')}
           {filteredPlaces.length > 0 ? (
             <View style={styles.photoSpotGrid}>
               {filteredPlaces.map(item => renderPhotoSpotCard(item))}
             </View>
           ) : (
             <View style={styles.emptyState}>
-              {selectedPhotoTheme ? (
+              {selectedPhotoTag ? (
                 <>
-                  <Text style={styles.emptyTitle}>해당 테마의 포토스팟이 없습니다.</Text>
-                  <Text style={styles.emptyDesc}>다른 테마를 확인해보세요.</Text>
+                  <Text style={styles.emptyTitle}>해당 태그의 포토스팟이 없습니다.</Text>
+                  <Text style={styles.emptyDesc}>다른 태그를 확인해보세요.</Text>
                 </>
               ) : (
                 <>
@@ -953,7 +953,7 @@ const styles = StyleSheet.create({
     color: Colors.light.grayDark,
     textAlign: 'left',
   },
-  photoThemeBox: {
+  photoTagBox: {
     marginTop: Spacing.v.large,
     marginHorizontal: Spacing.h.medium,
     padding: Spacing.v.medium,
@@ -961,10 +961,10 @@ const styles = StyleSheet.create({
     borderColor: Colors.light.grayLight,
     borderRadius: Spacing.r.small,
   },
-  photoThemeListContent: {
+  photoTagListContent: {
     gap: Spacing.h.medium,
   },
-  photoThemePillBox: {
+  photoTagPillBox: {
     marginHorizontal: Spacing.h.medium,
     flexDirection: 'row',
     alignItems: 'center',
@@ -974,16 +974,16 @@ const styles = StyleSheet.create({
     borderColor: Colors.light.grayLight,
     borderRadius: 999,
   },
-  photoThemePillLeftGroup: {
+  photoTagPillLeftGroup: {
     flexDirection: 'row',
     alignItems: 'center',
     flexShrink: 1,
   },
-  photoThemePillTitle: {
+  photoTagPillTitle: {
     ...Typography.title1,
     color: Colors.light.black,
   },
-  photoThemePillImageBox: {
+  photoTagPillImageBox: {
     marginLeft: Spacing.h.small,
     width: IconSize.large,
     height: IconSize.large,
@@ -991,27 +991,27 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: Colors.light.grayLight,
   },
-  photoThemePillImage: {
+  photoTagPillImage: {
     width: '100%',
     height: '100%',
   },
-  photoThemePillSubtitle: {
+  photoTagPillSubtitle: {
     marginLeft: Spacing.h.small,
     ...Typography.subtitle2,
     color: Colors.light.grayDark,
   },
-  photoThemeItemContainer: {
+  photoTagItemContainer: {
     alignItems: 'center',
     width: Size.circleMd,
   },
-  photoThemeCircle: {
+  photoTagCircle: {
     width: Size.circleMd,
     height: Size.circleMd,
     borderRadius: Size.circleMd / 2,
     overflow: 'hidden',
     backgroundColor: Colors.light.grayLight,
   },
-  photoThemeTitleText: {
+  photoTagTitleText: {
     marginTop: Spacing.v.small,
     ...Typography.button4,
     color: Colors.light.grayDark,

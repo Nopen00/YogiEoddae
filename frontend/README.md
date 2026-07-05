@@ -7,7 +7,7 @@ React Native (Expo) 기반 모바일 앱 프론트엔드입니다.
 - 퀴즈 화면 구현 (MainScreen 퀴즈 버튼 연결 예정, 미구현)
 - 리뷰쓰기 기능 기획 및 구현 (CourseDetailScreen·PlaceDetailScreen 버튼에 onPress 없음, 화면 기획 필요)
 - PlaceDetailScreen 지도 구현 (현재 빈 회색 박스, lat/lng 데이터는 존재)
-- 포토테마 이미지 데이터 연동 (현재 테마 원형·필터 pill의 이미지는 회색 placeholder, 백엔드 테마 이미지 필드 필요)
+- 포토태그 이미지 데이터 연동 (현재 태그 원형·필터 pill의 이미지는 회색 placeholder, 백엔드 태그 이미지 필드 필요)
 - 포토스팟 상세페이지 작성 (PlaceDetailScreen과 별개 화면, 촬영 관련 정보 위주로 구성 예정 — 촬영 팁·포토존 각도/포즈 안내·최적 촬영 시간대 등)
 
 ---
@@ -61,14 +61,14 @@ app/
 - `utils/sortByOption.ts`: `SortOption`에 따라 배열을 정렬하는 공용 비교 함수. 화면마다 정렬 대상 배열에 적용.
 - `CourseScreen`은 추천 탭에서 정렬 버튼 자체를 비활성화(회색)하고, 포토스팟 탭에서는 "장소 많은/적은 순" 옵션만 선택 불가 처리합니다.
 
-### 포토스팟 카드 & 테마 필터 (`CourseScreen`)
+### 포토스팟 카드 & 태그 필터 (`CourseScreen`)
 
 포토스팟 탭은 2열 그리드 카드(`photoSpotCard`)로 구성됩니다.
 
 - 카드 구조: 4:3 이미지(`photoSpotImageWrapper`, 하단 모서리 각짐) + 하단 정보 박스(`photoSpotInfoBox`, 타이틀·태그). 이미지 위에는 저장 하트 아이콘(우상단)과 별점·하트수(좌하단, 메인 화면 캐러셀과 동일한 하단 그라데이션 오버레이 위에 화이트 텍스트)가 겹쳐집니다.
 - 저장 하트는 `placeApi.bookmark`/`unbookmark` + 로컬 상태(`savedPlaces`)로 토글되며, 저장 시 채워진 빨간 하트(`#F24C54`)로 바뀝니다.
-- 상단 포토테마 목록(원형 아이템)을 탭하면 `selectedPhotoTheme`가 설정되어 포토테마 박스가 알약형 필터 박스로 교체되고(`renderPhotoThemeSection`), 포토스팟 그리드는 해당 태그를 가진 장소만(`filteredPlaces`)으로 필터링됩니다. 필터 박스의 X 아이콘으로 해제합니다.
-- 전체 탭의 포토테마 박스도 동일한 선택 상태를 공유해 같이 알약형으로 바뀌지만, 실제 필터링은 포토스팟 탭에서만 동작합니다.
+- 상단 포토태그 목록(원형 아이템)을 탭하면 `selectedPhotoTag`가 설정되어 포토태그 박스가 알약형 필터 박스로 교체되고(`renderPhotoTagSection`), 포토스팟 그리드는 해당 태그를 가진 장소만(`filteredPlaces`)으로 필터링됩니다. 필터 박스의 X 아이콘으로 해제합니다.
+- 전체 탭의 포토태그 박스도 동일한 선택 상태를 공유해 같이 알약형으로 바뀌지만, 실제 필터링은 포토스팟 탭에서만 동작합니다.
 
 ---
 
