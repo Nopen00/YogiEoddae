@@ -1,4 +1,5 @@
 import { LinearGradient } from 'expo-linear-gradient';
+import { SORT_OPTIONS, SortAlert, SortOption } from '@/components/modals/SortAlert';
 import SearchBar from '@/components/ui/SearchBar';
 import { TextSeparator } from '@/components/ui/TextSeparator';
 import { Colors } from '@/constants/Colors';
@@ -6,8 +7,9 @@ import { IconSize, IconStroke } from '@/constants/IconSize';
 import { CATEGORY_LABEL, CITY_SHORT, MEDIA_TYPE_LABEL, shortAddress } from '@/constants/labels';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
+import { sortByOption } from '@/utils/sortByOption';
 import { useRouter } from 'expo-router';
-import { Heart, Star } from 'lucide-react-native';
+import { ArrowUpDown, Heart, Star } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated,
@@ -35,8 +37,11 @@ const THEME_CARD_IMAGE_WIDTH = Math.round(THEME_CARD_CONTENT_WIDTH * 0.42);
 const THEME_CARD_IMAGE_HEIGHT = Math.round(THEME_CARD_IMAGE_WIDTH * 3 / 4);
 const COURSE_ITEM_WIDTH = Math.round(SCREEN_WIDTH * 0.4);
 const COURSE_ITEM_HEIGHT = Math.round(COURSE_ITEM_WIDTH * 3 / 4);
+const TAB_BAR_HEIGHT = Typography.subtitle1.lineHeight + Spacing.v.small * 2;
 
 const CATEGORIES = ['추천', '유튜브 PICK', '드라마 PICK', '영화 PICK', '포토스팟'];
+const COURSE_SORT_OPTIONS = SORT_OPTIONS.filter(option => option !== '관련도 높은 순');
+const PLACE_COUNT_SORT_OPTIONS: SortOption[] = ['장소 많은 순', '장소 적은 순'];
 const PHOTO_THEMES = ['자연', '음식', '풍경', '야경', '감성', '카페', '도심', '계절'];
 
 const formatLikeCount = (count: number): string => {
@@ -65,8 +70,9 @@ const getThemeCardTitle = (media: Media, region?: string): string => {
 
 const CourseScreen = () => {
   const router = useRouter();
-  const [inputText, setInputText] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [isSortVisible, setIsSortVisible] = useState(false);
+  const [sortOption, setSortOption] = useState<SortOption>(COURSE_SORT_OPTIONS[0]);
   const translateX = useRef(new Animated.Value(0)).current;
   const indicatorWidth = useRef(new Animated.Value(0)).current;
   const tabLayouts = useRef<{ x: number; width: number }[]>([]);
@@ -166,11 +172,10 @@ const CourseScreen = () => {
     scrollTabIntoView(index);
   };
 
-  const handleSearch = () => {
-    const trimmed = inputText.trim();
-    if (!trimmed) return;
-    router.push({ pathname: '/SearchResultScreen', params: { keyword: trimmed } });
-  };
+  const sortedYoutubeMedia = sortByOption(youtubeMedia, sortOption, m => m.title, m => m.place_count);
+  const sortedDramaMedia = sortByOption(dramaMedia, sortOption, m => m.title, m => m.place_count);
+  const sortedMovieMedia = sortByOption(movieMedia, sortOption, m => m.title, m => m.place_count);
+  const sortedPlaces = sortByOption(places, sortOption, p => p.name);
 
   const renderThemeCourseCard = (item: Media) => {
     const { visibleTags, extraCount } = getProcessedTags(item.tags);
@@ -378,20 +383,32 @@ const CourseScreen = () => {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.headerWrapper}>
-        <SearchBar
-          value={inputText}
-          onChangeText={setInputText}
-          onBackPress={() => router.back()}
-          onClearPress={() => setInputText('')}
-          onSubmitEditing={handleSearch}
-          returnKeyType="search"
-          placeholder="어디로 떠나볼까요?"
-        />
+        <View style={styles.searchRow}>
+          <View style={{ flex: 1 }}>
+            <SearchBar
+              onBackPress={() => router.back()}
+              onPress={() => router.push('/SearchScreen')}
+              placeholder="어디로 떠나볼까요?"
+            />
+          </View>
+          <TouchableOpacity
+            style={styles.sortButton}
+            onPress={() => setIsSortVisible(true)}
+            activeOpacity={selectedIndex === 0 ? 1 : 0.7}
+            disabled={selectedIndex === 0}
+          >
+            <ArrowUpDown
+              size={IconSize.large}
+              color={selectedIndex === 0 ? Colors.light.grayLight : Colors.light.black}
+              strokeWidth={IconStroke.regular}
+            />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.tabWrapper}>
         <View style={styles.backgroundLine} />
-        <ScrollView ref={tabScrollRef} horizontal showsHorizontalScrollIndicator={false}>
+        <ScrollView ref={tabScrollRef} horizontal showsHorizontalScrollIndicator={false} style={styles.tabScroll}>
           <View style={styles.tabContainer}>
             {CATEGORIES.map((tab, index) => (
               <TouchableOpacity
@@ -519,7 +536,7 @@ const CourseScreen = () => {
         <ScrollView key="1" showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContainer}>
           {youtubeMedia.length > 0 ? (
             <View>
-              {youtubeMedia.map(item => renderPickCard(item))}
+              {sortedYoutubeMedia.map(item => renderPickCard(item))}
             </View>
           ) : (
             <View style={styles.emptyState}>
@@ -533,7 +550,7 @@ const CourseScreen = () => {
         <ScrollView key="2" showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContainer}>
           {dramaMedia.length > 0 ? (
             <View>
-              {dramaMedia.map(item => renderPickCard(item))}
+              {sortedDramaMedia.map(item => renderPickCard(item))}
             </View>
           ) : (
             <View style={styles.emptyState}>
@@ -547,7 +564,7 @@ const CourseScreen = () => {
         <ScrollView key="3" showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContainer}>
           {movieMedia.length > 0 ? (
             <View>
-              {movieMedia.map(item => renderPickCard(item))}
+              {sortedMovieMedia.map(item => renderPickCard(item))}
             </View>
           ) : (
             <View style={styles.emptyState}>
@@ -559,9 +576,21 @@ const CourseScreen = () => {
 
         {/* ── 포토스팟 탭 ── */}
         <ScrollView key="4" showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContainer}>
+          <View style={[styles.sectionTitleContainer, { marginTop: Spacing.v.medium }]}>
+            <Text style={styles.sectionTitleText}>포토테마</Text>
+          </View>
+          <FlatList
+            data={PHOTO_THEMES}
+            renderItem={renderPhotoThemeItem}
+            keyExtractor={(item) => `photo-spot-theme-${item}`}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.courseListContent}
+            style={styles.courseList}
+          />
           {places.length > 0 ? (
             <View style={{ paddingTop: Spacing.v.medium }}>
-              {places.map(item => renderPlaceCard(item))}
+              {sortedPlaces.map(item => renderPlaceCard(item))}
             </View>
           ) : (
             <View style={styles.emptyState}>
@@ -571,6 +600,14 @@ const CourseScreen = () => {
           )}
         </ScrollView>
       </PagerView>
+      <SortAlert
+        visible={isSortVisible}
+        options={COURSE_SORT_OPTIONS}
+        disabledOptions={selectedIndex === 4 ? PLACE_COUNT_SORT_OPTIONS : undefined}
+        selected={sortOption}
+        onClose={() => setIsSortVisible(false)}
+        onSelect={setSortOption}
+      />
     </SafeAreaView>
   );
 };
@@ -578,8 +615,11 @@ const CourseScreen = () => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.light.background },
   headerWrapper: { paddingBottom: Spacing.v.small },
+  searchRow: { flexDirection: 'row', alignItems: 'center' },
+  sortButton: { marginRight: Spacing.h.medium },
   tabWrapper: { position: 'relative' },
   backgroundLine: { position: 'absolute', bottom: 0, left: 0, right: 0, height: Spacing.lw.small, backgroundColor: Colors.light.grayLight },
+  tabScroll: { height: TAB_BAR_HEIGHT },
   tabContainer: { flexDirection: 'row', position: 'relative' },
   tabItem: { justifyContent: 'center', alignItems: 'center', paddingVertical: Spacing.v.small, paddingHorizontal: Spacing.h.medium },
   tabText: { ...Typography.subtitle1 },

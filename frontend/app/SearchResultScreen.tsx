@@ -1,7 +1,9 @@
 ﻿import { useLocalSearchParams, useRouter } from 'expo-router';
 import { AddPlaceConfirmAlert } from '@/components/modals/AddPlaceConfirmAlert';
 import { CourseSelectPopup } from '@/components/modals/CourseSelectPopup';
-import { Heart, Star } from 'lucide-react-native';
+import { SORT_OPTIONS, SortAlert, SortOption } from '@/components/modals/SortAlert';
+import { sortByOption } from '@/utils/sortByOption';
+import { ArrowUpDown, Heart, Star } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated,
@@ -53,6 +55,8 @@ const SearchResultScreen = () => {
   const pagerRef = useRef<PagerView>(null);
   const [courses, setCourses] = useState<Media[]>([]);
   const [attractions, setAttractions] = useState<Place[]>([]);
+  const [isSortVisible, setIsSortVisible] = useState(false);
+  const [sortOption, setSortOption] = useState<SortOption>('관련도 높은 순');
 
   useEffect(() => {
     if (!searchKeyword) return;
@@ -65,6 +69,9 @@ const SearchResultScreen = () => {
     if (!trimmed) return;
     setSearchKeyword(trimmed);
   };
+
+  const sortedCourses = sortByOption(courses, sortOption, c => c.title, c => c.place_count);
+  const sortedAttractions = sortByOption(attractions, sortOption, a => a.name);
 
   const animateIndicatorTo = (index: number) => {
     Animated.spring(translateX, {
@@ -252,7 +259,14 @@ const SearchResultScreen = () => {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.headerWrapper}>
-        <SearchBar value={inputText} onChangeText={setInputText} onBackPress={() => router.back()} onClearPress={() => router.back()} onSubmitEditing={handleSearch} returnKeyType="search" />
+        <View style={styles.searchRow}>
+          <View style={{ flex: 1 }}>
+            <SearchBar value={inputText} onChangeText={setInputText} onBackPress={() => router.back()} onClearPress={() => router.back()} onSubmitEditing={handleSearch} returnKeyType="search" />
+          </View>
+          <TouchableOpacity style={styles.filterButton} onPress={() => setIsSortVisible(true)} activeOpacity={0.7}>
+            <ArrowUpDown size={IconSize.large} color={Colors.light.black} strokeWidth={IconStroke.regular} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.tabContainer}>
@@ -273,7 +287,7 @@ const SearchResultScreen = () => {
               <Text style={styles.sectionTitle}>코스</Text>
               <Divider marginTop={0} />
             </View>
-            {courses.slice(0, 3).map(renderCourseCard)}
+            {sortedCourses.slice(0, 3).map(renderCourseCard)}
             {courses.length > 3 && (
               <TouchableOpacity style={styles.moreButton} onPress={() => handleTabPress(1)}>
                 <Text style={styles.moreButtonText}>더보기</Text>
@@ -286,7 +300,7 @@ const SearchResultScreen = () => {
               <Text style={styles.sectionTitle}>명소</Text>
               <Divider marginTop={0} />
             </View>
-            {attractions.slice(0, 3).map(renderAttractionCard)}
+            {sortedAttractions.slice(0, 3).map(renderAttractionCard)}
             {attractions.length > 3 && (
               <TouchableOpacity style={styles.moreButton} onPress={() => handleTabPress(2)}>
                 <Text style={styles.moreButtonText}>더보기</Text>
@@ -299,7 +313,7 @@ const SearchResultScreen = () => {
               <Text style={styles.sectionTitle}>포토스팟</Text>
               <Divider marginTop={0} />
             </View>
-            {attractions.slice(0, 3).map(renderSpotCard)}
+            {sortedAttractions.slice(0, 3).map(renderSpotCard)}
             {attractions.length > 3 && (
               <TouchableOpacity style={styles.moreButton} onPress={() => handleTabPress(3)}>
                 <Text style={styles.moreButtonText}>더보기</Text>
@@ -318,7 +332,7 @@ const SearchResultScreen = () => {
         {/* --- 1. 코스 --- */}
         <ScrollView key="1" showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContainer}>
           <View>
-            {courses.map(renderCourseCard)}
+            {sortedCourses.map(renderCourseCard)}
           </View>
           {searchKeyword.length > 0 && courses.length === 0 && (
             <View style={styles.emptyState}>
@@ -331,7 +345,7 @@ const SearchResultScreen = () => {
         {/* --- 2. 명소 --- */}
         <ScrollView key="2" showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContainer}>
           <View>
-            {attractions.map(renderAttractionCard)}
+            {sortedAttractions.map(renderAttractionCard)}
           </View>
           {searchKeyword.length > 0 && attractions.length === 0 && (
             <View style={styles.emptyState}>
@@ -344,7 +358,7 @@ const SearchResultScreen = () => {
         {/* --- 3. 포토스팟 --- */}
         <ScrollView key="3" showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContainer}>
           <View>
-            {attractions.map(renderSpotCard)}
+            {sortedAttractions.map(renderSpotCard)}
           </View>
           {searchKeyword.length > 0 && attractions.length === 0 && (
             <View style={styles.emptyState}>
@@ -354,6 +368,13 @@ const SearchResultScreen = () => {
           )}
         </ScrollView>
       </PagerView>
+      <SortAlert
+        visible={isSortVisible}
+        options={SORT_OPTIONS}
+        selected={sortOption}
+        onClose={() => setIsSortVisible(false)}
+        onSelect={setSortOption}
+      />
       <CourseSelectPopup
         visible={placePopupVisible}
         label="일정으로 가져올 장소를 선택하세요."
@@ -392,6 +413,8 @@ const SearchResultScreen = () => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.light.background },
   headerWrapper: { paddingBottom: Spacing.v.small },
+  searchRow: { flexDirection: 'row', alignItems: 'center' },
+  filterButton: { marginRight: Spacing.h.medium },
   tabContainer: { flexDirection: 'row', position: 'relative' },
   backgroundLine: { position: 'absolute', bottom: 0, left: 0, right: 0, height: Spacing.lw.small, backgroundColor: Colors.light.grayLight },
   tabItem: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: Spacing.v.small },
