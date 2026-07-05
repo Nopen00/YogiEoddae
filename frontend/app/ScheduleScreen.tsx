@@ -31,6 +31,7 @@ import {
   ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import PagerView from 'react-native-pager-view';
 import { mediaApi, placeApi, scheduleApi } from '../services/api';
 import type { DailyPlace, Media, MediaPlace, Place, Schedule } from '../services/types';
 
@@ -272,6 +273,7 @@ export default function ScheduleScreen() {
   const params = useLocalSearchParams<{ mode?: string; scheduleId?: string; dayNumber?: string }>();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const translateX = useRef(new Animated.Value(0)).current;
+  const pagerRef = useRef<PagerView>(null);
 
   const [mySchedules, setMySchedules] = useState<Schedule[]>([]);
   const [pastSchedules, setPastSchedules] = useState<Schedule[]>([]);
@@ -314,14 +316,23 @@ export default function ScheduleScreen() {
     }, [])
   );
 
-  const handleTabPress = (index: number) => {
-    setSelectedIndex(index);
+  const animateIndicatorTo = (index: number) => {
     Animated.spring(translateX, {
       toValue: index * TAB_WIDTH,
       useNativeDriver: true,
       friction: 8,
       tension: 50,
     }).start();
+  };
+
+  const handleTabPress = (index: number) => {
+    pagerRef.current?.setPage(index);
+  };
+
+  const handlePageSelected = (e: { nativeEvent: { position: number } }) => {
+    const index = e.nativeEvent.position;
+    setSelectedIndex(index);
+    animateIndicatorTo(index);
   };
 
   const currentSchedules = mySchedules.filter(isCurrent);
@@ -366,9 +377,10 @@ export default function ScheduleScreen() {
         </TouchableOpacity>
       )}
 
+      <PagerView ref={pagerRef} style={{ flex: 1 }} initialPage={0} onPageSelected={handlePageSelected}>
       {/* 내 일정 탭 */}
-      {selectedIndex === 0 && (
-        mySchedulesEmpty ? (
+      <View key="0" style={{ flex: 1 }}>
+        {mySchedulesEmpty ? (
           <View style={styles.emptyContainer}>
             <Calendar size={IconSize.xxlarge} color={Colors.light.grayLight} strokeWidth={IconStroke.thin} />
             <Text style={styles.emptyTitle}>일정이 없습니다.</Text>
@@ -405,12 +417,12 @@ export default function ScheduleScreen() {
               ))}
             </SectionWrapper>
           </ScrollView>
-        )
-      )}
+        )}
+      </View>
 
       {/* 과거 일정 탭 */}
-      {selectedIndex === 1 && (
-        pastEmpty ? (
+      <View key="1" style={{ flex: 1 }}>
+        {pastEmpty ? (
           <View style={styles.emptyContainer}>
             <Calendar size={IconSize.xxlarge} color={Colors.light.grayLight} strokeWidth={IconStroke.thin} />
             <Text style={styles.emptyTitle}>일정이 없습니다.</Text>
@@ -431,12 +443,12 @@ export default function ScheduleScreen() {
               />
             ))}
           </ScrollView>
-        )
-      )}
+        )}
+      </View>
 
       {/* 저장소 탭 */}
-      {selectedIndex === 2 && (
-        savedEmpty ? (
+      <View key="2" style={{ flex: 1 }}>
+        {savedEmpty ? (
           <View style={styles.emptyContainer}>
             <Heart size={IconSize.xxlarge} color={Colors.light.grayLight} strokeWidth={IconStroke.thin} />
             <Text style={styles.emptyTitle}>저장소가 비어있습니다.</Text>
@@ -526,8 +538,9 @@ export default function ScheduleScreen() {
               ))}
             </SectionWrapper>
           </ScrollView>
-        )
-      )}
+        )}
+      </View>
+      </PagerView>
 
       <Modal visible={deleteTarget !== null} transparent animationType="fade">
         <View style={styles.deleteOverlay}>

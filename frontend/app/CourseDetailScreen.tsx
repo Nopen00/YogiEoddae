@@ -128,7 +128,7 @@ const CourseDetailScreen = () => {
                 <>
                   <TextSeparator />
                   <Heart size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
-                  <Text style={styles.metaText}> {media.like_count.toLocaleString()}</Text>
+                  <Text style={styles.metaText}> {formatLikeCount(media.like_count)}</Text>
                 </>
               )}
             </MetaRow>

@@ -22,6 +22,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import PagerView from 'react-native-pager-view';
 import { mediaApi, placeApi } from '../services/api';
 import type { Media, Place, Tag } from '../services/types';
 import { Size } from '@/constants/Size';
@@ -50,6 +51,9 @@ const getProcessedTags = (tags: Tag[] = []) => {
   return { visibleTags, extraCount };
 };
 
+const hasHypeTag = (media: Media): boolean =>
+  media.tags.some(tag => tag.name.toLowerCase() === 'hype');
+
 const getThemeCardTitle = (media: Media, region?: string): string => {
   const label = MEDIA_TYPE_LABEL[media.media_type] ?? media.media_type;
   const lastCode = label.charCodeAt(label.length - 1);
@@ -66,6 +70,8 @@ const CourseScreen = () => {
   const translateX = useRef(new Animated.Value(0)).current;
   const indicatorWidth = useRef(new Animated.Value(0)).current;
   const tabLayouts = useRef<{ x: number; width: number }[]>([]);
+  const pagerRef = useRef<PagerView>(null);
+  const tabScrollRef = useRef<ScrollView>(null);
   const [uniformTabWidth, setUniformTabWidth] = useState<number | null>(null);
   const rawWidths = useRef<number[]>(new Array(CATEGORIES.length).fill(0));
   const widthMeasured = useRef(false);
@@ -94,6 +100,7 @@ const CourseScreen = () => {
   const [movieMedia, setMovieMedia] = useState<Media[]>([]);
   const [places, setPlaces] = useState<Place[]>([]);
   const [themeRegions, setThemeRegions] = useState<Record<number, string>>({});
+  const [pickCardImages, setPickCardImages] = useState<Record<number, string[]>>({});
 
   useEffect(() => {
     mediaApi.getList().then(res => setAllMedia(res.data.results)).catch(() => {});
@@ -115,8 +122,16 @@ const CourseScreen = () => {
     });
   }, [allMedia]);
 
-  const handleTabPress = (index: number) => {
-    setSelectedIndex(index);
+  useEffect(() => {
+    [...youtubeMedia, ...dramaMedia, ...movieMedia].forEach(media => {
+      mediaApi.getPlaces(media.id).then(res => {
+        const images = res.data.map(mp => mp.place.image_url).filter(Boolean);
+        setPickCardImages(prev => ({ ...prev, [media.id]: images }));
+      }).catch(() => {});
+    });
+  }, [youtubeMedia, dramaMedia, movieMedia]);
+
+  const animateIndicatorTo = (index: number) => {
     const layout = tabLayouts.current[index];
     if (!layout) return;
     Animated.spring(translateX, {
@@ -133,64 +148,28 @@ const CourseScreen = () => {
     }).start();
   };
 
+  const scrollTabIntoView = (index: number) => {
+    const layout = tabLayouts.current[index];
+    if (!layout) return;
+    const targetX = Math.max(0, layout.x + layout.width / 2 - SCREEN_WIDTH / 2);
+    tabScrollRef.current?.scrollTo({ x: targetX, animated: true });
+  };
+
+  const handleTabPress = (index: number) => {
+    pagerRef.current?.setPage(index);
+  };
+
+  const handlePageSelected = (e: { nativeEvent: { position: number } }) => {
+    const index = e.nativeEvent.position;
+    setSelectedIndex(index);
+    animateIndicatorTo(index);
+    scrollTabIntoView(index);
+  };
+
   const handleSearch = () => {
     const trimmed = inputText.trim();
     if (!trimmed) return;
     router.push({ pathname: '/SearchResultScreen', params: { keyword: trimmed } });
-  };
-
-  const currentMedia = [allMedia, youtubeMedia, dramaMedia, movieMedia][selectedIndex] ?? [];
-
-  const renderMediaCard = (item: Media) => {
-    const { visibleTags, extraCount } = getProcessedTags(item.tags);
-    return (
-      <TouchableOpacity
-        key={`media-${item.id}`}
-        style={styles.card}
-        activeOpacity={0.9}
-        onPress={() => router.push({ pathname: '/CourseDetailScreen', params: { id: item.id, title: item.title } })}
-      >
-        <View style={styles.cardInner}>
-          <View style={styles.imageCircle} />
-          <View style={styles.infoContent}>
-            <Text style={styles.cardTitle} numberOfLines={1}>{item.title}</Text>
-            <View style={styles.metadataRow}>
-              <View style={styles.metaChip}>
-                <Text style={styles.metaText}>{MEDIA_TYPE_LABEL[item.media_type] ?? item.media_type}</Text>
-                {(item.place_count != null || item.rating != null || item.like_count != null) && <TextSeparator />}
-              </View>
-              {item.place_count != null && (
-                <View style={styles.metaChip}>
-                  <Text style={styles.metaText}>{item.place_count}개 장소</Text>
-                  {(item.rating != null || item.like_count != null) && <TextSeparator />}
-                </View>
-              )}
-              {(item.rating != null || item.like_count != null) && (
-                <View style={styles.metaChip}>
-                  {item.rating != null && (
-                    <>
-                      <Star size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
-                      <Text style={styles.metaText}> {item.rating.toFixed(1)}</Text>
-                    </>
-                  )}
-                  {item.rating != null && item.like_count != null && <TextSeparator />}
-                  {item.like_count != null && (
-                    <>
-                      <Heart size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
-                      <Text style={styles.metaText}> {formatLikeCount(item.like_count)}</Text>
-                    </>
-                  )}
-                </View>
-              )}
-            </View>
-            <View style={styles.tagRow}>
-              {visibleTags.map((tag, idx) => <Text key={idx} style={styles.tagText}>#{tag}</Text>)}
-              {extraCount > 0 && <Text style={styles.tagText}>+{extraCount}</Text>}
-            </View>
-          </View>
-        </View>
-      </TouchableOpacity>
-    );
   };
 
   const renderThemeCourseCard = (item: Media) => {
@@ -249,6 +228,79 @@ const CourseScreen = () => {
           </View>
         </View>
       </TouchableOpacity>
+    );
+  };
+
+  const renderPickCard = (item: Media) => {
+    const slideImages = pickCardImages[item.id] ?? [];
+    const isHype = hasHypeTag(item);
+    return (
+      <View key={`pick-card-${item.id}`} style={styles.pickCardWrapper}>
+        {isHype && (
+          <View style={styles.hypeBadge}>
+            <Text style={styles.hypeBadgeText}>HYPE</Text>
+          </View>
+        )}
+        <View style={[styles.pickCardBox, isHype && styles.pickCardBoxHype]}>
+        <TouchableOpacity
+          activeOpacity={0.9}
+          onPress={() => router.push({ pathname: '/CourseDetailScreen', params: { id: item.id, title: item.title } })}
+        >
+          <Text style={styles.pickCardTitle} numberOfLines={1}>{item.title}</Text>
+          <View style={[styles.metadataRow, styles.pickCardMetaRow]}>
+            <View style={styles.metaChip}>
+              <Text style={styles.metaText}>{MEDIA_TYPE_LABEL[item.media_type] ?? item.media_type}</Text>
+              {(item.place_count != null || item.rating != null || item.like_count != null) && <TextSeparator />}
+            </View>
+            {item.place_count != null && (
+              <View style={styles.metaChip}>
+                <Text style={styles.metaText}>{item.place_count}개 장소</Text>
+                {(item.rating != null || item.like_count != null) && <TextSeparator />}
+              </View>
+            )}
+            {(item.rating != null || item.like_count != null) && (
+              <View style={styles.metaChip}>
+                {item.rating != null && (
+                  <>
+                    <Star size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
+                    <Text style={styles.metaText}> {item.rating.toFixed(1)}</Text>
+                  </>
+                )}
+                {item.rating != null && item.like_count != null && <TextSeparator />}
+                {item.like_count != null && (
+                  <>
+                    <Heart size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
+                    <Text style={styles.metaText}> {formatLikeCount(item.like_count)}</Text>
+                  </>
+                )}
+              </View>
+            )}
+          </View>
+          <View style={styles.pickCardTitleImageWrapper}>
+            <Image
+              source={{ uri: item.thumbnail_url ?? undefined }}
+              style={styles.pickCardTitleImage}
+              resizeMode="cover"
+            />
+          </View>
+        </TouchableOpacity>
+        {slideImages.length > 0 && (
+          <FlatList
+            data={slideImages}
+            renderItem={({ item: uri }) => (
+              <View style={styles.pickCardSlideImageWrapper}>
+                <Image source={{ uri }} style={styles.pickCardSlideImage} resizeMode="cover" />
+              </View>
+            )}
+            keyExtractor={(uri, idx) => `pick-card-${item.id}-slide-${idx}`}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.pickCardSlideContent}
+            style={styles.pickCardSlideList}
+          />
+        )}
+        </View>
+      </View>
     );
   };
 
@@ -339,7 +391,7 @@ const CourseScreen = () => {
 
       <View style={styles.tabWrapper}>
         <View style={styles.backgroundLine} />
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        <ScrollView ref={tabScrollRef} horizontal showsHorizontalScrollIndicator={false}>
           <View style={styles.tabContainer}>
             {CATEGORIES.map((tab, index) => (
               <TouchableOpacity
@@ -358,13 +410,14 @@ const CourseScreen = () => {
         </ScrollView>
       </View>
 
-      <ScrollView
+      <PagerView
+        ref={pagerRef}
         style={styles.mainContent}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContainer}
+        initialPage={0}
+        onPageSelected={handlePageSelected}
       >
         {/* ── 전체 탭 ── */}
-        {selectedIndex === 0 && <>
+        <ScrollView key="0" showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContainer}>
         {/* 이 달의 테마 박스 */}
         {allMedia[0] && (
           <TouchableOpacity
@@ -460,22 +513,64 @@ const CourseScreen = () => {
           contentContainerStyle={styles.courseListContent}
           style={styles.courseList}
         />
-        </>}
+        </ScrollView>
 
-        {/* ── 유튜브 / 드라마 / 영화 탭 ── */}
-        {(selectedIndex === 1 || selectedIndex === 2 || selectedIndex === 3) && (
-          <View style={{ paddingTop: Spacing.v.medium }}>
-            {currentMedia.map(item => renderMediaCard(item))}
-          </View>
-        )}
+        {/* ── 유튜브 PICK 탭 ── */}
+        <ScrollView key="1" showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContainer}>
+          {youtubeMedia.length > 0 ? (
+            <View>
+              {youtubeMedia.map(item => renderPickCard(item))}
+            </View>
+          ) : (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyTitle}>유튜브 코스가 없습니다.</Text>
+              <Text style={styles.emptyDesc}>다른 카테고리를 확인해보세요.</Text>
+            </View>
+          )}
+        </ScrollView>
+
+        {/* ── 드라마 PICK 탭 ── */}
+        <ScrollView key="2" showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContainer}>
+          {dramaMedia.length > 0 ? (
+            <View>
+              {dramaMedia.map(item => renderPickCard(item))}
+            </View>
+          ) : (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyTitle}>드라마 코스가 없습니다.</Text>
+              <Text style={styles.emptyDesc}>다른 카테고리를 확인해보세요.</Text>
+            </View>
+          )}
+        </ScrollView>
+
+        {/* ── 영화 PICK 탭 ── */}
+        <ScrollView key="3" showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContainer}>
+          {movieMedia.length > 0 ? (
+            <View>
+              {movieMedia.map(item => renderPickCard(item))}
+            </View>
+          ) : (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyTitle}>영화 코스가 없습니다.</Text>
+              <Text style={styles.emptyDesc}>다른 카테고리를 확인해보세요.</Text>
+            </View>
+          )}
+        </ScrollView>
 
         {/* ── 포토스팟 탭 ── */}
-        {selectedIndex === 4 && (
-          <View style={{ paddingTop: Spacing.v.medium }}>
-            {places.map(item => renderPlaceCard(item))}
-          </View>
-        )}
-      </ScrollView>
+        <ScrollView key="4" showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContainer}>
+          {places.length > 0 ? (
+            <View style={{ paddingTop: Spacing.v.medium }}>
+              {places.map(item => renderPlaceCard(item))}
+            </View>
+          ) : (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyTitle}>등록된 장소가 없습니다.</Text>
+              <Text style={styles.emptyDesc}>다른 카테고리를 확인해보세요.</Text>
+            </View>
+          )}
+        </ScrollView>
+      </PagerView>
     </SafeAreaView>
   );
 };
@@ -558,6 +653,7 @@ const styles = StyleSheet.create({
   tagText: { ...Typography.body2, color: Colors.light.primary, marginRight: Spacing.h.xsmall },
   emptyState: { paddingTop: Spacing.v.medium, alignItems: 'center' },
   emptyTitle: { ...Typography.subtitle2, color: Colors.light.black },
+  emptyDesc: { ...Typography.body2, color: Colors.light.grayLight },
   themeCourseBox: {
     marginTop: Spacing.v.medium,
     marginHorizontal: Spacing.h.medium,
@@ -615,6 +711,69 @@ const styles = StyleSheet.create({
     ...Typography.body2,
     color: Colors.light.primary,
     marginRight: Spacing.h.xsmall,
+  },
+  pickCardWrapper: {
+    marginTop: Spacing.v.medium,
+    marginHorizontal: Spacing.h.medium,
+  },
+  pickCardBox: {
+    padding: Spacing.v.medium,
+    borderRadius: Spacing.r.small,
+    borderWidth: Spacing.lw.small,
+    borderColor: Colors.light.grayLight,
+  },
+  pickCardBoxHype: {
+    borderWidth: 4,
+    borderColor: Colors.light.primary,
+    borderTopLeftRadius: 0,
+  },
+  hypeBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: Spacing.h.small,
+    paddingVertical: Spacing.h.xsmall,
+    backgroundColor: Colors.light.primary,
+    borderTopLeftRadius: Spacing.r.small,
+    borderTopRightRadius: Spacing.r.small,
+  },
+  hypeBadgeText: {
+    ...Typography.subtitle2,
+    color: Colors.light.white,
+  },
+  pickCardTitle: {
+    ...Typography.title1,
+    color: Colors.light.black,
+  },
+  pickCardTitleImageWrapper: {
+    marginTop: Spacing.v.medium,
+    width: '100%',
+    height: THEME_IMAGE_HEIGHT,
+    borderRadius: Spacing.r.small,
+    overflow: 'hidden',
+    backgroundColor: Colors.light.grayLight,
+  },
+  pickCardTitleImage: {
+    width: '100%',
+    height: '100%',
+  },
+  pickCardSlideList: {
+    marginTop: Spacing.v.medium,
+  },
+  pickCardSlideContent: {
+    gap: Spacing.h.small,
+  },
+  pickCardSlideImageWrapper: {
+    width: THEME_CARD_IMAGE_WIDTH,
+    height: THEME_CARD_IMAGE_HEIGHT,
+    borderRadius: Spacing.r.small,
+    overflow: 'hidden',
+    backgroundColor: Colors.light.grayLight,
+  },
+  pickCardSlideImage: {
+    width: '100%',
+    height: '100%',
+  },
+  pickCardMetaRow: {
+    marginTop: Spacing.v.small,
   },
   sectionTitleContainer: {
     marginTop: Spacing.v.large,

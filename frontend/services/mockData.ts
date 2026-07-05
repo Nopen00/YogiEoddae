@@ -5,6 +5,7 @@ const MOCK_TAGS = [
   { id: 2, category: 'mood', name: '로맨스' },
   { id: 3, category: 'region', name: '서울' },
   { id: 4, category: 'region', name: '부산' },
+  { id: 5, category: 'special', name: 'hype' },
 ];
 
 const MOCK_PLACE: Place = {
@@ -216,6 +217,34 @@ export const MOCK_MEDIA_LIST: Media[] = [
     like_count: 1678,
     created_at: '2024-01-08T00:00:00Z',
   },
+  {
+    id: 9,
+    title: '서울 맛집 브이로그 - 종로 골목 투어',
+    media_type: 'youtube',
+    year: 2023,
+    thumbnail_url: 'https://picsum.photos/seed/media9/400/300',
+    description: '유튜버가 직접 다녀온 서울 종로 일대 맛집과 핫플레이스를 소개하는 여행 브이로그.',
+    tags: [MOCK_TAGS[0], MOCK_TAGS[2]],
+    is_bookmarked: false,
+    place_count: 4,
+    rating: 4.6,
+    like_count: 5820,
+    created_at: '2024-01-09T00:00:00Z',
+  },
+  {
+    id: 10,
+    title: '부산 여행 브이로그 - 해운대 감성 카페 투어',
+    media_type: 'youtube',
+    year: 2024,
+    thumbnail_url: 'https://picsum.photos/seed/media10/400/300',
+    description: '조회수 폭발 중인 부산 여행 브이로그. 해운대 일대 감성 카페와 핫플레이스를 소개합니다.',
+    tags: [MOCK_TAGS[1], MOCK_TAGS[3], MOCK_TAGS[4]],
+    is_bookmarked: false,
+    place_count: 3,
+    rating: 4.9,
+    like_count: 12400,
+    created_at: '2024-01-10T00:00:00Z',
+  },
 ];
 
 export const MOCK_MEDIA_PLACES: MediaPlace[] = [
@@ -274,6 +303,17 @@ export const MOCK_MEDIA_PLACES_MAP: Record<number, MediaPlace[]> = {
     { id: 11, place: MOCK_PLACE_5, day: 1, scene_description: '', confidence_score: 0.91, is_confirmed: true, created_at: '' },
     { id: 12, place: MOCK_PLACE,   day: 2, scene_description: '', confidence_score: 0.87, is_confirmed: true, created_at: '' },
     { id: 13, place: MOCK_PLACE_3, day: 2, scene_description: '', confidence_score: 0.84, is_confirmed: true, created_at: '' },
+  ],
+  9: [ // 서울 맛집 브이로그 - 종로 골목 투어
+    { id: 18, place: MOCK_PLACE,   day: 1, scene_description: '', confidence_score: 0.90, is_confirmed: true, created_at: '' },
+    { id: 19, place: MOCK_PLACE_3, day: 1, scene_description: '', confidence_score: 0.88, is_confirmed: true, created_at: '' },
+    { id: 20, place: MOCK_PLACE_6, day: 1, scene_description: '', confidence_score: 0.86, is_confirmed: true, created_at: '' },
+    { id: 21, place: MOCK_PLACE_4, day: 1, scene_description: '', confidence_score: 0.82, is_confirmed: true, created_at: '' },
+  ],
+  10: [ // 부산 여행 브이로그 - 해운대 감성 카페 투어
+    { id: 22, place: MOCK_PLACE_2, day: 1, scene_description: '', confidence_score: 0.94, is_confirmed: true, created_at: '' },
+    { id: 23, place: MOCK_PLACE_5, day: 1, scene_description: '', confidence_score: 0.90, is_confirmed: true, created_at: '' },
+    { id: 24, place: MOCK_PLACE_6, day: 1, scene_description: '', confidence_score: 0.85, is_confirmed: true, created_at: '' },
   ],
 };
 

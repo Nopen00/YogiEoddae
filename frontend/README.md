@@ -32,7 +32,8 @@ app/
 │   ├── MainScreen.tsx         # 메인 홈 (추천 코스·명소)
 │   └── _layout.tsx            # 탭 네비게이션 레이아웃
 ├── SearchScreen.tsx           # 검색 진입
-├── SearchResultScreen.tsx     # 검색 결과 (코스·명소·포토스팟 탭)
+├── SearchResultScreen.tsx     # 검색 결과 (전체·코스·명소·포토스팟 탭)
+├── CourseScreen.tsx           # 코스 탐색 (추천·유튜브/드라마/영화 PICK·포토스팟 탭)
 ├── CourseDetailScreen.tsx     # 코스 상세
 ├── PlaceDetailScreen.tsx      # 명소 상세
 ├── ScheduleDetailScreen.tsx   # 일정 상세 (슬라이딩 패널 + 지도)
@@ -40,6 +41,16 @@ app/
 ├── SettingScreen.tsx          # 설정
 └── AccountScreen.tsx          # 계정 관리
 ```
+
+### 탭 화면 스와이프 전환 (`react-native-pager-view`)
+
+상단 탭 바가 있는 화면(`CourseScreen`, `SearchResultScreen`, `ScheduleScreen`)은 탭 클릭뿐 아니라 좌우 스와이프로도 전환됩니다.
+
+- 탭 콘텐츠는 `PagerView`의 페이지(`key="0"`, `"1"`, ...)로 분리되어 있고, 각 페이지가 독립된 `ScrollView`입니다.
+- 탭 클릭은 `pagerRef.current?.setPage(index)`를 호출하고, 스와이프든 클릭이든 `onPageSelected`에서 `selectedIndex` 갱신과 탭 인디케이터 애니메이션을 동기화합니다.
+- `PagerView`는 일반 `View`와 달리 자체 `style`의 `padding`을 반영하지 않으므로, 탭 바와 콘텐츠 사이 여백은 각 페이지 `ScrollView`의 `contentContainerStyle`에 둡니다 (`PagerView` 자체 스타일에 padding 금지).
+- 탭이 화면 너비를 넘어가는 `CourseScreen`은 탭 전환 시 상단 탭 바도 선택된 탭이 보이도록 자동으로 가로 스크롤됩니다(`scrollTabIntoView`).
+- 각 탭 내부의 가로 스크롤(코스 리스트, pick 카드 이미지 슬라이드 등)과 페이지 스와이프 제스처 충돌 여부는 실기기 확인 결과 문제 없음.
 
 ---
 
