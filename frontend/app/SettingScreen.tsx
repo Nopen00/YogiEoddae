@@ -15,7 +15,7 @@ const SettingScreen = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScreenHeader title="설정" onBack={() => router.back()} />
+      <ScreenHeader title="마이" onBack={() => router.back()} />
 
       <TouchableOpacity style={styles.menuItem} activeOpacity={0.7} onPress={() => router.push('/AccountScreen')}>
         <Text style={styles.menuLabel}>계정</Text>

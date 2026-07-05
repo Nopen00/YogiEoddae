@@ -10,7 +10,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, usePathname } from 'expo-router';
-import { Home, MapPin, Settings, Calendar } from 'lucide-react-native';
+import { Home, MapPin, User, Calendar } from 'lucide-react-native';
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
 import { Spacing } from '@/constants/Spacing';
@@ -47,8 +47,8 @@ const TAB_ITEMS: Array<{
     activePatterns: ['/ScheduleScreen'],
   },
   {
-    label: '설정',
-    Icon: Settings,
+    label: '마이',
+    Icon: User,
     href: '/SettingScreen',
     activePatterns: ['/SettingScreen', '/AccountScreen'],
   },
