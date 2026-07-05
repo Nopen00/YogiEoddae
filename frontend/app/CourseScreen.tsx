@@ -472,8 +472,22 @@ const CourseScreen = () => {
         {allMedia[1] && renderThemeCourseCard(allMedia[1])}
         {allMedia[5] && renderThemeCourseCard(allMedia[5])}
 
-        {/* 실시간 인기 코스 */}
+        {/* 포토테마 */}
         <View style={styles.sectionTitleContainer}>
+          <Text style={styles.sectionTitleText}>포토테마</Text>
+        </View>
+        <FlatList
+          data={PHOTO_THEMES}
+          renderItem={renderPhotoThemeItem}
+          keyExtractor={(item) => `photo-${item}`}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.courseListContent}
+          style={styles.courseList}
+        />
+
+        {/* 실시간 인기 코스 */}
+        <View style={[styles.sectionTitleContainer, { marginTop: Spacing.v.large }]}>
           <Text style={styles.sectionTitleText}>실시간 인기 코스</Text>
         </View>
         <FlatList
@@ -494,20 +508,6 @@ const CourseScreen = () => {
           data={allMedia.slice(4, 8)}
           renderItem={renderCourseItem}
           keyExtractor={(item) => `recommended-${item.id}`}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.courseListContent}
-          style={styles.courseList}
-        />
-
-        {/* 포토테마 */}
-        <View style={[styles.sectionTitleContainer, { marginTop: Spacing.v.large }]}>
-          <Text style={styles.sectionTitleText}>포토테마</Text>
-        </View>
-        <FlatList
-          data={PHOTO_THEMES}
-          renderItem={renderPhotoThemeItem}
-          keyExtractor={(item) => `photo-${item}`}
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.courseListContent}
