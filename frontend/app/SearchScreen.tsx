@@ -93,7 +93,7 @@ const SearchScreen = () => {
     outputRange: [Colors.light.grayLight, Colors.light.primary],
   });
 
-  const renderRecentItem = ({ item }: { item: typeof INITIAL_DATA[0] }) => (
+  const renderRecentItem = ({ item }: { item: RecentItem }) => (
     <View style={styles.recentItemContainer}>
       {/* 🚀 검색어 클릭 시에도 해당 단어로 검색 실행 */}
       <TouchableOpacity 
