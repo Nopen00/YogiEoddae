@@ -9,7 +9,7 @@ import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { sortByOption } from '@/utils/sortByOption';
 import { useRouter } from 'expo-router';
-import { ArrowUpDown, Heart, Star } from 'lucide-react-native';
+import { ArrowUpDown, Heart, Star, X } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated,
@@ -37,6 +37,8 @@ const THEME_CARD_IMAGE_WIDTH = Math.round(THEME_CARD_CONTENT_WIDTH * 0.42);
 const THEME_CARD_IMAGE_HEIGHT = Math.round(THEME_CARD_IMAGE_WIDTH * 3 / 4);
 const COURSE_ITEM_WIDTH = Math.round(SCREEN_WIDTH * 0.4);
 const COURSE_ITEM_HEIGHT = Math.round(COURSE_ITEM_WIDTH * 3 / 4);
+const PHOTO_SPOT_CARD_WIDTH = (SCREEN_WIDTH - Spacing.h.medium * 3) / 2;
+const PHOTO_SPOT_IMAGE_HEIGHT = Math.round(PHOTO_SPOT_CARD_WIDTH * 3 / 4);
 const TAB_BAR_HEIGHT = Typography.subtitle1.lineHeight + Spacing.v.small * 2;
 
 const CATEGORIES = ['추천', '유튜브 PICK', '드라마 PICK', '영화 PICK', '포토스팟'];
@@ -107,14 +109,31 @@ const CourseScreen = () => {
   const [places, setPlaces] = useState<Place[]>([]);
   const [themeRegions, setThemeRegions] = useState<Record<number, string>>({});
   const [pickCardImages, setPickCardImages] = useState<Record<number, string[]>>({});
+  const [pickCardPlaceCounts, setPickCardPlaceCounts] = useState<Record<number, number>>({});
+  const [savedPlaces, setSavedPlaces] = useState<Record<number, boolean>>({});
+  const [selectedPhotoTheme, setSelectedPhotoTheme] = useState<string | null>(null);
 
   useEffect(() => {
     mediaApi.getList().then(res => setAllMedia(res.data.results)).catch(() => {});
     mediaApi.getList({ type: 'youtube' }).then(res => setYoutubeMedia(res.data.results)).catch(() => {});
     mediaApi.getList({ type: 'drama' }).then(res => setDramaMedia(res.data.results)).catch(() => {});
     mediaApi.getList({ type: 'movie' }).then(res => setMovieMedia(res.data.results)).catch(() => {});
-    placeApi.getList().then(res => setPlaces(res.data.results)).catch(() => {});
+    placeApi.getList().then(res => {
+      setPlaces(res.data.results);
+      const map: Record<number, boolean> = {};
+      res.data.results.forEach(p => { map[p.id] = p.is_bookmarked; });
+      setSavedPlaces(map);
+    }).catch(() => {});
   }, []);
+
+  const toggleSavedPlace = async (placeId: number) => {
+    const isSavedNow = savedPlaces[placeId];
+    try {
+      if (isSavedNow) await placeApi.unbookmark(placeId);
+      else await placeApi.bookmark(placeId);
+      setSavedPlaces(prev => ({ ...prev, [placeId]: !prev[placeId] }));
+    } catch {}
+  };
 
   useEffect(() => {
     [allMedia[1], allMedia[5]].forEach(media => {
@@ -133,6 +152,7 @@ const CourseScreen = () => {
       mediaApi.getPlaces(media.id).then(res => {
         const images = res.data.map(mp => mp.place.image_url).filter(Boolean);
         setPickCardImages(prev => ({ ...prev, [media.id]: images }));
+        setPickCardPlaceCounts(prev => ({ ...prev, [media.id]: res.data.length }));
       }).catch(() => {});
     });
   }, [youtubeMedia, dramaMedia, movieMedia]);
@@ -172,10 +192,14 @@ const CourseScreen = () => {
     scrollTabIntoView(index);
   };
 
-  const sortedYoutubeMedia = sortByOption(youtubeMedia, sortOption, m => m.title, m => m.place_count);
-  const sortedDramaMedia = sortByOption(dramaMedia, sortOption, m => m.title, m => m.place_count);
-  const sortedMovieMedia = sortByOption(movieMedia, sortOption, m => m.title, m => m.place_count);
+  const getPickCardPlaceCount = (m: Media) => pickCardPlaceCounts[m.id] ?? m.place_count;
+  const sortedYoutubeMedia = sortByOption(youtubeMedia, sortOption, m => m.title, getPickCardPlaceCount);
+  const sortedDramaMedia = sortByOption(dramaMedia, sortOption, m => m.title, getPickCardPlaceCount);
+  const sortedMovieMedia = sortByOption(movieMedia, sortOption, m => m.title, getPickCardPlaceCount);
   const sortedPlaces = sortByOption(places, sortOption, p => p.name);
+  const filteredPlaces = selectedPhotoTheme
+    ? sortedPlaces.filter(p => p.tags.some(t => t.name === selectedPhotoTheme))
+    : sortedPlaces;
 
   const renderThemeCourseCard = (item: Media) => {
     const { visibleTags, extraCount } = getProcessedTags(item.tags);
@@ -238,6 +262,7 @@ const CourseScreen = () => {
 
   const renderPickCard = (item: Media) => {
     const slideImages = pickCardImages[item.id] ?? [];
+    const placeCount = pickCardPlaceCounts[item.id] ?? item.place_count;
     const isHype = hasHypeTag(item);
     return (
       <View key={`pick-card-${item.id}`} style={styles.pickCardWrapper}>
@@ -255,11 +280,11 @@ const CourseScreen = () => {
           <View style={[styles.metadataRow, styles.pickCardMetaRow]}>
             <View style={styles.metaChip}>
               <Text style={styles.metaText}>{MEDIA_TYPE_LABEL[item.media_type] ?? item.media_type}</Text>
-              {(item.place_count != null || item.rating != null || item.like_count != null) && <TextSeparator />}
+              {(placeCount != null || item.rating != null || item.like_count != null) && <TextSeparator />}
             </View>
-            {item.place_count != null && (
+            {placeCount != null && (
               <View style={styles.metaChip}>
-                <Text style={styles.metaText}>{item.place_count}개 장소</Text>
+                <Text style={styles.metaText}>{placeCount}개 장소</Text>
                 {(item.rating != null || item.like_count != null) && <TextSeparator />}
               </View>
             )}
@@ -309,12 +334,103 @@ const CourseScreen = () => {
     );
   };
 
+  const renderPhotoSpotCard = (item: Place) => {
+    const { visibleTags, extraCount } = getProcessedTags(item.tags);
+    return (
+      <TouchableOpacity
+        key={`photo-spot-card-${item.id}`}
+        style={styles.photoSpotCard}
+        activeOpacity={0.9}
+        onPress={() => router.push({ pathname: '/PlaceDetailScreen', params: { id: item.id, name: item.name } })}
+      >
+        <View style={styles.photoSpotImageWrapper}>
+          <Image
+            source={{ uri: item.image_url ?? undefined }}
+            style={styles.photoSpotImage}
+            resizeMode="cover"
+          />
+          {(item.rating != null || item.like_count != null) && (
+            <LinearGradient colors={['transparent', 'rgba(0,0,0,0.75)']} style={styles.photoSpotGradient}>
+              <View style={styles.photoSpotInfoOverlay}>
+                {item.rating != null && (
+                  <>
+                    <Star size={IconSize.xsmall} color={Colors.light.white} strokeWidth={IconStroke.regular} />
+                    <Text style={styles.photoSpotInfoText}> {item.rating.toFixed(1)}</Text>
+                  </>
+                )}
+                {item.rating != null && item.like_count != null && <TextSeparator color={Colors.light.white} />}
+                {item.like_count != null && (
+                  <>
+                    <Heart size={IconSize.xsmall} color={Colors.light.white} strokeWidth={IconStroke.regular} />
+                    <Text style={styles.photoSpotInfoText}> {formatLikeCount(item.like_count)}</Text>
+                  </>
+                )}
+              </View>
+            </LinearGradient>
+          )}
+          <TouchableOpacity
+            style={styles.photoSpotSaveButton}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            onPress={() => toggleSavedPlace(item.id)}
+          >
+            <Heart
+              size={IconSize.large}
+              color={savedPlaces[item.id] ? '#F24C54' : Colors.light.white}
+              fill={savedPlaces[item.id] ? '#F24C54' : 'none'}
+              strokeWidth={IconStroke.regular}
+            />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.photoSpotInfoBox}>
+          <Text style={styles.photoSpotTitle} numberOfLines={1}>{item.name}</Text>
+          <View style={styles.photoSpotTagRow}>
+            {visibleTags.map((tag, idx) => <Text key={idx} style={styles.photoSpotTagText}>#{tag}</Text>)}
+            {extraCount > 0 && <Text style={styles.photoSpotTagText}>+{extraCount}</Text>}
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
   const renderPhotoThemeItem = ({ item }: { item: string }) => (
-    <View style={styles.photoThemeItemContainer}>
+    <TouchableOpacity
+      style={styles.photoThemeItemContainer}
+      activeOpacity={0.7}
+      onPress={() => setSelectedPhotoTheme(item)}
+    >
       <View style={styles.photoThemeCircle} />
       <Text style={styles.photoThemeTitleText} numberOfLines={1}>{item}</Text>
-    </View>
+    </TouchableOpacity>
   );
+
+  const renderPhotoThemeSection = (marginTop: number, keyPrefix: string) =>
+    selectedPhotoTheme ? (
+      <View style={[styles.photoThemePillBox, { marginTop }]}>
+        <View style={styles.photoThemePillLeftGroup}>
+          <Text style={styles.photoThemePillTitle} numberOfLines={1}>{selectedPhotoTheme}</Text>
+          <View style={styles.photoThemePillImageBox}>
+            <Image source={{ uri: undefined }} style={styles.photoThemePillImage} resizeMode="cover" />
+          </View>
+          <Text style={styles.photoThemePillSubtitle} numberOfLines={1}>테마 선택</Text>
+        </View>
+        <TouchableOpacity onPress={() => setSelectedPhotoTheme(null)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <X size={IconSize.large} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
+        </TouchableOpacity>
+      </View>
+    ) : (
+      <View style={[styles.photoThemeBox, { marginTop }]}>
+        <Text style={styles.sectionTitleText}>포토테마</Text>
+        <FlatList
+          data={PHOTO_THEMES}
+          renderItem={renderPhotoThemeItem}
+          keyExtractor={(item) => `${keyPrefix}-${item}`}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.photoThemeListContent}
+          style={styles.courseList}
+        />
+      </View>
+    );
 
   const renderCourseItem = ({ item }: { item: Media }) => (
     <TouchableOpacity
@@ -490,18 +606,7 @@ const CourseScreen = () => {
         {allMedia[5] && renderThemeCourseCard(allMedia[5])}
 
         {/* 포토테마 */}
-        <View style={styles.sectionTitleContainer}>
-          <Text style={styles.sectionTitleText}>포토테마</Text>
-        </View>
-        <FlatList
-          data={PHOTO_THEMES}
-          renderItem={renderPhotoThemeItem}
-          keyExtractor={(item) => `photo-${item}`}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.courseListContent}
-          style={styles.courseList}
-        />
+        {renderPhotoThemeSection(Spacing.v.large, 'photo')}
 
         {/* 실시간 인기 코스 */}
         <View style={[styles.sectionTitleContainer, { marginTop: Spacing.v.large }]}>
@@ -540,8 +645,8 @@ const CourseScreen = () => {
             </View>
           ) : (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyTitle}>유튜브 코스가 없습니다.</Text>
-              <Text style={styles.emptyDesc}>다른 카테고리를 확인해보세요.</Text>
+              <Text style={styles.emptyTitle}>유튜브 코스가 존재하지 않습니다.</Text>
+              <Text style={styles.emptyDesc}>다른 탭을 확인해주세요.</Text>
             </View>
           )}
         </ScrollView>
@@ -554,8 +659,8 @@ const CourseScreen = () => {
             </View>
           ) : (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyTitle}>드라마 코스가 없습니다.</Text>
-              <Text style={styles.emptyDesc}>다른 카테고리를 확인해보세요.</Text>
+              <Text style={styles.emptyTitle}>드라마 코스가 존재하지 않습니다.</Text>
+              <Text style={styles.emptyDesc}>다른 탭을 확인해주세요.</Text>
             </View>
           )}
         </ScrollView>
@@ -568,34 +673,32 @@ const CourseScreen = () => {
             </View>
           ) : (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyTitle}>영화 코스가 없습니다.</Text>
-              <Text style={styles.emptyDesc}>다른 카테고리를 확인해보세요.</Text>
+              <Text style={styles.emptyTitle}>영화 코스가 존재하지 않습니다.</Text>
+              <Text style={styles.emptyDesc}>다른 탭을 확인해주세요.</Text>
             </View>
           )}
         </ScrollView>
 
         {/* ── 포토스팟 탭 ── */}
         <ScrollView key="4" showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContainer}>
-          <View style={[styles.sectionTitleContainer, { marginTop: Spacing.v.medium }]}>
-            <Text style={styles.sectionTitleText}>포토테마</Text>
-          </View>
-          <FlatList
-            data={PHOTO_THEMES}
-            renderItem={renderPhotoThemeItem}
-            keyExtractor={(item) => `photo-spot-theme-${item}`}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.courseListContent}
-            style={styles.courseList}
-          />
-          {places.length > 0 ? (
-            <View style={{ paddingTop: Spacing.v.medium }}>
-              {sortedPlaces.map(item => renderPlaceCard(item))}
+          {renderPhotoThemeSection(Spacing.v.medium, 'photo-spot-theme')}
+          {filteredPlaces.length > 0 ? (
+            <View style={styles.photoSpotGrid}>
+              {filteredPlaces.map(item => renderPhotoSpotCard(item))}
             </View>
           ) : (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyTitle}>등록된 장소가 없습니다.</Text>
-              <Text style={styles.emptyDesc}>다른 카테고리를 확인해보세요.</Text>
+              {selectedPhotoTheme ? (
+                <>
+                  <Text style={styles.emptyTitle}>해당 테마의 포토스팟이 없습니다.</Text>
+                  <Text style={styles.emptyDesc}>다른 테마를 확인해보세요.</Text>
+                </>
+              ) : (
+                <>
+                  <Text style={styles.emptyTitle}>포토스팟이 존재하지 않습니다.</Text>
+                  <Text style={styles.emptyDesc}>다른 탭를 확인해보세요.</Text>
+                </>
+              )}
             </View>
           )}
         </ScrollView>
@@ -693,7 +796,7 @@ const styles = StyleSheet.create({
   tagText: { ...Typography.body2, color: Colors.light.primary, marginRight: Spacing.h.xsmall },
   emptyState: { paddingTop: Spacing.v.medium, alignItems: 'center' },
   emptyTitle: { ...Typography.subtitle2, color: Colors.light.black },
-  emptyDesc: { ...Typography.body2, color: Colors.light.grayLight },
+  emptyDesc: { ...Typography.body2, color: Colors.light.grayLight, marginTop: Spacing.v.medium },
   themeCourseBox: {
     marginTop: Spacing.v.medium,
     marginHorizontal: Spacing.h.medium,
@@ -850,6 +953,53 @@ const styles = StyleSheet.create({
     color: Colors.light.grayDark,
     textAlign: 'left',
   },
+  photoThemeBox: {
+    marginTop: Spacing.v.large,
+    marginHorizontal: Spacing.h.medium,
+    padding: Spacing.v.medium,
+    borderWidth: Spacing.lw.small,
+    borderColor: Colors.light.grayLight,
+    borderRadius: Spacing.r.small,
+  },
+  photoThemeListContent: {
+    gap: Spacing.h.medium,
+  },
+  photoThemePillBox: {
+    marginHorizontal: Spacing.h.medium,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: Spacing.v.medium,
+    borderWidth: Spacing.lw.small,
+    borderColor: Colors.light.grayLight,
+    borderRadius: 999,
+  },
+  photoThemePillLeftGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexShrink: 1,
+  },
+  photoThemePillTitle: {
+    ...Typography.title1,
+    color: Colors.light.black,
+  },
+  photoThemePillImageBox: {
+    marginLeft: Spacing.h.small,
+    width: IconSize.large,
+    height: IconSize.large,
+    borderRadius: IconSize.large / 2,
+    overflow: 'hidden',
+    backgroundColor: Colors.light.grayLight,
+  },
+  photoThemePillImage: {
+    width: '100%',
+    height: '100%',
+  },
+  photoThemePillSubtitle: {
+    marginLeft: Spacing.h.small,
+    ...Typography.subtitle2,
+    color: Colors.light.grayDark,
+  },
   photoThemeItemContainer: {
     alignItems: 'center',
     width: Size.circleMd,
@@ -866,6 +1016,81 @@ const styles = StyleSheet.create({
     ...Typography.button4,
     color: Colors.light.grayDark,
     textAlign: 'center',
+  },
+  photoSpotGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: Spacing.h.medium,
+    paddingTop: Spacing.v.medium,
+    columnGap: Spacing.h.medium,
+    rowGap: Spacing.v.medium,
+  },
+  photoSpotCard: {
+    width: PHOTO_SPOT_CARD_WIDTH,
+    backgroundColor: Colors.light.white,
+    borderRadius: Spacing.r.small,
+    borderWidth: Spacing.lw.small,
+    borderColor: Colors.light.grayLight,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  photoSpotImageWrapper: {
+    width: '100%',
+    height: PHOTO_SPOT_IMAGE_HEIGHT,
+    borderTopLeftRadius: Spacing.r.small,
+    borderTopRightRadius: Spacing.r.small,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+    overflow: 'hidden',
+    backgroundColor: Colors.light.grayLight,
+  },
+  photoSpotImage: {
+    width: '100%',
+    height: '100%',
+  },
+  photoSpotSaveButton: {
+    position: 'absolute',
+    top: Spacing.h.small,
+    right: Spacing.h.small,
+  },
+  photoSpotGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '50%',
+    justifyContent: 'flex-end',
+  },
+  photoSpotInfoOverlay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingLeft: Spacing.h.small,
+    paddingBottom: Spacing.h.small,
+  },
+  photoSpotInfoText: {
+    ...Typography.subtitle1,
+    color: Colors.light.white,
+  },
+  photoSpotInfoBox: {
+    padding: Spacing.h.small,
+  },
+  photoSpotTitle: {
+    ...Typography.title2,
+    color: Colors.light.black,
+  },
+  photoSpotTagRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    marginTop: Spacing.h.small,
+  },
+  photoSpotTagText: {
+    ...Typography.body2,
+    color: Colors.light.primary,
+    marginRight: Spacing.h.xsmall,
   },
 });
 
