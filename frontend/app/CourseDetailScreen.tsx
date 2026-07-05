@@ -19,7 +19,6 @@ import { mediaApi, scheduleApi } from '../services/api';
 import type { Media, MediaPlace, Schedule } from '../services/types';
 import { Image, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Shadow } from 'react-native-shadow-2';
 import { CATEGORY_LABEL, MEDIA_TYPE_LABEL, shortAddress } from '@/constants/labels';
 import { Size } from '@/constants/Size';
 
@@ -209,28 +208,26 @@ const CourseDetailScreen = () => {
                       activeOpacity={0.8}
                       onPress={() => router.push({ pathname: '/PlaceDetailScreen', params: { id: mp.place.id, name: mp.place.name } })}
                     >
-                      <Shadow distance={4} startColor="rgba(0, 0, 0, 0.15)" offset={[0, 0]} stretch>
-                        <View style={styles.courseCard}>
-                          <Image
-                            source={{ uri: mp.place.image_url ?? undefined }}
-                            style={styles.courseCardImage}
-                            resizeMode="cover"
-                          />
-                          <View style={styles.cardContent}>
-                            <View style={styles.cardNameRow}>
-                              <Text style={styles.placeNameText}>{mp.place.name}</Text>
-                            </View>
-                            <View style={styles.cardSubRow}>
-                              <Text style={styles.cardSubText}>{CATEGORY_LABEL[mp.place.category] ?? mp.place.category}</Text>
-                              <TextSeparator />
-                              <Text style={styles.cardSubText} numberOfLines={1}>{shortAddress(mp.place.address)}</Text>
-                            </View>
-                            <TouchableOpacity style={styles.routeButton} activeOpacity={0.7} onPress={() => handleRoutePress(mp.place)}>
-                              <Text style={styles.routeButtonText}>경로 확인</Text>
-                            </TouchableOpacity>
+                      <View style={styles.courseCard}>
+                        <Image
+                          source={{ uri: mp.place.image_url ?? undefined }}
+                          style={styles.courseCardImage}
+                          resizeMode="cover"
+                        />
+                        <View style={styles.cardContent}>
+                          <View style={styles.cardNameRow}>
+                            <Text style={styles.placeNameText}>{mp.place.name}</Text>
                           </View>
+                          <View style={styles.cardSubRow}>
+                            <Text style={styles.cardSubText}>{CATEGORY_LABEL[mp.place.category] ?? mp.place.category}</Text>
+                            <TextSeparator />
+                            <Text style={styles.cardSubText} numberOfLines={1}>{shortAddress(mp.place.address)}</Text>
+                          </View>
+                          <TouchableOpacity style={styles.routeButton} activeOpacity={0.7} onPress={() => handleRoutePress(mp.place)}>
+                            <Text style={styles.routeButtonText}>경로 확인</Text>
+                          </TouchableOpacity>
                         </View>
-                      </Shadow>
+                      </View>
                     </TouchableOpacity>
                   </View>
                 ))}
@@ -251,6 +248,13 @@ const CourseDetailScreen = () => {
                         <Text style={styles.photoSpotItemTitle}>{mp.place.name}</Text>
                         <View style={styles.photoSpotMetaRow}>
                           <Text style={styles.photoSpotAddress}>{shortAddress(mp.place.address)}</Text>
+                          {mp.place.rating != null && (
+                            <>
+                              <TextSeparator />
+                              <Star size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
+                              <Text style={styles.photoSpotLikes}> {mp.place.rating.toFixed(1)}</Text>
+                            </>
+                          )}
                           {mp.place.like_count != null && (
                             <>
                               <TextSeparator />
@@ -411,6 +415,8 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     backgroundColor: Colors.light.white,
     borderRadius: Spacing.r.small,
+    borderWidth: Spacing.lw.small,
+    borderColor: Colors.light.grayLight,
     paddingVertical: Spacing.v.small,
     paddingLeft: Spacing.h.small,
   },

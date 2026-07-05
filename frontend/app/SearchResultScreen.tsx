@@ -237,12 +237,23 @@ const SearchResultScreen = () => {
             <View style={styles.metadataRow}>
               <View style={styles.metaChip}>
                 <Text style={styles.metadataText}>{spotShortAddr}</Text>
-                {spot.like_count != null && <TextSeparator />}
+                {(spot.rating != null || spot.like_count != null) && <TextSeparator />}
               </View>
-              {spot.like_count != null && (
+              {(spot.rating != null || spot.like_count != null) && (
                 <View style={styles.metaChip}>
-                  <Heart size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
-                  <Text style={styles.metadataText}> {formatLikeCount(spot.like_count)}</Text>
+                  {spot.rating != null && (
+                    <>
+                      <Star size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
+                      <Text style={styles.metadataText}> {spot.rating.toFixed(1)}</Text>
+                    </>
+                  )}
+                  {spot.rating != null && spot.like_count != null && <TextSeparator />}
+                  {spot.like_count != null && (
+                    <>
+                      <Heart size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
+                      <Text style={styles.metadataText}> {formatLikeCount(spot.like_count)}</Text>
+                    </>
+                  )}
                 </View>
               )}
             </View>

@@ -8,6 +8,7 @@ React Native (Expo) 기반 모바일 앱 프론트엔드입니다.
 - 리뷰쓰기 기능 기획 및 구현 (CourseDetailScreen·PlaceDetailScreen 버튼에 onPress 없음, 화면 기획 필요)
 - PlaceDetailScreen 지도 구현 (현재 빈 회색 박스, lat/lng 데이터는 존재)
 - 포토테마 이미지 데이터 연동 (현재 테마 원형·필터 pill의 이미지는 회색 placeholder, 백엔드 테마 이미지 필드 필요)
+- 포토스팟 상세페이지 작성 (PlaceDetailScreen과 별개 화면, 촬영 관련 정보 위주로 구성 예정 — 촬영 팁·포토존 각도/포즈 안내·최적 촬영 시간대 등)
 
 ---
 
