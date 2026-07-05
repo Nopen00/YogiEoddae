@@ -28,7 +28,6 @@ function RootLayoutNav() {
         <View style={{ flex: 1 }}>
           <Stack>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
             <Stack.Screen name="SearchScreen" options={{ headerShown: false }} />
             <Stack.Screen name="SearchResultScreen" options={{ headerShown: false }} />
             <Stack.Screen name="CourseDetailScreen" options={{ headerShown: false }} />
