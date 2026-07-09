@@ -26,6 +26,14 @@ class MediaBriefSerializer(serializers.Serializer):
     title = serializers.CharField()
     thumbnail_url = serializers.URLField()
     media_type = serializers.CharField()
+    tags = serializers.SerializerMethodField()
+    place_count = serializers.SerializerMethodField()
+
+    def get_tags(self, obj):
+        return [{'id': t.id, 'name': t.name, 'category': t.category} for t in obj.tags.all()]
+
+    def get_place_count(self, obj):
+        return obj.media_places.filter(status='admin_approved').count()
 
 
 class ScheduleSerializer(serializers.ModelSerializer):

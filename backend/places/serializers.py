@@ -55,10 +55,11 @@ class PhotoSerializer(serializers.ModelSerializer):
 class MediaSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
     is_bookmarked = serializers.SerializerMethodField()
+    place_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Media
-        fields = ['id', 'title', 'media_type', 'year', 'thumbnail_url', 'description', 'tags', 'is_bookmarked', 'created_at']
+        fields = ['id', 'title', 'media_type', 'year', 'thumbnail_url', 'description', 'tags', 'is_bookmarked', 'place_count', 'created_at']
 
     def get_is_bookmarked(self, obj):
         user = _get_user_from_context(self.context)
@@ -66,6 +67,9 @@ class MediaSerializer(serializers.ModelSerializer):
             return False
         from bookmarks.models import MediaBookmark
         return MediaBookmark.objects.filter(user=user, media=obj).exists()
+
+    def get_place_count(self, obj):
+        return obj.media_places.filter(status='admin_approved').count()
 
 
 class MediaPlaceSerializer(serializers.ModelSerializer):

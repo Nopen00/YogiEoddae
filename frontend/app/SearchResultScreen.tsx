@@ -15,7 +15,7 @@ import {
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import PagerView from 'react-native-pager-view';
+import PagerView from '@/components/ui/PagerViewWrapper';
 
 // 디자인 시스템 임포트
 import { Divider } from '@/components/ui/Divider';

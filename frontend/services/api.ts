@@ -215,7 +215,7 @@ export const scheduleApi = {
       }
       return mock({});
     }
-    return mock({});
+    return apiClient.post(`/api/schedules/${id}/places/reorder/`, places);
   },
   importSchedule: (id: number, data?: { title?: string; start_date?: string; end_date?: string }) =>
     USE_MOCK ? mock(mockScheduleStore[0]) : apiClient.post<Schedule>(`/api/schedules/${id}/import/`, data),

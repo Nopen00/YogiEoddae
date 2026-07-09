@@ -23,6 +23,48 @@
 
 ---
 
+## 로컬 풀스택 실행 가이드 (백엔드+프론트 연동)
+
+매번 새로 묻지 않고 이 순서만 따라 하면 됩니다.
+
+### 0. 최초 1회 확인 사항
+- `backend/.env`, `frontend/.env` 가 로컬에 있어야 함 (git에 안 올라가는 파일이라 새 PC에서는 직접 생성 필요)
+- MySQL 서비스가 떠 있어야 함 → PowerShell: `Get-Service MySQL`
+- `frontend/node_modules` 없으면 `frontend` 폴더에서 `npm install` 먼저
+
+### 1. 백엔드 (터미널 1)
+```powershell
+cd backend
+.\venv\Scripts\Activate.ps1      # PowerShell. cmd는 venv\Scripts\activate.bat, Git Bash는 source venv/Scripts/activate
+python manage.py runserver 127.0.0.1:8000
+```
+
+### 2. 프론트엔드 (터미널 2, 새 창)
+`frontend/.env` 가 아래처럼 실서버 모드인지 확인:
+```
+EXPO_PUBLIC_USE_MOCK=false
+EXPO_PUBLIC_API_URL=http://127.0.0.1:8000
+```
+그 다음:
+```powershell
+cd frontend
+npm run web      # 또는 npx expo start --web
+```
+
+### 3. 확인
+- 브라우저 `http://localhost:8081` 접속
+- 콘솔에 `API BASE_URL: http://127.0.0.1:8000` 로그가 보이면 실서버 연동 정상
+- 백엔드 단독 확인: `http://127.0.0.1:8000/api/places/` → 200 응답 와야 함
+
+### 4. 종료
+- 각 터미널에서 `Ctrl+C`
+- 백엔드 터미널에서 `deactivate` (venv 비활성화)
+
+### Mock 모드로 돌리고 싶을 때
+`frontend/.env` 의 `EXPO_PUBLIC_USE_MOCK=true` 로 바꾸면 백엔드 없이 더미 데이터로 UI만 확인 가능 (API_URL 값은 무시됨).
+
+---
+
 ## Phase 진행 현황
 
 | Phase | 내용 | 상태 |

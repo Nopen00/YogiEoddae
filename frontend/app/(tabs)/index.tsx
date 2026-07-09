@@ -87,6 +87,11 @@ const IntroScreen = () => {
         onScroll={onScroll}
         scrollEventThrottle={16}
         bounces={false}
+        getItemLayout={(_, index) => ({
+          length: SCREEN_WIDTH,
+          offset: SCREEN_WIDTH * index,
+          index,
+        })}
       />
 
       <View style={[styles.bottomContent, { bottom: insets.bottom + 16 }]}>

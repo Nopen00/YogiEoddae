@@ -8,14 +8,16 @@ import { CourseSelectPopup } from '@/components/modals/CourseSelectPopup';
 import { type DateRange, NewScheduleAlert } from '@/components/modals/NewScheduleAlert';
 import { NewScheduleStep3Alert } from '@/components/modals/NewScheduleStep3Alert';
 import { ScheduleMoreMenuAlert } from '@/components/modals/ScheduleMoreMenuAlert';
+import { SortAlert, type SortOption, SORT_OPTIONS } from '@/components/modals/SortAlert';
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
 import { CATEGORY_LABEL, CITY_SHORT, MEDIA_TYPE_LABEL, shortAddress } from '@/constants/labels';
 import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
+import { sortByOption } from '@/utils/sortByOption';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { Calendar, Heart, MoreVertical, Plus } from 'lucide-react-native';
+import { Calendar, Heart, MoreVertical, Plus, SlidersHorizontal } from 'lucide-react-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Animated,
@@ -31,9 +33,18 @@ import {
   ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import PagerView from 'react-native-pager-view';
-import { mediaApi, placeApi, scheduleApi } from '../services/api';
-import type { DailyPlace, Media, MediaPlace, Place, Schedule } from '../services/types';
+import PagerView from '@/components/ui/PagerViewWrapper';
+import { bookmarkApi, mediaApi, placeApi, scheduleApi } from '../services/api';
+import type { DailyPlace, Media, Place, Schedule } from '../services/types';
+
+type SavedPhoto = {
+  id: number;
+  image_url: string;
+  description: string;
+  place_name: string;
+  tags: { name: string; category: string }[];
+  saved_at: string;
+};
 
 const TABS = ['내 일정', '과거 일정', '저장소'];
 const { width } = Dimensions.get('window');
@@ -277,9 +288,14 @@ export default function ScheduleScreen() {
 
   const [mySchedules, setMySchedules] = useState<Schedule[]>([]);
   const [pastSchedules, setPastSchedules] = useState<Schedule[]>([]);
+  const [savedSchedules, setSavedSchedules] = useState<Schedule[]>([]);
   const [savedCourses, setSavedCourses] = useState<Media[]>([]);
   const [savedPlaces, setSavedPlaces] = useState<Place[]>([]);
-  const [savedSpots] = useState<MediaPlace[]>([]);
+  const [savedPhotos, setSavedPhotos] = useState<SavedPhoto[]>([]);
+  const [myScheduleSort, setMyScheduleSort] = useState<SortOption>('관련도 높은 순');
+  const [isMySortVisible, setIsMySortVisible] = useState(false);
+  const [courseSort, setCourseSort] = useState<SortOption>('관련도 높은 순');
+  const [isCourseSortVisible, setIsCourseSortVisible] = useState(false);
   const [isNewScheduleVisible, setIsNewScheduleVisible] = useState(false);
   const [newScheduleKey, setNewScheduleKey] = useState(0);
   const [isCourseSelectVisible, setIsCourseSelectVisible] = useState(false);
@@ -311,8 +327,10 @@ export default function ScheduleScreen() {
         setMySchedules(all.filter((s: Schedule) => !isExpired(s.end_date)));
         setPastSchedules(all.filter((s: Schedule) => isExpired(s.end_date)));
       }).catch(() => {});
+      scheduleApi.getBookmarked().then(res => setSavedSchedules(res.data)).catch(() => {});
       mediaApi.getBookmarked().then(res => setSavedCourses(res.data)).catch(() => {});
       placeApi.getBookmarked().then(res => setSavedPlaces(res.data)).catch(() => {});
+      bookmarkApi.getAll().then((res: any) => setSavedPhotos(res.data?.saved_photos ?? [])).catch(() => {});
     }, [])
   );
 
@@ -335,12 +353,16 @@ export default function ScheduleScreen() {
     animateIndicatorTo(index);
   };
 
-  const currentSchedules = mySchedules.filter(isCurrent);
-  const plannedSchedules = mySchedules.filter(isPlanned);
+  const sortedByName = (list: Schedule[]) =>
+    myScheduleSort === '이름순' ? [...list].sort((a, b) => a.title.localeCompare(b.title, 'ko')) : list;
+
+  const currentSchedules = sortedByName(mySchedules.filter(isCurrent));
+  const plannedSchedules = sortedByName(mySchedules.filter(isPlanned));
+  const sortedSavedCourses = sortByOption(savedCourses, courseSort, m => m.title, m => m.place_count);
 
   const mySchedulesEmpty = currentSchedules.length === 0 && plannedSchedules.length === 0;
   const pastEmpty = pastSchedules.length === 0;
-  const savedEmpty = savedCourses.length === 0 && savedPlaces.length === 0 && savedSpots.length === 0;
+  const savedEmpty = savedSchedules.length === 0 && savedCourses.length === 0 && savedPlaces.length === 0 && savedPhotos.length === 0;
 
   const showAddButton =
     (selectedIndex === 0 && mySchedulesEmpty) ||
@@ -388,6 +410,10 @@ export default function ScheduleScreen() {
           </View>
         ) : (
           <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            <TouchableOpacity style={styles.sortButton} onPress={() => setIsMySortVisible(true)} activeOpacity={0.7}>
+              <SlidersHorizontal size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
+              <Text style={styles.sortButtonText}>{myScheduleSort}</Text>
+            </TouchableOpacity>
             <SectionWrapper title="현재 진행 중인 일정" isEmpty={currentSchedules.length === 0} emptyTitle="현재 진행 중인 일정이 비어있습니다." emptySubtitle="일정을 추가해보세요." onAddPress={openNewScheduleFresh}>
               {currentSchedules.map(s => (
                 <ScheduleCard
@@ -456,23 +482,49 @@ export default function ScheduleScreen() {
           </View>
         ) : (
           <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-            <SectionWrapper title="저장한 코스" showAdd={false} isEmpty={savedCourses.length === 0} emptyTitle="저장한 코스가 비어있습니다.">
-              {savedCourses.map(m => (
-                <CourseCard
-                  key={m.id}
-                  media={m}
-                  onPress={() => {
-                    if (isCourseSelectVisible) {
-                      setSelectedCourseMedia(m);
-                      setIsCourseSelectVisible(false);
-                      setIsStep3Visible(true);
-                    } else {
-                      router.push({ pathname: '/CourseDetailScreen', params: { id: m.id } });
-                    }
-                  }}
+            {/* 저장한 일정 */}
+            <SectionWrapper title="저장한 일정" showAdd={false} isEmpty={savedSchedules.length === 0} emptyTitle="저장한 일정이 비어있습니다.">
+              {savedSchedules.map(s => (
+                <ScheduleCard
+                  key={s.id}
+                  schedule={s}
+                  onPress={() => router.push({ pathname: '/ScheduleDetailScreen', params: { id: s.id, title: s.title } })}
                 />
               ))}
             </SectionWrapper>
+            {/* 저장한 코스 */}
+            <View style={styles.secondSection}>
+              <View style={styles.sectionHeaderRow}>
+                <Text style={styles.sectionTitle}>저장한 코스</Text>
+                <TouchableOpacity onPress={() => setIsCourseSortVisible(true)} activeOpacity={0.7} style={styles.sectionSortBtn}>
+                  <SlidersHorizontal size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
+                  <Text style={styles.sortButtonText}>{courseSort}</Text>
+                </TouchableOpacity>
+              </View>
+              <Divider marginTop={Spacing.v.small} style={{ marginHorizontal: Spacing.h.medium }} />
+              {savedCourses.length === 0 ? (
+                <View style={styles.sectionEmpty}>
+                  <Text style={styles.sectionEmptyTitle}>저장한 코스가 비어있습니다.</Text>
+                </View>
+              ) : (
+                sortedSavedCourses.map(m => (
+                  <CourseCard
+                    key={m.id}
+                    media={m}
+                    onPress={() => {
+                      if (isCourseSelectVisible) {
+                        setSelectedCourseMedia(m);
+                        setIsCourseSelectVisible(false);
+                        setIsStep3Visible(true);
+                      } else {
+                        router.push({ pathname: '/CourseDetailScreen', params: { id: m.id } });
+                      }
+                    }}
+                  />
+                ))
+              )}
+            </View>
+            {/* 저장한 명소 */}
             <SectionWrapper title="저장한 명소" style={styles.secondSection} showAdd={false} isEmpty={savedPlaces.length === 0} emptyTitle="저장한 명소가 비어있습니다.">
               {savedPlaces.map(p => (
                 <TouchableOpacity
@@ -514,22 +566,26 @@ export default function ScheduleScreen() {
                 </TouchableOpacity>
               ))}
             </SectionWrapper>
-            <SectionWrapper title="저장한 포토스팟" style={styles.secondSection} showAdd={false} isEmpty={savedSpots.length === 0} emptyTitle="저장한 포토스팟이 비어있습니다.">
-              {savedSpots.map(sp => (
+            {/* 저장한 포토스팟 */}
+            <SectionWrapper title="저장한 포토스팟" style={styles.secondSection} showAdd={false} isEmpty={savedPhotos.length === 0} emptyTitle="저장한 포토스팟이 비어있습니다.">
+              {savedPhotos.map(sp => (
                 <TouchableOpacity key={sp.id} style={styles.card} activeOpacity={0.85}>
                   <View style={styles.imageWrapper}>
-                    {sp.place.image_url ? (
-                      <Image source={{ uri: sp.place.image_url }} style={styles.cardImage} />
+                    {sp.image_url ? (
+                      <Image source={{ uri: sp.image_url }} style={styles.cardImage} />
                     ) : (
                       <View style={[styles.cardImage, { backgroundColor: Colors.light.grayLight }]} />
                     )}
                   </View>
                   <View style={styles.cardContent}>
-                    <Text style={styles.cardTitle} numberOfLines={1}>{sp.place.name}</Text>
-                    {sp.place.tags.length > 0 && (
+                    <Text style={styles.cardTitle} numberOfLines={1}>{sp.place_name}</Text>
+                    {sp.description ? (
+                      <Text style={styles.infoText} numberOfLines={1}>{sp.description}</Text>
+                    ) : null}
+                    {sp.tags.length > 0 && (
                       <TagRow>
-                        {sp.place.tags.map(tag => (
-                          <Text key={tag.id} style={styles.tagText}>#{tag.name}</Text>
+                        {sp.tags.map((tag, i) => (
+                          <Text key={i} style={styles.tagText}>#{tag.name}</Text>
                         ))}
                       </TagRow>
                     )}
@@ -649,6 +705,22 @@ export default function ScheduleScreen() {
           }}
         />
       )}
+      <SortAlert
+        visible={isMySortVisible}
+        options={['관련도 높은 순', '이름순']}
+        disabledOptions={['별점순', '하트 순', '장소 많은 순', '장소 적은 순']}
+        selected={myScheduleSort}
+        onClose={() => setIsMySortVisible(false)}
+        onSelect={setMyScheduleSort}
+      />
+      <SortAlert
+        visible={isCourseSortVisible}
+        options={SORT_OPTIONS}
+        disabledOptions={['별점순', '하트 순']}
+        selected={courseSort}
+        onClose={() => setIsCourseSortVisible(false)}
+        onSelect={setCourseSort}
+      />
       {selectedCourseMedia && (
         <NewScheduleStep3Alert
           visible={isStep3Visible}
@@ -701,6 +773,10 @@ const styles = StyleSheet.create({
   scrollContent: { paddingTop: Spacing.v.medium, paddingBottom: Spacing.v.screenBottom },
   scrollContentOther: { paddingTop: 0, paddingBottom: Spacing.v.screenBottom },
   sectionTitle: { ...Typography.title1, color: Colors.light.black, paddingLeft: Spacing.h.medium },
+  sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingRight: Spacing.h.medium },
+  sectionSortBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  sortButton: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: Spacing.h.medium, paddingBottom: Spacing.v.small },
+  sortButtonText: { ...Typography.body2, color: Colors.light.grayDark },
   secondSection: { marginTop: Spacing.v.large },
   card: { flexDirection: 'row', alignItems: 'flex-start', marginHorizontal: Spacing.h.medium, marginTop: Spacing.v.medium, borderRadius: Spacing.r.small, borderWidth: Spacing.lw.small, borderColor: Colors.light.grayLight, padding: Spacing.h.medium, backgroundColor: Colors.light.white },
   imageWrapper: { width: Size.circleMd, height: Size.circleMd, borderRadius: Size.circleMd / 2, overflow: 'hidden', flexShrink: 0 },

@@ -3,7 +3,7 @@ from django.conf import settings
 from django.db.models import Count, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from rest_framework import viewsets
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -13,6 +13,8 @@ from .serializers import (
     MediaSerializer, MediaDetailSerializer, MediaPlaceSerializer,
     TagSerializer, PhotoSerializer,
 )
+from bookmarks.models import MediaBookmark, PlaceBookmark
+from users.utils import get_user_by_device_id
 
 
 def place_map_test(request):
@@ -401,6 +403,17 @@ class PlaceViewSet(viewsets.ReadOnlyModelViewSet):
             qs = qs.filter(tags__name__icontains=tag)
         return qs.distinct()
 
+    @action(detail=False, methods=['get'], url_path='bookmarked')
+    def bookmarked(self, request):
+        """GET /api/places/bookmarked/  저장한 장소 목록"""
+        device_id = request.headers.get('X-Device-ID')
+        user = get_user_by_device_id(device_id) if device_id else None
+        if not user:
+            return Response({'error': '유저 정보가 없습니다.'}, status=status.HTTP_401_UNAUTHORIZED)
+        bookmarks = PlaceBookmark.objects.filter(user=user).select_related('place').prefetch_related('place__tags')
+        places = [b.place for b in bookmarks]
+        return Response(PlaceSerializer(places, many=True, context={'request': request}).data)
+
     @action(detail=True, methods=['get'])
     def photos(self, request, pk=None):
         """
@@ -458,6 +471,17 @@ class MediaViewSet(viewsets.ReadOnlyModelViewSet):
         if tag:
             qs = qs.filter(tags__name__icontains=tag)
         return qs.distinct()
+
+    @action(detail=False, methods=['get'], url_path='bookmarked')
+    def bookmarked(self, request):
+        """GET /api/media/bookmarked/  저장한 코스 목록"""
+        device_id = request.headers.get('X-Device-ID')
+        user = get_user_by_device_id(device_id) if device_id else None
+        if not user:
+            return Response({'error': '유저 정보가 없습니다.'}, status=status.HTTP_401_UNAUTHORIZED)
+        bookmarks = MediaBookmark.objects.filter(user=user).select_related('media').prefetch_related('media__tags')
+        media_list = [b.media for b in bookmarks]
+        return Response(MediaSerializer(media_list, many=True, context={'request': request}).data)
 
     @action(detail=True, methods=['get'])
     def places(self, request, pk=None):

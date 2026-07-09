@@ -149,6 +149,28 @@ class ScheduleImportView(APIView):
         return Response(ScheduleSerializer(new_schedule, context={'request': request}).data, status=status.HTTP_201_CREATED)
 
 
+class DailyPlaceBulkReorderView(APIView):
+    """POST /api/schedules/{id}/places/reorder/  장소 순서 일괄 변경"""
+    def post(self, request, pk):
+        user = get_user(request)
+        if not user:
+            return Response({'error': '유저 정보가 없습니다.'}, status=status.HTTP_401_UNAUTHORIZED)
+        schedule = get_object_or_404(Schedule, pk=pk, user=user)
+        items = request.data
+        if not isinstance(items, list):
+            return Response({'error': '리스트 형태로 전송해주세요.'}, status=status.HTTP_400_BAD_REQUEST)
+        ids = [item.get('id') for item in items if item.get('id') is not None]
+        daily_places = {dp.id: dp for dp in DailyPlace.objects.filter(schedule=schedule, id__in=ids)}
+        if len(daily_places) != len(ids):
+            return Response({'error': '유효하지 않은 장소 ID가 포함되어 있습니다.'}, status=status.HTTP_400_BAD_REQUEST)
+        for item in items:
+            dp = daily_places[item['id']]
+            dp.day_number = item.get('day_number', dp.day_number)
+            dp.order = item.get('order', dp.order)
+        DailyPlace.objects.bulk_update(list(daily_places.values()), ['day_number', 'order'])
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
 class ScheduleBookmarkView(APIView):
     def post(self, request, pk):
         user = get_user(request)
