@@ -1,16 +1,17 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>장소 추출 | 요기어따?</title>
+  <title>장소 추출 | 요기어때?</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-50 min-h-screen">
 
   <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center gap-4">
     <a href="/" class="text-gray-400 hover:text-gray-600 text-sm">← 홈</a>
-    <h1 class="text-xl font-bold text-gray-800">🎬 YouTube 장소 추출</h1>
+    <h1 class="text-xl font-bold text-gray-800 flex items-center gap-2"><img src="{% static 'places/icons/search.svg' %}" class="w-5 h-5" alt="">YouTube 장소 추출</h1>
   </header>
 
   <main class="max-w-2xl mx-auto px-6 py-10">

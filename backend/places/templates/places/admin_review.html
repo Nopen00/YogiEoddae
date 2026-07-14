@@ -1,9 +1,10 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>장소 검토 | 요기어따?</title>
+  <title>장소 검토 | 요기어때?</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: #f9fafb; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #1f2937; }
@@ -128,6 +129,11 @@
     .result-addr { font-size: 12px; color: #6b7280; margin-top: 2px; }
     .result-empty { padding: 12px 14px; font-size: 13px; color: #9ca3af; text-align: center; }
     .result-searching { padding: 12px 14px; font-size: 13px; color: #6b7280; text-align: center; }
+
+    /* ── inline icon ── */
+    .ic { width: 16px; height: 16px; vertical-align: -3px; margin-right: 4px; }
+    .icon-no img, .icon-ok img { width: 16px; height: 16px; vertical-align: -3px; }
+    .confirm-icon img { width: 36px; height: 36px; }
   </style>
 </head>
 <body>
@@ -135,14 +141,14 @@
 <header>
   <a href="/places/extract/history/" class="back">← 목록</a>
   <div class="header-info">
-    <h1>📍 {{ media.title }}</h1>
+    <h1><img class="ic" src="{% static 'places/icons/map-pin.svg' %}" alt="">{{ media.title }}</h1>
     <p>{{ media.get_media_type_display }}</p>
   </div>
   <button type="button" class="btn-reextract" id="geocodeBtn"
     onclick="geocodeAll()" style="margin-right:8px; background:#f0fdf4; color:#16a34a; border:1px solid #bbf7d0;">
-    📍 주소 일괄갱신
+    <img class="ic" src="{% static 'places/icons/map-pin.svg' %}" alt="">주소 일괄갱신
   </button>
-  <a href="/places/extract/?media_id={{ media.pk }}" class="btn-reextract">🔄 재추출</a>
+  <a href="/places/extract/?media_id={{ media.pk }}" class="btn-reextract"><img class="ic" src="{% static 'places/icons/clock.svg' %}" alt="">재추출</a>
 </header>
 
 <main>
@@ -171,7 +177,7 @@
                 <span class="tag-kto">KTO 확인</span>
                 <span class="tag-conf">신뢰도 {{ mp.confidence_score|floatformat:0 }}%</span>
               </div>
-              {% if mp.place.address %}<p class="card-addr">📍 {{ mp.place.address }}</p>{% endif %}
+              {% if mp.place.address %}<p class="card-addr"><img class="ic" src="{% static 'places/icons/map-pin.svg' %}" alt="">{{ mp.place.address }}</p>{% endif %}
               {% if mp.ai_reason %}<p class="card-reason">{{ mp.ai_reason }}</p>{% endif %}
             </div>
             <div class="conf-bar-wrap">
@@ -196,7 +202,7 @@
   {% if inferred_uncertain %}
   <section>
     <div class="section-header">
-      <h2 class="section-title">⚠️ 추가 확인 필요</h2>
+      <h2 class="section-title"><img class="ic" src="{% static 'places/icons/alert-circle.svg' %}" alt="">추가 확인 필요</h2>
       <span class="badge badge-orange">{{ inferred_uncertain|length }}건</span>
       <p class="section-hint">자막에 정확한 장소명이 없어 위치가 불확실합니다. 수정 후 승인하세요.</p>
     </div>
@@ -216,10 +222,10 @@
                 <span class="tag-unverified">미확정</span>
                 <span class="tag-conf">신뢰도 {{ mp.confidence_score|floatformat:0 }}%</span>
               </div>
-              <p class="card-addr" id="addr-{{ mp.place.pk }}">{% if mp.place.address %}📍 {{ mp.place.address }}{% else %}주소 미확인{% endif %}</p>
+              <p class="card-addr" id="addr-{{ mp.place.pk }}">{% if mp.place.address %}<img class="ic" src="{% static 'places/icons/map-pin.svg' %}" alt="">{{ mp.place.address }}{% else %}주소 미확인{% endif %}</p>
               {% if mp.ai_reason %}<p class="card-reason">{{ mp.ai_reason }}</p>{% endif %}
               <p class="warn-label">위치 추정 필요 — 수정 후 승인하세요</p>
-              <button type="button" class="btn-edit" onclick="openModal(event, {{ mp.place.pk }}, '{{ mp.place.name|escapejs }}', '{{ mp.place.address|escapejs }}')">✏️ 위치 수정</button>
+              <button type="button" class="btn-edit" onclick="openModal(event, {{ mp.place.pk }}, '{{ mp.place.name|escapejs }}', '{{ mp.place.address|escapejs }}')"><img class="ic" src="{% static 'places/icons/more-vertical.svg' %}" alt="">위치 수정</button>
             </div>
             <div class="conf-bar-wrap">
               <div class="conf-bar-bg"><div class="conf-bar-fill" style="width:{{ mp.confidence_score|floatformat:0 }}%; background:#fb923c"></div></div>
@@ -247,7 +253,7 @@
   {% if approved %}
   <section>
     <div class="section-header">
-      <h2 class="section-title">✅ 승인된 장소</h2>
+      <h2 class="section-title">✓ 승인된 장소</h2>
       <span class="badge badge-green">{{ approved|length }}건</span>
     </div>
     <div class="card-list">
@@ -258,9 +264,9 @@
         {% if mp.place.address %}<span class="simple-addr" id="addr-{{ mp.place.pk }}">{{ mp.place.address }}</span>{% endif %}
         <span class="simple-conf">{{ mp.confidence_score|floatformat:0 }}%</span>
         <button type="button" class="btn-edit" style="margin-top:0; margin-left:8px;"
-          onclick="openModal(event, {{ mp.place.pk }}, '{{ mp.place.name|escapejs }}', '{{ mp.place.address|escapejs }}')">✏️</button>
+          onclick="openModal(event, {{ mp.place.pk }}, '{{ mp.place.name|escapejs }}', '{{ mp.place.address|escapejs }}')"><img class="ic" style="margin-right:0" src="{% static 'places/icons/more-vertical.svg' %}" alt=""></button>
         <button type="button" class="btn-revoke"
-          onclick="openRevoke({{ mp.pk }}, '{{ mp.place.name|escapejs }}')">✕ 승인 취소</button>
+          onclick="openRevoke({{ mp.pk }}, '{{ mp.place.name|escapejs }}')"><img class="ic" src="{% static 'places/icons/x.svg' %}" alt="">승인 취소</button>
       </div>
       {% endfor %}
     </div>
@@ -271,13 +277,13 @@
   {% if rejected %}
   <section>
     <div class="section-header">
-      <h2 class="section-title">✕ 반려된 장소</h2>
+      <h2 class="section-title"><img class="ic" src="{% static 'places/icons/x.svg' %}" alt="">반려된 장소</h2>
       <span class="badge badge-gray">{{ rejected|length }}건</span>
     </div>
     <div class="card-list">
       {% for mp in rejected %}
       <div class="simple-card rejected-card">
-        <span class="icon-no">✕</span>
+        <span class="icon-no"><img src="{% static 'places/icons/x.svg' %}" alt=""></span>
         <span class="simple-name">{{ mp.place.name }}</span>
       </div>
       {% endfor %}
@@ -290,7 +296,7 @@
 <!-- 위치 수정 모달 -->
 <div class="modal-overlay" id="editModal">
   <div class="modal" onclick="event.stopPropagation()">
-    <h2 class="modal-title">📍 위치 수정</h2>
+    <h2 class="modal-title"><img class="ic" src="{% static 'places/icons/map-pin.svg' %}" alt="">위치 수정</h2>
     <p class="modal-sub" id="modalSub">AI가 추정한 장소입니다. 정확한 명칭과 주소로 수정하세요.</p>
 
     <input type="hidden" id="modalPlaceId">
@@ -299,7 +305,7 @@
       <label class="field-label">장소명</label>
       <div class="name-row">
         <input type="text" id="modalName" class="field-input" placeholder="정확한 장소명 입력">
-        <button type="button" class="btn-search" id="searchBtn" onclick="searchPlace()">🔍 검색</button>
+        <button type="button" class="btn-search" id="searchBtn" onclick="searchPlace()"><img class="ic" style="margin-right:2px" src="{% static 'places/icons/search.svg' %}" alt="">검색</button>
       </div>
       <!-- KTO 검색 결과 -->
       <div class="search-results" id="searchResults"></div>
@@ -321,7 +327,7 @@
 <!-- 승인 취소 확인 모달 -->
 <div class="confirm-overlay" id="revokeModal">
   <div class="confirm-box" onclick="event.stopPropagation()">
-    <div class="confirm-icon">⚠️</div>
+    <div class="confirm-icon"><img src="{% static 'places/icons/alert-circle.svg' %}" alt=""></div>
     <div class="confirm-title">승인을 취소하시겠습니까?</div>
     <div class="confirm-desc" id="revokeDesc">이 장소가 검토 대기 상태로 돌아갑니다.</div>
     <div class="confirm-btns">
@@ -333,6 +339,8 @@
 
 <script>
   const CSRF = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
+  const ICON_MAP_PIN = "{% static 'places/icons/map-pin.svg' %}";
+  const ICON_SEARCH  = "{% static 'places/icons/search.svg' %}";
 
   function setAll(checked) {
     document.querySelectorAll('#approveForm input[type=checkbox]').forEach(c => {
@@ -379,7 +387,7 @@
     const btn = document.getElementById('searchBtn');
     const resultsEl = document.getElementById('searchResults');
     btn.disabled = true; btn.textContent = '검색 중...';
-    resultsEl.innerHTML = '<div class="result-searching">🔍 KTO에서 검색 중...</div>';
+    resultsEl.innerHTML = `<div class="result-searching"><img class="ic" src="${ICON_SEARCH}" alt="">KTO에서 검색 중...</div>`;
     resultsEl.classList.add('show');
 
     try {
@@ -393,14 +401,14 @@
           const src = r.source === 'kakao' ? ' <span style="font-size:11px;color:#f59e0b">카카오</span>' : ' <span style="font-size:11px;color:#2563eb">KTO</span>';
           return `<div class="result-item" onclick="selectResult('${r.name.replace(/'/g,"\\'")}', '${r.address.replace(/'/g,"\\'")}', ${r.lat}, ${r.lng})">
             <div class="result-name">${r.name}${src}</div>
-            <div class="result-addr">📍 ${r.address}</div>
+            <div class="result-addr"><img class="ic" src="${ICON_MAP_PIN}" alt="">${r.address}</div>
           </div>`;
         }).join('');
       }
     } catch {
       resultsEl.innerHTML = '<div class="result-empty">검색 실패 (네트워크 오류)</div>';
     }
-    btn.disabled = false; btn.textContent = '🔍 검색';
+    btn.disabled = false; btn.innerHTML = `<img class="ic" style="margin-right:2px" src="${ICON_SEARCH}" alt="">검색`;
   }
 
   // 선택된 좌표를 hidden 필드에 보관
@@ -446,7 +454,7 @@
         if (nameEl) nameEl.textContent = data.name;
         if (data.address) {
           if (addrEl) {
-            addrEl.textContent = '📍 ' + data.address;
+            addrEl.innerHTML = `<img class="ic" src="${ICON_MAP_PIN}" alt="">` + data.address;
           } else if (nameEl) {
             const span = document.createElement('span');
             span.id = `addr-${placeId}`;

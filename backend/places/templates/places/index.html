@@ -1,9 +1,10 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>요기어따? 관리 포털</title>
+  <title>요기어때? 관리 포털</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: #f9fafb; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
@@ -31,7 +32,9 @@
     .card.indigo:hover { border-color: #818cf8; }
     .card.green:hover  { border-color: #4ade80; }
     .card.yellow:hover { border-color: #fbbf24; }
-    .card-icon { font-size: 36px; margin-bottom: 16px; }
+    .card-icon { margin-bottom: 16px; }
+    .card-icon img { width: 32px; height: 32px; }
+    .header-icon { width: 24px; height: 24px; vertical-align: -4px; margin-right: 4px; }
     .card-title { font-size: 18px; font-weight: 700; color: #1f2937; }
     .card.indigo:hover .card-title { color: #4f46e5; }
     .card.green:hover  .card-title { color: #16a34a; }
@@ -44,7 +47,7 @@
 <body>
 
   <header>
-    <h1>🍿 요기어따? <span>관리 포털</span></h1>
+    <h1><img class="header-icon" src="{% static 'places/icons/star.svg' %}" alt="">요기어때? <span>관리 포털</span></h1>
   </header>
 
   <main>
@@ -71,19 +74,19 @@
     <div class="cards">
 
       <a href="/places/demo/" class="card indigo">
-        <div class="card-icon">🗺️</div>
+        <div class="card-icon"><img src="{% static 'places/icons/copy.svg' %}" alt=""></div>
         <h2 class="card-title">지도 보기</h2>
         <p class="card-desc">카카오 지도로 미디어별 촬영지 확인</p>
       </a>
 
       <a href="/places/extract/" class="card green">
-        <div class="card-icon">🎬</div>
+        <div class="card-icon"><img src="{% static 'places/icons/search.svg' %}" alt=""></div>
         <h2 class="card-title">장소 추출</h2>
         <p class="card-desc">YouTube 영상에서 AI로 촬영 장소 추출</p>
       </a>
 
       <a href="/places/extract/history/" class="card yellow">
-        <div class="card-icon">📋</div>
+        <div class="card-icon"><img src="{% static 'places/icons/calendar.svg' %}" alt=""></div>
         <h2 class="card-title">검토 현황</h2>
         <p class="card-desc">
           AI 추론 결과 검토 및 장소 승인

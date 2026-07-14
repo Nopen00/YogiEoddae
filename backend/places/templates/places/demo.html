@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -89,6 +90,7 @@
     .place-card .p-address { font-size: 0.78rem; color: #888; }
     .place-card .p-conf    { font-size: 0.74rem; color: #10b981; margin-top: 5px; }
     .card-empty { color: #bbb; text-align: center; width: 100%; padding: 60px 0; font-size: 0.88rem; }
+    .ic-inline { width: 13px; height: 13px; vertical-align: -2px; margin-right: 3px; }
 
     /* 로딩 */
     #loading {
@@ -161,6 +163,8 @@
 
 <script>
   /* ── 전역 상태 ─────────────────────────────────── */
+  var ICON_SEARCH  = "{% static 'places/icons/search.svg' %}";
+  var ICON_MAP_PIN = "{% static 'places/icons/map-pin.svg' %}";
   var currentMode = 'kakao';   // 'kakao' | 'naver'
   var kakaoMap    = null;
   var naverMap    = null;
@@ -369,8 +373,8 @@
       card.className = 'place-card';
       card.innerHTML = [
         '<div class="p-name">' + place.name + '</div>',
-        mi.scene_description ? '<div class="p-scene">🎬 ' + mi.scene_description + '</div>' : '',
-        '<div class="p-address">📍 ' + (place.address || '주소 미확인') + '</div>',
+        mi.scene_description ? '<div class="p-scene"><img class="ic-inline" src="' + ICON_SEARCH + '" alt="">' + mi.scene_description + '</div>' : '',
+        '<div class="p-address"><img class="ic-inline" src="' + ICON_MAP_PIN + '" alt="">' + (place.address || '주소 미확인') + '</div>',
         mi.confidence_score ? '<div class="p-conf">✓ ' + Math.round(mi.confidence_score * 100) + '% 확신도</div>' : '',
       ].join('');
       section.appendChild(card);
@@ -388,8 +392,8 @@
     document.getElementById('info-panel').innerHTML = [
       '<div class="place-info">',
       '<div class="p-name">' + place.name + '</div>',
-      mi.scene_description ? '<div class="p-scene">🎬 ' + mi.scene_description + '</div>' : '',
-      '<div class="p-address">📍 ' + (place.address || '주소 미확인') + '</div>',
+      mi.scene_description ? '<div class="p-scene"><img class="ic-inline" src="' + ICON_SEARCH + '" alt="">' + mi.scene_description + '</div>' : '',
+      '<div class="p-address"><img class="ic-inline" src="' + ICON_MAP_PIN + '" alt="">' + (place.address || '주소 미확인') + '</div>',
       mi.confidence_score ? '<div class="p-conf">✓ ' + Math.round(mi.confidence_score * 100) + '% 확신도</div>' : '',
       '</div>',
     ].join('');

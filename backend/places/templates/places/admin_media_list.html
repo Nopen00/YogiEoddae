@@ -1,9 +1,10 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>검토 현황 | 요기어따?</title>
+  <title>검토 현황 | 요기어때?</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -11,7 +12,7 @@
 
   <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center gap-4">
     <a href="/" class="text-gray-400 hover:text-gray-600 text-sm">← 홈</a>
-    <h1 class="text-xl font-bold text-gray-800">📋 검토 현황</h1>
+    <h1 class="text-xl font-bold text-gray-800 flex items-center gap-2"><img src="{% static 'places/icons/calendar.svg' %}" class="w-5 h-5" alt="">검토 현황</h1>
     <a href="/places/extract/" class="ml-auto bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors">
       + 새 추출
     </a>
@@ -21,7 +22,7 @@
 
     {% if not media_list %}
     <div class="text-center text-gray-400 py-20">
-      <p class="text-5xl mb-4">📭</p>
+      <img src="{% static 'places/icons/eye-off.svg' %}" class="w-12 h-12 mb-4 mx-auto opacity-40" alt="">
       <p class="text-lg">추출된 미디어가 없습니다.</p>
       <a href="/places/extract/" class="inline-block mt-4 text-blue-600 hover:underline">첫 번째 추출 시작하기 →</a>
     </div>
@@ -33,14 +34,14 @@
         <button type="button"
           class="group flex-shrink-0 flex items-center gap-1.5 bg-gray-50 hover:bg-red-50 text-gray-400 hover:text-red-600 rounded-lg p-2.5 transition-colors"
           onclick="openDelete({{ media.pk }}, '{{ media.title|escapejs }}')">
-          <span class="text-base leading-none">🗑</span>
+          <img src="{% static 'places/icons/x.svg' %}" class="w-4 h-4" alt="">
           <span class="hidden group-hover:inline text-sm font-medium whitespace-nowrap">삭제</span>
         </button>
 
         {% if media.thumbnail_url %}
         <img src="{{ media.thumbnail_url }}" alt="{{ media.title }}" class="w-24 h-14 object-cover rounded-lg flex-shrink-0">
         {% else %}
-        <div class="w-24 h-14 bg-gray-100 rounded-lg flex-shrink-0 flex items-center justify-center text-gray-300 text-2xl">🎬</div>
+        <div class="w-24 h-14 bg-gray-100 rounded-lg flex-shrink-0 flex items-center justify-center text-gray-300"><img src="{% static 'places/icons/search.svg' %}" class="w-6 h-6 opacity-50" alt=""></div>
         {% endif %}
 
         <div class="flex-1 min-w-0">
@@ -78,7 +79,7 @@
   <!-- 삭제 확인 모달 -->
   <div class="hidden fixed inset-0 bg-black/45 z-50 items-center justify-center" id="deleteModal">
     <div class="bg-white rounded-2xl px-7 py-6 w-80 shadow-2xl text-center" onclick="event.stopPropagation()">
-      <p class="text-3xl mb-2">⚠️</p>
+      <img src="{% static 'places/icons/alert-circle.svg' %}" class="w-8 h-8 mb-2 mx-auto" alt="">
       <p class="font-bold text-gray-800 mb-1">삭제하시겠습니까?</p>
       <p class="text-sm text-gray-500 mb-5" id="deleteDesc"></p>
       <div class="flex gap-2.5">
