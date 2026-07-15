@@ -1,4 +1,4 @@
-﻿//app\(tabs)\ScheduleScreen.tsx
+//app\(tabs)\ScheduleScreen.tsx
 import { Divider } from '@/components/ui/Divider';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { TagRow } from '@/components/ui/TagRow';
@@ -31,7 +31,7 @@ import {
   ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import PagerView from '@/components/ui/PagerViewWrapper';
+import PagerView, { PagerViewHandle } from '@/components/ui/PagerViewWrapper';
 import { bookmarkApi, mediaApi, placeApi, scheduleApi } from '../services/api';
 import type { DailyPlace, Media, Place, Schedule } from '../services/types';
 
@@ -282,7 +282,7 @@ export default function ScheduleScreen() {
   const params = useLocalSearchParams<{ mode?: string; scheduleId?: string; dayNumber?: string }>();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const translateX = useRef(new Animated.Value(0)).current;
-  const pagerRef = useRef<PagerView>(null);
+  const pagerRef = useRef<PagerViewHandle>(null);
 
   const [mySchedules, setMySchedules] = useState<Schedule[]>([]);
   const [pastSchedules, setPastSchedules] = useState<Schedule[]>([]);
@@ -311,6 +311,8 @@ export default function ScheduleScreen() {
       handleTabPress(2);
       setIsPlaceSelectVisible(true);
     }
+    // 진입 시점의 초기 파라미터만 확인하는 마운트 1회성 효과 — params.mode를 deps에 넣으면 재실행됨
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useFocusEffect(
@@ -550,9 +552,11 @@ export default function ScheduleScreen() {
                     )}
                   </View>
                   <View style={styles.cardContent}>
-                    <Text style={styles.cardTitle} numberOfLines={1}>{sp.place_name}</Text>
-                    {sp.description ? (
-                      <Text style={styles.infoText} numberOfLines={1}>{sp.description}</Text>
+                    <Text style={styles.cardTitle} numberOfLines={1}>{sp.description}</Text>
+                    {sp.place_name ? (
+                      <View style={styles.infoRow}>
+                        <Text style={styles.infoText} numberOfLines={1}>{sp.place_name}</Text>
+                      </View>
                     ) : null}
                     {sp.tags.length > 0 && (
                       <TagRow>

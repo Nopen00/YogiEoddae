@@ -13,94 +13,22 @@ import { TagRow } from '@/components/ui/TagRow';
 import { TextSeparator } from '@/components/ui/TextSeparator';
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
+import { CATEGORY_LABEL, shortAddress } from '@/constants/labels';
+import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import PagerView from '@/components/ui/PagerViewWrapper';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Calendar, Check, ChevronDown, Edit3, Heart, Star } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { photoApi, scheduleApi } from '../services/api';
-import type { Schedule } from '../services/types';
-
-// TODO: 목데이터. 실제 데이터 연동 시 photoApi로 교체
-const MOCK_PHOTO = {
-  title: '포토스팟 이름',
-  image_url: 'https://picsum.photos/seed/photospot-hero/800/600',
-  rating: 4.8,
-  like_count: 128,
-  tags: ['로맨스', '드라마', '야경'],
-};
-
-// TODO: 목데이터. 실제 데이터 연동 시 포토스팟이 속한 장소(place)로 교체
-const MOCK_PLACE = {
-  name: '장소 이름',
-  image_url: 'https://picsum.photos/seed/photospot-place/200/200',
-  category: '관광지',
-  address: '서울 종로구',
-  tags: ['로맨스', '드라마'],
-};
-
-// TODO: 목데이터. 실제 데이터 연동 시 해당 장소의 포토스팟 목록(photoApi)으로 교체
-const MOCK_PLACE_PHOTOS = [
-  { id: 1, title: '포토스팟 1', image_url: 'https://picsum.photos/seed/photospot-place1/400/300', tags: ['야경', '로맨스'] },
-  { id: 2, title: '포토스팟 2', image_url: 'https://picsum.photos/seed/photospot-place2/400/300', tags: ['드라마'] },
-  { id: 3, title: '포토스팟 3', image_url: 'https://picsum.photos/seed/photospot-place3/400/300', tags: ['영화', '데이트'] },
-];
-
-// TODO: 목데이터. 실제 데이터 연동 시 같은 태그를 가진 포토스팟 목록(photoApi)으로 교체
-const MOCK_TAG_PHOTOS = [
-  { id: 4, title: '포토스팟 4', image_url: 'https://picsum.photos/seed/photospot-tag4/400/300', tags: ['로맨스'] },
-  { id: 5, title: '포토스팟 5', image_url: 'https://picsum.photos/seed/photospot-tag5/400/300', tags: ['로맨스', '드라마'] },
-  { id: 6, title: '포토스팟 6', image_url: 'https://picsum.photos/seed/photospot-tag6/400/300', tags: ['야경', '로맨스'] },
-];
+import { photoApi, reviewApi, scheduleApi } from '../services/api';
+import { pseudoRating } from '../services/mockData';
+import type { PhotoSpotDetail, Review, Schedule } from '../services/types';
 
 const REVIEW_SORT_OPTIONS = ['추천순', '최신 여행 순', '최신 리뷰 순', '별점 높은 순', '별점 낮은 순'] as const;
 type ReviewSortOption = typeof REVIEW_SORT_OPTIONS[number];
-
-// TODO: 목데이터. 실제 데이터 연동 시 리뷰 API로 교체
-const MOCK_REVIEWS = [
-  {
-    id: 1,
-    author: '여행자1',
-    travelDate: '2026.04.02',
-    writtenDate: '2026.05.01',
-    rating: 5,
-    content:
-      '분위기가 정말 좋았어요. 사진 찍기 딱 좋은 곳이에요. 주변에 카페도 많고 산책하기도 좋아서 하루 종일 있어도 지루하지 않았어요. 특히 노을 질 때 색감이 예술이었습니다. 사람이 몰리는 시간대만 피하면 여유롭게 사진도 찍을 수 있고, 근처 맛집도 많아서 같이 둘러보기 좋아요. 아이와 함께 가도 무리 없을 정도로 동선이 편했습니다. 다음에 또 오고 싶어요. 강력 추천합니다!',
-    images: [
-      'https://picsum.photos/seed/review1-1/400/300',
-      'https://picsum.photos/seed/review1-2/400/300',
-      'https://picsum.photos/seed/review1-3/400/300',
-    ],
-    hasPhoto: true,
-    likeCount: 24,
-  },
-  {
-    id: 2,
-    author: '여행자2',
-    travelDate: '2026.03.15',
-    writtenDate: '2026.03.20',
-    rating: 3,
-    content: '생각보다 사람이 많아서 아쉬웠지만 뷰는 최고였어요.',
-    images: [],
-    hasPhoto: false,
-    likeCount: 3,
-  },
-  {
-    id: 3,
-    author: '여행자3',
-    travelDate: '2026.02.10',
-    writtenDate: '2026.02.14',
-    rating: 4,
-    content:
-      '해질녘에 가면 더 예뻐요! 노을이 지기 시작할 때 딱 맞춰서 도착하는 걸 추천해요. 주차 공간이 넉넉하지 않아서 대중교통으로 가는 게 편했습니다.',
-    images: ['https://picsum.photos/seed/review3-1/400/300'],
-    hasPhoto: true,
-    likeCount: 11,
-  },
-];
 
 const PhotoSpotDetailScreen = () => {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -117,17 +45,20 @@ const PhotoSpotDetailScreen = () => {
   const [isScheduleVisible, setIsScheduleVisible] = useState(false);
   const [isScheduleSelectVisible, setIsScheduleSelectVisible] = useState(false);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
+  const [detail, setDetail] = useState<PhotoSpotDetail | null>(null);
   const [savedPlacePhotos, setSavedPlacePhotos] = useState<Record<number, boolean>>({});
   const [savedTagPhotos, setSavedTagPhotos] = useState<Record<number, boolean>>({});
-  const [selectedTags, setSelectedTags] = useState([MOCK_PHOTO.tags[0]]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [photoOnly, setPhotoOnly] = useState(false);
   const [reviewSort, setReviewSort] = useState<ReviewSortOption>('추천순');
   const [isReviewSortVisible, setIsReviewSortVisible] = useState(false);
   const [expandedReviews, setExpandedReviews] = useState<Record<number, boolean>>({});
   const [likedReviews, setLikedReviews] = useState<Record<number, boolean>>({});
   const [imagePopup, setImagePopup] = useState<{ reviewId: number; index: number } | null>(null);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewDeleteTarget, setReviewDeleteTarget] = useState<Review | null>(null);
 
-  const filteredReviews = (photoOnly ? MOCK_REVIEWS.filter((r) => r.hasPhoto) : MOCK_REVIEWS)
+  const filteredReviews = (photoOnly ? reviews.filter((r) => r.hasPhoto) : reviews)
     .slice()
     .sort((a, b) => {
       switch (reviewSort) {
@@ -144,7 +75,7 @@ const PhotoSpotDetailScreen = () => {
           return getReviewLikeCount(b, likedReviews[b.id] ?? false) - getReviewLikeCount(a, likedReviews[a.id] ?? false);
       }
     });
-  const popupReview = imagePopup ? MOCK_REVIEWS.find((r) => r.id === imagePopup.reviewId) : null;
+  const popupReview = imagePopup ? reviews.find((r) => r.id === imagePopup.reviewId) : null;
 
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) => {
@@ -156,11 +87,35 @@ const PhotoSpotDetailScreen = () => {
     });
   };
 
-  const filteredTagPhotos = MOCK_TAG_PHOTOS.filter((photo) => selectedTags.every((tag) => photo.tags.includes(tag)));
+  const relatedPhotos = detail?.relatedPhotos ?? [];
+  const filteredTagPhotos = relatedPhotos.filter((photo) =>
+    selectedTags.every((tag) => photo.tags.some((t) => t.name === tag))
+  );
 
   useEffect(() => {
     scheduleApi.getList().then(res => setSchedules(res.data)).catch(() => {});
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      reviewApi.getList().then(res => setReviews(res.data)).catch(() => {});
+    }, [])
+  );
+
+  useEffect(() => {
+    if (!id) return;
+    photoApi.getDetail(Number(id)).then(res => {
+      setDetail(res.data);
+      setIsSaved(res.data.photo.is_bookmarked ?? false);
+      setSelectedTags(res.data.photo.tags.length ? [res.data.photo.tags[0].name] : []);
+    }).catch(() => {});
+  }, [id]);
+
+  const photo = detail?.photo;
+  const place = detail?.place;
+  const placePhotos = detail?.placePhotos ?? [];
+  const photoTags = photo?.tags.map((t) => t.name) ?? [];
+  const placeTags = place?.tags.map((t) => t.name) ?? [];
 
   const closeMenu = () => { if (isMenuVisible) setIsMenuVisible(false); };
 
@@ -170,6 +125,7 @@ const PhotoSpotDetailScreen = () => {
       if (isSaved) await photoApi.unbookmark(Number(id));
       else await photoApi.bookmark(Number(id));
       setIsSaved(!isSaved);
+      setDetail(prev => prev ? { ...prev, photo: { ...prev.photo, likes: prev.photo.likes + (isSaved ? -1 : 1) } } : prev);
     } catch {}
   };
 
@@ -195,22 +151,22 @@ const PhotoSpotDetailScreen = () => {
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
           <View style={[styles.imageContainer, { width: imageWidth, height: imageHeight }]}>
-            <Image source={{ uri: MOCK_PHOTO.image_url }} style={styles.mainImage} resizeMode="cover" />
+            <Image source={{ uri: photo?.image_url }} style={styles.mainImage} resizeMode="cover" />
           </View>
 
           <View style={styles.infoContainer}>
-            <Text style={styles.titleText}>{MOCK_PHOTO.title}</Text>
+            <Text style={styles.titleText}>{photo?.description ?? '로딩 중...'}</Text>
 
             <MetaRow>
               <Star size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
-              <Text style={styles.metaText}> {MOCK_PHOTO.rating.toFixed(1)}</Text>
+              <Text style={styles.metaText}> {photo ? pseudoRating(photo).toFixed(1) : '-'}</Text>
               <TextSeparator />
               <Heart size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
-              <Text style={styles.metaText}> {MOCK_PHOTO.like_count}</Text>
+              <Text style={styles.metaText}> {photo?.likes ?? 0}</Text>
             </MetaRow>
 
             <TagRow>
-              {MOCK_PHOTO.tags.map((tag) => (
+              {photoTags.map((tag) => (
                 <Text key={tag} style={styles.tagText}>#{tag}</Text>
               ))}
             </TagRow>
@@ -224,7 +180,11 @@ const PhotoSpotDetailScreen = () => {
                 <Calendar size={IconSize.xlarge} color={Colors.light.grayDark} strokeWidth={IconStroke.thin} />
                 <Text style={styles.actionButtonText}>일정추가</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.actionButton} onPress={() => {}} activeOpacity={0.7}>
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={() => router.push({ pathname: '/ReviewWriteScreen', params: { type: 'photospot', id } })}
+                activeOpacity={0.7}
+              >
                 <Star size={IconSize.xlarge} color={Colors.light.grayDark} strokeWidth={IconStroke.thin} />
                 <Text style={styles.actionButtonText}>리뷰쓰기</Text>
               </TouchableOpacity>
@@ -235,18 +195,18 @@ const PhotoSpotDetailScreen = () => {
             <Text style={styles.sectionTitle}>장소</Text>
             <View style={styles.placeCard}>
               <View style={styles.placeImageWrapper}>
-                <Image source={{ uri: MOCK_PLACE.image_url }} style={styles.placeImage} resizeMode="cover" />
+                <Image source={{ uri: place?.image_url }} style={styles.placeImage} resizeMode="cover" />
               </View>
               <View style={styles.placeCardContent}>
-                <Text style={styles.placeCardTitle} numberOfLines={1}>{MOCK_PLACE.name}</Text>
+                <Text style={styles.placeCardTitle} numberOfLines={1}>{place?.name ?? '로딩 중...'}</Text>
                 <View style={styles.placeInfoRow}>
-                  <Text style={styles.placeInfoText}>{MOCK_PLACE.category}</Text>
+                  <Text style={styles.placeInfoText}>{place ? (CATEGORY_LABEL[place.category] ?? place.category) : ''}</Text>
                   <Text style={styles.placeInfoSep}>|</Text>
-                  <Text style={styles.placeInfoText} numberOfLines={1}>{MOCK_PLACE.address}</Text>
+                  <Text style={styles.placeInfoText} numberOfLines={1}>{place ? shortAddress(place.address) : ''}</Text>
                 </View>
-                {MOCK_PLACE.tags.length > 0 && (
+                {placeTags.length > 0 && (
                   <TagRow>
-                    {MOCK_PLACE.tags.map((tag) => (
+                    {placeTags.map((tag) => (
                       <Text key={tag} style={styles.tagText}>#{tag}</Text>
                     ))}
                   </TagRow>
@@ -265,32 +225,32 @@ const PhotoSpotDetailScreen = () => {
           {/* 장소 포토스팟 */}
           <View style={{ marginTop: Spacing.v.medium, marginHorizontal: Spacing.h.medium }}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.nearbyScrollContent}>
-              {MOCK_PLACE_PHOTOS.map((photo) => (
+              {placePhotos.map((p) => (
                 <TouchableOpacity
-                  key={photo.id}
+                  key={p.id}
                   style={{ width: smallImageWidth }}
                   activeOpacity={0.9}
-                  onPress={() => router.push({ pathname: '/PhotoSpotDetailScreen', params: { id: photo.id } })}
+                  onPress={() => router.push({ pathname: '/PhotoSpotDetailScreen', params: { id: p.id } })}
                 >
                   <View style={[styles.nearbyImageBox, { width: smallImageWidth, height: smallImageHeight }]}>
-                    <Image source={{ uri: photo.image_url }} style={styles.nearbyImage} resizeMode="cover" />
+                    <Image source={{ uri: p.image_url }} style={styles.nearbyImage} resizeMode="cover" />
                     <TouchableOpacity
                       style={styles.nearbyHeart}
-                      onPress={(e) => { e.stopPropagation(); setSavedPlacePhotos(prev => ({ ...prev, [photo.id]: !prev[photo.id] })); }}
+                      onPress={(e) => { e.stopPropagation(); setSavedPlacePhotos(prev => ({ ...prev, [p.id]: !prev[p.id] })); }}
                       activeOpacity={0.8}
                     >
                       <Heart
                         size={IconSize.large}
-                        color={savedPlacePhotos[photo.id] ? Colors.light.heart : Colors.light.white}
-                        fill={savedPlacePhotos[photo.id] ? Colors.light.heart : 'transparent'}
+                        color={savedPlacePhotos[p.id] ? Colors.light.heart : Colors.light.white}
+                        fill={savedPlacePhotos[p.id] ? Colors.light.heart : 'transparent'}
                         strokeWidth={IconStroke.thin}
                       />
                     </TouchableOpacity>
                   </View>
-                  <Text style={styles.nearbyPlaceName} numberOfLines={1}>{photo.title}</Text>
+                  <Text style={styles.nearbyPlaceName} numberOfLines={1}>{p.description}</Text>
                   <TagRow>
-                    {photo.tags.map((tag) => (
-                      <Text key={tag} style={styles.tagText}>#{tag}</Text>
+                    {p.tags.map((tag) => (
+                      <Text key={tag.id} style={styles.tagText}>#{tag.name}</Text>
                     ))}
                   </TagRow>
                 </TouchableOpacity>
@@ -303,7 +263,7 @@ const PhotoSpotDetailScreen = () => {
             <Text style={styles.placePhotoSectionDesc}>태그를 선택하여 자유롭게 볼 수 있어요</Text>
 
             <View style={styles.tagFilterRow}>
-              {MOCK_PHOTO.tags.map((tag) => {
+              {photoTags.map((tag) => {
                 const isSelected = selectedTags.includes(tag);
                 return (
                   <TouchableOpacity key={tag} onPress={() => toggleTag(tag)} activeOpacity={0.7}>
@@ -325,32 +285,32 @@ const PhotoSpotDetailScreen = () => {
           ) : (
             <View style={{ marginTop: Spacing.v.medium, marginHorizontal: Spacing.h.medium }}>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.nearbyScrollContent}>
-                {filteredTagPhotos.map((photo) => (
+                {filteredTagPhotos.map((p) => (
                   <TouchableOpacity
-                    key={photo.id}
+                    key={p.id}
                     style={{ width: smallImageWidth }}
                     activeOpacity={0.9}
-                    onPress={() => router.push({ pathname: '/PhotoSpotDetailScreen', params: { id: photo.id } })}
+                    onPress={() => router.push({ pathname: '/PhotoSpotDetailScreen', params: { id: p.id } })}
                   >
                     <View style={[styles.nearbyImageBox, { width: smallImageWidth, height: smallImageHeight }]}>
-                      <Image source={{ uri: photo.image_url }} style={styles.nearbyImage} resizeMode="cover" />
+                      <Image source={{ uri: p.image_url }} style={styles.nearbyImage} resizeMode="cover" />
                       <TouchableOpacity
                         style={styles.nearbyHeart}
-                        onPress={(e) => { e.stopPropagation(); setSavedTagPhotos(prev => ({ ...prev, [photo.id]: !prev[photo.id] })); }}
+                        onPress={(e) => { e.stopPropagation(); setSavedTagPhotos(prev => ({ ...prev, [p.id]: !prev[p.id] })); }}
                         activeOpacity={0.8}
                       >
                         <Heart
                           size={IconSize.large}
-                          color={savedTagPhotos[photo.id] ? Colors.light.heart : Colors.light.white}
-                          fill={savedTagPhotos[photo.id] ? Colors.light.heart : 'transparent'}
+                          color={savedTagPhotos[p.id] ? Colors.light.heart : Colors.light.white}
+                          fill={savedTagPhotos[p.id] ? Colors.light.heart : 'transparent'}
                           strokeWidth={IconStroke.thin}
                         />
                       </TouchableOpacity>
                     </View>
-                    <Text style={styles.nearbyPlaceName} numberOfLines={1}>{photo.title}</Text>
+                    <Text style={styles.nearbyPlaceName} numberOfLines={1}>{p.description}</Text>
                     <TagRow>
-                      {photo.tags.map((tag) => (
-                        <Text key={tag} style={styles.tagText}>#{tag}</Text>
+                      {p.tags.map((tag) => (
+                        <Text key={tag.id} style={styles.tagText}>#{tag.name}</Text>
                       ))}
                     </TagRow>
                   </TouchableOpacity>
@@ -365,7 +325,7 @@ const PhotoSpotDetailScreen = () => {
             <View style={styles.reviewHeaderRow}>
               <View style={styles.reviewTitleRow}>
                 <Text style={styles.reviewTitle}>리뷰</Text>
-                <Text style={styles.reviewCount}>{MOCK_REVIEWS.length}</Text>
+                <Text style={styles.reviewCount}>{reviews.length}</Text>
               </View>
               <TouchableOpacity style={styles.photoFilterRow} onPress={() => setPhotoOnly(!photoOnly)} activeOpacity={0.7}>
                 <View style={[styles.checkbox, photoOnly && styles.checkboxActive]}>
@@ -380,7 +340,11 @@ const PhotoSpotDetailScreen = () => {
                 <Text style={styles.reviewSortText}>{reviewSort}</Text>
                 <ChevronDown size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.writeReviewButton} onPress={() => {}} activeOpacity={0.7}>
+              <TouchableOpacity
+                style={styles.writeReviewButton}
+                onPress={() => router.push({ pathname: '/ReviewWriteScreen', params: { type: 'photospot', id } })}
+                activeOpacity={0.7}
+              >
                 <Edit3 size={16} color={Colors.light.white} strokeWidth={IconStroke.regular} />
                 <Text style={styles.writeReviewText}>리뷰 작성</Text>
               </TouchableOpacity>
@@ -395,6 +359,8 @@ const PhotoSpotDetailScreen = () => {
                 isLiked={likedReviews[review.id] ?? false}
                 onToggleLike={() => setLikedReviews((prev) => ({ ...prev, [review.id]: !prev[review.id] }))}
                 onImagePress={(index) => setImagePopup({ reviewId: review.id, index })}
+                onEditPress={() => router.push({ pathname: '/ReviewWriteScreen', params: { type: 'photospot', id, reviewId: review.id } })}
+                onDeletePress={() => setReviewDeleteTarget(review)}
               />
             ))}
           </View>
@@ -402,6 +368,7 @@ const PhotoSpotDetailScreen = () => {
 
         <PhotoSpotScheduleAlert
           visible={isScheduleVisible}
+          place={place}
           onClose={() => setIsScheduleVisible(false)}
           onConfirm={() => {
             setIsScheduleVisible(false);
@@ -414,10 +381,10 @@ const PhotoSpotDetailScreen = () => {
           onClose={() => setIsScheduleSelectVisible(false)}
           schedules={schedules}
           onConfirm={async (scheduleId, dayNumber) => {
-            // TODO: 목데이터 연동 중. 실제 포토스팟이 속한 place_id로 교체 필요
+            if (!place) return;
             try {
               await scheduleApi.addPlace(scheduleId, {
-                place_id: Number(id),
+                place_id: place.id,
                 day_number: dayNumber,
                 order: 999,
               });
@@ -459,6 +426,39 @@ const PhotoSpotDetailScreen = () => {
               </View>
             </TouchableWithoutFeedback>
           </TouchableOpacity>
+        </Modal>
+
+        <Modal visible={reviewDeleteTarget !== null} transparent animationType="fade">
+          <View style={styles.deleteOverlay}>
+            <View style={[styles.deletePopup, { width: width - 64 }]}>
+              <Text style={styles.deleteTitle}>리뷰를 삭제하시겠습니까?</Text>
+              <Text style={styles.deleteDesc}>삭제된 리뷰는 되돌릴 수 없습니다.</Text>
+              <View style={styles.deleteButtons}>
+                <TouchableOpacity
+                  style={styles.btnConfirm}
+                  activeOpacity={0.8}
+                  onPress={async () => {
+                    if (!reviewDeleteTarget) return;
+                    const target = reviewDeleteTarget;
+                    setReviewDeleteTarget(null);
+                    try {
+                      await reviewApi.remove(target.id);
+                      setReviews((prev) => prev.filter((r) => r.id !== target.id));
+                    } catch {}
+                  }}
+                >
+                  <Text style={styles.btnConfirmText}>확인</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.btnCancel}
+                  activeOpacity={0.8}
+                  onPress={() => setReviewDeleteTarget(null)}
+                >
+                  <Text style={styles.btnCancelText}>취소</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
         </Modal>
       </SafeAreaView>
     </TouchableWithoutFeedback>
@@ -578,6 +578,23 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.v.small,
   },
   writeReviewText: { ...Typography.button4, color: Colors.light.white },
+  deleteOverlay: { flex: 1, backgroundColor: Colors.light.overlay, justifyContent: 'center', alignItems: 'center' },
+  deletePopup: {
+    borderRadius: Spacing.r.small,
+    borderWidth: Spacing.lw.small,
+    borderColor: Colors.light.grayLight,
+    backgroundColor: Colors.light.white,
+    paddingTop: Spacing.v.medium,
+    paddingHorizontal: Spacing.h.medium,
+    paddingBottom: Spacing.v.medium,
+  },
+  deleteTitle: { ...Typography.subtitle2, color: Colors.light.black, textAlign: 'center' },
+  deleteDesc: { ...Typography.body2, color: Colors.light.primary, marginTop: Spacing.v.medium, textAlign: 'center' },
+  deleteButtons: { flexDirection: 'row', justifyContent: 'center', gap: Spacing.h.medium, marginTop: Spacing.v.medium },
+  btnConfirm: { width: 80, height: Size.buttonSm, borderRadius: Spacing.r.small, backgroundColor: Colors.light.grayLight, justifyContent: 'center', alignItems: 'center' },
+  btnConfirmText: { ...Typography.button2, color: Colors.light.grayDark },
+  btnCancel: { width: 80, height: Size.buttonSm, borderRadius: Spacing.r.small, backgroundColor: Colors.light.primary, justifyContent: 'center', alignItems: 'center' },
+  btnCancelText: { ...Typography.button2, color: Colors.light.white },
   imagePopupOverlay: {
     flex: 1,
     backgroundColor: Colors.light.overlay,

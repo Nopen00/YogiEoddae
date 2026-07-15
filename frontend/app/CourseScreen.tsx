@@ -4,7 +4,7 @@ import SearchBar from '@/components/ui/SearchBar';
 import { TextSeparator } from '@/components/ui/TextSeparator';
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
-import { CATEGORY_LABEL, CITY_SHORT, MEDIA_TYPE_LABEL, shortAddress } from '@/constants/labels';
+import { CITY_SHORT, MEDIA_TYPE_LABEL } from '@/constants/labels';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { sortByOption } from '@/utils/sortByOption';
@@ -24,7 +24,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import PagerView from '@/components/ui/PagerViewWrapper';
+import PagerView, { PagerViewHandle } from '@/components/ui/PagerViewWrapper';
 import { mediaApi, placeApi } from '../services/api';
 import type { Media, Place, Tag } from '../services/types';
 import { Size } from '@/constants/Size';
@@ -78,7 +78,7 @@ const CourseScreen = () => {
   const translateX = useRef(new Animated.Value(0)).current;
   const indicatorWidth = useRef(new Animated.Value(0)).current;
   const tabLayouts = useRef<{ x: number; width: number }[]>([]);
-  const pagerRef = useRef<PagerView>(null);
+  const pagerRef = useRef<PagerViewHandle>(null);
   const tabScrollRef = useRef<ScrollView>(null);
   const [uniformTabWidth, setUniformTabWidth] = useState<number | null>(null);
   const rawWidths = useRef<number[]>(new Array(CATEGORIES.length).fill(0));
@@ -112,6 +112,7 @@ const CourseScreen = () => {
   const [pickCardPlaceCounts, setPickCardPlaceCounts] = useState<Record<number, number>>({});
   const [savedPlaces, setSavedPlaces] = useState<Record<number, boolean>>({});
   const [selectedPhotoTag, setSelectedPhotoTag] = useState<string | null>(null);
+  const [placePhotoId, setPlacePhotoId] = useState<Record<number, number>>({});
 
   useEffect(() => {
     mediaApi.getList().then(res => setAllMedia(res.data.results)).catch(() => {});
@@ -123,6 +124,14 @@ const CourseScreen = () => {
       const map: Record<number, boolean> = {};
       res.data.results.forEach(p => { map[p.id] = p.is_bookmarked; });
       setSavedPlaces(map);
+
+      Promise.all(res.data.results.map(p => placeApi.getPhotos(p.id).then(r => ({ placeId: p.id, photo: r.data[0] }))))
+        .then(entries => {
+          const photoMap: Record<number, number> = {};
+          entries.forEach(({ placeId, photo }) => { if (photo) photoMap[placeId] = photo.id; });
+          setPlacePhotoId(photoMap);
+        })
+        .catch(() => {});
     }).catch(() => {});
   }, []);
 
@@ -132,6 +141,10 @@ const CourseScreen = () => {
       if (isSavedNow) await placeApi.unbookmark(placeId);
       else await placeApi.bookmark(placeId);
       setSavedPlaces(prev => ({ ...prev, [placeId]: !prev[placeId] }));
+      setPlaces(prev => prev.map(p => p.id === placeId
+        ? { ...p, like_count: (p.like_count ?? 0) + (isSavedNow ? -1 : 1) }
+        : p
+      ));
     } catch {}
   };
 
@@ -341,7 +354,7 @@ const CourseScreen = () => {
         key={`photo-spot-card-${item.id}`}
         style={styles.photoSpotCard}
         activeOpacity={0.9}
-        onPress={() => router.push({ pathname: '/PhotoSpotDetailScreen', params: { id: item.id, name: item.name } })}
+        onPress={() => router.push({ pathname: '/PhotoSpotDetailScreen', params: { id: placePhotoId[item.id] ?? item.id, name: item.name } })}
       >
         <View style={styles.photoSpotImageWrapper}>
           <Image
@@ -444,57 +457,6 @@ const CourseScreen = () => {
       <Text style={styles.courseTitleText} numberOfLines={1}>{item.title}</Text>
     </TouchableOpacity>
   );
-
-  const renderPlaceCard = (item: Place) => {
-    const { visibleTags, extraCount } = getProcessedTags(item.tags);
-    const shortAddr = shortAddress(item.address);
-    return (
-      <TouchableOpacity
-        key={`place-${item.id}`}
-        style={styles.card}
-        activeOpacity={0.9}
-        onPress={() => router.push({ pathname: '/PlaceDetailScreen', params: { id: item.id, name: item.name } })}
-      >
-        <View style={styles.cardInner}>
-          <View style={styles.imageCircle} />
-          <View style={styles.infoContent}>
-            <Text style={styles.cardTitle} numberOfLines={1}>{item.name}</Text>
-            <View style={styles.metadataRow}>
-              <View style={styles.metaChip}>
-                <Text style={styles.metaText}>{CATEGORY_LABEL[item.category] ?? item.category}</Text>
-                <TextSeparator />
-              </View>
-              <View style={styles.metaChip}>
-                <Text style={styles.metaText}>{shortAddr}</Text>
-                {(item.rating != null || item.like_count != null) && <TextSeparator />}
-              </View>
-              {(item.rating != null || item.like_count != null) && (
-                <View style={styles.metaChip}>
-                  {item.rating != null && (
-                    <>
-                      <Star size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
-                      <Text style={styles.metaText}> {item.rating.toFixed(1)}</Text>
-                    </>
-                  )}
-                  {item.rating != null && item.like_count != null && <TextSeparator />}
-                  {item.like_count != null && (
-                    <>
-                      <Heart size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
-                      <Text style={styles.metaText}> {formatLikeCount(item.like_count)}</Text>
-                    </>
-                  )}
-                </View>
-              )}
-            </View>
-            <View style={styles.tagRow}>
-              {visibleTags.map((tag, idx) => <Text key={idx} style={styles.tagText}>#{tag}</Text>)}
-              {extraCount > 0 && <Text style={styles.tagText}>+{extraCount}</Text>}
-            </View>
-          </View>
-        </View>
-      </TouchableOpacity>
-    );
-  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>

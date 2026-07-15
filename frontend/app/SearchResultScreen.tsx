@@ -1,4 +1,4 @@
-﻿import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { AddPlaceConfirmAlert } from '@/components/modals/AddPlaceConfirmAlert';
 import { CourseSelectPopup } from '@/components/modals/CourseSelectPopup';
 import { SORT_OPTIONS, SortAlert, SortOption } from '@/components/modals/SortAlert';
@@ -15,7 +15,7 @@ import {
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import PagerView from '@/components/ui/PagerViewWrapper';
+import PagerView, { PagerViewHandle } from '@/components/ui/PagerViewWrapper';
 
 // 디자인 시스템 임포트
 import { Divider } from '@/components/ui/Divider';
@@ -27,19 +27,19 @@ import { CATEGORY_LABEL, MEDIA_TYPE_LABEL, shortAddress } from '@/constants/labe
 import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
-import { mediaApi, placeApi, scheduleApi } from '../services/api';
+import { mediaApi, placeApi, photoApi, scheduleApi } from '../services/api';
+import { pseudoRating } from '../services/mockData';
 import type { Media, Place, Tag } from '../services/types';
 
 const CATEGORIES = ["전체", "코스", "명소", "포토스팟"];
 
-// TODO: 목데이터. 실제 데이터 연동 시 전역 포토스팟 API로 교체 (프론트 README TODO 참고)
-const MOCK_PHOTO_SPOTS = [
-  { id: 1, name: '광화문 야경 포토존', rating: 4.8, like_count: 320, tags: ['야경', '감성'] },
-  { id: 2, name: '해운대 일몰 스팟', rating: 4.6, like_count: 210, tags: ['풍경', '자연'] },
-  { id: 3, name: '경복궁 한복 포토존', rating: 4.7, like_count: 275, tags: ['계절', '전통'] },
-  { id: 4, name: '북촌 골목 카페 뷰', rating: 4.3, like_count: 130, tags: ['카페', '감성'] },
-  { id: 5, name: '남산타워 전망대', rating: 4.9, like_count: 420, tags: ['야경', '자연'] },
-];
+interface PhotoSpotCardData {
+  id: number;
+  name: string;
+  rating: number;
+  like_count: number;
+  tags: string[];
+}
 
 const formatLikeCount = (count: number): string => {
   if (count < 100) return count.toString();
@@ -61,9 +61,10 @@ const SearchResultScreen = () => {
   const [searchKeyword, setSearchKeyword] = useState(initialKeyword || '');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const translateX = useRef(new Animated.Value(0)).current;
-  const pagerRef = useRef<PagerView>(null);
+  const pagerRef = useRef<PagerViewHandle>(null);
   const [courses, setCourses] = useState<Media[]>([]);
   const [attractions, setAttractions] = useState<Place[]>([]);
+  const [photoSpots, setPhotoSpots] = useState<PhotoSpotCardData[]>([]);
   const [isSortVisible, setIsSortVisible] = useState(false);
   const [sortOption, setSortOption] = useState<SortOption>('관련도 높은 순');
 
@@ -73,6 +74,18 @@ const SearchResultScreen = () => {
     placeApi.getList({ keyword: searchKeyword }).then(res => setAttractions(res.data.results)).catch((e) => console.error('place error:', e));
   }, [searchKeyword]);
 
+  useEffect(() => {
+    photoApi.getList().then(res => {
+      setPhotoSpots(res.data.map(photo => ({
+        id: photo.id,
+        name: photo.description,
+        rating: pseudoRating(photo),
+        like_count: photo.likes,
+        tags: photo.tags.map(t => t.name),
+      })));
+    }).catch(() => {});
+  }, []);
+
   const handleSearch = () => {
     const trimmed = inputText.trim();
     if (!trimmed) return;
@@ -81,7 +94,7 @@ const SearchResultScreen = () => {
 
   const sortedCourses = sortByOption(courses, sortOption, c => c.title, c => c.place_count);
   const sortedAttractions = sortByOption(attractions, sortOption, a => a.name);
-  const sortedPhotoSpots = sortByOption(MOCK_PHOTO_SPOTS, sortOption, s => s.name);
+  const sortedPhotoSpots = sortByOption(photoSpots, sortOption, s => s.name);
 
   const animateIndicatorTo = (index: number) => {
     Animated.spring(translateX, {
@@ -230,7 +243,7 @@ const SearchResultScreen = () => {
     );
   };
 
-  const renderSpotCard = (spot: typeof MOCK_PHOTO_SPOTS[number]) => (
+  const renderSpotCard = (spot: PhotoSpotCardData) => (
     <TouchableOpacity
       key={`spot-${spot.id}`}
       style={styles.cardButton}
@@ -316,7 +329,7 @@ const SearchResultScreen = () => {
               <Divider marginTop={0} />
             </View>
             {sortedPhotoSpots.slice(0, 3).map(renderSpotCard)}
-            {MOCK_PHOTO_SPOTS.length > 3 && (
+            {photoSpots.length > 3 && (
               <TouchableOpacity style={styles.moreButton} onPress={() => handleTabPress(3)}>
                 <Text style={styles.moreButtonText}>더보기</Text>
               </TouchableOpacity>

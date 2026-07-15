@@ -1,4 +1,4 @@
-﻿import { BackButton } from '@/components/ui/BackButton';
+import { BackButton } from '@/components/ui/BackButton';
 import { Colors } from '@/constants/Colors';
 import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';

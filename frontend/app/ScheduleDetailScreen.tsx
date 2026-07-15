@@ -1,4 +1,4 @@
-﻿// app/ScheduleDetailScreen.tsx
+// app/ScheduleDetailScreen.tsx
 import { AddPlaceAlert } from '@/components/modals/AddPlaceAlert';
 import { ScheduleEditNameAlert } from '@/components/modals/ScheduleEditNameAlert';
 import { Divider } from '@/components/ui/Divider';
@@ -146,6 +146,8 @@ const DraggableRow = React.memo(({ id, dragging, onBegin, onChange, onEnd, child
   );
 });
 
+DraggableRow.displayName = 'DraggableRow';
+
 // ─── 메인 화면 ────────────────────────────────────────────────────────────────
 type PanelState = -1 | 0 | 1;
 
@@ -234,7 +236,7 @@ export default function ScheduleDetailScreen() {
     setLocalPlaces(sorted);
     originalPlacesRef.current = sorted;
     setIsEditing(true);
-  }, [schedule, autoEdit]);
+  }, [schedule, autoEdit, isEditing]);
 
   // 실제 콘텐츠 높이가 측정되면 현재 패널 상태에 맞게 즉시 재조정
   useEffect(() => {

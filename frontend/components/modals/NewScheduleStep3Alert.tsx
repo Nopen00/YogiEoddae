@@ -1,4 +1,4 @@
-﻿// components/modals/NewScheduleStep3Alert.tsx
+// components/modals/NewScheduleStep3Alert.tsx
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
 import { Spacing } from '@/constants/Spacing';

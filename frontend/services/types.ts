@@ -46,6 +46,26 @@ export interface Photo {
   created_at: string;
 }
 
+export interface PhotoSpotDetail {
+  photo: Photo;
+  place: Place;
+  placePhotos: Photo[];
+  relatedPhotos: Photo[];
+}
+
+export interface Review {
+  id: number;
+  author: string;
+  travelDate: string;
+  writtenDate: string;
+  rating: number;
+  content: string;
+  images: string[];
+  hasPhoto: boolean;
+  likeCount: number;
+  isMine: boolean;
+}
+
 export interface MediaPlace {
   id: number;
   place: Place;

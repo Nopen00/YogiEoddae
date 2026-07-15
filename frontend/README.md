@@ -5,11 +5,10 @@ React Native (Expo) 기반 모바일 앱 프론트엔드입니다.
 ## TODO
 
 - 퀴즈 화면 구현 (MainScreen 퀴즈 버튼 연결 예정, 미구현)
-- 리뷰쓰기 기능 기획 및 구현 (CourseDetailScreen·PlaceDetailScreen 버튼에 onPress 없음, 화면 기획 필요)
+- PlaceDetailScreen·CourseDetailScreen에 리뷰 리스트 UI 추가 (ReviewWriteScreen 작성 화면과 리뷰쓰기 버튼 연결은 완료됐고, PhotoSpotDetailScreen에는 리뷰 리스트가 있음. 하지만 PlaceDetailScreen·CourseDetailScreen에는 애초에 리뷰 리스트 UI 자체가 없어서, 작성한 리뷰를 보여줄 곳이 없음 — 리스트 UI 기획 필요)
 - PlaceDetailScreen 지도 구현 (현재 빈 회색 박스, lat/lng 데이터는 존재)
 - 포토태그 이미지 데이터 연동 (현재 태그 원형·필터 pill의 이미지는 회색 placeholder, 백엔드 태그 이미지 필드 필요)
-- 포토스팟 상세페이지 작성 (PlaceDetailScreen과 별개 화면, 촬영 관련 정보 위주로 구성 예정 — 촬영 팁·포토존 각도/포즈 안내·최적 촬영 시간대 등)
-- CourseScreen 포토스팟 탭을 실제 Photo 단위로 전환 (기획상 한 장소에 포토스팟이 여러 개 있을 수 있는 구조인데, 현재 `renderPhotoSpotCard`는 Place 단위로 그려짐 — 타이틀이 장소 이름, 탭 시 PlaceDetailScreen 이동, 이미지가 장소 대표 이미지. 목데이터라 1:1로 보이는 것이고, 포토스팟 상세페이지가 아직 없어서 임시로 PlaceDetailScreen에 연결해둔 상태 — 포토스팟 상세페이지 구현 후 함께 전환 필요)
+- CourseScreen 포토스팟 탭을 실제 Photo 단위로 전환 (기획상 한 장소에 포토스팟이 여러 개 있을 수 있는 구조인데, 현재 `renderPhotoSpotCard`는 Place 단위로 그려짐 — 타이틀이 장소 이름, 이미지가 장소 대표 이미지. PhotoSpotDetailScreen은 이미 있고 탭 시 해당 장소의 대표 사진 id로 연결은 해뒀지만, 카드 자체는 여전히 장소 단위 데이터라 한 장소의 여러 포토스팟을 개별 카드로 보여주지 못함 — Photo 단위 카드로 전환 필요)
 
 ---
 

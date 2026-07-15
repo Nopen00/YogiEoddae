@@ -19,6 +19,7 @@ export interface ReviewCardData {
   content: string;
   images: string[];
   likeCount: number;
+  isMine?: boolean;
 }
 
 export const getReviewLikeCount = (review: ReviewCardData, isLiked: boolean) =>
@@ -31,9 +32,20 @@ interface ReviewCardProps {
   isLiked: boolean;
   onToggleLike: () => void;
   onImagePress: (index: number) => void;
+  onEditPress?: () => void;
+  onDeletePress?: () => void;
 }
 
-export const ReviewCard = ({ review, isExpanded, onToggleExpand, isLiked, onToggleLike, onImagePress }: ReviewCardProps) => {
+export const ReviewCard = ({
+  review,
+  isExpanded,
+  onToggleExpand,
+  isLiked,
+  onToggleLike,
+  onImagePress,
+  onEditPress,
+  onDeletePress,
+}: ReviewCardProps) => {
   const isTruncated = review.content.length > REVIEW_TRUNCATE_LENGTH;
   const likeCount = getReviewLikeCount(review, isLiked);
 
@@ -99,6 +111,17 @@ export const ReviewCard = ({ review, isExpanded, onToggleExpand, isLiked, onTogg
         </TouchableOpacity>
         <Text style={styles.likeCount}>{likeCount}</Text>
       </View>
+
+      {review.isMine && (
+        <View style={styles.myActionsRow}>
+          <TouchableOpacity onPress={onEditPress} activeOpacity={0.7}>
+            <Text style={styles.myActionText}>수정</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onDeletePress} activeOpacity={0.7}>
+            <Text style={styles.myActionText}>삭제</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 };
@@ -141,4 +164,11 @@ const styles = StyleSheet.create({
     marginTop: Spacing.v.medium,
   },
   likeCount: { ...Typography.body2, color: Colors.light.grayDark },
+  myActionsRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: Spacing.h.medium,
+    marginTop: Spacing.v.medium,
+  },
+  myActionText: { ...Typography.button4, color: Colors.light.grayLight },
 });

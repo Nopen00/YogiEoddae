@@ -1,26 +1,21 @@
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
+import { CATEGORY_LABEL, shortAddress } from '@/constants/labels';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { X } from 'lucide-react-native';
 import React from 'react';
 import { Image, Modal, Platform, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
-
-// TODO: 목데이터. 실제 데이터 연동 시 포토스팟이 속한 장소(place) prop으로 교체
-const MOCK_PLACE = {
-  name: '장소 이름',
-  category: '관광지',
-  address: '서울 종로구',
-  tags: ['로맨스', '드라마'],
-};
+import type { Place } from '../../services/types';
 
 interface PhotoSpotScheduleAlertProps {
   visible: boolean;
   onClose: () => void;
   onConfirm?: () => void;
+  place: Place | null | undefined;
 }
 
-export const PhotoSpotScheduleAlert = ({ visible, onClose, onConfirm }: PhotoSpotScheduleAlertProps) => {
+export const PhotoSpotScheduleAlert = ({ visible, onClose, onConfirm, place }: PhotoSpotScheduleAlertProps) => {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <TouchableWithoutFeedback onPress={onClose}>
@@ -36,19 +31,23 @@ export const PhotoSpotScheduleAlert = ({ visible, onClose, onConfirm }: PhotoSpo
 
               <View style={styles.card}>
                 <View style={styles.imageWrapper}>
-                  <View style={[styles.cardImage, { backgroundColor: Colors.light.grayLight }]} />
+                  {place?.image_url ? (
+                    <Image source={{ uri: place.image_url }} style={styles.cardImage} />
+                  ) : (
+                    <View style={[styles.cardImage, { backgroundColor: Colors.light.grayLight }]} />
+                  )}
                 </View>
                 <View style={styles.cardContent}>
-                  <Text style={styles.cardTitle} numberOfLines={1}>{MOCK_PLACE.name}</Text>
+                  <Text style={styles.cardTitle} numberOfLines={1}>{place?.name ?? '로딩 중...'}</Text>
                   <View style={styles.infoRow}>
-                    <Text style={styles.infoText}>{MOCK_PLACE.category}</Text>
+                    <Text style={styles.infoText}>{place ? (CATEGORY_LABEL[place.category] ?? place.category) : ''}</Text>
                     <Text style={styles.infoSep}>|</Text>
-                    <Text style={styles.infoText} numberOfLines={1}>{MOCK_PLACE.address}</Text>
+                    <Text style={styles.infoText} numberOfLines={1}>{place ? shortAddress(place.address) : ''}</Text>
                   </View>
-                  {MOCK_PLACE.tags.length > 0 && (
+                  {place && place.tags.length > 0 && (
                     <View style={styles.tagRow}>
-                      {MOCK_PLACE.tags.map(tag => (
-                        <Text key={tag} style={styles.tagText}>#{tag}</Text>
+                      {place.tags.map(tag => (
+                        <Text key={tag.id} style={styles.tagText}>#{tag.name}</Text>
                       ))}
                     </View>
                   )}

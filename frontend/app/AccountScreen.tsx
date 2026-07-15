@@ -1,4 +1,4 @@
-﻿import { Divider } from '@/components/ui/Divider';
+import { Divider } from '@/components/ui/Divider';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { Colors } from '@/constants/Colors';
 import { IconSize } from '@/constants/IconSize';

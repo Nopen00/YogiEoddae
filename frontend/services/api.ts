@@ -1,9 +1,9 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { Media, Place, Photo, MediaPlace, Schedule, PaginatedResponse } from './types';
+import type { Media, Place, Photo, MediaPlace, PhotoSpotDetail, Review, Schedule, PaginatedResponse } from './types';
 import {
   MOCK_MEDIA_LIST, MOCK_MEDIA_PLACES_MAP, MOCK_PHOTOS, MOCK_PHOTOS_BY_PLACE, mockPhotoStore, mockPhotoPlaceName,
-  mockScheduleStore, mockPlaceStore, paginatedOf,
+  mockPhotoPlaceId, mockScheduleStore, mockPlaceStore, mockReviewStore, paginatedOf,
 } from './mockData';
 
 // 서버 없이 UI 테스트할 때 true로 설정
@@ -126,6 +126,22 @@ export const placeApi = {
 };
 
 export const photoApi = {
+  getList: () =>
+    USE_MOCK ? mock([...mockPhotoStore]) : apiClient.get<Photo[]>('/api/photos/'),
+  getDetail: (id: number) => {
+    if (USE_MOCK) {
+      const photo = mockPhotoStore.find(p => p.id === id) ?? mockPhotoStore[0];
+      const placeId = mockPhotoPlaceId[photo.id] ?? 1;
+      const place = mockPlaceStore.find(p => p.id === placeId) ?? mockPlaceStore[0];
+      const placePhotos = (MOCK_PHOTOS_BY_PLACE[placeId] ?? []).filter(p => p.id !== photo.id);
+      const tagNames = photo.tags.map(t => t.name);
+      const relatedPhotos = mockPhotoStore.filter(
+        p => p.id !== photo.id && p.tags.some(t => tagNames.includes(t.name))
+      );
+      return mock<PhotoSpotDetail>({ photo, place, placePhotos, relatedPhotos });
+    }
+    return apiClient.get<PhotoSpotDetail>(`/api/photos/${id}/detail/`);
+  },
   bookmark: (id: number) => {
     if (USE_MOCK) {
       const item = mockPhotoStore.find(p => p.id === id);
@@ -276,5 +292,61 @@ export const bookmarkApi = {
       });
     }
     return apiClient.get('/api/bookmarks/');
+  },
+};
+
+const formatDateDots = (date: Date) =>
+  `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
+
+export const reviewApi = {
+  getList: () =>
+    USE_MOCK ? mock([...mockReviewStore]) : apiClient.get<Review[]>('/api/reviews/'),
+  getDetail: (id: number) =>
+    USE_MOCK
+      ? mock(mockReviewStore.find(r => r.id === id) ?? null)
+      : apiClient.get<Review>(`/api/reviews/${id}/`),
+  create: (data: { rating: number; content: string; images: string[]; visitDate?: string }) => {
+    if (USE_MOCK) {
+      const newReview: Review = {
+        id: Date.now(),
+        author: '나',
+        travelDate: data.visitDate ?? '',
+        writtenDate: formatDateDots(new Date()),
+        rating: data.rating,
+        content: data.content,
+        images: data.images,
+        hasPhoto: data.images.length > 0,
+        likeCount: 0,
+        isMine: true,
+      };
+      mockReviewStore.unshift(newReview);
+      return mock(newReview);
+    }
+    return apiClient.post<Review>('/api/reviews/', data);
+  },
+  update: (id: number, data: { rating: number; content: string; images: string[]; visitDate?: string }) => {
+    if (USE_MOCK) {
+      const idx = mockReviewStore.findIndex(r => r.id === id);
+      if (idx !== -1) {
+        mockReviewStore[idx] = {
+          ...mockReviewStore[idx],
+          rating: data.rating,
+          content: data.content,
+          images: data.images,
+          hasPhoto: data.images.length > 0,
+          travelDate: data.visitDate ?? mockReviewStore[idx].travelDate,
+        };
+      }
+      return mock(mockReviewStore[idx] ?? null);
+    }
+    return apiClient.patch<Review>(`/api/reviews/${id}/`, data);
+  },
+  remove: (id: number) => {
+    if (USE_MOCK) {
+      const idx = mockReviewStore.findIndex(r => r.id === id);
+      if (idx !== -1) mockReviewStore.splice(idx, 1);
+      return mock({});
+    }
+    return apiClient.delete(`/api/reviews/${id}/`);
   },
 };

@@ -1,4 +1,4 @@
-﻿import { Divider } from '@/components/ui/Divider';
+import { Divider } from '@/components/ui/Divider';
 import { MetaRow } from '@/components/ui/MetaRow';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { TagRow } from '@/components/ui/TagRow';
@@ -97,6 +97,7 @@ const PlaceDetailScreen = () => {
       if (isSaved) await placeApi.unbookmark(Number(id));
       else await placeApi.bookmark(Number(id));
       setIsSaved(!isSaved);
+      setPlace(prev => prev ? { ...prev, like_count: (prev.like_count ?? 0) + (isSaved ? -1 : 1) } : prev);
     } catch {}
   };
 
@@ -185,7 +186,11 @@ const PlaceDetailScreen = () => {
                 <Calendar size={IconSize.xlarge} color={Colors.light.grayDark} strokeWidth={IconStroke.thin} />
                 <Text style={styles.actionButtonText}>일정추가</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.actionButton} onPress={() => {}} activeOpacity={0.7}>
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={() => router.push({ pathname: '/ReviewWriteScreen', params: { type: 'place', id } })}
+                activeOpacity={0.7}
+              >
                 <Star size={IconSize.xlarge} color={Colors.light.grayDark} strokeWidth={IconStroke.thin} />
                 <Text style={styles.actionButtonText}>리뷰쓰기</Text>
               </TouchableOpacity>

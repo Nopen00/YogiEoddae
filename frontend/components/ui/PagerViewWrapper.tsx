@@ -30,4 +30,6 @@ const PagerViewWrapper = forwardRef<PagerViewHandle, Props>(
   }
 );
 
+PagerViewWrapper.displayName = 'PagerViewWrapper';
+
 export default PagerViewWrapper;

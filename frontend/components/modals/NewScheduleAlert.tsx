@@ -1,4 +1,4 @@
-﻿// components/modals/NewScheduleAlert.tsx
+// components/modals/NewScheduleAlert.tsx
 
 // 색상, 아이콘 크기, 간격, 타이포그래피 등 디자인 시스템 상수 임포트
 import { Colors } from '@/constants/Colors';
@@ -98,7 +98,7 @@ export interface DateRange {
 }
 
 // ─── 월 선택 스크롤 컴포넌트 ───────────────────────────────────────────
-const MonthPickerRow = ({ current, onSelect }: { current: Date; onSelect: (d: Date) => void }) => {
+export const MonthPickerRow = ({ current, onSelect }: { current: Date; onSelect: (d: Date) => void }) => {
   // 기준 날짜를 중심으로 이전/이후 달의 배열을 생성 — 마운트 시 최초 1회만 고정
   // (선택 후 current가 바뀌어도 배열을 재생성하지 않아야 스크롤 위치와 months 인덱스가 어긋나지 않음)
   const months = useRef<Date[]>(

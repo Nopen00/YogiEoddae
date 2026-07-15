@@ -1,4 +1,4 @@
-import type { Media, Place, MediaPlace, Photo, Schedule, PaginatedResponse } from './types';
+import type { Media, Place, MediaPlace, Photo, Review, Schedule, PaginatedResponse } from './types';
 
 const MOCK_TAGS = [
   { id: 1, category: 'mood', name: '감성' },
@@ -390,6 +390,19 @@ export const mockPhotoPlaceName: Record<number, string> = Object.fromEntries(
   )
 );
 
+// PhotoSpotDetailScreen에서 사진이 속한 장소를 조회하기 위한 포토스팟 id → 장소 id 매핑
+export const mockPhotoPlaceId: Record<number, number> = Object.fromEntries(
+  Object.entries(MOCK_PHOTOS_BY_PLACE).flatMap(([placeId, photos]) =>
+    photos.map((p) => [p.id, Number(placeId)])
+  )
+);
+
+// 백엔드에 별점 필드가 아직 없어 임시로 사용하는 목데이터 전용 평점 — id 기반으로 고정값 산출
+export const pseudoRating = (photo: Photo): number => {
+  const val = 3.8 + ((photo.id * 7) % 12) / 10;
+  return Math.min(5, Math.round(val * 10) / 10);
+};
+
 export const MOCK_SCHEDULES: Schedule[] = [
   {
     id: 1,
@@ -468,6 +481,53 @@ export const mockScheduleStore: Schedule[] = [...MOCK_SCHEDULES];
 // 전체 장소 mutable store — bookmark/unbookmark 시 is_bookmarked를 실제로 변경
 export const mockPlaceStore: Place[] = [
   MOCK_PLACE, MOCK_PLACE_2, MOCK_PLACE_3, MOCK_PLACE_4, MOCK_PLACE_5, MOCK_PLACE_6,
+];
+
+// TODO: 목데이터. 전체 포토스팟이 공유하는 임시 리뷰 목록 — 실제 데이터 연동 시 대상(장소/코스/포토스팟)별 리뷰 API로 교체
+// 리뷰 작성 화면에서 새 리뷰를 앞에 추가(unshift)하는 mutable store
+export const mockReviewStore: Review[] = [
+  {
+    id: 1,
+    author: '여행자1',
+    travelDate: '2026.04.02',
+    writtenDate: '2026.05.01',
+    rating: 5,
+    content:
+      '분위기가 정말 좋았어요. 사진 찍기 딱 좋은 곳이에요. 주변에 카페도 많고 산책하기도 좋아서 하루 종일 있어도 지루하지 않았어요. 특히 노을 질 때 색감이 예술이었습니다. 사람이 몰리는 시간대만 피하면 여유롭게 사진도 찍을 수 있고, 근처 맛집도 많아서 같이 둘러보기 좋아요. 아이와 함께 가도 무리 없을 정도로 동선이 편했습니다. 다음에 또 오고 싶어요. 강력 추천합니다!',
+    images: [
+      'https://picsum.photos/seed/review1-1/400/300',
+      'https://picsum.photos/seed/review1-2/400/300',
+      'https://picsum.photos/seed/review1-3/400/300',
+    ],
+    hasPhoto: true,
+    likeCount: 24,
+    isMine: false,
+  },
+  {
+    id: 2,
+    author: '여행자2',
+    travelDate: '2026.03.15',
+    writtenDate: '2026.03.20',
+    rating: 3,
+    content: '생각보다 사람이 많아서 아쉬웠지만 뷰는 최고였어요.',
+    images: [],
+    hasPhoto: false,
+    likeCount: 3,
+    isMine: false,
+  },
+  {
+    id: 3,
+    author: '여행자3',
+    travelDate: '2026.02.10',
+    writtenDate: '2026.02.14',
+    rating: 4,
+    content:
+      '해질녘에 가면 더 예뻐요! 노을이 지기 시작할 때 딱 맞춰서 도착하는 걸 추천해요. 주차 공간이 넉넉하지 않아서 대중교통으로 가는 게 편했습니다.',
+    images: ['https://picsum.photos/seed/review3-1/400/300'],
+    hasPhoto: true,
+    likeCount: 11,
+    isMine: false,
+  },
 ];
 
 export function paginatedOf<T>(results: T[]): PaginatedResponse<T> {

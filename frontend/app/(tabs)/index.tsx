@@ -12,10 +12,9 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { userApi } from '../../services/api';
 
@@ -40,7 +39,7 @@ const IntroScreen = () => {
     AsyncStorage.getItem('device_id').then((id) => {
       if (id) router.replace('/MainScreen');
     });
-  }, []);
+  }, [router]);
 
   const onScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const scrollOffset = event.nativeEvent.contentOffset.x;
@@ -53,7 +52,7 @@ const IntroScreen = () => {
       try {
         const res = await userApi.createUser();
         await AsyncStorage.setItem('device_id', res.data.device_id);
-      } catch (e) {
+      } catch {
         // 유저 생성 실패해도 앱 진입은 허용
       }
       router.replace('/MainScreen');

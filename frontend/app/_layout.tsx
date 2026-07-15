@@ -1,4 +1,4 @@
-﻿import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
@@ -33,6 +33,7 @@ function RootLayoutNav() {
             <Stack.Screen name="CourseDetailScreen" options={{ headerShown: false }} />
             <Stack.Screen name="PlaceDetailScreen" options={{ headerShown: false }} />
             <Stack.Screen name="PhotoSpotDetailScreen" options={{ headerShown: false }} />
+            <Stack.Screen name="ReviewWriteScreen" options={{ headerShown: false }} />
             <Stack.Screen name="ScheduleScreen" options={{ headerShown: false }} />
             <Stack.Screen name="SettingScreen" options={{ headerShown: false }} />
             <Stack.Screen name="AccountScreen" options={{ headerShown: false }} />

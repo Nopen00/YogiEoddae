@@ -22,12 +22,12 @@ type IconComponent = React.ComponentType<{
   strokeWidth?: number;
 }>;
 
-const TAB_ITEMS: Array<{
+const TAB_ITEMS: {
   label: string;
   Icon: IconComponent;
   href: string | null;
   activePatterns: string[];
-}> = [
+}[] = [
   {
     label: '홈',
     Icon: Home,
