@@ -160,6 +160,7 @@ export default function ScheduleDetailScreen() {
   const [pendingRemovals, setPendingRemovals] = useState<Set<number>>(new Set());
   const [localPlaces, setLocalPlaces] = useState<DailyPlace[]>([]);
   const [isUnsavedWarningVisible, setIsUnsavedWarningVisible] = useState(false);
+  const [placeDeleteTarget, setPlaceDeleteTarget] = useState<number | null>(null);
   const [isAddPlaceVisible, setIsAddPlaceVisible] = useState(false);
   const [isEditNameVisible, setIsEditNameVisible] = useState(false);
   const [activeDayNum, setActiveDayNum] = useState(1);
@@ -615,7 +616,7 @@ export default function ScheduleDetailScreen() {
                             <TouchableOpacity
                               style={styles.trashButton}
                               activeOpacity={0.7}
-                              onPress={() => handleRemovePlace(dp.id)}
+                              onPress={() => setPlaceDeleteTarget(dp.id)}
                             >
                               <Trash2 size={IconSize.medium} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
                             </TouchableOpacity>
@@ -740,6 +741,33 @@ export default function ScheduleDetailScreen() {
                 style={styles.btnStay}
                 activeOpacity={0.8}
                 onPress={() => setIsUnsavedWarningVisible(false)}
+              >
+                <Text style={styles.btnStayText}>취소</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+      <Modal visible={placeDeleteTarget !== null} transparent animationType="fade">
+        <View style={styles.overlay}>
+          <View style={styles.unsavedPopup}>
+            <Text style={styles.unsavedTitle}>장소을 삭제하시겠습니까?</Text>
+            <Text style={styles.unsavedDesc}>삭제된 장소는 되돌릴 수 없습니다.</Text>
+            <View style={styles.unsavedButtons}>
+              <TouchableOpacity
+                style={styles.btnDiscard}
+                activeOpacity={0.8}
+                onPress={() => {
+                  if (placeDeleteTarget !== null) handleRemovePlace(placeDeleteTarget);
+                  setPlaceDeleteTarget(null);
+                }}
+              >
+                <Text style={styles.btnDiscardText}>확인</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.btnStay}
+                activeOpacity={0.8}
+                onPress={() => setPlaceDeleteTarget(null)}
               >
                 <Text style={styles.btnStayText}>취소</Text>
               </TouchableOpacity>
