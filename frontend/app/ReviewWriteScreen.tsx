@@ -3,6 +3,7 @@ import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { TagRow } from '@/components/ui/TagRow';
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
+import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { VisitDate, VisitDateAlert } from '@/components/modals/VisitDateAlert';
@@ -10,8 +11,8 @@ import { reviewApi } from '../services/api';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { Calendar, ChevronRight, Plus, Star, X } from 'lucide-react-native';
-import React, { useEffect, useMemo, useState } from 'react';
-import { Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Dimensions, Image, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -32,6 +33,8 @@ const formatVisitDateValue = (date: VisitDate) =>
 
 const formatVisitDate = (date: VisitDate) => `${formatVisitDateValue(date)} 방문`;
 
+const visitDateKey = (date: VisitDate | null) => (date ? formatVisitDateValue(date) : '');
+
 const parseVisitDate = (value: string): VisitDate | null => {
   const [year, month, day] = value.split('.').map(Number);
   if (!year || !month || !day) return null;
@@ -40,6 +43,7 @@ const parseVisitDate = (value: string): VisitDate | null => {
 
 const MAX_REVIEW_IMAGES = 10;
 const IMAGE_THUMB_SIZE = 90;
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const STAR_COUNT = 5;
 const STAR_SIZE = IconSize.xlarge;
@@ -54,6 +58,8 @@ const ReviewWriteScreen = () => {
   const [visitDate, setVisitDate] = useState<VisitDate | null>(null);
   const [isDateVisible, setIsDateVisible] = useState(false);
   const [reviewImages, setReviewImages] = useState<string[]>([]);
+  const [isUnsavedWarningVisible, setIsUnsavedWarningVisible] = useState(false);
+  const initialSnapshotRef = useRef({ rating: 0, reviewText: '', visitDate: null as VisitDate | null, reviewImages: [] as string[] });
 
   useEffect(() => {
     if (!reviewId) return;
@@ -63,12 +69,29 @@ const ReviewWriteScreen = () => {
       setRating(review.rating);
       setReviewText(review.content);
       setReviewImages(review.images);
+      let parsedDate: VisitDate | null = null;
       if (review.travelDate) {
-        const parsed = parseVisitDate(review.travelDate);
-        if (parsed) setVisitDate(parsed);
+        parsedDate = parseVisitDate(review.travelDate);
+        if (parsedDate) setVisitDate(parsedDate);
       }
+      initialSnapshotRef.current = { rating: review.rating, reviewText: review.content, visitDate: parsedDate, reviewImages: review.images };
     }).catch(() => {});
   }, [reviewId]);
+
+  const hasUnsavedChanges = () => {
+    const snap = initialSnapshotRef.current;
+    if (rating !== snap.rating) return true;
+    if (reviewText !== snap.reviewText) return true;
+    if (visitDateKey(visitDate) !== visitDateKey(snap.visitDate)) return true;
+    if (reviewImages.length !== snap.reviewImages.length) return true;
+    if (reviewImages.some((uri, i) => uri !== snap.reviewImages[i])) return true;
+    return false;
+  };
+
+  const handleBack = () => {
+    if (hasUnsavedChanges()) setIsUnsavedWarningVisible(true);
+    else router.back();
+  };
 
   const handlePickImage = async () => {
     const remaining = MAX_REVIEW_IMAGES - reviewImages.length;
@@ -120,7 +143,7 @@ const ReviewWriteScreen = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScreenHeader onBack={() => router.back()} />
+      <ScreenHeader onBack={handleBack} />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <Text style={styles.titleText}>{MOCK_REVIEW_TARGET.title}</Text>
@@ -210,6 +233,34 @@ const ReviewWriteScreen = () => {
         onConfirm={(date) => { setVisitDate(date); setIsDateVisible(false); }}
         initialDate={visitDate}
       />
+
+      <Modal visible={isUnsavedWarningVisible} transparent animationType="fade">
+        <View style={styles.overlay}>
+          <View style={styles.unsavedPopup}>
+            <Text style={styles.unsavedTitle}>리뷰가 아직 저장되지 않았습니다.</Text>
+            <Text style={styles.unsavedDesc}>저장되지 않은 변동사항은 반영되지 않습니다.</Text>
+            <View style={styles.unsavedButtons}>
+              <TouchableOpacity
+                style={styles.btnDiscard}
+                activeOpacity={0.8}
+                onPress={() => {
+                  setIsUnsavedWarningVisible(false);
+                  router.back();
+                }}
+              >
+                <Text style={styles.btnDiscardText}>무시</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.btnStay}
+                activeOpacity={0.8}
+                onPress={() => setIsUnsavedWarningVisible(false)}
+              >
+                <Text style={styles.btnStayText}>취소</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -275,4 +326,27 @@ const styles = StyleSheet.create({
   },
   submitButtonDisabled: { backgroundColor: Colors.light.grayLight },
   submitButtonText: { ...Typography.button2, color: Colors.light.white },
+  overlay: { flex: 1, backgroundColor: Colors.light.overlay, justifyContent: 'center', alignItems: 'center' },
+  unsavedPopup: {
+    width: SCREEN_WIDTH - 64,
+    borderRadius: Spacing.r.small,
+    borderWidth: Spacing.lw.small,
+    borderColor: Colors.light.grayLight,
+    backgroundColor: Colors.light.white,
+    paddingTop: Spacing.v.medium,
+    paddingHorizontal: Spacing.h.medium,
+    paddingBottom: Spacing.v.medium,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  unsavedTitle: { ...Typography.subtitle2, color: Colors.light.black, textAlign: 'center' },
+  unsavedDesc: { ...Typography.body2, color: Colors.light.primary, marginTop: Spacing.v.medium, textAlign: 'center' },
+  unsavedButtons: { flexDirection: 'row', justifyContent: 'center', gap: Spacing.h.medium, marginTop: Spacing.v.medium },
+  btnDiscard: { width: 80, height: Size.buttonSm, borderRadius: Spacing.r.small, backgroundColor: Colors.light.grayLight, justifyContent: 'center', alignItems: 'center' },
+  btnDiscardText: { ...Typography.button2, color: Colors.light.grayDark },
+  btnStay: { width: 80, height: Size.buttonSm, borderRadius: Spacing.r.small, backgroundColor: Colors.light.primary, justifyContent: 'center', alignItems: 'center' },
+  btnStayText: { ...Typography.button2, color: Colors.light.white },
 });

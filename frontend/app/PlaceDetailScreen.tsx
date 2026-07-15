@@ -1,4 +1,5 @@
 import { Divider } from '@/components/ui/Divider';
+import { KakaoMap } from '@/components/ui/KakaoMap';
 import { MetaRow } from '@/components/ui/MetaRow';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { TagRow } from '@/components/ui/TagRow';
@@ -200,7 +201,16 @@ const PlaceDetailScreen = () => {
 
             {/* 기본 정보 */}
             <Text style={styles.basicInfoTitle}>기본 정보</Text>
-            <View style={[styles.mapContainer, { height: imageHeight }]} />
+            {place && (
+              <View style={styles.mapContainer}>
+                <KakaoMap
+                  latitude={Number(place.latitude)}
+                  longitude={Number(place.longitude)}
+                  height={imageHeight}
+                  markerTitle={place.name}
+                />
+              </View>
+            )}
             <View style={{ marginTop: Spacing.v.medium }}>
               <Shadow distance={4} startColor="rgba(0, 0, 0, 0.15)" offset={[0, 0]} stretch>
                 <View style={styles.infoGroup}>
@@ -395,6 +405,7 @@ const styles = StyleSheet.create({
     width: '100%',
     borderRadius: Spacing.r.small,
     backgroundColor: Colors.light.grayLight,
+    overflow: 'hidden',
   },
   infoGroup: {
     borderRadius: Spacing.r.small,

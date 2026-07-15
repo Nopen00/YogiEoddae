@@ -193,7 +193,12 @@ const PhotoSpotDetailScreen = () => {
             <Divider />
 
             <Text style={styles.sectionTitle}>장소</Text>
-            <View style={styles.placeCard}>
+            <TouchableOpacity
+              style={styles.placeCard}
+              activeOpacity={0.8}
+              disabled={!place}
+              onPress={() => place && router.push({ pathname: '/PlaceDetailScreen', params: { id: place.id, name: place.name } })}
+            >
               <View style={styles.placeImageWrapper}>
                 <Image source={{ uri: place?.image_url }} style={styles.placeImage} resizeMode="cover" />
               </View>
@@ -212,7 +217,7 @@ const PhotoSpotDetailScreen = () => {
                   </TagRow>
                 )}
               </View>
-            </View>
+            </TouchableOpacity>
 
             <Divider marginTop={Spacing.v.large} />
 

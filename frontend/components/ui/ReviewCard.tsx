@@ -100,28 +100,30 @@ export const ReviewCard = ({
         </ScrollView>
       )}
 
-      <View style={styles.likeRow}>
-        <TouchableOpacity onPress={onToggleLike} activeOpacity={0.7}>
-          <ThumbsUp
-            size={16}
-            color={isLiked ? Colors.light.dark : Colors.light.grayDark}
-            fill={isLiked ? Colors.light.primary : 'none'}
-            strokeWidth={IconStroke.regular}
-          />
-        </TouchableOpacity>
-        <Text style={styles.likeCount}>{likeCount}</Text>
-      </View>
-
-      {review.isMine && (
-        <View style={styles.myActionsRow}>
-          <TouchableOpacity onPress={onEditPress} activeOpacity={0.7}>
-            <Text style={styles.myActionText}>수정</Text>
+      <View style={styles.bottomRow}>
+        <View style={styles.likeRow}>
+          <TouchableOpacity onPress={onToggleLike} activeOpacity={0.7}>
+            <ThumbsUp
+              size={16}
+              color={isLiked ? Colors.light.dark : Colors.light.grayDark}
+              fill={isLiked ? Colors.light.primary : 'none'}
+              strokeWidth={IconStroke.regular}
+            />
           </TouchableOpacity>
-          <TouchableOpacity onPress={onDeletePress} activeOpacity={0.7}>
-            <Text style={styles.myActionText}>삭제</Text>
-          </TouchableOpacity>
+          <Text style={styles.likeCount}>{likeCount}</Text>
         </View>
-      )}
+
+        {review.isMine && (
+          <View style={styles.myActionsRow}>
+            <TouchableOpacity onPress={onEditPress} activeOpacity={0.7}>
+              <Text style={styles.myActionText}>수정</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={onDeletePress} activeOpacity={0.7}>
+              <Text style={styles.myActionText}>삭제</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
     </View>
   );
 };
@@ -157,18 +159,21 @@ const styles = StyleSheet.create({
     height: 90,
     borderRadius: Spacing.r.small,
   },
+  bottomRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: Spacing.v.medium,
+  },
   likeRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.h.xsmall,
-    marginTop: Spacing.v.medium,
   },
   likeCount: { ...Typography.body2, color: Colors.light.grayDark },
   myActionsRow: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
     gap: Spacing.h.medium,
-    marginTop: Spacing.v.medium,
   },
   myActionText: { ...Typography.button4, color: Colors.light.grayLight },
 });

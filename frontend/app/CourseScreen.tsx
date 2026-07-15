@@ -25,9 +25,12 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PagerView, { PagerViewHandle } from '@/components/ui/PagerViewWrapper';
-import { mediaApi, placeApi } from '../services/api';
-import type { Media, Place, Tag } from '../services/types';
+import { mediaApi, photoApi, placeApi } from '../services/api';
+import { pseudoRating } from '../services/mockData';
+import type { Media, Photo, Tag } from '../services/types';
 import { Size } from '@/constants/Size';
+
+type PhotoSpotItem = Photo & { rating: number; like_count: number };
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const THEME_IMAGE_WIDTH = SCREEN_WIDTH - Spacing.h.medium * 4;
@@ -106,13 +109,12 @@ const CourseScreen = () => {
   const [youtubeMedia, setYoutubeMedia] = useState<Media[]>([]);
   const [dramaMedia, setDramaMedia] = useState<Media[]>([]);
   const [movieMedia, setMovieMedia] = useState<Media[]>([]);
-  const [places, setPlaces] = useState<Place[]>([]);
   const [themeRegions, setThemeRegions] = useState<Record<number, string>>({});
   const [pickCardImages, setPickCardImages] = useState<Record<number, string[]>>({});
   const [pickCardPlaceCounts, setPickCardPlaceCounts] = useState<Record<number, number>>({});
-  const [savedPlaces, setSavedPlaces] = useState<Record<number, boolean>>({});
+  const [photoSpots, setPhotoSpots] = useState<PhotoSpotItem[]>([]);
+  const [savedPhotos, setSavedPhotos] = useState<Record<number, boolean>>({});
   const [selectedPhotoTag, setSelectedPhotoTag] = useState<string | null>(null);
-  const [placePhotoId, setPlacePhotoId] = useState<Record<number, number>>({});
 
   useEffect(() => {
     mediaApi.getList().then(res => setAllMedia(res.data.results)).catch(() => {});
@@ -120,33 +122,31 @@ const CourseScreen = () => {
     mediaApi.getList({ type: 'drama' }).then(res => setDramaMedia(res.data.results)).catch(() => {});
     mediaApi.getList({ type: 'movie' }).then(res => setMovieMedia(res.data.results)).catch(() => {});
     placeApi.getList().then(res => {
-      setPlaces(res.data.results);
-      const map: Record<number, boolean> = {};
-      res.data.results.forEach(p => { map[p.id] = p.is_bookmarked; });
-      setSavedPlaces(map);
-
-      Promise.all(res.data.results.map(p => placeApi.getPhotos(p.id).then(r => ({ placeId: p.id, photo: r.data[0] }))))
-        .then(entries => {
-          const photoMap: Record<number, number> = {};
-          entries.forEach(({ placeId, photo }) => { if (photo) photoMap[placeId] = photo.id; });
-          setPlacePhotoId(photoMap);
+      Promise.all(res.data.results.map(p => placeApi.getPhotos(p.id).then(r => r.data)))
+        .then(results => {
+          const allPhotos: PhotoSpotItem[] = results.flat().map(p => ({ ...p, rating: pseudoRating(p), like_count: p.likes }));
+          setPhotoSpots(allPhotos);
+          const map: Record<number, boolean> = {};
+          allPhotos.forEach(p => { map[p.id] = p.is_bookmarked ?? false; });
+          setSavedPhotos(map);
         })
         .catch(() => {});
     }).catch(() => {});
   }, []);
 
-  const toggleSavedPlace = async (placeId: number) => {
-    const isSavedNow = savedPlaces[placeId];
+  const toggleSavedPhoto = async (photoId: number) => {
+    const isSavedNow = savedPhotos[photoId];
     try {
-      if (isSavedNow) await placeApi.unbookmark(placeId);
-      else await placeApi.bookmark(placeId);
-      setSavedPlaces(prev => ({ ...prev, [placeId]: !prev[placeId] }));
-      setPlaces(prev => prev.map(p => p.id === placeId
-        ? { ...p, like_count: (p.like_count ?? 0) + (isSavedNow ? -1 : 1) }
+      if (isSavedNow) await photoApi.unbookmark(photoId);
+      else await photoApi.bookmark(photoId);
+      setSavedPhotos(prev => ({ ...prev, [photoId]: !prev[photoId] }));
+      setPhotoSpots(prev => prev.map(p => p.id === photoId
+        ? { ...p, likes: p.likes + (isSavedNow ? -1 : 1), like_count: p.likes + (isSavedNow ? -1 : 1) }
         : p
       ));
     } catch {}
   };
+
 
   useEffect(() => {
     [allMedia[1], allMedia[5]].forEach(media => {
@@ -209,10 +209,10 @@ const CourseScreen = () => {
   const sortedYoutubeMedia = sortByOption(youtubeMedia, sortOption, m => m.title, getPickCardPlaceCount);
   const sortedDramaMedia = sortByOption(dramaMedia, sortOption, m => m.title, getPickCardPlaceCount);
   const sortedMovieMedia = sortByOption(movieMedia, sortOption, m => m.title, getPickCardPlaceCount);
-  const sortedPlaces = sortByOption(places, sortOption, p => p.name);
-  const filteredPlaces = selectedPhotoTag
-    ? sortedPlaces.filter(p => p.tags.some(t => t.name === selectedPhotoTag))
-    : sortedPlaces;
+  const sortedPhotoSpots = sortByOption(photoSpots, sortOption, p => p.description);
+  const filteredPhotoSpots = selectedPhotoTag
+    ? sortedPhotoSpots.filter(p => p.tags.some(t => t.name === selectedPhotoTag))
+    : sortedPhotoSpots;
 
   const renderThemeCourseCard = (item: Media) => {
     const { visibleTags, extraCount } = getProcessedTags(item.tags);
@@ -347,14 +347,14 @@ const CourseScreen = () => {
     );
   };
 
-  const renderPhotoSpotCard = (item: Place) => {
+  const renderPhotoSpotCard = (item: PhotoSpotItem) => {
     const { visibleTags, extraCount } = getProcessedTags(item.tags);
     return (
       <TouchableOpacity
         key={`photo-spot-card-${item.id}`}
         style={styles.photoSpotCard}
         activeOpacity={0.9}
-        onPress={() => router.push({ pathname: '/PhotoSpotDetailScreen', params: { id: placePhotoId[item.id] ?? item.id, name: item.name } })}
+        onPress={() => router.push({ pathname: '/PhotoSpotDetailScreen', params: { id: item.id, name: item.description } })}
       >
         <View style={styles.photoSpotImageWrapper}>
           <Image
@@ -384,18 +384,18 @@ const CourseScreen = () => {
           <TouchableOpacity
             style={styles.photoSpotSaveButton}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            onPress={() => toggleSavedPlace(item.id)}
+            onPress={() => toggleSavedPhoto(item.id)}
           >
             <Heart
               size={IconSize.large}
-              color={savedPlaces[item.id] ? '#F24C54' : Colors.light.white}
-              fill={savedPlaces[item.id] ? '#F24C54' : 'none'}
+              color={savedPhotos[item.id] ? '#F24C54' : Colors.light.white}
+              fill={savedPhotos[item.id] ? '#F24C54' : 'none'}
               strokeWidth={IconStroke.regular}
             />
           </TouchableOpacity>
         </View>
         <View style={styles.photoSpotInfoBox}>
-          <Text style={styles.photoSpotTitle} numberOfLines={1}>{item.name}</Text>
+          <Text style={styles.photoSpotTitle} numberOfLines={1}>{item.description}</Text>
           <View style={styles.photoSpotTagRow}>
             {visibleTags.map((tag, idx) => <Text key={idx} style={styles.photoSpotTagText}>#{tag}</Text>)}
             {extraCount > 0 && <Text style={styles.photoSpotTagText}>+{extraCount}</Text>}
@@ -644,9 +644,9 @@ const CourseScreen = () => {
         {/* ── 포토스팟 탭 ── */}
         <ScrollView key="4" showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContainer}>
           {renderPhotoTagSection(Spacing.v.medium, 'photo-spot-theme')}
-          {filteredPlaces.length > 0 ? (
+          {filteredPhotoSpots.length > 0 ? (
             <View style={styles.photoSpotGrid}>
-              {filteredPlaces.map(item => renderPhotoSpotCard(item))}
+              {filteredPhotoSpots.map(item => renderPhotoSpotCard(item))}
             </View>
           ) : (
             <View style={styles.emptyState}>

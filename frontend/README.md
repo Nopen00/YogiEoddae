@@ -6,9 +6,7 @@ React Native (Expo) 기반 모바일 앱 프론트엔드입니다.
 
 - 퀴즈 화면 구현 (MainScreen 퀴즈 버튼 연결 예정, 미구현)
 - PlaceDetailScreen·CourseDetailScreen에 리뷰 리스트 UI 추가 (ReviewWriteScreen 작성 화면과 리뷰쓰기 버튼 연결은 완료됐고, PhotoSpotDetailScreen에는 리뷰 리스트가 있음. 하지만 PlaceDetailScreen·CourseDetailScreen에는 애초에 리뷰 리스트 UI 자체가 없어서, 작성한 리뷰를 보여줄 곳이 없음 — 리스트 UI 기획 필요)
-- PlaceDetailScreen 지도 구현 (현재 빈 회색 박스, lat/lng 데이터는 존재)
 - 포토태그 이미지 데이터 연동 (현재 태그 원형·필터 pill의 이미지는 회색 placeholder, 백엔드 태그 이미지 필드 필요)
-- CourseScreen 포토스팟 탭을 실제 Photo 단위로 전환 (기획상 한 장소에 포토스팟이 여러 개 있을 수 있는 구조인데, 현재 `renderPhotoSpotCard`는 Place 단위로 그려짐 — 타이틀이 장소 이름, 이미지가 장소 대표 이미지. PhotoSpotDetailScreen은 이미 있고 탭 시 해당 장소의 대표 사진 id로 연결은 해뒀지만, 카드 자체는 여전히 장소 단위 데이터라 한 장소의 여러 포토스팟을 개별 카드로 보여주지 못함 — Photo 단위 카드로 전환 필요)
 
 ---
 
@@ -20,6 +18,14 @@ npm start        # Expo 개발 서버 시작
 npm run android  # Android 실행
 npm run ios      # iOS 실행
 npm run web      # 웹 실행
+```
+
+`.env`는 git에 커밋되지 않으므로 각자 로컬에 아래 값을 채워야 합니다.
+
+```
+EXPO_PUBLIC_API_URL=
+EXPO_PUBLIC_USE_MOCK=
+EXPO_PUBLIC_KAKAO_JS_KEY=   # PlaceDetailScreen 카카오맵 표시용. backend/.env의 KAKAO_JS_KEY와 동일한 값
 ```
 
 ---
@@ -36,7 +42,9 @@ app/
 ├── SearchResultScreen.tsx     # 검색 결과 (전체·코스·명소·포토스팟 탭)
 ├── CourseScreen.tsx           # 코스 탐색 (추천·유튜브/드라마/영화 PICK·포토스팟 탭)
 ├── CourseDetailScreen.tsx     # 코스 상세
-├── PlaceDetailScreen.tsx      # 명소 상세
+├── PlaceDetailScreen.tsx      # 명소 상세 (카카오맵 포함)
+├── PhotoSpotDetailScreen.tsx  # 포토스팟 상세 (장소·태그별 관련 포토스팟, 리뷰 목록)
+├── ReviewWriteScreen.tsx      # 리뷰 작성/수정 (별점·방문일·사진 첨부)
 ├── ScheduleDetailScreen.tsx   # 일정 상세 (슬라이딩 패널 + 지도)
 ├── ScheduleScreen.tsx         # 내 일정 / 과거 일정 / 저장소
 ├── SettingScreen.tsx          # 설정
@@ -63,12 +71,33 @@ app/
 
 ### 포토스팟 카드 & 태그 필터 (`CourseScreen`)
 
-포토스팟 탭은 2열 그리드 카드(`photoSpotCard`)로 구성됩니다.
+포토스팟 탭은 2열 그리드 카드(`photoSpotCard`)로 구성되고, **장소(Place) 단위가 아니라 개별 사진(Photo) 단위**로 카드가 그려집니다 — `placeApi.getList()`로 가져온 모든 장소마다 `placeApi.getPhotos(placeId)`를 호출해 사진을 전부 펼친(`flat`) 뒤 사진 하나당 카드 하나(`photoSpots` state)를 만듭니다. 즉 사진이 2장인 장소는 카드 2개로 보입니다.
 
 - 카드 구조: 4:3 이미지(`photoSpotImageWrapper`, 하단 모서리 각짐) + 하단 정보 박스(`photoSpotInfoBox`, 타이틀·태그). 이미지 위에는 저장 하트 아이콘(우상단)과 별점·하트수(좌하단, 메인 화면 캐러셀과 동일한 하단 그라데이션 오버레이 위에 화이트 텍스트)가 겹쳐집니다.
-- 저장 하트는 `placeApi.bookmark`/`unbookmark` + 로컬 상태(`savedPlaces`)로 토글되며, 저장 시 채워진 빨간 하트(`#F24C54`)로 바뀝니다.
-- 상단 포토태그 목록(원형 아이템)을 탭하면 `selectedPhotoTag`가 설정되어 포토태그 박스가 알약형 필터 박스로 교체되고(`renderPhotoTagSection`), 포토스팟 그리드는 해당 태그를 가진 장소만(`filteredPlaces`)으로 필터링됩니다. 필터 박스의 X 아이콘으로 해제합니다.
+- 카드에 쓰이는 타이틀·태그·평점·좋아요 수는 모두 **사진(Photo) 자체의 데이터**입니다 — 타이틀은 `photo.description`, 태그는 `photo.tags`(장소 태그와 별개), 좋아요 수는 `photo.likes`. `Photo`에는 평점 필드가 없어서 `services/mockData.ts`의 `pseudoRating()`으로 임시 평점을 계산합니다(백엔드에 rating 필드 추가되면 교체 필요).
+- 저장 하트는 `photoApi.bookmark`/`unbookmark` + 로컬 상태(`savedPhotos`)로 토글되며, 저장 시 채워진 빨간 하트(`#F24C54`)로 바뀌고 좋아요 수도 즉시 ±1 반영됩니다.
+- 상단 포토태그 목록(원형 아이템)을 탭하면 `selectedPhotoTag`가 설정되어 포토태그 박스가 알약형 필터 박스로 교체되고(`renderPhotoTagSection`), 포토스팟 그리드는 해당 태그를 가진 사진만(`filteredPhotoSpots`, `photo.tags` 기준)으로 필터링됩니다. 필터 박스의 X 아이콘으로 해제합니다.
 - 전체 탭의 포토태그 박스도 동일한 선택 상태를 공유해 같이 알약형으로 바뀌지만, 실제 필터링은 포토스팟 탭에서만 동작합니다.
+- 카드 탭 시 `photo.id`로 바로 `PhotoSpotDetailScreen`에 연결됩니다.
+
+### 리뷰 작성/수정 (`ReviewWriteScreen`, `VisitDateAlert`)
+
+`PlaceDetailScreen`·`CourseDetailScreen`·`PhotoSpotDetailScreen`의 "리뷰쓰기" 버튼과 `PhotoSpotDetailScreen`의 "리뷰 작성" 버튼, 그리고 `ReviewCard`의 "수정" 버튼이 모두 `ReviewWriteScreen`으로 연결됩니다 (`params: { type, id, reviewId? }`, `reviewId`가 있으면 수정 모드).
+
+- **별점**: `react-native-gesture-handler`의 `Gesture.Pan`으로 별 5개 영역을 드래그하면 터치 x좌표 기준으로 실시간 채워집니다 (`minDistance(0)`이라 탭만 해도 동작).
+- **방문 날짜**: 날짜 행을 탭하면 `VisitDateAlert`가 뜹니다. `NewScheduleAlert`(일정 만들기 달력)와 동일한 달력 UI를 재사용하되, 범위 드래그 선택 로직은 빼고 한 칸 탭으로 단일 날짜만 고르도록 단순화한 컴포넌트입니다. 월 스크롤 피커(`MonthPickerRow`)는 `NewScheduleAlert`에서 export해서 그대로 씁니다.
+- **이미지 첨부**: `expo-image-picker`로 최대 10장까지 첨부/삭제 가능. 90×90 정사각형 썸네일이 가로 스크롤로 나열됩니다.
+- **수정 모드 프리필**: `reviewApi.getDetail(reviewId)`로 기존 별점·내용·이미지·방문일을 불러와 폼에 채웁니다.
+- **미저장 경고**: 뒤로가기 시 처음 불러온 값(수정 모드) 또는 빈 값(새 작성)과 현재 값을 비교해 변경사항이 있으면 `ScheduleDetailScreen`과 동일한 형식의 경고 팝업이 뜹니다.
+- 리뷰 데이터는 `services/mockData.ts`의 `mockReviewStore`(전체 포토스팟이 공유하는 단일 목록, 대상별로 분리되어 있지 않음)에서 `reviewApi`(`getList`/`getDetail`/`create`/`update`/`remove`)로 관리됩니다. `ReviewCard`가 `review.isMine`이면 "수정"/"삭제" 버튼을 노출하고, 삭제는 `ScheduleDetailScreen`의 일정 삭제 팝업과 동일한 형식의 확인 팝업을 거칩니다.
+
+### 카카오맵 (`PlaceDetailScreen`, `components/ui/KakaoMap`)
+
+`PlaceDetailScreen`의 "기본 정보" 지도는 카카오맵 JS SDK를 웹뷰에 띄우는 방식입니다.
+
+- `react-native-webview`가 웹을 지원하지 않아서, `KakaoMap.tsx`(네이티브, `WebView` 사용)와 `KakaoMap.web.tsx`(웹, `iframe` + `srcDoc` 직접 렌더링) 두 파일로 플랫폼을 분리했습니다. Metro가 파일명의 `.web.tsx`를 보고 자동으로 웹 빌드에서는 `KakaoMap.web.tsx`를 선택합니다.
+- HTML 생성 로직(카카오맵 SDK 스크립트 + 마커 + 인포윈도우)은 `kakaoMapHtml.ts`에 공용으로 있습니다.
+- 카카오 JS 키는 `EXPO_PUBLIC_KAKAO_JS_KEY` 환경변수로 주입됩니다(`backend/.env`의 `KAKAO_JS_KEY`와 동일한 값). **카카오 디벨로퍼스 콘솔의 Web 플랫폼 도메인 허용 목록에 테스트 도메인이 등록돼 있어야** 지도가 뜹니다 — 안 되어 있으면 401로 지도 스크립트 로드가 실패합니다.
 
 ---
 
@@ -84,13 +113,21 @@ components/
 │   ├── Divider          # 가로 구분선 (height: 1, grayLight)
 │   ├── TextSeparator    # 인라인 세로 구분선 (width: 1, height: 10)
 │   ├── MetaRow          # 메타 정보 가로 줄 (평점·좋아요·카테고리 등)
-│   └── TagRow           # 해시태그 가로 줄 (flexWrap)
+│   ├── TagRow           # 해시태그 가로 줄 (flexWrap)
+│   ├── ReviewCard       # 리뷰 카드 (별점·내용·이미지·좋아요, 내 리뷰면 수정/삭제)
+│   ├── PagerViewWrapper # 탭 스와이프용 PagerView 웹 호환 래퍼 (.native.tsx로 네이티브 분리)
+│   └── KakaoMap         # 카카오맵 (.tsx=네이티브 WebView, .web.tsx=iframe, kakaoMapHtml.ts=공용 HTML)
 ├── modals/              # 팝업 및 알림
 │   ├── MoreMenuAlert          # 저장/일정추가 드롭다운 메뉴
 │   ├── ScheduleAlert          # 일정 선택 팝업
-│   ├── NewScheduleAlert       # 일정 만들기 스텝 1 (제목·날짜)
+│   ├── ScheduleMoreMenuAlert  # 일정 카드 더보기 메뉴 (편집/삭제)
+│   ├── NewScheduleAlert       # 일정 만들기 스텝 1 (제목·날짜, 달력 UI를 VisitDateAlert와 공유)
 │   ├── NewScheduleStep2Alert  # 일정 만들기 스텝 2 (코스 선택)
 │   ├── NewScheduleStep3Alert  # 일정 만들기 스텝 3 (최종 확인)
+│   ├── VisitDateAlert         # 리뷰 작성용 단일 날짜 선택 팝업 (NewScheduleAlert 달력 단순화)
+│   ├── AddPlaceAlert          # 장소 추가 팝업
+│   ├── AddPlaceConfirmAlert   # 장소 추가 확인 팝업
+│   ├── PhotoSpotScheduleAlert # 포토스팟 일정추가 확인 팝업
 │   ├── CourseSelectPopup      # 코스 선택 팝업
 │   ├── ScheduleEditNameAlert  # 일정 이름 수정 팝업 (편집 모드에서 제목 탭)
 │   └── SortAlert              # 정렬 기준 선택 팝업 (CourseScreen·SearchResultScreen 공용)
@@ -220,8 +257,10 @@ API 데이터를 한국어로 변환하는 매핑 상수입니다. 각 화면에
 
 | 파일 | 설명 |
 |------|------|
-| `api.ts` | axios 기반 API 함수 모음 (`scheduleApi`, `mediaApi`, `placeApi`) |
-| `types.ts` | 공통 타입 정의 (`Schedule`, `Media`, `Place`, `Tag` 등) |
-| `mockData.ts` | 개발용 목 데이터 |
+| `api.ts` | axios 기반 API 함수 모음 (`scheduleApi`, `mediaApi`, `placeApi`, `photoApi`, `reviewApi`, `userApi`, `bookmarkApi`) |
+| `types.ts` | 공통 타입 정의 (`Schedule`, `Media`, `Place`, `Photo`, `PhotoSpotDetail`, `Review`, `Tag` 등) |
+| `mockData.ts` | 개발용 목 데이터 + mutable store(`mockPlaceStore`, `mockPhotoStore`, `mockReviewStore` 등, 북마크/작성 등의 변경이 세션 내에서 유지되도록 함) |
+
+`EXPO_PUBLIC_USE_MOCK=true`(`.env`)일 때 각 API 함수는 실제 axios 호출 대신 `mockData.ts`의 값을 반환합니다. `photoApi.getList()`/`getDetail()`은 mock 전용이며 실제 백엔드 엔드포인트가 아직 없습니다 — 개별 장소의 사진은 실제로 연결된 `placeApi.getPhotos(placeId)`(`GET /api/places/{id}/photos/`)를 사용하세요. `reviewApi`도 현재 전체 화면이 공유하는 단일 mock 리스트이며, 대상(장소/코스/포토스팟)별로 분리된 실제 리뷰 엔드포인트는 아직 없습니다.
 
 `utils/sortByOption.ts`는 화면 전반에서 재사용하는 정렬 비교 함수입니다 (위 정렬 기능 참고).
