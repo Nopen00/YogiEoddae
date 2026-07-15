@@ -28,6 +28,7 @@ export const Colors = {
     heart: '#F24C54',
     error: '#F24C54',
     skyBlue: '#33A7EA',
+    star: '#F2C94C',
     overlay: 'rgba(0, 0, 0, 0.25)',
   },
   dark: {

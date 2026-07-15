@@ -42,6 +42,7 @@ export interface Photo {
   description: string;
   likes: number;
   tags: Tag[];
+  is_bookmarked?: boolean;
   created_at: string;
 }
 

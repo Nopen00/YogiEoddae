@@ -32,6 +32,15 @@ import type { Media, Place, Tag } from '../services/types';
 
 const CATEGORIES = ["전체", "코스", "명소", "포토스팟"];
 
+// TODO: 목데이터. 실제 데이터 연동 시 전역 포토스팟 API로 교체 (프론트 README TODO 참고)
+const MOCK_PHOTO_SPOTS = [
+  { id: 1, name: '광화문 야경 포토존', rating: 4.8, like_count: 320, tags: ['야경', '감성'] },
+  { id: 2, name: '해운대 일몰 스팟', rating: 4.6, like_count: 210, tags: ['풍경', '자연'] },
+  { id: 3, name: '경복궁 한복 포토존', rating: 4.7, like_count: 275, tags: ['계절', '전통'] },
+  { id: 4, name: '북촌 골목 카페 뷰', rating: 4.3, like_count: 130, tags: ['카페', '감성'] },
+  { id: 5, name: '남산타워 전망대', rating: 4.9, like_count: 420, tags: ['야경', '자연'] },
+];
+
 const formatLikeCount = (count: number): string => {
   if (count < 100) return count.toString();
   return (Math.floor(count / 100) * 100).toLocaleString() + '+';
@@ -72,6 +81,7 @@ const SearchResultScreen = () => {
 
   const sortedCourses = sortByOption(courses, sortOption, c => c.title, c => c.place_count);
   const sortedAttractions = sortByOption(attractions, sortOption, a => a.name);
+  const sortedPhotoSpots = sortByOption(MOCK_PHOTO_SPOTS, sortOption, s => s.name);
 
   const animateIndicatorTo = (index: number) => {
     Animated.spring(translateX, {
@@ -220,52 +230,33 @@ const SearchResultScreen = () => {
     );
   };
 
-  const renderSpotCard = (spot: Place) => {
-    const { visibleTags: spotTags, extraCount: spotExtra } = getProcessedTags(spot.tags);
-    const spotShortAddr = shortAddress(spot.address);
-    return (
-      <TouchableOpacity
-        key={`spot-${spot.id}`}
-        style={styles.cardButton}
-        activeOpacity={0.9}
-        onPress={() => router.push({ pathname: '/PlaceDetailScreen', params: { id: spot.id, name: spot.name } })}
-      >
-        <View style={styles.cardInner}>
-          <View style={styles.imageCircle} />
-          <View style={styles.infoContent}>
-            <Text style={styles.courseTitle} numberOfLines={1}>{spot.name}</Text>
-            <View style={styles.metadataRow}>
-              <View style={styles.metaChip}>
-                <Text style={styles.metadataText}>{spotShortAddr}</Text>
-                {(spot.rating != null || spot.like_count != null) && <TextSeparator />}
-              </View>
-              {(spot.rating != null || spot.like_count != null) && (
-                <View style={styles.metaChip}>
-                  {spot.rating != null && (
-                    <>
-                      <Star size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
-                      <Text style={styles.metadataText}> {spot.rating.toFixed(1)}</Text>
-                    </>
-                  )}
-                  {spot.rating != null && spot.like_count != null && <TextSeparator />}
-                  {spot.like_count != null && (
-                    <>
-                      <Heart size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
-                      <Text style={styles.metadataText}> {formatLikeCount(spot.like_count)}</Text>
-                    </>
-                  )}
-                </View>
-              )}
-            </View>
-            <View style={styles.tagRow}>
-              {spotTags.map((tag, idx) => <Text key={idx} style={styles.tagText}>#{tag}</Text>)}
-              {spotExtra > 0 && <Text style={styles.tagText}>+{spotExtra}</Text>}
+  const renderSpotCard = (spot: typeof MOCK_PHOTO_SPOTS[number]) => (
+    <TouchableOpacity
+      key={`spot-${spot.id}`}
+      style={styles.cardButton}
+      activeOpacity={0.9}
+      onPress={() => router.push({ pathname: '/PhotoSpotDetailScreen', params: { id: spot.id, name: spot.name } })}
+    >
+      <View style={styles.cardInner}>
+        <View style={styles.imageCircle} />
+        <View style={styles.infoContent}>
+          <Text style={styles.courseTitle} numberOfLines={1}>{spot.name}</Text>
+          <View style={styles.metadataRow}>
+            <View style={styles.metaChip}>
+              <Star size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
+              <Text style={styles.metadataText}> {spot.rating.toFixed(1)}</Text>
+              <TextSeparator />
+              <Heart size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
+              <Text style={styles.metadataText}> {formatLikeCount(spot.like_count)}</Text>
             </View>
           </View>
+          <View style={styles.tagRow}>
+            {spot.tags.map((tag, idx) => <Text key={idx} style={styles.tagText}>#{tag}</Text>)}
+          </View>
         </View>
-      </TouchableOpacity>
-    );
-  };
+      </View>
+    </TouchableOpacity>
+  );
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -324,8 +315,8 @@ const SearchResultScreen = () => {
               <Text style={styles.sectionTitle}>포토스팟</Text>
               <Divider marginTop={0} />
             </View>
-            {sortedAttractions.slice(0, 3).map(renderSpotCard)}
-            {attractions.length > 3 && (
+            {sortedPhotoSpots.slice(0, 3).map(renderSpotCard)}
+            {MOCK_PHOTO_SPOTS.length > 3 && (
               <TouchableOpacity style={styles.moreButton} onPress={() => handleTabPress(3)}>
                 <Text style={styles.moreButtonText}>더보기</Text>
               </TouchableOpacity>
@@ -369,14 +360,8 @@ const SearchResultScreen = () => {
         {/* --- 3. 포토스팟 --- */}
         <ScrollView key="3" showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContainer}>
           <View>
-            {sortedAttractions.map(renderSpotCard)}
+            {sortedPhotoSpots.map(renderSpotCard)}
           </View>
-          {searchKeyword.length > 0 && attractions.length === 0 && (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyTitle}>검색 결과가 없습니다.</Text>
-              <Text style={styles.emptyDesc}>검색어가 정확한지 확인해주세요.</Text>
-            </View>
-          )}
         </ScrollView>
       </PagerView>
       <SortAlert

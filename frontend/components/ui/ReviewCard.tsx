@@ -1,0 +1,144 @@
+import { TextSeparator } from '@/components/ui/TextSeparator';
+import { Colors } from '@/constants/Colors';
+import { IconStroke } from '@/constants/IconSize';
+import { Spacing } from '@/constants/Spacing';
+import { Typography } from '@/constants/Typography';
+import { Star, ThumbsUp } from 'lucide-react-native';
+import React from 'react';
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
+// 카드 너비 기준 대략 4줄을 넘는 글자 수 (플랫폼 간 onTextLayout 신뢰도 문제로 근사치 사용)
+const REVIEW_TRUNCATE_LENGTH = 80;
+
+export interface ReviewCardData {
+  id: number;
+  author: string;
+  travelDate: string;
+  writtenDate: string;
+  rating: number;
+  content: string;
+  images: string[];
+  likeCount: number;
+}
+
+export const getReviewLikeCount = (review: ReviewCardData, isLiked: boolean) =>
+  review.likeCount + (isLiked ? 1 : 0);
+
+interface ReviewCardProps {
+  review: ReviewCardData;
+  isExpanded: boolean;
+  onToggleExpand: () => void;
+  isLiked: boolean;
+  onToggleLike: () => void;
+  onImagePress: (index: number) => void;
+}
+
+export const ReviewCard = ({ review, isExpanded, onToggleExpand, isLiked, onToggleLike, onImagePress }: ReviewCardProps) => {
+  const isTruncated = review.content.length > REVIEW_TRUNCATE_LENGTH;
+  const likeCount = getReviewLikeCount(review, isLiked);
+
+  return (
+    <View style={styles.card}>
+      <View style={styles.header}>
+        <View style={styles.avatar} />
+        <View style={styles.authorInfo}>
+          <Text style={styles.authorName}>{review.author}</Text>
+          <View style={styles.dateRow}>
+            <Text style={styles.dateText}>{review.travelDate} 여행</Text>
+            <TextSeparator color={Colors.light.grayDark} />
+            <Text style={styles.dateText}>{review.writtenDate} 작성</Text>
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.ratingRow}>
+        {[1, 2, 3, 4, 5].map((n) => (
+          <Star
+            key={n}
+            size={20}
+            color={n <= review.rating ? Colors.light.star : Colors.light.grayDark}
+            fill={n <= review.rating ? Colors.light.star : 'none'}
+            strokeWidth={IconStroke.regular}
+          />
+        ))}
+      </View>
+
+      <Text style={styles.contentText} numberOfLines={isExpanded ? undefined : 4}>
+        {review.content}
+      </Text>
+
+      {isTruncated && (
+        <TouchableOpacity onPress={onToggleExpand} activeOpacity={0.7}>
+          <Text style={styles.moreText}>{isExpanded ? '간략히' : '더보기'}</Text>
+        </TouchableOpacity>
+      )}
+
+      {review.images.length > 0 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.imagesScroll}
+          contentContainerStyle={styles.imagesContent}
+        >
+          {review.images.map((img, idx) => (
+            <TouchableOpacity key={img} onPress={() => onImagePress(idx)} activeOpacity={0.9}>
+              <Image source={{ uri: img }} style={styles.imageThumb} resizeMode="cover" />
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
+
+      <View style={styles.likeRow}>
+        <TouchableOpacity onPress={onToggleLike} activeOpacity={0.7}>
+          <ThumbsUp
+            size={16}
+            color={isLiked ? Colors.light.dark : Colors.light.grayDark}
+            fill={isLiked ? Colors.light.primary : 'none'}
+            strokeWidth={IconStroke.regular}
+          />
+        </TouchableOpacity>
+        <Text style={styles.likeCount}>{likeCount}</Text>
+      </View>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  card: {
+    marginTop: Spacing.v.medium,
+    paddingHorizontal: Spacing.h.medium,
+    paddingVertical: Spacing.v.medium,
+    borderWidth: Spacing.lw.small,
+    borderColor: Colors.light.grayLight,
+    borderRadius: Spacing.r.small,
+    backgroundColor: Colors.light.white,
+  },
+  header: { flexDirection: 'row', alignItems: 'center' },
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.light.grayLight,
+  },
+  authorInfo: { flex: 1, marginLeft: Spacing.h.medium },
+  authorName: { ...Typography.subtitle2, color: Colors.light.black },
+  dateRow: { flexDirection: 'row', alignItems: 'center', marginTop: Spacing.v.small },
+  dateText: { ...Typography.body1, color: Colors.light.grayDark },
+  ratingRow: { flexDirection: 'row', gap: 4, marginTop: Spacing.v.small },
+  contentText: { ...Typography.body2, color: Colors.light.black, marginTop: Spacing.v.small },
+  moreText: { ...Typography.button4, color: Colors.light.primary, marginTop: Spacing.v.small },
+  imagesScroll: { marginTop: Spacing.v.small },
+  imagesContent: { gap: Spacing.h.medium },
+  imageThumb: {
+    width: 120,
+    height: 90,
+    borderRadius: Spacing.r.small,
+  },
+  likeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.h.xsmall,
+    marginTop: Spacing.v.medium,
+  },
+  likeCount: { ...Typography.body2, color: Colors.light.grayDark },
+});

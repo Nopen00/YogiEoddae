@@ -8,16 +8,14 @@ import { CourseSelectPopup } from '@/components/modals/CourseSelectPopup';
 import { type DateRange, NewScheduleAlert } from '@/components/modals/NewScheduleAlert';
 import { NewScheduleStep3Alert } from '@/components/modals/NewScheduleStep3Alert';
 import { ScheduleMoreMenuAlert } from '@/components/modals/ScheduleMoreMenuAlert';
-import { SortAlert, type SortOption, SORT_OPTIONS } from '@/components/modals/SortAlert';
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
 import { CATEGORY_LABEL, CITY_SHORT, MEDIA_TYPE_LABEL, shortAddress } from '@/constants/labels';
 import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
-import { sortByOption } from '@/utils/sortByOption';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { Calendar, Heart, MoreVertical, Plus, SlidersHorizontal } from 'lucide-react-native';
+import { Calendar, Heart, MoreVertical, Plus } from 'lucide-react-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Animated,
@@ -288,14 +286,9 @@ export default function ScheduleScreen() {
 
   const [mySchedules, setMySchedules] = useState<Schedule[]>([]);
   const [pastSchedules, setPastSchedules] = useState<Schedule[]>([]);
-  const [savedSchedules, setSavedSchedules] = useState<Schedule[]>([]);
   const [savedCourses, setSavedCourses] = useState<Media[]>([]);
   const [savedPlaces, setSavedPlaces] = useState<Place[]>([]);
   const [savedPhotos, setSavedPhotos] = useState<SavedPhoto[]>([]);
-  const [myScheduleSort, setMyScheduleSort] = useState<SortOption>('관련도 높은 순');
-  const [isMySortVisible, setIsMySortVisible] = useState(false);
-  const [courseSort, setCourseSort] = useState<SortOption>('관련도 높은 순');
-  const [isCourseSortVisible, setIsCourseSortVisible] = useState(false);
   const [isNewScheduleVisible, setIsNewScheduleVisible] = useState(false);
   const [newScheduleKey, setNewScheduleKey] = useState(0);
   const [isCourseSelectVisible, setIsCourseSelectVisible] = useState(false);
@@ -327,7 +320,6 @@ export default function ScheduleScreen() {
         setMySchedules(all.filter((s: Schedule) => !isExpired(s.end_date)));
         setPastSchedules(all.filter((s: Schedule) => isExpired(s.end_date)));
       }).catch(() => {});
-      scheduleApi.getBookmarked().then(res => setSavedSchedules(res.data)).catch(() => {});
       mediaApi.getBookmarked().then(res => setSavedCourses(res.data)).catch(() => {});
       placeApi.getBookmarked().then(res => setSavedPlaces(res.data)).catch(() => {});
       bookmarkApi.getAll().then((res: any) => setSavedPhotos(res.data?.saved_photos ?? [])).catch(() => {});
@@ -353,16 +345,11 @@ export default function ScheduleScreen() {
     animateIndicatorTo(index);
   };
 
-  const sortedByName = (list: Schedule[]) =>
-    myScheduleSort === '이름순' ? [...list].sort((a, b) => a.title.localeCompare(b.title, 'ko')) : list;
-
-  const currentSchedules = sortedByName(mySchedules.filter(isCurrent));
-  const plannedSchedules = sortedByName(mySchedules.filter(isPlanned));
-  const sortedSavedCourses = sortByOption(savedCourses, courseSort, m => m.title, m => m.place_count);
-
+  const currentSchedules = mySchedules.filter(isCurrent);
+  const plannedSchedules = mySchedules.filter(isPlanned);
   const mySchedulesEmpty = currentSchedules.length === 0 && plannedSchedules.length === 0;
   const pastEmpty = pastSchedules.length === 0;
-  const savedEmpty = savedSchedules.length === 0 && savedCourses.length === 0 && savedPlaces.length === 0 && savedPhotos.length === 0;
+  const savedEmpty = savedCourses.length === 0 && savedPlaces.length === 0 && savedPhotos.length === 0;
 
   const showAddButton =
     (selectedIndex === 0 && mySchedulesEmpty) ||
@@ -410,10 +397,6 @@ export default function ScheduleScreen() {
           </View>
         ) : (
           <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-            <TouchableOpacity style={styles.sortButton} onPress={() => setIsMySortVisible(true)} activeOpacity={0.7}>
-              <SlidersHorizontal size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
-              <Text style={styles.sortButtonText}>{myScheduleSort}</Text>
-            </TouchableOpacity>
             <SectionWrapper title="현재 진행 중인 일정" isEmpty={currentSchedules.length === 0} emptyTitle="현재 진행 중인 일정이 비어있습니다." emptySubtitle="일정을 추가해보세요." onAddPress={openNewScheduleFresh}>
               {currentSchedules.map(s => (
                 <ScheduleCard
@@ -482,32 +465,16 @@ export default function ScheduleScreen() {
           </View>
         ) : (
           <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-            {/* 저장한 일정 */}
-            <SectionWrapper title="저장한 일정" showAdd={false} isEmpty={savedSchedules.length === 0} emptyTitle="저장한 일정이 비어있습니다.">
-              {savedSchedules.map(s => (
-                <ScheduleCard
-                  key={s.id}
-                  schedule={s}
-                  onPress={() => router.push({ pathname: '/ScheduleDetailScreen', params: { id: s.id, title: s.title } })}
-                />
-              ))}
-            </SectionWrapper>
             {/* 저장한 코스 */}
-            <View style={styles.secondSection}>
-              <View style={styles.sectionHeaderRow}>
-                <Text style={styles.sectionTitle}>저장한 코스</Text>
-                <TouchableOpacity onPress={() => setIsCourseSortVisible(true)} activeOpacity={0.7} style={styles.sectionSortBtn}>
-                  <SlidersHorizontal size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
-                  <Text style={styles.sortButtonText}>{courseSort}</Text>
-                </TouchableOpacity>
-              </View>
+            <View>
+              <Text style={styles.sectionTitle}>저장한 코스</Text>
               <Divider marginTop={Spacing.v.small} style={{ marginHorizontal: Spacing.h.medium }} />
               {savedCourses.length === 0 ? (
                 <View style={styles.sectionEmpty}>
                   <Text style={styles.sectionEmptyTitle}>저장한 코스가 비어있습니다.</Text>
                 </View>
               ) : (
-                sortedSavedCourses.map(m => (
+                savedCourses.map(m => (
                   <CourseCard
                     key={m.id}
                     media={m}
@@ -569,7 +536,12 @@ export default function ScheduleScreen() {
             {/* 저장한 포토스팟 */}
             <SectionWrapper title="저장한 포토스팟" style={styles.secondSection} showAdd={false} isEmpty={savedPhotos.length === 0} emptyTitle="저장한 포토스팟이 비어있습니다.">
               {savedPhotos.map(sp => (
-                <TouchableOpacity key={sp.id} style={styles.card} activeOpacity={0.85}>
+                <TouchableOpacity
+                  key={sp.id}
+                  style={styles.card}
+                  activeOpacity={0.85}
+                  onPress={() => router.push({ pathname: '/PhotoSpotDetailScreen', params: { id: sp.id } })}
+                >
                   <View style={styles.imageWrapper}>
                     {sp.image_url ? (
                       <Image source={{ uri: sp.image_url }} style={styles.cardImage} />
@@ -705,22 +677,6 @@ export default function ScheduleScreen() {
           }}
         />
       )}
-      <SortAlert
-        visible={isMySortVisible}
-        options={['관련도 높은 순', '이름순']}
-        disabledOptions={['별점순', '하트 순', '장소 많은 순', '장소 적은 순']}
-        selected={myScheduleSort}
-        onClose={() => setIsMySortVisible(false)}
-        onSelect={setMyScheduleSort}
-      />
-      <SortAlert
-        visible={isCourseSortVisible}
-        options={SORT_OPTIONS}
-        disabledOptions={['별점순', '하트 순']}
-        selected={courseSort}
-        onClose={() => setIsCourseSortVisible(false)}
-        onSelect={setCourseSort}
-      />
       {selectedCourseMedia && (
         <NewScheduleStep3Alert
           visible={isStep3Visible}
@@ -773,10 +729,6 @@ const styles = StyleSheet.create({
   scrollContent: { paddingTop: Spacing.v.medium, paddingBottom: Spacing.v.screenBottom },
   scrollContentOther: { paddingTop: 0, paddingBottom: Spacing.v.screenBottom },
   sectionTitle: { ...Typography.title1, color: Colors.light.black, paddingLeft: Spacing.h.medium },
-  sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingRight: Spacing.h.medium },
-  sectionSortBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  sortButton: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: Spacing.h.medium, paddingBottom: Spacing.v.small },
-  sortButtonText: { ...Typography.body2, color: Colors.light.grayDark },
   secondSection: { marginTop: Spacing.v.large },
   card: { flexDirection: 'row', alignItems: 'flex-start', marginHorizontal: Spacing.h.medium, marginTop: Spacing.v.medium, borderRadius: Spacing.r.small, borderWidth: Spacing.lw.small, borderColor: Colors.light.grayLight, padding: Spacing.h.medium, backgroundColor: Colors.light.white },
   imageWrapper: { width: Size.circleMd, height: Size.circleMd, borderRadius: Size.circleMd / 2, overflow: 'hidden', flexShrink: 0 },

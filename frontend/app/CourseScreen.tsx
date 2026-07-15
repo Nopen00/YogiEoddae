@@ -341,7 +341,7 @@ const CourseScreen = () => {
         key={`photo-spot-card-${item.id}`}
         style={styles.photoSpotCard}
         activeOpacity={0.9}
-        onPress={() => router.push({ pathname: '/PlaceDetailScreen', params: { id: item.id, name: item.name } })}
+        onPress={() => router.push({ pathname: '/PhotoSpotDetailScreen', params: { id: item.id, name: item.name } })}
       >
         <View style={styles.photoSpotImageWrapper}>
           <Image
@@ -419,7 +419,7 @@ const CourseScreen = () => {
       </View>
     ) : (
       <View style={[styles.photoTagBox, { marginTop }]}>
-        <Text style={styles.sectionTitleText}>포토태그</Text>
+        <Text style={styles.sectionTitleText}>인기 포토 태그</Text>
         <FlatList
           data={PHOTO_TAGS}
           renderItem={renderPhotoTagItem}

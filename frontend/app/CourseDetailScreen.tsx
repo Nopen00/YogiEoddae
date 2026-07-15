@@ -20,7 +20,6 @@ import type { Media, MediaPlace, Schedule } from '../services/types';
 import { Image, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CATEGORY_LABEL, MEDIA_TYPE_LABEL, shortAddress } from '@/constants/labels';
-import { Size } from '@/constants/Size';
 
 const formatLikeCount = (count: number): string => {
   if (count < 100) return count.toString();
@@ -40,6 +39,7 @@ const CourseDetailScreen = () => {
   const [isMenuVisible, setIsMenuVisible] = useState(false);
   const [isScheduleVisible, setIsScheduleVisible] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [savedPhotoSpots, setSavedPhotoSpots] = useState<Record<number, boolean>>({});
   const [media, setMedia] = useState<Media | null>(null);
   const [mediaPlaces, setMediaPlaces] = useState<MediaPlace[]>([]);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
@@ -238,40 +238,45 @@ const CourseDetailScreen = () => {
             {mediaPlaces.length > 0 && (
               <>
                 <Divider marginTop={Spacing.v.large} />
-                <Text style={styles.photoSpotTitle}>포토스팟</Text>
-                {mediaPlaces.map((mp, index) => (
-                  <View key={mp.id} style={[styles.photoSpotBox, index > 0 && { marginTop: Spacing.v.small }]}>
-                    <View style={styles.photoSpotItem}>
-                      <Image source={{ uri: mp.place.image_url ?? undefined }} style={styles.photoSpotImage} />
-                      <View style={{ width: Spacing.h.medium }} />
-                      <View style={styles.photoSpotContent}>
-                        <Text style={styles.photoSpotItemTitle}>{mp.place.name}</Text>
-                        <View style={styles.photoSpotMetaRow}>
-                          <Text style={styles.photoSpotAddress}>{shortAddress(mp.place.address)}</Text>
-                          {mp.place.rating != null && (
-                            <>
-                              <TextSeparator />
-                              <Star size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
-                              <Text style={styles.photoSpotLikes}> {mp.place.rating.toFixed(1)}</Text>
-                            </>
-                          )}
-                          {mp.place.like_count != null && (
-                            <>
-                              <TextSeparator />
-                              <Heart size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
-                              <Text style={styles.photoSpotLikes}>{formatLikeCount(mp.place.like_count)}</Text>
-                            </>
-                          )}
-                        </View>
-                        <View style={styles.photoSpotTags}>
+                <View style={styles.photoSpotSectionHeader}>
+                  <Text style={[styles.photoSpotTitle, { marginTop: 0 }]}>등장 장소 포토스팟</Text>
+                  <Text style={styles.photoSpotSectionDesc}>코스 속 장소의 인기 포토스팟이에요.</Text>
+                </View>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: Spacing.v.medium }}
+                  contentContainerStyle={styles.photoSpotScrollContent}>
+                  {mediaPlaces.map((mp) => (
+                    <TouchableOpacity
+                      key={mp.id}
+                      style={{ width: smallImageWidth }}
+                      activeOpacity={0.9}
+                      onPress={() => router.push({ pathname: '/PlaceDetailScreen', params: { id: mp.place.id, name: mp.place.name } })}
+                    >
+                      <View style={[styles.photoSpotImageBox, { width: smallImageWidth, height: smallImageHeight }]}>
+                        <Image source={{ uri: mp.place.image_url ?? undefined }} style={styles.photoSpotImage} resizeMode="cover" />
+                        <TouchableOpacity
+                          style={styles.photoSpotHeart}
+                          onPress={(e) => { e.stopPropagation(); setSavedPhotoSpots(prev => ({ ...prev, [mp.place.id]: !prev[mp.place.id] })); }}
+                          activeOpacity={0.8}
+                        >
+                          <Heart
+                            size={IconSize.large}
+                            color={savedPhotoSpots[mp.place.id] ? Colors.light.heart : Colors.light.white}
+                            fill={savedPhotoSpots[mp.place.id] ? Colors.light.heart : 'transparent'}
+                            strokeWidth={IconStroke.thin}
+                          />
+                        </TouchableOpacity>
+                      </View>
+                      <Text style={styles.photoSpotItemTitle} numberOfLines={1}>{mp.place.name}</Text>
+                      {mp.place.tags.length > 0 && (
+                        <TagRow>
                           {mp.place.tags.map((tag) => (
                             <Text key={tag.id} style={styles.photoSpotTag}>#{tag.name}</Text>
                           ))}
-                        </View>
-                      </View>
-                    </View>
-                  </View>
-                ))}
+                        </TagRow>
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
               </>
             )}
           </View>
@@ -476,51 +481,26 @@ const styles = StyleSheet.create({
     color: Colors.light.black,
     marginTop: Spacing.v.large,
   },
-  photoSpotBox: {
-    marginTop: Spacing.v.medium,
-    backgroundColor: Colors.light.white,
-    borderWidth: Spacing.lw.small,
-    borderColor: Colors.light.grayLight,
+  photoSpotSectionHeader: {
+    marginTop: Spacing.v.large,
+  },
+  photoSpotSectionDesc: { ...Typography.body2, color: Colors.light.grayDark, marginTop: Spacing.h.small },
+  photoSpotScrollContent: { gap: Spacing.h.medium },
+  photoSpotImageBox: {
     borderRadius: Spacing.r.small,
-    paddingHorizontal: Spacing.h.medium,
-    paddingTop: Spacing.v.medium,
-    paddingBottom: Spacing.v.medium,
-  },
-  photoSpotItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  photoSpotImage: {
-    width: Size.circleMd,
-    height: Size.circleMd,
-    borderRadius: Size.circleMd / 2,
+    overflow: 'hidden',
     backgroundColor: Colors.light.grayLight,
   },
-  photoSpotContent: {
-    flex: 1,
+  photoSpotImage: { width: '100%', height: '100%' },
+  photoSpotHeart: {
+    position: 'absolute',
+    top: Spacing.v.small,
+    right: Spacing.h.small,
   },
   photoSpotItemTitle: {
-    ...Typography.title1,
+    ...Typography.subtitle2,
     color: Colors.light.black,
-  },
-  photoSpotMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
     marginTop: Spacing.v.small,
-  },
-  photoSpotAddress: {
-    ...Typography.subtitle1,
-    color: Colors.light.grayDark,
-  },
-  photoSpotLikes: {
-    ...Typography.subtitle1,
-    color: Colors.light.grayDark,
-    marginLeft: Spacing.h.xsmall,
-  },
-  photoSpotTags: {
-    flexDirection: 'row',
-    marginTop: Spacing.v.small,
-    gap: Spacing.h.xsmall,
   },
   photoSpotTag: {
     ...Typography.body2,

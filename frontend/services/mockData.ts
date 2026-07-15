@@ -6,6 +6,14 @@ const MOCK_TAGS = [
   { id: 3, category: 'region', name: '서울' },
   { id: 4, category: 'region', name: '부산' },
   { id: 5, category: 'special', name: 'hype' },
+  // CourseScreen PHOTO_TAGS와 매칭되는 포토스팟 필터용 태그
+  { id: 6, category: 'place_type', name: '자연' },
+  { id: 7, category: 'place_type', name: '음식' },
+  { id: 8, category: 'place_type', name: '풍경' },
+  { id: 9, category: 'place_type', name: '야경' },
+  { id: 10, category: 'place_type', name: '카페' },
+  { id: 11, category: 'place_type', name: '도심' },
+  { id: 12, category: 'place_type', name: '계절' },
 ];
 
 const MOCK_PLACE: Place = {
@@ -20,7 +28,7 @@ const MOCK_PLACE: Place = {
   is_bookmarked: false,
   rating: 4.3,
   like_count: 1200,
-  tags: [MOCK_TAGS[0], MOCK_TAGS[2]],
+  tags: [MOCK_TAGS[0], MOCK_TAGS[2], MOCK_TAGS[10], MOCK_TAGS[8]],
   created_at: '2024-01-01T00:00:00Z',
 };
 
@@ -36,7 +44,7 @@ const MOCK_PLACE_2: Place = {
   is_bookmarked: false,
   rating: 4.7,
   like_count: 3400,
-  tags: [MOCK_TAGS[1], MOCK_TAGS[3]],
+  tags: [MOCK_TAGS[1], MOCK_TAGS[3], MOCK_TAGS[5], MOCK_TAGS[7]],
   created_at: '2024-01-01T00:00:00Z',
 };
 
@@ -52,7 +60,7 @@ const MOCK_PLACE_3: Place = {
   is_bookmarked: true,
   rating: 4.5,
   like_count: 8900,
-  tags: [MOCK_TAGS[0], MOCK_TAGS[2]],
+  tags: [MOCK_TAGS[0], MOCK_TAGS[2], MOCK_TAGS[11], MOCK_TAGS[10]],
   created_at: '2024-01-01T00:00:00Z',
 };
 
@@ -68,7 +76,7 @@ const MOCK_PLACE_4: Place = {
   is_bookmarked: false,
   rating: 4.2,
   like_count: 5600,
-  tags: [MOCK_TAGS[0], MOCK_TAGS[2]],
+  tags: [MOCK_TAGS[0], MOCK_TAGS[2], MOCK_TAGS[9], MOCK_TAGS[11]],
   created_at: '2024-01-01T00:00:00Z',
 };
 
@@ -84,7 +92,7 @@ const MOCK_PLACE_5: Place = {
   is_bookmarked: false,
   rating: 4.6,
   like_count: 12300,
-  tags: [MOCK_TAGS[1], MOCK_TAGS[2]],
+  tags: [MOCK_TAGS[1], MOCK_TAGS[2], MOCK_TAGS[8], MOCK_TAGS[5]],
   created_at: '2024-01-01T00:00:00Z',
 };
 
@@ -100,7 +108,7 @@ const MOCK_PLACE_6: Place = {
   is_bookmarked: false,
   rating: 4.0,
   like_count: 3200,
-  tags: [MOCK_TAGS[0], MOCK_TAGS[2]],
+  tags: [MOCK_TAGS[0], MOCK_TAGS[2], MOCK_TAGS[6], MOCK_TAGS[9]],
   created_at: '2024-01-01T00:00:00Z',
 };
 
@@ -335,6 +343,52 @@ export const MOCK_PHOTOS: Photo[] = [
     created_at: '2024-01-02T00:00:00Z',
   },
 ];
+
+// 장소별 포토스팟 목데이터 — placeApi.getPhotos(id)가 장소마다 다른 사진을 반환하도록 함
+export const MOCK_PHOTOS_BY_PLACE: Record<number, Photo[]> = {
+  1: [ // 광화문 광장
+    { id: 101, image_url: 'https://picsum.photos/seed/gwanghwamun1/400/300', description: '광화문 야경', likes: 210, tags: [MOCK_TAGS[8]], created_at: '2024-01-01T00:00:00Z' },
+    { id: 102, image_url: 'https://picsum.photos/seed/gwanghwamun2/400/300', description: '광화문 앞 도심 풍경', likes: 96, tags: [MOCK_TAGS[10]], created_at: '2024-01-01T00:00:00Z' },
+  ],
+  2: [ // 해운대 해수욕장
+    { id: 103, image_url: 'https://picsum.photos/seed/haeundae1/400/300', description: '해운대 일몰', likes: 340, tags: [MOCK_TAGS[7]], created_at: '2024-01-01T00:00:00Z' },
+    { id: 104, image_url: 'https://picsum.photos/seed/haeundae2/400/300', description: '탁 트인 바다 풍경', likes: 188, tags: [MOCK_TAGS[5]], created_at: '2024-01-01T00:00:00Z' },
+  ],
+  3: [ // 경복궁
+    { id: 105, image_url: 'https://picsum.photos/seed/gyeongbok1/400/300', description: '경복궁 단풍', likes: 275, tags: [MOCK_TAGS[11]], created_at: '2024-01-01T00:00:00Z' },
+    { id: 106, image_url: 'https://picsum.photos/seed/gyeongbok2/400/300', description: '한복 입고 궁궐 산책', likes: 152, tags: [MOCK_TAGS[10]], created_at: '2024-01-01T00:00:00Z' },
+  ],
+  4: [ // 북촌 한옥마을
+    { id: 107, image_url: 'https://picsum.photos/seed/bukchon1/400/300', description: '북촌 골목 카페', likes: 130, tags: [MOCK_TAGS[9]], created_at: '2024-01-01T00:00:00Z' },
+    { id: 108, image_url: 'https://picsum.photos/seed/bukchon2/400/300', description: '한옥 지붕 풍경', likes: 98, tags: [MOCK_TAGS[11]], created_at: '2024-01-01T00:00:00Z' },
+  ],
+  5: [ // 남산타워
+    { id: 109, image_url: 'https://picsum.photos/seed/namsan1/400/300', description: '남산타워 야경', likes: 420, tags: [MOCK_TAGS[8]], created_at: '2024-01-01T00:00:00Z' },
+    { id: 110, image_url: 'https://picsum.photos/seed/namsan2/400/300', description: '전망대에서 본 자연 풍경', likes: 201, tags: [MOCK_TAGS[5]], created_at: '2024-01-01T00:00:00Z' },
+  ],
+  6: [ // 인사동 거리
+    { id: 111, image_url: 'https://picsum.photos/seed/insadong1/400/300', description: '인사동 전통 디저트', likes: 87, tags: [MOCK_TAGS[6]], created_at: '2024-01-01T00:00:00Z' },
+    { id: 112, image_url: 'https://picsum.photos/seed/insadong2/400/300', description: '골목 찻집', likes: 64, tags: [MOCK_TAGS[9]], created_at: '2024-01-01T00:00:00Z' },
+  ],
+};
+
+const PLACE_NAME_BY_ID: Record<number, string> = {
+  1: MOCK_PLACE.name, 2: MOCK_PLACE_2.name, 3: MOCK_PLACE_3.name,
+  4: MOCK_PLACE_4.name, 5: MOCK_PLACE_5.name, 6: MOCK_PLACE_6.name,
+};
+
+// 전체 포토스팟 mutable store — bookmark/unbookmark 시 is_bookmarked를 실제로 변경
+export const mockPhotoStore: Photo[] = [
+  ...MOCK_PHOTOS,
+  ...Object.values(MOCK_PHOTOS_BY_PLACE).flat(),
+];
+
+// 저장소(북마크) 응답에 place_name을 채우기 위한 포토스팟 id → 장소명 매핑
+export const mockPhotoPlaceName: Record<number, string> = Object.fromEntries(
+  Object.entries(MOCK_PHOTOS_BY_PLACE).flatMap(([placeId, photos]) =>
+    photos.map((p) => [p.id, PLACE_NAME_BY_ID[Number(placeId)] ?? ''])
+  )
+);
 
 export const MOCK_SCHEDULES: Schedule[] = [
   {

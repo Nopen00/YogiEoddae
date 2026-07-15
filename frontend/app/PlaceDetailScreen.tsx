@@ -51,6 +51,7 @@ const PlaceDetailScreen = () => {
   const [isSaved, setIsSaved] = useState(false);
   const [isScheduleVisible, setIsScheduleVisible] = useState(false);
   const [savedNearby, setSavedNearby] = useState<Record<number, boolean>>({});
+  const [savedPhotoSpots, setSavedPhotoSpots] = useState<Record<number, boolean>>({});
   const [isToggled, setIsToggled] = useState(false);
   const [place, setPlace] = useState<Place | null>(null);
   const [photos, setPhotos] = useState<Photo[]>([]);
@@ -234,13 +235,45 @@ const PlaceDetailScreen = () => {
             {photos.length > 0 && (
               <>
                 <Divider marginTop={Spacing.v.large} />
-                <Text style={styles.nearbyTitle}>포토스팟</Text>
+                <View style={styles.photoSectionHeader}>
+                  <Text style={[styles.nearbyTitle, { marginTop: 0 }]}>포토스팟</Text>
+                  <Text style={styles.photoSectionDesc}>이 장소의 포토스팟이에요.</Text>
+                </View>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: Spacing.v.medium }}
-                  contentContainerStyle={{ gap: Spacing.v.small }}>
+                  contentContainerStyle={styles.nearbyScrollContent}>
                   {photos.map((photo) => (
-                    <View key={photo.id} style={[styles.nearbyImageBox, { width: smallImageWidth, height: smallImageHeight }]}>
-                      <Image source={{ uri: photo.image_url }} style={styles.nearbyImage} resizeMode="cover" />
-                    </View>
+                    <TouchableOpacity
+                      key={photo.id}
+                      style={{ width: smallImageWidth }}
+                      activeOpacity={0.9}
+                      onPress={() => router.push({ pathname: '/PhotoSpotDetailScreen', params: { id: photo.id } })}
+                    >
+                      <View style={[styles.nearbyImageBox, { width: smallImageWidth, height: smallImageHeight }]}>
+                        <Image source={{ uri: photo.image_url }} style={styles.nearbyImage} resizeMode="cover" />
+                        <TouchableOpacity
+                          style={styles.nearbyHeart}
+                          onPress={(e) => { e.stopPropagation(); setSavedPhotoSpots(prev => ({ ...prev, [photo.id]: !prev[photo.id] })); }}
+                          activeOpacity={0.8}
+                        >
+                          <Heart
+                            size={IconSize.large}
+                            color={savedPhotoSpots[photo.id] ? Colors.light.heart : Colors.light.white}
+                            fill={savedPhotoSpots[photo.id] ? Colors.light.heart : 'transparent'}
+                            strokeWidth={IconStroke.thin}
+                          />
+                        </TouchableOpacity>
+                      </View>
+                      {photo.description ? (
+                        <Text style={styles.nearbyPlaceName} numberOfLines={1}>{photo.description}</Text>
+                      ) : null}
+                      {photo.tags.length > 0 && (
+                        <TagRow>
+                          {photo.tags.map((tag) => (
+                            <Text key={tag.id} style={styles.tagText}>#{tag.name}</Text>
+                          ))}
+                        </TagRow>
+                      )}
+                    </TouchableOpacity>
                   ))}
                 </ScrollView>
               </>
@@ -393,6 +426,10 @@ const styles = StyleSheet.create({
     color: Colors.light.black,
     marginTop: Spacing.v.large,
   },
+  photoSectionHeader: {
+    marginTop: Spacing.v.large,
+  },
+  photoSectionDesc: { ...Typography.body2, color: Colors.light.grayDark, marginTop: Spacing.h.small },
   reviewCard: {
     flexDirection: 'row',
     height: 102,
@@ -443,7 +480,7 @@ const styles = StyleSheet.create({
   },
   kakaoLinkText: { ...Typography.button3, color: Colors.light.primary },
   nearbyScrollContent: {
-    gap: Spacing.v.small,
+    gap: Spacing.h.medium,
   },
   nearbyImageBox: {
     borderRadius: Spacing.r.small,

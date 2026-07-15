@@ -18,16 +18,16 @@ export const SORT_OPTIONS = [
 
 export type SortOption = typeof SORT_OPTIONS[number];
 
-interface SortAlertProps {
+interface SortAlertProps<T extends string> {
   visible: boolean;
-  options: readonly SortOption[];
-  disabledOptions?: readonly SortOption[];
-  selected: SortOption;
+  options: readonly T[];
+  disabledOptions?: readonly T[];
+  selected: T;
   onClose: () => void;
-  onSelect: (option: SortOption) => void;
+  onSelect: (option: T) => void;
 }
 
-export const SortAlert = ({ visible, options, disabledOptions, selected, onClose, onSelect }: SortAlertProps) => (
+export const SortAlert = <T extends string = SortOption>({ visible, options, disabledOptions, selected, onClose, onSelect }: SortAlertProps<T>) => (
   <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
     <TouchableWithoutFeedback onPress={onClose}>
       <View style={styles.overlay}>

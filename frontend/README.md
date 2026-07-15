@@ -9,6 +9,7 @@ React Native (Expo) 기반 모바일 앱 프론트엔드입니다.
 - PlaceDetailScreen 지도 구현 (현재 빈 회색 박스, lat/lng 데이터는 존재)
 - 포토태그 이미지 데이터 연동 (현재 태그 원형·필터 pill의 이미지는 회색 placeholder, 백엔드 태그 이미지 필드 필요)
 - 포토스팟 상세페이지 작성 (PlaceDetailScreen과 별개 화면, 촬영 관련 정보 위주로 구성 예정 — 촬영 팁·포토존 각도/포즈 안내·최적 촬영 시간대 등)
+- CourseScreen 포토스팟 탭을 실제 Photo 단위로 전환 (기획상 한 장소에 포토스팟이 여러 개 있을 수 있는 구조인데, 현재 `renderPhotoSpotCard`는 Place 단위로 그려짐 — 타이틀이 장소 이름, 탭 시 PlaceDetailScreen 이동, 이미지가 장소 대표 이미지. 목데이터라 1:1로 보이는 것이고, 포토스팟 상세페이지가 아직 없어서 임시로 PlaceDetailScreen에 연결해둔 상태 — 포토스팟 상세페이지 구현 후 함께 전환 필요)
 
 ---
 
@@ -133,6 +134,7 @@ components/
 | `error` | `#F24C54` | 에러·경고 |
 | `heart` | `#F24C54` | 좋아요 하트 |
 | `skyBlue` | `#33A7EA` | 보조 포인트 |
+| `star` | `#F2C94C` | 리뷰 별점 |
 | `overlay` | `rgba(0,0,0,0.25)` | 모달 배경 딤 처리 |
 
 ### Typography (`constants/Typography.ts`)

@@ -2,7 +2,8 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Media, Place, Photo, MediaPlace, Schedule, PaginatedResponse } from './types';
 import {
-  MOCK_MEDIA_LIST, MOCK_MEDIA_PLACES_MAP, MOCK_PHOTOS, mockScheduleStore, mockPlaceStore, paginatedOf,
+  MOCK_MEDIA_LIST, MOCK_MEDIA_PLACES_MAP, MOCK_PHOTOS, MOCK_PHOTOS_BY_PLACE, mockPhotoStore, mockPhotoPlaceName,
+  mockScheduleStore, mockPlaceStore, paginatedOf,
 } from './mockData';
 
 // 서버 없이 UI 테스트할 때 true로 설정
@@ -101,7 +102,7 @@ export const placeApi = {
       ? mock(mockPlaceStore.find(p => p.id === id) ?? mockPlaceStore[0])
       : apiClient.get<Place>(`/api/places/${id}/`),
   getPhotos: (id: number) =>
-    USE_MOCK ? mock(MOCK_PHOTOS) : apiClient.get<Photo[]>(`/api/places/${id}/photos/`),
+    USE_MOCK ? mock(MOCK_PHOTOS_BY_PLACE[id] ?? MOCK_PHOTOS) : apiClient.get<Photo[]>(`/api/places/${id}/photos/`),
   getBookmarked: () =>
     USE_MOCK
       ? mock(mockPlaceStore.filter(p => p.is_bookmarked))
@@ -121,6 +122,25 @@ export const placeApi = {
       return mock({});
     }
     return apiClient.delete(`/api/places/${id}/bookmark/`);
+  },
+};
+
+export const photoApi = {
+  bookmark: (id: number) => {
+    if (USE_MOCK) {
+      const item = mockPhotoStore.find(p => p.id === id);
+      if (item) item.is_bookmarked = true;
+      return mock({});
+    }
+    return apiClient.post(`/api/photos/${id}/bookmark/`);
+  },
+  unbookmark: (id: number) => {
+    if (USE_MOCK) {
+      const item = mockPhotoStore.find(p => p.id === id);
+      if (item) item.is_bookmarked = false;
+      return mock({});
+    }
+    return apiClient.delete(`/api/photos/${id}/bookmark/`);
   },
 };
 
@@ -238,6 +258,23 @@ export const scheduleApi = {
 };
 
 export const bookmarkApi = {
-  getAll: () =>
-    USE_MOCK ? mock([]) : apiClient.get('/api/bookmarks/'),
+  getAll: () => {
+    if (USE_MOCK) {
+      return mock({
+        saved_media: MOCK_MEDIA_LIST.filter(m => m.is_bookmarked),
+        saved_places: mockPlaceStore.filter(p => p.is_bookmarked),
+        saved_photos: mockPhotoStore
+          .filter(p => p.is_bookmarked)
+          .map(p => ({
+            id: p.id,
+            image_url: p.image_url,
+            description: p.description,
+            place_name: mockPhotoPlaceName[p.id] ?? '',
+            tags: p.tags,
+            saved_at: p.created_at,
+          })),
+      });
+    }
+    return apiClient.get('/api/bookmarks/');
+  },
 };
