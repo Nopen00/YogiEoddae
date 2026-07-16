@@ -1,21 +1,28 @@
-import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import React, { useMemo } from 'react';
+import { StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
 import { WebView } from 'react-native-webview';
-import { buildKakaoMapHtml } from './kakaoMapHtml';
+import { buildKakaoMapHtml, buildKakaoMapHtmlMulti, KakaoMapPlace } from './kakaoMapHtml';
 
 interface KakaoMapProps {
-  latitude: number;
-  longitude: number;
-  height: number;
+  latitude?: number;
+  longitude?: number;
   markerTitle?: string;
+  places?: KakaoMapPlace[];
+  height?: number;
+  style?: StyleProp<ViewStyle>;
 }
 
-export function KakaoMap({ latitude, longitude, height, markerTitle }: KakaoMapProps) {
+export function KakaoMap({ latitude, longitude, markerTitle, places, height, style }: KakaoMapProps) {
+  const html = useMemo(
+    () => (places ? buildKakaoMapHtmlMulti(places) : buildKakaoMapHtml(latitude ?? 0, longitude ?? 0, markerTitle)),
+    [places, latitude, longitude, markerTitle]
+  );
+
   return (
-    <View style={[styles.wrapper, { height }]}>
+    <View style={[styles.wrapper, height != null ? { height } : { flex: 1 }, style]}>
       <WebView
         originWhitelist={['*']}
-        source={{ html: buildKakaoMapHtml(latitude, longitude, markerTitle) }}
+        source={{ html }}
         style={styles.webview}
         scrollEnabled={false}
       />
