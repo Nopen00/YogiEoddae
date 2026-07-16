@@ -4,6 +4,7 @@ import { TagRow } from '@/components/ui/TagRow';
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
 import { Size } from '@/constants/Size';
+import { Shadows } from '@/constants/Shadows';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { VisitDate, VisitDateAlert } from '@/components/modals/VisitDateAlert';
@@ -42,7 +43,6 @@ const parseVisitDate = (value: string): VisitDate | null => {
 };
 
 const MAX_REVIEW_IMAGES = 10;
-const IMAGE_THUMB_SIZE = 90;
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const STAR_COUNT = 5;
@@ -307,14 +307,14 @@ const styles = StyleSheet.create({
   },
   imageRow: { marginTop: Spacing.v.medium, gap: Spacing.h.small },
   imageAddButton: {
-    width: IMAGE_THUMB_SIZE,
-    height: IMAGE_THUMB_SIZE,
+    width: Size.reviewUpload,
+    height: Size.reviewUpload,
     backgroundColor: Colors.light.grayLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  imageThumbWrapper: { width: IMAGE_THUMB_SIZE, height: IMAGE_THUMB_SIZE },
-  imageThumb: { width: IMAGE_THUMB_SIZE, height: IMAGE_THUMB_SIZE },
+  imageThumbWrapper: { width: Size.reviewUpload, height: Size.reviewUpload },
+  imageThumb: { width: Size.reviewUpload, height: Size.reviewUpload },
   imageRemoveButton: { position: 'absolute', top: 0, right: 0 },
   submitButton: {
     marginTop: Spacing.v.large,
@@ -336,11 +336,7 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.v.medium,
     paddingHorizontal: Spacing.h.medium,
     paddingBottom: Spacing.v.medium,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 4,
+    ...Shadows.card,
   },
   unsavedTitle: { ...Typography.subtitle2, color: Colors.light.black, textAlign: 'center' },
   unsavedDesc: { ...Typography.body2, color: Colors.light.primary, marginTop: Spacing.v.medium, textAlign: 'center' },

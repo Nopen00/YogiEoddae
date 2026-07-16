@@ -515,7 +515,7 @@ const styles = StyleSheet.create({
     padding: Spacing.h.medium,
     backgroundColor: Colors.light.white,
   },
-  placeImageWrapper: { width: 48, height: 48, borderRadius: 24, overflow: 'hidden', flexShrink: 0 },
+  placeImageWrapper: { width: Size.circleMd, height: Size.circleMd, borderRadius: Size.circleMd / 2, overflow: 'hidden', flexShrink: 0 },
   placeImage: { width: '100%', height: '100%' },
   placeCardContent: { flex: 1, marginLeft: Spacing.h.medium },
   placeCardTitle: { ...Typography.title1, color: Colors.light.black },

@@ -2,13 +2,13 @@
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
 import { Size } from '@/constants/Size';
+import { Shadows } from '@/constants/Shadows';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { X } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import {
   Modal,
-  Platform,
   StyleSheet,
   Text,
   TextInput,
@@ -119,15 +119,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.light.grayLight,
     paddingHorizontal: Spacing.h.medium,
     paddingVertical: Spacing.v.medium,
-    ...Platform.select({
-      ios: {
-        shadowColor: Colors.light.black,
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.25,
-        shadowRadius: 4,
-      },
-      android: { elevation: 4 },
-    }),
+    ...Shadows.card,
   },
   header: {
     flexDirection: 'row',

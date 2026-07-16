@@ -3,6 +3,7 @@ import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { Colors } from '@/constants/Colors';
 import { IconSize } from '@/constants/IconSize';
 import { Size } from '@/constants/Size';
+import { Shadows } from '@/constants/Shadows';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import * as Clipboard from 'expo-clipboard';
@@ -195,11 +196,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.white,
     paddingTop: Spacing.v.medium,
     paddingHorizontal: Spacing.h.medium,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 4,
+    ...Shadows.card,
   },
   popupTitle: {
     ...Typography.subtitle2,
@@ -244,11 +241,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.white,
     paddingVertical: Spacing.v.medium,
     paddingHorizontal: Spacing.h.medium,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 4,
+    ...Shadows.card,
     alignItems: 'center',
   },
   resultTitle: { ...Typography.subtitle2, color: Colors.light.black, textAlign: 'center' },

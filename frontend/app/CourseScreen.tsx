@@ -5,6 +5,7 @@ import { TextSeparator } from '@/components/ui/TextSeparator';
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
 import { CITY_SHORT, MEDIA_TYPE_LABEL } from '@/constants/labels';
+import { Shadows } from '@/constants/Shadows';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { sortByOption } from '@/utils/sortByOption';
@@ -993,11 +994,7 @@ const styles = StyleSheet.create({
     borderRadius: Spacing.r.small,
     borderWidth: Spacing.lw.small,
     borderColor: Colors.light.grayLight,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 4,
+    ...Shadows.card,
   },
   photoSpotImageWrapper: {
     width: '100%',

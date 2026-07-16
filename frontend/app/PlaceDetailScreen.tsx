@@ -11,6 +11,7 @@ import { SaveHeart32 } from '@/components/icons/SaveHeart';
 import { UnSaveHeart32 } from '@/components/icons/UnSaveHeart';
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
+import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -454,9 +455,9 @@ const styles = StyleSheet.create({
     padding: Spacing.v.small,
   },
   reviewImageBox: {
-    width: 86,
-    height: 86,
-    borderRadius: Spacing.r.small,
+    width: Size.thumbSquare,
+    height: Size.thumbSquare,
+    borderRadius: Spacing.r.xsmall,
     backgroundColor: Colors.light.grayLight,
   },
   reviewContent: {

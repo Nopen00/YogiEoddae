@@ -1,11 +1,13 @@
 // components/modals/NewScheduleStep3Alert.tsx
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
+import { Size } from '@/constants/Size';
+import { Shadows } from '@/constants/Shadows';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { ArrowLeft, X } from 'lucide-react-native';
 import React from 'react';
-import { Image, Modal, Platform, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
+import { Image, Modal, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 import type { Media } from '../../services/types';
 
 interface NewScheduleStep3AlertProps {
@@ -92,15 +94,7 @@ const styles = StyleSheet.create({
     borderWidth: Spacing.lw.small,
     borderColor: Colors.light.grayLight,
     paddingBottom: Spacing.v.medium,
-    ...Platform.select({
-      ios: {
-        shadowColor: Colors.light.black,
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.25,
-        shadowRadius: 4,
-      },
-      android: { elevation: 4 },
-    }),
+    ...Shadows.card,
   },
   header: {
     flexDirection: 'row',
@@ -125,9 +119,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.white,
   },
   imageWrapper: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: Size.circleMd,
+    height: Size.circleMd,
+    borderRadius: Size.circleMd / 2,
     overflow: 'hidden',
     flexShrink: 0,
   },

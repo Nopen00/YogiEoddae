@@ -1,11 +1,13 @@
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
 import { CATEGORY_LABEL, shortAddress } from '@/constants/labels';
+import { Size } from '@/constants/Size';
+import { Shadows } from '@/constants/Shadows';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { X } from 'lucide-react-native';
 import React from 'react';
-import { Image, Modal, Platform, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
+import { Image, Modal, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 import type { Place } from '../../services/types';
 
 interface PhotoSpotScheduleAlertProps {
@@ -86,10 +88,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.light.grayLight,
     paddingBottom: Spacing.v.medium,
     maxHeight: '82%',
-    ...Platform.select({
-      ios: { shadowColor: Colors.light.black, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.25, shadowRadius: 4 },
-      android: { elevation: 4 },
-    }),
+    ...Shadows.card,
   },
   header: {
     flexDirection: 'row',
@@ -110,7 +109,7 @@ const styles = StyleSheet.create({
     padding: Spacing.h.medium,
     backgroundColor: Colors.light.white,
   },
-  imageWrapper: { width: 48, height: 48, borderRadius: 24, overflow: 'hidden', flexShrink: 0 },
+  imageWrapper: { width: Size.circleMd, height: Size.circleMd, borderRadius: Size.circleMd / 2, overflow: 'hidden', flexShrink: 0 },
   cardImage: { width: '100%', height: '100%' },
   cardContent: { flex: 1, marginLeft: Spacing.h.medium },
   cardTitle: { ...Typography.title1, color: Colors.light.black },

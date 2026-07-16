@@ -1,13 +1,14 @@
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
 import { Size } from '@/constants/Size';
+import { Shadows } from '@/constants/Shadows';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { TOKEN_PACKAGES, userApi } from '@/services/api';
 import { X } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
-  ActivityIndicator, Image, Modal, Platform, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View,
+  ActivityIndicator, Image, Modal, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View,
 } from 'react-native';
 
 interface TokenChargeAlertProps {
@@ -120,15 +121,7 @@ const styles = StyleSheet.create({
     borderWidth: Spacing.lw.small,
     borderColor: Colors.light.grayLight,
     paddingBottom: Spacing.v.medium,
-    ...Platform.select({
-      ios: {
-        shadowColor: Colors.light.black,
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.25,
-        shadowRadius: 4,
-      },
-      android: { elevation: 4 },
-    }),
+    ...Shadows.card,
   },
   header: {
     flexDirection: 'row',

@@ -3,6 +3,7 @@
 // 색상, 아이콘 크기, 간격, 타이포그래피 등 디자인 시스템 상수 임포트
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
+import { Shadows } from '@/constants/Shadows';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 
@@ -470,18 +471,7 @@ const styles = StyleSheet.create({
     borderWidth: Spacing.lw.small,
     borderColor: Colors.light.grayLight,
     paddingBottom: Spacing.v.medium,
-    // 플랫폼별 그림자 효과 설정
-    ...Platform.select({
-      ios: {
-        shadowColor: Colors.light.black,
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.25,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 4,
-      },
-    }),
+    ...Shadows.card,
   },
   header: {
     flexDirection: 'row',

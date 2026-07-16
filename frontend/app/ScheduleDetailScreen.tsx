@@ -7,9 +7,10 @@ import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { TagRow } from '@/components/ui/TagRow';
 import { TextSeparator } from '@/components/ui/TextSeparator';
 import { CATEGORY_LABEL, MEDIA_TYPE_LABEL, shortAddress } from '@/constants/labels';
-import { Size } from '@/constants/Size';
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
+import { Size } from '@/constants/Size';
+import { Shadows } from '@/constants/Shadows';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
@@ -956,8 +957,8 @@ const styles = StyleSheet.create({
     paddingLeft: Spacing.h.small,
   },
   placeCardImage: {
-    width: 86,
-    height: 86,
+    width: Size.thumbSquare,
+    height: Size.thumbSquare,
     borderRadius: Spacing.r.xsmall,
     backgroundColor: Colors.light.grayLight,
   },
@@ -1049,11 +1050,7 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.v.medium,
     paddingHorizontal: Spacing.h.medium,
     paddingBottom: Spacing.v.medium,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 4,
+    ...Shadows.card,
   },
   unsavedTitle: {
     ...Typography.subtitle2,

@@ -10,6 +10,7 @@ import { SaveHeart32 } from '@/components/icons/SaveHeart'; // 기존 저장 아
 import { UnSaveHeart32 } from '@/components/icons/UnSaveHeart'; // 기존 저장 아이콘 가정
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
+import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -431,8 +432,8 @@ const styles = StyleSheet.create({
     paddingLeft: Spacing.h.small,
   },
   courseCardImage: {
-    width: 86,
-    height: 86,
+    width: Size.thumbSquare,
+    height: Size.thumbSquare,
     borderRadius: Spacing.r.xsmall,
     backgroundColor: Colors.light.grayLight,
   },

@@ -1,6 +1,7 @@
 import { TextSeparator } from '@/components/ui/TextSeparator';
 import { Colors } from '@/constants/Colors';
 import { IconStroke } from '@/constants/IconSize';
+import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { Star, ThumbsUp } from 'lucide-react-native';
@@ -155,8 +156,8 @@ const styles = StyleSheet.create({
   imagesScroll: { marginTop: Spacing.v.small },
   imagesContent: { gap: Spacing.h.medium },
   imageThumb: {
-    width: 120,
-    height: 90,
+    width: Size.reviewThumbW,
+    height: Size.reviewThumbH,
     borderRadius: Spacing.r.small,
   },
   bottomRow: {

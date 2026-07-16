@@ -4,6 +4,7 @@ import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
 import { CITY_SHORT, MEDIA_TYPE_LABEL } from '@/constants/labels';
 import { Size } from '@/constants/Size';
+import { Shadows } from '@/constants/Shadows';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import type { DailyPlace, Schedule } from '@/services/types';
@@ -12,7 +13,6 @@ import React, { useState } from 'react';
 import {
   Image,
   Modal,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -324,10 +324,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.light.grayLight,
     paddingBottom: Spacing.v.medium,
     maxHeight: '82%',
-    ...Platform.select({
-      ios: { shadowColor: Colors.light.black, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.25, shadowRadius: 4 },
-      android: { elevation: 4 },
-    }),
+    ...Shadows.card,
   },
   header: {
     flexDirection: 'row',
