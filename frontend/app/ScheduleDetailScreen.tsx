@@ -1070,7 +1070,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.v.medium,
   },
   btnDiscard: {
-    width: 80,
+    paddingHorizontal: Spacing.h.medium,
     height: Size.buttonSm,
     borderRadius: Spacing.r.small,
     backgroundColor: Colors.light.grayLight,
@@ -1079,7 +1079,7 @@ const styles = StyleSheet.create({
   },
   btnDiscardText: { ...Typography.button2, color: Colors.light.grayDark },
   btnStay: {
-    width: 80,
+    paddingHorizontal: Spacing.h.medium,
     height: Size.buttonSm,
     borderRadius: Spacing.r.small,
     backgroundColor: Colors.light.primary,
