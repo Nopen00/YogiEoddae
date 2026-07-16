@@ -533,3 +533,9 @@ export const mockReviewStore: Review[] = [
 export function paginatedOf<T>(results: T[]): PaginatedResponse<T> {
   return { count: results.length, next: null, previous: null, results };
 }
+
+// 보유 토큰 mutable store — 충전 시 실제로 값이 증가
+export let mockTokenBalance = 120;
+export function setMockTokenBalance(next: number) {
+  mockTokenBalance = next;
+}

@@ -4,7 +4,15 @@ import type { Media, Place, Photo, MediaPlace, PhotoSpotDetail, Review, Schedule
 import {
   MOCK_MEDIA_LIST, MOCK_MEDIA_PLACES_MAP, MOCK_PHOTOS, MOCK_PHOTOS_BY_PLACE, mockPhotoStore, mockPhotoPlaceName,
   mockPhotoPlaceId, mockScheduleStore, mockPlaceStore, mockReviewStore, paginatedOf,
+  mockTokenBalance, setMockTokenBalance,
 } from './mockData';
+
+// 토큰 충전 상품 카탈로그 — 백엔드 TOKEN_PACKAGES(users/views.py)와 동일하게 유지
+export const TOKEN_PACKAGES: { id: string; tokens: number; price: number }[] = [
+  { id: 'p100', tokens: 100, price: 1000 },
+  { id: 'p500', tokens: 500, price: 4500 },
+  { id: 'p1000', tokens: 1000, price: 8000 },
+];
 
 // 서버 없이 UI 테스트할 때 true로 설정
 const USE_MOCK = process.env.EXPO_PUBLIC_USE_MOCK === 'true';
@@ -31,6 +39,23 @@ const mock = <T>(data: T): Promise<{ data: T }> => Promise.resolve({ data });
 export const userApi = {
   createUser: () =>
     USE_MOCK ? mock({ device_id: 'mock-device' }) : apiClient.post<{ device_id: string }>('/api/users/'),
+  getMe: () =>
+    USE_MOCK ? mock({ token_balance: mockTokenBalance }) : apiClient.get<{ token_balance: number }>('/api/users/me/'),
+  chargeToken: (packageId: string) => {
+    if (USE_MOCK) {
+      const pkg = TOKEN_PACKAGES.find(p => p.id === packageId);
+      setMockTokenBalance(mockTokenBalance + (pkg?.tokens ?? 0));
+      return mock({ token_balance: mockTokenBalance });
+    }
+    return apiClient.post<{ token_balance: number }>('/api/users/charge-token/', { package_id: packageId });
+  },
+  resetToken: () => {
+    if (USE_MOCK) {
+      setMockTokenBalance(0);
+      return mock({ token_balance: mockTokenBalance });
+    }
+    return apiClient.post<{ token_balance: number }>('/api/users/reset-token/');
+  },
 };
 
 export const mediaApi = {
