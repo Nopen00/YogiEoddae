@@ -113,7 +113,10 @@ class MediaImportView(APIView):
             start_date=request.data.get('start_date'),
             end_date=request.data.get('end_date'),
         )
-        media_places = MediaPlace.objects.filter(media=media).select_related('place').order_by('day', 'id')
+        media_places = (MediaPlace.objects
+                        .filter(media=media, status=MediaPlace.STATUS_ADMIN_APPROVED)
+                        .select_related('place')
+                        .order_by('day', 'id'))
         for i, mp in enumerate(media_places):
             DailyPlace.objects.create(
                 schedule=schedule,

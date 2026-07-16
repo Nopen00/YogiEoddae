@@ -1,4 +1,5 @@
 // app/ScheduleDetailScreen.tsx
+import { KakaoMap } from '@/components/ui/KakaoMap';
 import { AddPlaceAlert } from '@/components/modals/AddPlaceAlert';
 import { ScheduleEditNameAlert } from '@/components/modals/ScheduleEditNameAlert';
 import { Divider } from '@/components/ui/Divider';
@@ -394,6 +395,11 @@ export default function ScheduleDetailScreen() {
 
   const displayTitle = schedule?.title ?? paramTitle ?? '';
 
+  const mapPlaces = useMemo(() => {
+    const places = isEditing ? localPlaces : (schedule?.daily_places ?? []);
+    return places.map(dp => dp.place);
+  }, [isEditing, localPlaces, schedule]);
+
   const dayGroups = useMemo(() => {
     const places = schedule?.daily_places ?? [];
     return places.reduce<Record<number, DailyPlace[]>>((acc, dp) => {
@@ -526,9 +532,7 @@ export default function ScheduleDetailScreen() {
             },
           ]}
         >
-          <View style={styles.mapPlaceholder}>
-            <Text style={styles.mapPlaceholderText}>지도</Text>
-          </View>
+          <KakaoMap places={mapPlaces} style={styles.mapPlaceholder} />
         </RNAnimated.View>
 
         {/* 슬라이딩 패널 */}
@@ -798,12 +802,6 @@ const styles = StyleSheet.create({
   },
   mapPlaceholder: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  mapPlaceholderText: {
-    ...Typography.title1,
-    color: Colors.light.grayDark,
   },
   panel: {
     position: 'absolute',
