@@ -341,8 +341,8 @@ const styles = StyleSheet.create({
   unsavedTitle: { ...Typography.subtitle2, color: Colors.light.black, textAlign: 'center' },
   unsavedDesc: { ...Typography.body2, color: Colors.light.primary, marginTop: Spacing.v.medium, textAlign: 'center' },
   unsavedButtons: { flexDirection: 'row', justifyContent: 'center', gap: Spacing.h.medium, marginTop: Spacing.v.medium },
-  btnDiscard: { paddingHorizontal: Spacing.h.medium, height: Size.buttonSm, borderRadius: Spacing.r.small, backgroundColor: Colors.light.grayLight, justifyContent: 'center', alignItems: 'center' },
+  btnDiscard: { width: 80, height: Size.buttonSm, borderRadius: Spacing.r.small, backgroundColor: Colors.light.grayLight, justifyContent: 'center', alignItems: 'center' },
   btnDiscardText: { ...Typography.button2, color: Colors.light.grayDark },
-  btnStay: { paddingHorizontal: Spacing.h.medium, height: Size.buttonSm, borderRadius: Spacing.r.small, backgroundColor: Colors.light.primary, justifyContent: 'center', alignItems: 'center' },
+  btnStay: { width: 80, height: Size.buttonSm, borderRadius: Spacing.r.small, backgroundColor: Colors.light.primary, justifyContent: 'center', alignItems: 'center' },
   btnStayText: { ...Typography.button2, color: Colors.light.white },
 });

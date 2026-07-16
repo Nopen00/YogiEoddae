@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
   },
   clearButton: { marginLeft: Spacing.h.small, marginRight: Spacing.h.medium },
   submitButton: {
-    paddingHorizontal: Spacing.h.medium,
+    width: 80,
     height: Size.buttonSm,
     marginLeft: Spacing.h.medium,
     borderRadius: Spacing.r.small,
@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.v.medium,
   },
   btnComplete: {
-    paddingHorizontal: Spacing.h.medium,
+    width: 80,
     height: Size.buttonSm,
     borderRadius: Spacing.r.small,
     backgroundColor: Colors.light.grayLight,
@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
   },
   btnCompleteText: { ...Typography.button2, color: Colors.light.grayDark },
   btnCancel: {
-    paddingHorizontal: Spacing.h.medium,
+    width: 80,
     height: Size.buttonSm,
     borderRadius: Spacing.r.small,
     backgroundColor: Colors.light.error,
