@@ -8,7 +8,7 @@ import { Shadows } from '@/constants/Shadows';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import type { DailyPlace, Schedule } from '@/services/types';
-import { Calendar, X } from 'lucide-react-native';
+import { X } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
   Image,
@@ -288,7 +288,6 @@ export const ScheduleAlert = ({ visible, onClose, schedules, onConfirm, checkMed
           onPress={() => setResultVisible(false)}
         >
           <View style={styles.resultPopupBox}>
-            <Calendar size={IconSize.xxlarge} color={Colors.light.primary} strokeWidth={IconStroke.thin} style={styles.resultIcon} />
             <Text style={styles.resultText}>일정에 성공적으로 추가했습니다!</Text>
           </View>
         </TouchableOpacity>
@@ -399,15 +398,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.h.xlarge,
   },
   resultPopupBox: {
-    height: 116,
     backgroundColor: Colors.light.white,
     borderRadius: Spacing.r.small,
     borderWidth: Spacing.lw.small,
     borderColor: Colors.light.grayLight,
     alignItems: 'center',
+    paddingVertical: Spacing.v.medium,
+    paddingHorizontal: Spacing.h.medium,
   },
-  resultIcon: { marginTop: Spacing.v.medium, width: 48, height: 48 },
-  resultText: { marginTop: Spacing.v.medium, ...Typography.subtitle2, color: Colors.light.black },
+  resultText: { ...Typography.subtitle2, color: Colors.light.black },
   failPopupBox: {
     backgroundColor: Colors.light.white,
     borderRadius: Spacing.r.small,

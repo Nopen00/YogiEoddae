@@ -17,6 +17,10 @@ export const TOKEN_PACKAGES: { id: string; tokens: number; price: number }[] = [
 // 서버 없이 UI 테스트할 때 true로 설정
 const USE_MOCK = process.env.EXPO_PUBLIC_USE_MOCK === 'true';
 
+// mock 데이터 id 생성기 — Date.now()는 같은 ms 안에 여러 번 호출되면(반복문 등) 값이 겹쳐 중복 id를 만들 수 있어 카운터로 대체
+let mockIdCounter = Date.now();
+const nextMockId = () => ++mockIdCounter;
+
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 console.log('API BASE_URL:', BASE_URL, USE_MOCK ? '(MOCK MODE)' : '');
 
@@ -97,14 +101,14 @@ export const mediaApi = {
       const mediaPlaces = MOCK_MEDIA_PLACES_MAP[id] ?? [];
       const media = MOCK_MEDIA_LIST.find(m => m.id === id) ?? null;
       const newSchedule: Schedule = {
-        id: Date.now(),
+        id: nextMockId(),
         title: data?.title ?? media?.title ?? '새 일정',
         media: media ? { id: media.id, title: media.title, thumbnail_url: media.thumbnail_url, media_type: media.media_type, tags: media.tags, place_count: media.place_count } : null,
         start_date: data?.start_date ?? null,
         end_date: data?.end_date ?? null,
         is_bookmarked: false,
         daily_places: mediaPlaces.map((mp, i) => ({
-          id: Date.now() + i + 1,
+          id: nextMockId(),
           day_number: mp.day ?? 1,
           order: i + 1,
           memo: '',
@@ -197,7 +201,7 @@ export const scheduleApi = {
   create: (data: { title: string; start_date?: string; end_date?: string }) => {
     if (USE_MOCK) {
       const newSchedule: Schedule = {
-        id: Date.now(),
+        id: nextMockId(),
         title: data.title,
         media: null,
         start_date: data.start_date ?? null,
@@ -233,7 +237,7 @@ export const scheduleApi = {
       const place = mockPlaceStore.find(p => p.id === data.place_id);
       if (schedIdx !== -1 && place) {
         const newDp = {
-          id: Date.now(),
+          id: nextMockId(),
           day_number: data.day_number,
           order: data.order,
           memo: data.memo ?? '',
@@ -333,7 +337,7 @@ export const reviewApi = {
   create: (data: { rating: number; content: string; images: string[]; visitDate?: string }) => {
     if (USE_MOCK) {
       const newReview: Review = {
-        id: Date.now(),
+        id: nextMockId(),
         author: '나',
         travelDate: data.visitDate ?? '',
         writtenDate: formatDateDots(new Date()),

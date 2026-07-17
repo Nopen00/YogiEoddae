@@ -7,6 +7,9 @@ import { TextSeparator } from '@/components/ui/TextSeparator';
 import { MoreButton } from '@/components/ui/MoreButton';
 import { MoreMenuAlert } from '@/components/modals/MoreMenuAlert';
 import { ScheduleAlert } from '@/components/modals/ScheduleAlert';
+import { SortAlert } from '@/components/modals/SortAlert';
+import { getReviewLikeCount, ReviewCard } from '@/components/ui/ReviewCard';
+import PagerView from '@/components/ui/PagerViewWrapper';
 import { SaveHeart32 } from '@/components/icons/SaveHeart';
 import { UnSaveHeart32 } from '@/components/icons/UnSaveHeart';
 import { Colors } from '@/constants/Colors';
@@ -14,12 +17,13 @@ import { IconSize, IconStroke } from '@/constants/IconSize';
 import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Calendar, Heart, Star } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { Calendar, Check, ChevronDown, Edit3, Heart, Star } from 'lucide-react-native';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   Image,
   Linking,
+  Modal,
   ScrollView,
   StyleSheet,
   Text,
@@ -28,11 +32,14 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import { placeApi, scheduleApi } from '../services/api';
-import type { Photo, Place, Schedule } from '../services/types';
+import { placeApi, reviewApi, scheduleApi } from '../services/api';
+import type { Photo, Place, Review, Schedule } from '../services/types';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Shadow } from 'react-native-shadow-2';
 import { CATEGORY_LABEL, shortAddress } from '@/constants/labels';
+
+const REVIEW_SORT_OPTIONS = ['추천순', '최신 여행 순', '최신 리뷰 순', '별점 높은 순', '별점 낮은 순'] as const;
+type ReviewSortOption = typeof REVIEW_SORT_OPTIONS[number];
 
 const formatLikeCount = (count: number): string => {
   if (count < 100) return count.toString();
@@ -59,6 +66,33 @@ const PlaceDetailScreen = () => {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [nearbyPlaces, setNearbyPlaces] = useState<Place[]>([]);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [photoOnly, setPhotoOnly] = useState(false);
+  const [reviewSort, setReviewSort] = useState<ReviewSortOption>('추천순');
+  const [isReviewSortVisible, setIsReviewSortVisible] = useState(false);
+  const [expandedReviews, setExpandedReviews] = useState<Record<number, boolean>>({});
+  const [likedReviews, setLikedReviews] = useState<Record<number, boolean>>({});
+  const [imagePopup, setImagePopup] = useState<{ reviewId: number; index: number } | null>(null);
+  const [reviewDeleteTarget, setReviewDeleteTarget] = useState<Review | null>(null);
+
+  const filteredReviews = (photoOnly ? reviews.filter((r) => r.hasPhoto) : reviews)
+    .slice()
+    .sort((a, b) => {
+      switch (reviewSort) {
+        case '최신 여행 순':
+          return b.travelDate.localeCompare(a.travelDate);
+        case '최신 리뷰 순':
+          return b.writtenDate.localeCompare(a.writtenDate);
+        case '별점 높은 순':
+          return b.rating - a.rating;
+        case '별점 낮은 순':
+          return a.rating - b.rating;
+        case '추천순':
+        default:
+          return getReviewLikeCount(b, likedReviews[b.id] ?? false) - getReviewLikeCount(a, likedReviews[a.id] ?? false);
+      }
+    });
+  const popupReview = imagePopup ? reviews.find((r) => r.id === imagePopup.reviewId) : null;
 
   useEffect(() => {
     if (!id) return;
@@ -81,6 +115,12 @@ const PlaceDetailScreen = () => {
       .then(res => setSchedules(res.data))
       .catch(() => {});
   }, [id]);
+
+  useFocusEffect(
+    useCallback(() => {
+      reviewApi.getList().then(res => setReviews(res.data)).catch(() => {});
+    }, [])
+  );
 
   const toggleNearby = async (placeId: number) => {
     const isSavedNow = savedNearby[placeId];
@@ -247,6 +287,36 @@ const PlaceDetailScreen = () => {
               <Text style={styles.placeDesc}>{place?.address}</Text>
             )}
 
+            {/* 근처 추천 장소 */}
+            <Divider marginTop={Spacing.v.large} />
+            <Text style={styles.nearbyTitle}>근처 추천 장소</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: Spacing.v.medium }}
+              contentContainerStyle={styles.nearbyScrollContent}>
+              {nearbyPlaces.map((nearby, i) => (
+                <TouchableOpacity
+                  key={nearby.id}
+                  style={{ width: smallImageWidth }}
+                  activeOpacity={0.9}
+                  onPress={() => router.push({ pathname: '/PlaceDetailScreen', params: { id: nearby.id, name: nearby.name } })}
+                >
+                  <View style={[styles.nearbyImageBox, { height: smallImageHeight }]}>
+                    <Image source={{ uri: nearby.image_url ?? undefined }} style={styles.nearbyImage} resizeMode="cover" />
+                    <TouchableOpacity style={styles.nearbyHeart} onPress={(e) => { e.stopPropagation(); toggleNearby(nearby.id); }} activeOpacity={0.8}>
+                      <Heart
+                        size={IconSize.large}
+                        color={savedNearby[nearby.id] ? Colors.light.heart : Colors.light.white}
+                        fill={savedNearby[nearby.id] ? Colors.light.heart : 'transparent'}
+                        strokeWidth={IconStroke.thin}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                  <Text style={styles.nearbyPlaceName} numberOfLines={1}>{nearby.name}</Text>
+                  <Text style={styles.nearbyCategory}>{CATEGORY_LABEL[nearby.category] ?? nearby.category}</Text>
+                  <Text style={styles.nearbyAddress} numberOfLines={1}>{shortAddress(nearby.address)}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
             {/* 포토스팟 */}
             {photos.length > 0 && (
               <>
@@ -295,37 +365,50 @@ const PlaceDetailScreen = () => {
               </>
             )}
 
+            {/* 리뷰 섹션 */}
             <Divider marginTop={Spacing.v.large} />
-            <Text style={styles.nearbyTitle}>근처 추천 장소</Text>
-          </View>
 
-          {/* 근처 추천 장소 */}
-          <View style={{ marginTop: Spacing.v.medium, marginHorizontal: Spacing.h.medium }}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.nearbyScrollContent}>
-              {nearbyPlaces.map((nearby, i) => (
-                <TouchableOpacity
-                  key={nearby.id}
-                  style={{ width: smallImageWidth }}
-                  activeOpacity={0.9}
-                  onPress={() => router.push({ pathname: '/PlaceDetailScreen', params: { id: nearby.id, name: nearby.name } })}
-                >
-                  <View style={[styles.nearbyImageBox, { height: smallImageHeight }]}>
-                    <Image source={{ uri: nearby.image_url ?? undefined }} style={styles.nearbyImage} resizeMode="cover" />
-                    <TouchableOpacity style={styles.nearbyHeart} onPress={(e) => { e.stopPropagation(); toggleNearby(nearby.id); }} activeOpacity={0.8}>
-                      <Heart
-                        size={IconSize.large}
-                        color={savedNearby[nearby.id] ? Colors.light.heart : Colors.light.white}
-                        fill={savedNearby[nearby.id] ? Colors.light.heart : 'transparent'}
-                        strokeWidth={IconStroke.thin}
-                      />
-                    </TouchableOpacity>
-                  </View>
-                  <Text style={styles.nearbyPlaceName} numberOfLines={1}>{nearby.name}</Text>
-                  <Text style={styles.nearbyCategory}>{CATEGORY_LABEL[nearby.category] ?? nearby.category}</Text>
-                  <Text style={styles.nearbyAddress} numberOfLines={1}>{shortAddress(nearby.address)}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
+            <View style={styles.reviewHeaderRow}>
+              <View style={styles.reviewTitleRow}>
+                <Text style={styles.reviewTitle}>리뷰</Text>
+                <Text style={styles.reviewCount}>{reviews.length}</Text>
+              </View>
+              <TouchableOpacity style={styles.photoFilterRow} onPress={() => setPhotoOnly(!photoOnly)} activeOpacity={0.7}>
+                <View style={[styles.checkbox, photoOnly && styles.checkboxActive]}>
+                  {photoOnly && <Check size={14} color={Colors.light.white} strokeWidth={IconStroke.regular} />}
+                </View>
+                <Text style={styles.photoFilterText}>사진 포함</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.reviewSortRow}>
+              <TouchableOpacity style={styles.reviewSortTrigger} onPress={() => setIsReviewSortVisible(true)} activeOpacity={0.7}>
+                <Text style={styles.reviewSortText}>{reviewSort}</Text>
+                <ChevronDown size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.writeReviewButton}
+                onPress={() => router.push({ pathname: '/ReviewWriteScreen', params: { type: 'place', id } })}
+                activeOpacity={0.7}
+              >
+                <Edit3 size={16} color={Colors.light.white} strokeWidth={IconStroke.regular} />
+                <Text style={styles.writeReviewText}>리뷰 작성</Text>
+              </TouchableOpacity>
+            </View>
+
+            {filteredReviews.map((review) => (
+              <ReviewCard
+                key={review.id}
+                review={review}
+                isExpanded={expandedReviews[review.id] ?? false}
+                onToggleExpand={() => setExpandedReviews((prev) => ({ ...prev, [review.id]: !prev[review.id] }))}
+                isLiked={likedReviews[review.id] ?? false}
+                onToggleLike={() => setLikedReviews((prev) => ({ ...prev, [review.id]: !prev[review.id] }))}
+                onImagePress={(index) => setImagePopup({ reviewId: review.id, index })}
+                onEditPress={() => router.push({ pathname: '/ReviewWriteScreen', params: { type: 'place', id, reviewId: review.id } })}
+                onDeletePress={() => setReviewDeleteTarget(review)}
+              />
+            ))}
           </View>
         </ScrollView>
 
@@ -344,6 +427,75 @@ const PlaceDetailScreen = () => {
             } catch {}
           }}
         />
+
+        <SortAlert
+          visible={isReviewSortVisible}
+          options={REVIEW_SORT_OPTIONS}
+          selected={reviewSort}
+          onClose={() => setIsReviewSortVisible(false)}
+          onSelect={setReviewSort}
+        />
+
+        <Modal visible={!!imagePopup} transparent animationType="fade" onRequestClose={() => setImagePopup(null)}>
+          <TouchableOpacity style={styles.imagePopupOverlay} activeOpacity={1} onPress={() => setImagePopup(null)}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <View style={styles.imagePopupContainer}>
+                {popupReview && imagePopup && (
+                  <>
+                    <PagerView
+                      style={{ width: imageWidth, height: imageHeight }}
+                      initialPage={imagePopup.index}
+                      onPageSelected={(e) => {
+                        const position = e.nativeEvent.position;
+                        setImagePopup((prev) => (prev ? { ...prev, index: position } : prev));
+                      }}
+                    >
+                      {popupReview.images.map((img) => (
+                        <Image key={img} source={{ uri: img }} style={styles.imagePopupImage} resizeMode="cover" />
+                      ))}
+                    </PagerView>
+                    <Text style={styles.imagePopupIndexText}>
+                      {imagePopup.index + 1}/{popupReview.images.length}
+                    </Text>
+                  </>
+                )}
+              </View>
+            </TouchableWithoutFeedback>
+          </TouchableOpacity>
+        </Modal>
+
+        <Modal visible={reviewDeleteTarget !== null} transparent animationType="fade">
+          <View style={styles.deleteOverlay}>
+            <View style={[styles.deletePopup, { width: width - 64 }]}>
+              <Text style={styles.deleteTitle}>리뷰를 삭제하시겠습니까?</Text>
+              <Text style={styles.deleteDesc}>삭제된 리뷰는 되돌릴 수 없습니다.</Text>
+              <View style={styles.deleteButtons}>
+                <TouchableOpacity
+                  style={styles.btnConfirm}
+                  activeOpacity={0.8}
+                  onPress={async () => {
+                    if (!reviewDeleteTarget) return;
+                    const target = reviewDeleteTarget;
+                    setReviewDeleteTarget(null);
+                    try {
+                      await reviewApi.remove(target.id);
+                      setReviews((prev) => prev.filter((r) => r.id !== target.id));
+                    } catch {}
+                  }}
+                >
+                  <Text style={styles.btnConfirmText}>확인</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.btnCancel}
+                  activeOpacity={0.8}
+                  onPress={() => setReviewDeleteTarget(null)}
+                >
+                  <Text style={styles.btnCancelText}>취소</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </SafeAreaView>
     </TouchableWithoutFeedback>
   );
@@ -525,6 +677,80 @@ const styles = StyleSheet.create({
     color: Colors.light.grayDark,
     marginTop: 2,
   },
+  reviewHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: Spacing.v.large,
+  },
+  reviewTitleRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.h.small },
+  reviewTitle: { ...Typography.title1, color: Colors.light.black },
+  reviewCount: { ...Typography.title1, color: Colors.light.primary },
+  photoFilterRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.h.small },
+  photoFilterText: { ...Typography.body2, color: Colors.light.black },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: Spacing.r.small,
+    borderWidth: Spacing.lw.small,
+    borderColor: Colors.light.primary,
+    backgroundColor: Colors.light.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxActive: { backgroundColor: Colors.light.primary },
+  reviewSortRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: Spacing.v.medium,
+  },
+  reviewSortTrigger: { flexDirection: 'row', alignItems: 'center', gap: Spacing.h.small },
+  reviewSortText: { ...Typography.button4, color: Colors.light.black },
+  writeReviewButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.h.small,
+    backgroundColor: Colors.light.primary,
+    borderRadius: Spacing.r.small,
+    paddingHorizontal: Spacing.h.medium,
+    paddingVertical: Spacing.v.small,
+  },
+  writeReviewText: { ...Typography.button4, color: Colors.light.white },
+  imagePopupOverlay: {
+    flex: 1,
+    backgroundColor: Colors.light.overlay,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imagePopupContainer: { alignItems: 'center' },
+  imagePopupImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: Spacing.r.small,
+  },
+  imagePopupIndexText: {
+    ...Typography.HeadLine5,
+    color: Colors.light.white,
+    marginTop: Spacing.v.small,
+  },
+  deleteOverlay: { flex: 1, backgroundColor: Colors.light.overlay, justifyContent: 'center', alignItems: 'center' },
+  deletePopup: {
+    borderRadius: Spacing.r.small,
+    borderWidth: Spacing.lw.small,
+    borderColor: Colors.light.grayLight,
+    backgroundColor: Colors.light.white,
+    paddingTop: Spacing.v.medium,
+    paddingHorizontal: Spacing.h.medium,
+    paddingBottom: Spacing.v.medium,
+  },
+  deleteTitle: { ...Typography.subtitle2, color: Colors.light.black, textAlign: 'center' },
+  deleteDesc: { ...Typography.body2, color: Colors.light.primary, marginTop: Spacing.v.medium, textAlign: 'center' },
+  deleteButtons: { flexDirection: 'row', justifyContent: 'center', gap: Spacing.h.medium, marginTop: Spacing.v.medium },
+  btnConfirm: { width: 80, height: Size.buttonSm, borderRadius: Spacing.r.small, backgroundColor: Colors.light.grayLight, justifyContent: 'center', alignItems: 'center' },
+  btnConfirmText: { ...Typography.button2, color: Colors.light.grayDark },
+  btnCancel: { width: 80, height: Size.buttonSm, borderRadius: Spacing.r.small, backgroundColor: Colors.light.primary, justifyContent: 'center', alignItems: 'center' },
+  btnCancelText: { ...Typography.button2, color: Colors.light.white },
 });
 
 export default PlaceDetailScreen;

@@ -5,8 +5,19 @@ React Native (Expo) 기반 모바일 앱 프론트엔드입니다.
 ## TODO
 
 - 퀴즈 화면 구현 (MainScreen 퀴즈 버튼 연결 예정, 미구현)
-- PlaceDetailScreen·CourseDetailScreen에 리뷰 리스트 UI 추가 (ReviewWriteScreen 작성 화면과 리뷰쓰기 버튼 연결은 완료됐고, PhotoSpotDetailScreen에는 리뷰 리스트가 있음. 하지만 PlaceDetailScreen·CourseDetailScreen에는 애초에 리뷰 리스트 UI 자체가 없어서, 작성한 리뷰를 보여줄 곳이 없음 — 리스트 UI 기획 필요)
 - 포토태그 이미지 데이터 연동 (현재 태그 원형·필터 pill의 이미지는 회색 placeholder, 백엔드 태그 이미지 필드 필요)
+
+---
+
+## 백엔드에게 전할것
+
+- 리뷰 API에 대상 구분(장소/코스/포토스팟별) 필요 — 현재 `reviewApi`는 대상 구분 없이 전체 리뷰를 한 리스트로 반환해서, 특정 코스에 작성한 리뷰가 다른 코스 상세화면 리뷰리스트에도 그대로 나타남. 대상별로 분리된 리뷰 엔드포인트(예: `GET /api/courses/{id}/reviews/`, `GET /api/places/{id}/reviews/`, `GET /api/photos/{id}/reviews/`) 필요.
+- 계정 복구 코드 발급/확인 API 필요 — `AccountScreen`의 복구 코드가 현재 `ABCD-1234-EFGH-5678`로 하드코딩돼 있고 화면에 API 호출이 전혀 없음. 코드 발급(예: `GET /api/users/me/recovery-code/`)과 복구 확인(예: `POST /api/users/recover/`) 엔드포인트 필요.
+- "실시간 인기 코스"/"추천 코스" 정렬 기준 필요 — `MainScreen`이 현재 전체 코스 목록을 받아온 순서 그대로 앞 4개/다음 4개(`slice(0,4)`/`slice(4,8)`)를 잘라서 보여주고 있어 실제 인기순·추천순이 아님. 정렬 파라미터(예: `GET /api/media/?ordering=popular`)나 별도 엔드포인트 필요.
+- "이 달의 테마" 코스 지정 방식 필요 — `CourseScreen`이 코스 목록의 2번째·6번째 항목(`allMedia[1]`, `allMedia[5]`)을 하드코딩으로 테마 카드에 쓰고 있음. 테마/추천 지정용 필드(예: `is_theme`) 또는 별도 엔드포인트 필요.
+- 포토스팟 검색(키워드) 지원 필요 — `photoApi.getList()`가 파라미터를 아예 받지 않아서 `SearchResultScreen`의 포토스팟 탭은 검색어를 입력해도 결과가 필터링되지 않음. `GET /api/photos/?keyword=` 형태의 키워드 검색 지원 필요 (포토스팟 전용 엔드포인트 자체가 아직 없다는 것과 연결된 항목).
+- 북마크한 포토스팟에 장소 정보 포함 필요 — `Photo`에 소속 장소 참조가 없어서, 저장한 포토스팟 목록에 표시할 장소 이름을 프론트에서 mock으로 임시 매핑 중(`mockPhotoPlaceName`). `/api/bookmarks/` 응답의 `saved_photos` 항목에 `place_name`(또는 place id) 포함 필요.
+- 리뷰 작성자 프로필 이미지 필드 필요 — 리뷰 카드의 아바타가 현재 항상 빈 회색 원(`ReviewCard`). `Review`에 작성자 프로필 이미지 URL 필드 필요.
 
 ---
 

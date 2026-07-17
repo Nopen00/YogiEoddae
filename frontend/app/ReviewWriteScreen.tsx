@@ -126,8 +126,10 @@ const ReviewWriteScreen = () => {
     []
   );
 
+  const isSubmitEnabled = rating > 0 && visitDate !== null;
+
   const handleSubmit = async () => {
-    if (rating === 0) return;
+    if (!isSubmitEnabled) return;
     try {
       const payload = {
         rating,
@@ -219,8 +221,8 @@ const ReviewWriteScreen = () => {
         </View>
 
         <TouchableOpacity
-          style={[styles.submitButton, rating === 0 && styles.submitButtonDisabled]}
-          activeOpacity={0.8}
+          style={[styles.submitButton, !isSubmitEnabled && styles.submitButtonDisabled]}
+          activeOpacity={isSubmitEnabled ? 0.8 : 1}
           onPress={handleSubmit}
         >
           <Text style={styles.submitButtonText}>작성 완료</Text>
