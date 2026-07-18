@@ -33,7 +33,7 @@ const SettingScreen = () => {
 
         <View style={styles.userInfoColumn}>
           <Text style={styles.nickname}>내이름은김철수</Text>
-          <TouchableOpacity style={styles.infoDetailButton} activeOpacity={0.7} onPress={() => router.push('/AccountScreen')}>
+          <TouchableOpacity style={styles.infoDetailButton} activeOpacity={0.7} onPress={() => router.push('/PasswordConfirmScreen')}>
             <Text style={styles.infoDetailText}>내 정보</Text>
             <ChevronRight size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
           </TouchableOpacity>

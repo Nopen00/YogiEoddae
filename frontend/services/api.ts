@@ -17,6 +17,9 @@ export const TOKEN_PACKAGES: { id: string; tokens: number; price: number }[] = [
 // 서버 없이 UI 테스트할 때 true로 설정
 const USE_MOCK = process.env.EXPO_PUBLIC_USE_MOCK === 'true';
 
+// 비밀번호 재확인 mock 검증용 — 실제 계정 비밀번호와 무관, UI 테스트 전용
+const MOCK_PASSWORD = '123456';
+
 // mock 데이터 id 생성기 — Date.now()는 같은 ms 안에 여러 번 호출되면(반복문 등) 값이 겹쳐 중복 id를 만들 수 있어 카운터로 대체
 let mockIdCounter = Date.now();
 const nextMockId = () => ++mockIdCounter;
@@ -66,6 +69,12 @@ export const userApi = {
       return mock({ token_balance: mockTokenBalance });
     }
     return apiClient.post<{ token_balance: number }>('/api/users/watch-ad/');
+  },
+  verifyPassword: (password: string) => {
+    if (USE_MOCK) {
+      return mock({ success: password === MOCK_PASSWORD });
+    }
+    return apiClient.post<{ success: boolean }>('/api/users/verify-password/', { password });
   },
 };
 
