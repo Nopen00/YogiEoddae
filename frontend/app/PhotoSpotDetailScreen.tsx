@@ -192,6 +192,11 @@ const PhotoSpotDetailScreen = () => {
 
             <Divider />
 
+            <Text style={styles.photoInfoTitle}>포토스팟 정보</Text>
+            <Text style={styles.photoInfoDesc}>{photo?.description ?? ''}</Text>
+
+            <Divider />
+
             <Text style={styles.sectionTitle}>장소</Text>
             <TouchableOpacity
               style={styles.placeCard}
@@ -499,6 +504,16 @@ const styles = StyleSheet.create({
     ...Typography.button4,
     color: Colors.light.grayDark,
     marginTop: Spacing.v.small,
+  },
+  photoInfoTitle: {
+    ...Typography.title1,
+    color: Colors.light.black,
+    marginTop: Spacing.v.medium,
+  },
+  photoInfoDesc: {
+    ...Typography.body2,
+    color: Colors.light.black,
+    marginTop: Spacing.v.medium,
   },
   sectionTitle: {
     ...Typography.title1,
