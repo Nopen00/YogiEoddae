@@ -35,6 +35,7 @@ function RootLayoutNav() {
             <Stack.Screen name="PhotoSpotDetailScreen" options={{ headerShown: false }} />
             <Stack.Screen name="ReviewWriteScreen" options={{ headerShown: false }} />
             <Stack.Screen name="ScheduleScreen" options={{ headerShown: false }} />
+            <Stack.Screen name="SavedListScreen" options={{ headerShown: false }} />
             <Stack.Screen name="SettingScreen" options={{ headerShown: false }} />
             <Stack.Screen name="AccountScreen" options={{ headerShown: false }} />
             <Stack.Screen name="ScheduleDetailScreen" options={{ headerShown: false }} />

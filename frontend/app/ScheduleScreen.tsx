@@ -2,21 +2,17 @@
 import { Divider } from '@/components/ui/Divider';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { TagRow } from '@/components/ui/TagRow';
-import { TextSeparator } from '@/components/ui/TextSeparator';
-import { AddPlaceConfirmAlert } from '@/components/modals/AddPlaceConfirmAlert';
-import { CourseSelectPopup } from '@/components/modals/CourseSelectPopup';
-import { type DateRange, NewScheduleAlert } from '@/components/modals/NewScheduleAlert';
-import { NewScheduleStep3Alert } from '@/components/modals/NewScheduleStep3Alert';
+import { NewScheduleAlert } from '@/components/modals/NewScheduleAlert';
 import { ScheduleMoreMenuAlert } from '@/components/modals/ScheduleMoreMenuAlert';
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
-import { CATEGORY_LABEL, CITY_SHORT, MEDIA_TYPE_LABEL, shortAddress } from '@/constants/labels';
+import { CITY_SHORT, MEDIA_TYPE_LABEL } from '@/constants/labels';
 import { Size } from '@/constants/Size';
 import { Shadows } from '@/constants/Shadows';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { Calendar, Heart, MoreVertical, Plus } from 'lucide-react-native';
+import { ChevronRight, MoreVertical, Plus } from 'lucide-react-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Animated,
@@ -33,17 +29,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PagerView, { PagerViewHandle } from '@/components/ui/PagerViewWrapper';
-import { bookmarkApi, mediaApi, placeApi, scheduleApi } from '../services/api';
-import type { DailyPlace, Media, Place, Schedule } from '../services/types';
-
-type SavedPhoto = {
-  id: number;
-  image_url: string;
-  description: string;
-  place_name: string;
-  tags: { name: string; category: string }[];
-  saved_at: string;
-};
+import { scheduleApi } from '../services/api';
+import type { DailyPlace, Schedule } from '../services/types';
 
 const TABS = ['내 일정', '과거 일정', '저장소'];
 const { width } = Dimensions.get('window');
@@ -246,59 +233,19 @@ const ScheduleCard = ({
   );
 };
 
-// ─── 코스 카드 ────────────────────────────────────────────────
-const CourseCard = ({ media, onPress }: { media: Media; onPress: () => void }) => {
-  const typeLabel = MEDIA_TYPE_LABEL[media.media_type] ?? media.media_type;
-  return (
-    <TouchableOpacity style={styles.card} activeOpacity={0.85} onPress={onPress}>
-      <View style={styles.imageWrapper}>
-        {media.thumbnail_url ? (
-          <Image source={{ uri: media.thumbnail_url }} style={styles.cardImage} />
-        ) : (
-          <View style={[styles.cardImage, { backgroundColor: Colors.light.grayLight }]} />
-        )}
-      </View>
-      <View style={styles.cardContent}>
-        <Text style={styles.cardTitle} numberOfLines={1}>{media.title}</Text>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoText}>{media.place_count ?? 0}개 장소</Text>
-          <TextSeparator />
-          <Text style={styles.infoText}>{typeLabel}</Text>
-        </View>
-        {media.tags.length > 0 && (
-          <TagRow>
-            {media.tags.map(tag => (
-              <Text key={tag.id} style={styles.tagText}>#{tag.name}</Text>
-            ))}
-          </TagRow>
-        )}
-      </View>
-    </TouchableOpacity>
-  );
-};
-
 // ─── 메인 컴포넌트 ────────────────────────────────────────────
 export default function ScheduleScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ mode?: string; scheduleId?: string; dayNumber?: string }>();
-  const [selectedIndex, setSelectedIndex] = useState(0);
-  const translateX = useRef(new Animated.Value(0)).current;
+  const params = useLocalSearchParams<{ mode?: string; scheduleId?: string; dayNumber?: string; tab?: string }>();
+  const initialTabIndex = params.tab ? Number(params.tab) : 0;
+  const [selectedIndex, setSelectedIndex] = useState(initialTabIndex);
+  const translateX = useRef(new Animated.Value(initialTabIndex * TAB_WIDTH)).current;
   const pagerRef = useRef<PagerViewHandle>(null);
 
   const [mySchedules, setMySchedules] = useState<Schedule[]>([]);
   const [pastSchedules, setPastSchedules] = useState<Schedule[]>([]);
-  const [savedCourses, setSavedCourses] = useState<Media[]>([]);
-  const [savedPlaces, setSavedPlaces] = useState<Place[]>([]);
-  const [savedPhotos, setSavedPhotos] = useState<SavedPhoto[]>([]);
   const [isNewScheduleVisible, setIsNewScheduleVisible] = useState(false);
   const [newScheduleKey, setNewScheduleKey] = useState(0);
-  const [isCourseSelectVisible, setIsCourseSelectVisible] = useState(false);
-  const [isPlaceSelectVisible, setIsPlaceSelectVisible] = useState(false);
-  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
-  const [isPlaceConfirmVisible, setIsPlaceConfirmVisible] = useState(false);
-  const [isStep3Visible, setIsStep3Visible] = useState(false);
-  const [selectedCourseMedia, setSelectedCourseMedia] = useState<Media | null>(null);
-  const [scheduleData, setScheduleData] = useState<{ name: string; range: DateRange } | null>(null);
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Schedule | null>(null);
 
@@ -309,8 +256,7 @@ export default function ScheduleScreen() {
 
   useEffect(() => {
     if (params.mode === 'addPlace') {
-      handleTabPress(2);
-      setIsPlaceSelectVisible(true);
+      router.replace({ pathname: '/SavedListScreen', params: { type: 'place', mode: 'addPlace', scheduleId: params.scheduleId, dayNumber: params.dayNumber } });
     }
     // 진입 시점의 초기 파라미터만 확인하는 마운트 1회성 효과 — params.mode를 deps에 넣으면 재실행됨
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -323,9 +269,6 @@ export default function ScheduleScreen() {
         setMySchedules(all.filter((s: Schedule) => !isExpired(s.end_date)));
         setPastSchedules(all.filter((s: Schedule) => isExpired(s.end_date)));
       }).catch(() => {});
-      mediaApi.getBookmarked().then(res => setSavedCourses(res.data)).catch(() => {});
-      placeApi.getBookmarked().then(res => setSavedPlaces(res.data)).catch(() => {});
-      bookmarkApi.getAll().then((res: any) => setSavedPhotos(res.data?.saved_photos ?? [])).catch(() => {});
     }, [])
   );
 
@@ -352,7 +295,6 @@ export default function ScheduleScreen() {
   const plannedSchedules = mySchedules.filter(isPlanned);
   const mySchedulesEmpty = currentSchedules.length === 0 && plannedSchedules.length === 0;
   const pastEmpty = pastSchedules.length === 0;
-  const savedEmpty = savedCourses.length === 0 && savedPlaces.length === 0 && savedPhotos.length === 0;
 
   const showAddButton =
     (selectedIndex === 0 && mySchedulesEmpty) ||
@@ -389,12 +331,11 @@ export default function ScheduleScreen() {
         </TouchableOpacity>
       )}
 
-      <PagerView ref={pagerRef} style={{ flex: 1 }} initialPage={0} onPageSelected={handlePageSelected}>
+      <PagerView ref={pagerRef} style={{ flex: 1 }} initialPage={initialTabIndex} onPageSelected={handlePageSelected}>
       {/* 내 일정 탭 */}
       <View key="0" style={{ flex: 1 }}>
         {mySchedulesEmpty ? (
           <View style={styles.emptyContainer}>
-            <Calendar size={IconSize.xxlarge} color={Colors.light.grayLight} strokeWidth={IconStroke.thin} />
             <Text style={styles.emptyTitle}>일정이 없습니다.</Text>
             <Text style={styles.emptySubtitle}>일정을 추가해보세요.</Text>
           </View>
@@ -436,7 +377,6 @@ export default function ScheduleScreen() {
       <View key="1" style={{ flex: 1 }}>
         {pastEmpty ? (
           <View style={styles.emptyContainer}>
-            <Calendar size={IconSize.xxlarge} color={Colors.light.grayLight} strokeWidth={IconStroke.thin} />
             <Text style={styles.emptyTitle}>일정이 없습니다.</Text>
             <Text style={styles.emptySubtitle}>일정을 추가해보세요.</Text>
           </View>
@@ -460,118 +400,18 @@ export default function ScheduleScreen() {
 
       {/* 저장소 탭 */}
       <View key="2" style={{ flex: 1 }}>
-        {savedEmpty ? (
-          <View style={styles.emptyContainer}>
-            <Heart size={IconSize.xxlarge} color={Colors.light.grayLight} strokeWidth={IconStroke.thin} />
-            <Text style={styles.emptyTitle}>저장소가 비어있습니다.</Text>
-            <Text style={styles.emptySubtitle}>마음에 드는 걸 추가해보세요.</Text>
-          </View>
-        ) : (
-          <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-            {/* 저장한 코스 */}
-            <View>
-              <Text style={styles.sectionTitle}>저장한 코스</Text>
-              <Divider marginTop={Spacing.v.small} style={{ marginHorizontal: Spacing.h.medium }} />
-              {savedCourses.length === 0 ? (
-                <View style={styles.sectionEmpty}>
-                  <Text style={styles.sectionEmptyTitle}>저장한 코스가 비어있습니다.</Text>
-                </View>
-              ) : (
-                savedCourses.map(m => (
-                  <CourseCard
-                    key={m.id}
-                    media={m}
-                    onPress={() => {
-                      if (isCourseSelectVisible) {
-                        setSelectedCourseMedia(m);
-                        setIsCourseSelectVisible(false);
-                        setIsStep3Visible(true);
-                      } else {
-                        router.push({ pathname: '/CourseDetailScreen', params: { id: m.id } });
-                      }
-                    }}
-                  />
-                ))
-              )}
-            </View>
-            {/* 저장한 명소 */}
-            <SectionWrapper title="저장한 명소" style={styles.secondSection} showAdd={false} isEmpty={savedPlaces.length === 0} emptyTitle="저장한 명소가 비어있습니다.">
-              {savedPlaces.map(p => (
-                <TouchableOpacity
-                  key={p.id}
-                  style={styles.card}
-                  activeOpacity={0.85}
-                  onPress={() => {
-                    if (isPlaceSelectVisible) {
-                      setSelectedPlace(p);
-                      setIsPlaceSelectVisible(false);
-                      setIsPlaceConfirmVisible(true);
-                    } else {
-                      router.push({ pathname: '/PlaceDetailScreen', params: { id: p.id } });
-                    }
-                  }}
-                >
-                  <View style={styles.imageWrapper}>
-                    {p.image_url ? (
-                      <Image source={{ uri: p.image_url }} style={styles.cardImage} />
-                    ) : (
-                      <View style={[styles.cardImage, { backgroundColor: Colors.light.grayLight }]} />
-                    )}
-                  </View>
-                  <View style={styles.cardContent}>
-                    <Text style={styles.cardTitle} numberOfLines={1}>{p.name}</Text>
-                    <View style={styles.infoRow}>
-                      <Text style={styles.infoText}>{CATEGORY_LABEL[p.category] ?? p.category}</Text>
-                      <TextSeparator />
-                      <Text style={styles.infoText} numberOfLines={1}>{shortAddress(p.address)}</Text>
-                    </View>
-                    {p.tags.length > 0 && (
-                      <TagRow>
-                        {p.tags.map(tag => (
-                          <Text key={tag.id} style={styles.tagText}>#{tag.name}</Text>
-                        ))}
-                      </TagRow>
-                    )}
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </SectionWrapper>
-            {/* 저장한 포토스팟 */}
-            <SectionWrapper title="저장한 포토스팟" style={styles.secondSection} showAdd={false} isEmpty={savedPhotos.length === 0} emptyTitle="저장한 포토스팟이 비어있습니다.">
-              {savedPhotos.map(sp => (
-                <TouchableOpacity
-                  key={sp.id}
-                  style={styles.card}
-                  activeOpacity={0.85}
-                  onPress={() => router.push({ pathname: '/PhotoSpotDetailScreen', params: { id: sp.id } })}
-                >
-                  <View style={styles.imageWrapper}>
-                    {sp.image_url ? (
-                      <Image source={{ uri: sp.image_url }} style={styles.cardImage} />
-                    ) : (
-                      <View style={[styles.cardImage, { backgroundColor: Colors.light.grayLight }]} />
-                    )}
-                  </View>
-                  <View style={styles.cardContent}>
-                    <Text style={styles.cardTitle} numberOfLines={1}>{sp.description}</Text>
-                    {sp.place_name ? (
-                      <View style={styles.infoRow}>
-                        <Text style={styles.infoText} numberOfLines={1}>{sp.place_name}</Text>
-                      </View>
-                    ) : null}
-                    {sp.tags.length > 0 && (
-                      <TagRow>
-                        {sp.tags.map((tag, i) => (
-                          <Text key={i} style={styles.tagText}>#{tag.name}</Text>
-                        ))}
-                      </TagRow>
-                    )}
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </SectionWrapper>
-          </ScrollView>
-        )}
+        <TouchableOpacity style={styles.savedMenuItem} activeOpacity={0.7} onPress={() => router.push({ pathname: '/SavedListScreen', params: { type: 'course' } })}>
+          <Text style={styles.savedMenuLabel}>코스</Text>
+          <ChevronRight size={IconSize.large} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.savedMenuItem, styles.savedMenuItemSpaced]} activeOpacity={0.7} onPress={() => router.push({ pathname: '/SavedListScreen', params: { type: 'place' } })}>
+          <Text style={styles.savedMenuLabel}>명소</Text>
+          <ChevronRight size={IconSize.large} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.savedMenuItem, styles.savedMenuItemSpaced]} activeOpacity={0.7} onPress={() => router.push({ pathname: '/SavedListScreen', params: { type: 'photo' } })}>
+          <Text style={styles.savedMenuLabel}>포토스팟</Text>
+          <ChevronRight size={IconSize.large} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
+        </TouchableOpacity>
       </View>
       </PagerView>
 
@@ -618,10 +458,8 @@ export default function ScheduleScreen() {
           const startDate = `${range.year}-${fmt(range.month + 1)}-${fmt(range.startDay)}`;
           const endDate = `${range.year}-${fmt(range.month + 1)}-${fmt(range.endDay)}`;
           if (courseType === 'import') {
-            setScheduleData({ name, range });
             setIsNewScheduleVisible(false);
-            handleTabPress(2);
-            setIsCourseSelectVisible(true);
+            router.push({ pathname: '/SavedListScreen', params: { type: 'course', mode: 'import', scheduleName: name, startDate, endDate } });
           } else {
             try {
               const res = await scheduleApi.create({ title: name, start_date: startDate, end_date: endDate });
@@ -637,83 +475,6 @@ export default function ScheduleScreen() {
           }
         }}
       />
-      <CourseSelectPopup
-        visible={isCourseSelectVisible}
-        onClose={() => setIsCourseSelectVisible(false)}
-        onBack={() => {
-          setIsCourseSelectVisible(false);
-          setIsNewScheduleVisible(true);
-        }}
-      />
-      <CourseSelectPopup
-        visible={isPlaceSelectVisible}
-        label="일정으로 가져올 장소를 선택하세요."
-        onClose={() => { setIsPlaceSelectVisible(false); router.back(); }}
-        onBack={() => { setIsPlaceSelectVisible(false); router.back(); }}
-      />
-      {selectedPlace && (
-        <AddPlaceConfirmAlert
-          visible={isPlaceConfirmVisible}
-          place={selectedPlace}
-          onClose={() => {
-            setIsPlaceConfirmVisible(false);
-            setIsPlaceSelectVisible(true);
-          }}
-          onBack={() => {
-            setIsPlaceConfirmVisible(false);
-            setIsPlaceSelectVisible(true);
-          }}
-          onConfirm={async () => {
-            if (!params.scheduleId) return;
-            const scheduleId = Number(params.scheduleId);
-            const dayNum = Number(params.dayNumber ?? 1);
-            const allSchedules = [...mySchedules, ...pastSchedules];
-            const schedule = allSchedules.find(s => s.id === scheduleId);
-            const existingCount = schedule?.daily_places.filter(dp => dp.day_number === dayNum).length ?? 0;
-            try {
-              await scheduleApi.addPlace(scheduleId, {
-                place_id: selectedPlace.id,
-                day_number: dayNum,
-                order: existingCount + 1,
-              });
-            } catch {}
-            setIsPlaceConfirmVisible(false);
-            router.back();
-          }}
-        />
-      )}
-      {selectedCourseMedia && (
-        <NewScheduleStep3Alert
-          visible={isStep3Visible}
-          onClose={() => {
-            setIsStep3Visible(false);
-            setIsCourseSelectVisible(true);
-          }}
-          onBack={() => {
-            setIsStep3Visible(false);
-            setIsCourseSelectVisible(true);
-          }}
-          onConfirm={async () => {
-            if (!scheduleData || !selectedCourseMedia) return;
-            const { name, range } = scheduleData;
-            const fmt = (n: number) => String(n).padStart(2, '0');
-            const startDate = `${range.year}-${fmt(range.month + 1)}-${fmt(range.startDay)}`;
-            const endDate = `${range.year}-${fmt(range.month + 1)}-${fmt(range.endDay)}`;
-            try {
-              const res = await mediaApi.importToSchedule(selectedCourseMedia.id, { title: name, start_date: startDate, end_date: endDate });
-              const created = res.data;
-              if (isExpired(created.end_date)) {
-                setPastSchedules(prev => [...prev, created]);
-              } else {
-                setMySchedules(prev => [...prev, created]);
-              }
-              setIsStep3Visible(false);
-              router.push({ pathname: '/ScheduleDetailScreen', params: { id: created.id, title: name } });
-            } catch {}
-          }}
-          media={selectedCourseMedia}
-        />
-      )}
     </SafeAreaView>
   );
 }
@@ -736,8 +497,6 @@ const styles = StyleSheet.create({
   sectionTitle: { ...Typography.title1, color: Colors.light.black, paddingLeft: Spacing.h.medium },
   secondSection: { marginTop: Spacing.v.large },
   card: { flexDirection: 'row', alignItems: 'flex-start', marginHorizontal: Spacing.h.medium, marginTop: Spacing.v.medium, borderRadius: Spacing.r.small, borderWidth: Spacing.lw.small, borderColor: Colors.light.grayLight, padding: Spacing.h.medium, backgroundColor: Colors.light.white },
-  imageWrapper: { width: Size.circleMd, height: Size.circleMd, borderRadius: Size.circleMd / 2, overflow: 'hidden', flexShrink: 0 },
-  cardImage: { width: '100%', height: '100%' },
   cardContent: { flex: 1, marginLeft: Spacing.h.medium },
   cardTitle: { ...Typography.title1, color: Colors.light.black },
   infoRow: { flexDirection: 'row', alignItems: 'center', marginTop: Spacing.v.small, gap: Spacing.h.xsmall },
@@ -770,4 +529,7 @@ const styles = StyleSheet.create({
   sectionEmpty: { alignItems: 'center', marginTop: Spacing.v.medium, paddingVertical: Spacing.v.medium },
   sectionEmptyTitle: { ...Typography.subtitle2, color: Colors.light.black },
   sectionEmptySubtitle: { ...Typography.body2, color: Colors.light.grayLight, marginTop: Spacing.v.small },
+  savedMenuItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.h.medium, marginTop: Spacing.v.medium },
+  savedMenuItemSpaced: { marginTop: Spacing.v.large },
+  savedMenuLabel: { ...Typography.title1, color: Colors.light.black },
 });
