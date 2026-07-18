@@ -5,7 +5,7 @@ import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { Star, ThumbsUp } from 'lucide-react-native';
-import React from 'react';
+import React, { ReactNode } from 'react';
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 // 카드 너비 기준 대략 4줄을 넘는 글자 수 (플랫폼 간 onTextLayout 신뢰도 문제로 근사치 사용)
@@ -35,6 +35,9 @@ interface ReviewCardProps {
   onImagePress: (index: number) => void;
   onEditPress?: () => void;
   onDeletePress?: () => void;
+  likeDisabled?: boolean;
+  hideAuthor?: boolean;
+  sectionCard?: ReactNode;
 }
 
 export const ReviewCard = ({
@@ -46,23 +49,30 @@ export const ReviewCard = ({
   onImagePress,
   onEditPress,
   onDeletePress,
+  likeDisabled,
+  hideAuthor,
+  sectionCard,
 }: ReviewCardProps) => {
   const isTruncated = review.content.length > REVIEW_TRUNCATE_LENGTH;
   const likeCount = getReviewLikeCount(review, isLiked);
 
   return (
     <View style={styles.card}>
-      <View style={styles.header}>
-        <View style={styles.avatar} />
-        <View style={styles.authorInfo}>
-          <Text style={styles.authorName}>{review.author}</Text>
-          <View style={styles.dateRow}>
-            <Text style={styles.dateText}>{review.travelDate} 여행</Text>
-            <TextSeparator color={Colors.light.grayDark} />
-            <Text style={styles.dateText}>{review.writtenDate} 작성</Text>
+      {hideAuthor ? (
+        sectionCard
+      ) : (
+        <View style={styles.header}>
+          <View style={styles.avatar} />
+          <View style={styles.authorInfo}>
+            <Text style={styles.authorName}>{review.author}</Text>
+            <View style={styles.dateRow}>
+              <Text style={styles.dateText}>{review.travelDate} 여행</Text>
+              <TextSeparator color={Colors.light.grayDark} />
+              <Text style={styles.dateText}>{review.writtenDate} 작성</Text>
+            </View>
           </View>
         </View>
-      </View>
+      )}
 
       <View style={styles.ratingRow}>
         {[1, 2, 3, 4, 5].map((n) => (
@@ -103,14 +113,23 @@ export const ReviewCard = ({
 
       <View style={styles.bottomRow}>
         <View style={styles.likeRow}>
-          <TouchableOpacity onPress={onToggleLike} activeOpacity={0.7}>
+          {likeDisabled ? (
             <ThumbsUp
               size={16}
               color={isLiked ? Colors.light.dark : Colors.light.grayDark}
               fill={isLiked ? Colors.light.primary : 'none'}
               strokeWidth={IconStroke.regular}
             />
-          </TouchableOpacity>
+          ) : (
+            <TouchableOpacity onPress={onToggleLike} activeOpacity={0.7}>
+              <ThumbsUp
+                size={16}
+                color={isLiked ? Colors.light.dark : Colors.light.grayDark}
+                fill={isLiked ? Colors.light.primary : 'none'}
+                strokeWidth={IconStroke.regular}
+              />
+            </TouchableOpacity>
+          )}
           <Text style={styles.likeCount}>{likeCount}</Text>
         </View>
 
