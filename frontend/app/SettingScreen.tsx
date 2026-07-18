@@ -1,4 +1,3 @@
-import { TokenChargeAlert } from '@/components/modals/TokenChargeAlert';
 import { Divider } from '@/components/ui/Divider';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { Colors } from '@/constants/Colors';
@@ -8,7 +7,7 @@ import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { userApi } from '@/services/api';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { ChevronRight, Coins, Trash2, User as UserIcon } from 'lucide-react-native';
+import { ChevronRight, HelpCircle } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -16,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 const SettingScreen = () => {
   const router = useRouter();
   const [tokenBalance, setTokenBalance] = useState(0);
-  const [isChargeVisible, setIsChargeVisible] = useState(false);
+  const [isLargeIconMode, setIsLargeIconMode] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -24,101 +23,168 @@ const SettingScreen = () => {
     }, [])
   );
 
-  const handleResetToken = () => {
-    userApi.resetToken().then(res => setTokenBalance(res.data.token_balance)).catch(() => {});
-  };
-
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScreenHeader title="MY" onBack={() => router.back()} />
 
-      <View style={styles.profileSection}>
-        <View style={styles.avatarCircle}>
-          <UserIcon size={IconSize.large} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
+      {/* 유저 정보 섹션 */}
+      <View style={styles.userSection}>
+        <View style={styles.profileImage} />
+
+        <View style={styles.userInfoColumn}>
+          <Text style={styles.nickname}>내이름은김철수</Text>
+          <TouchableOpacity style={styles.infoDetailButton} activeOpacity={0.7} onPress={() => router.push('/AccountScreen')}>
+            <Text style={styles.infoDetailText}>내 정보</Text>
+            <ChevronRight size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
+          </TouchableOpacity>
         </View>
-        <View style={styles.tokenInfo}>
-          <Text style={styles.tokenLabel}>보유 토큰</Text>
-          <View style={styles.tokenRow}>
-            <Coins size={IconSize.medium} color={Colors.light.primary} strokeWidth={IconStroke.regular} />
-            <Text style={styles.tokenValue}>{tokenBalance.toLocaleString()}</Text>
-            <TouchableOpacity
-              onPress={handleResetToken}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              style={styles.resetButton}
-            >
-              <Trash2 size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
-            </TouchableOpacity>
-          </View>
-        </View>
+
+        <TouchableOpacity style={styles.mailboxButton} activeOpacity={0.7} onPress={() => router.push('/MailboxScreen')}>
+          <Text style={styles.mailboxButtonText}>우편함</Text>
+        </TouchableOpacity>
       </View>
 
-      <TouchableOpacity style={styles.chargeButton} activeOpacity={0.8} onPress={() => setIsChargeVisible(true)}>
-        <Text style={styles.chargeButtonText}>토큰 충전하기</Text>
+      <Divider marginTop={Spacing.v.large} style={{ marginHorizontal: Spacing.h.medium }} />
+
+      {/* 토큰 섹션 */}
+      <View style={styles.tokenSection}>
+        <View style={styles.tokenLabelRow}>
+          <Text style={styles.tokenLabel}>토큰</Text>
+          <Text style={styles.tokenValue}>{tokenBalance.toLocaleString()} 토큰</Text>
+        </View>
+        <TouchableOpacity style={styles.chargeButton} activeOpacity={0.8} onPress={() => router.push('/TokenChargeScreen')}>
+          <Text style={styles.chargeButtonText}>충전</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* 리뷰 관리 섹션 */}
+      <TouchableOpacity style={styles.menuRow} activeOpacity={0.7} onPress={() => router.push('/ReviewManageScreen')}>
+        <Text style={styles.menuRowText}>작성한 리뷰 관리</Text>
+        <ChevronRight size={IconSize.medium} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
       </TouchableOpacity>
 
-      <Divider style={{ marginHorizontal: Spacing.h.medium, marginTop: Spacing.v.medium }} />
-
-      <TouchableOpacity style={styles.menuItem} activeOpacity={0.7} onPress={() => router.push('/AccountScreen')}>
-        <Text style={styles.menuLabel}>계정</Text>
-        <ChevronRight size={IconSize.large} color={Colors.light.grayDark} />
+      {/* 포토스팟 관리 섹션 */}
+      <TouchableOpacity style={styles.menuRow} activeOpacity={0.7}>
+        <Text style={styles.menuRowText}>작성한 포토스팟 관리</Text>
+        <ChevronRight size={IconSize.medium} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
       </TouchableOpacity>
-      <Divider style={{ marginHorizontal: Spacing.h.medium }} />
 
-      <TokenChargeAlert
-        visible={isChargeVisible}
-        onClose={() => setIsChargeVisible(false)}
-        onCharged={setTokenBalance}
-      />
+      {/* 아이콘 모드 섹션 */}
+      <View style={styles.iconModeSection}>
+        <View style={styles.iconModeTextColumn}>
+          <Text style={styles.iconModeTitle}>큰 아이콘 모드</Text>
+          <View style={styles.iconModeDescRow}>
+            <HelpCircle size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
+            <Text style={styles.iconModeDesc}>상세정보 화면을 좀 더 큰 아이콘으로 볼 수 있어요.</Text>
+          </View>
+        </View>
+        <TouchableOpacity
+          style={[styles.toggle, { backgroundColor: isLargeIconMode ? Colors.light.primary : Colors.light.grayLight }]}
+          onPress={() => setIsLargeIconMode(!isLargeIconMode)}
+          activeOpacity={0.8}
+        >
+          <View style={[styles.toggleCircle, { left: isLargeIconMode ? 26 : 2 }]} />
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.light.background },
-  profileSection: {
+  userSection: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     paddingHorizontal: Spacing.h.medium,
     marginTop: Spacing.v.medium,
   },
-  avatarCircle: {
-    width: Size.circleMd,
-    height: Size.circleMd,
-    borderRadius: Size.circleMd / 2,
+  profileImage: {
+    width: Size.avatarLg,
+    height: Size.avatarLg,
+    borderRadius: Size.avatarLg / 2,
     backgroundColor: Colors.light.grayLight,
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexShrink: 0,
   },
-  tokenInfo: {
+  userInfoColumn: {
+    flex: 1,
     marginLeft: Spacing.h.medium,
   },
-  tokenLabel: { ...Typography.subtitle1, color: Colors.light.grayDark },
-  tokenRow: {
+  nickname: { ...Typography.title1, color: Colors.light.black },
+  infoDetailButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: Spacing.h.small,
     marginTop: Spacing.v.small,
-    gap: Spacing.h.xsmall,
+    alignSelf: 'flex-start',
   },
-  tokenValue: { ...Typography.title1, color: Colors.light.black },
-  resetButton: { marginLeft: Spacing.h.xsmall },
+  infoDetailText: { ...Typography.button4, color: Colors.light.grayDark },
+  mailboxButton: {
+    width: 80,
+    height: Size.buttonSm,
+    borderWidth: Spacing.lw.small,
+    borderColor: Colors.light.grayLight,
+    borderRadius: Spacing.r.small,
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexShrink: 0,
+  },
+  mailboxButtonText: { ...Typography.button2, color: Colors.light.grayDark },
+  tokenSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.h.medium,
+    marginTop: Spacing.v.large,
+  },
+  tokenLabelRow: { flexDirection: 'row', alignItems: 'center' },
+  tokenLabel: { ...Typography.title1, color: Colors.light.black },
+  tokenValue: { ...Typography.title1, color: Colors.light.primary, marginLeft: Spacing.h.small },
   chargeButton: {
-    marginTop: Spacing.v.medium,
-    marginHorizontal: Spacing.h.medium,
+    width: 80,
     height: Size.buttonSm,
     borderRadius: Spacing.r.small,
-    backgroundColor: Colors.light.dark,
+    backgroundColor: Colors.light.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
   chargeButtonText: { ...Typography.button2, color: Colors.light.white },
-  menuItem: {
+  menuRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.h.medium,
+    marginTop: Spacing.v.large,
+  },
+  menuRowText: { ...Typography.title1, color: Colors.light.black },
+  iconModeSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: Spacing.h.medium,
-    marginTop: Spacing.v.medium,
+    marginTop: Spacing.v.large,
   },
-  menuLabel: { ...Typography.title1, color: Colors.light.black },
+  iconModeTextColumn: { flex: 1 },
+  iconModeTitle: { ...Typography.title1, color: Colors.light.black },
+  iconModeDescRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.h.small,
+    marginTop: Spacing.v.small,
+  },
+  iconModeDesc: { ...Typography.body2, color: Colors.light.grayDark, flexShrink: 1 },
+  toggle: {
+    width: 48,
+    height: 24,
+    borderRadius: 12,
+    flexShrink: 0,
+  },
+  toggleCircle: {
+    position: 'absolute',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: Colors.light.white,
+    top: 2,
+  },
 });
 
 export default SettingScreen;
