@@ -5,7 +5,7 @@ import { IconSize, IconStroke } from '@/constants/IconSize';
 import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
-import { userApi } from '@/services/api';
+import { mailApi, userApi } from '@/services/api';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { ChevronRight, HelpCircle } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
@@ -16,10 +16,12 @@ const SettingScreen = () => {
   const router = useRouter();
   const [tokenBalance, setTokenBalance] = useState(0);
   const [isLargeIconMode, setIsLargeIconMode] = useState(false);
+  const [hasMail, setHasMail] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
       userApi.getMe().then(res => setTokenBalance(res.data.token_balance)).catch(() => {});
+      mailApi.getList().then(res => setHasMail(res.data.length > 0)).catch(() => {});
     }, [])
   );
 
@@ -41,6 +43,7 @@ const SettingScreen = () => {
 
         <TouchableOpacity style={styles.mailboxButton} activeOpacity={0.7} onPress={() => router.push('/MailboxScreen')}>
           <Text style={styles.mailboxButtonText}>우편함</Text>
+          {hasMail && <View style={styles.mailboxDot} />}
         </TouchableOpacity>
       </View>
 
@@ -127,8 +130,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     flexShrink: 0,
+    position: 'relative',
   },
   mailboxButtonText: { ...Typography.button2, color: Colors.light.grayDark },
+  mailboxDot: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: Colors.light.primary,
+  },
   tokenSection: {
     flexDirection: 'row',
     justifyContent: 'space-between',
