@@ -20,6 +20,7 @@ export type SortOption = typeof SORT_OPTIONS[number];
 
 interface SortAlertProps<T extends string> {
   visible: boolean;
+  title?: string;
   options: readonly T[];
   disabledOptions?: readonly T[];
   selected: T;
@@ -27,14 +28,14 @@ interface SortAlertProps<T extends string> {
   onSelect: (option: T) => void;
 }
 
-export const SortAlert = <T extends string = SortOption>({ visible, options, disabledOptions, selected, onClose, onSelect }: SortAlertProps<T>) => (
+export const SortAlert = <T extends string = SortOption>({ visible, title = '정렬 기준', options, disabledOptions, selected, onClose, onSelect }: SortAlertProps<T>) => (
   <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
     <TouchableWithoutFeedback onPress={onClose}>
       <View style={styles.overlay}>
         <TouchableWithoutFeedback onPress={() => {}}>
           <View style={styles.container}>
             <View style={styles.header}>
-              <Text style={styles.title}>정렬 기준</Text>
+              <Text style={styles.title}>{title}</Text>
               <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                 <X size={IconSize.large} color={Colors.light.grayLight} strokeWidth={IconStroke.regular} />
               </TouchableOpacity>
@@ -97,19 +98,27 @@ const styles = StyleSheet.create({
   },
   optionRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
   },
   optionTextSelected: {
     ...Typography.title2,
     color: Colors.light.primary,
+    flex: 1,
+    flexShrink: 1,
+    marginRight: Spacing.h.small,
   },
   optionTextUnselected: {
     ...Typography.subtitle2,
     color: Colors.light.black,
+    flex: 1,
+    flexShrink: 1,
+    marginRight: Spacing.h.small,
   },
   optionTextDisabled: {
     ...Typography.subtitle2,
     color: Colors.light.grayDark,
+    flex: 1,
+    flexShrink: 1,
+    marginRight: Spacing.h.small,
   },
 });

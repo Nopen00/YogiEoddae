@@ -13,6 +13,7 @@ export interface Media {
   description: string;
   tags: Tag[];
   is_bookmarked: boolean;
+  is_submitted?: boolean;
   place_count: number | null;
   rating: number | null;
   like_count: number | null;

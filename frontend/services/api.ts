@@ -96,6 +96,14 @@ export const mediaApi = {
     }
     return apiClient.delete(`/api/media/${id}/bookmark/`);
   },
+  submitQuiz: (id: number, answers: Record<number, string>) => {
+    if (USE_MOCK) {
+      const item = MOCK_MEDIA_LIST.find(m => m.id === id);
+      if (item) item.is_submitted = true;
+      return mock({});
+    }
+    return apiClient.post(`/api/media/${id}/quiz/submit/`, { answers });
+  },
   importToSchedule: (id: number, data?: { title?: string; start_date?: string; end_date?: string }) => {
     if (USE_MOCK) {
       const mediaPlaces = MOCK_MEDIA_PLACES_MAP[id] ?? [];

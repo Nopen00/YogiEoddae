@@ -193,7 +193,7 @@ const MainScreen = () => {
         </View>
 
         {/* 3. 퀴즈 버튼 */}
-        <TouchableOpacity style={styles.quizButton} activeOpacity={0.8}>
+        <TouchableOpacity style={styles.quizButton} activeOpacity={0.8} onPress={() => router.push('/QuizListScreen')}>
           <HelpCircle size={IconSize.large} color={Colors.light.black} strokeWidth={IconStroke.regular} />
           <Text style={styles.quizButtonText}>퀴즈</Text>
         </TouchableOpacity>
