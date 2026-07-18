@@ -1,9 +1,9 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { Media, Place, Photo, MediaPlace, PhotoSpotDetail, Review, Schedule, PaginatedResponse } from './types';
+import type { Media, Place, Photo, MediaPlace, PhotoSpotDetail, Review, Schedule, PaginatedResponse, MailItem } from './types';
 import {
   MOCK_MEDIA_LIST, MOCK_MEDIA_PLACES_MAP, MOCK_PHOTOS, MOCK_PHOTOS_BY_PLACE, mockPhotoStore, mockPhotoPlaceName,
-  mockPhotoPlaceId, mockScheduleStore, mockPlaceStore, mockReviewStore, paginatedOf,
+  mockPhotoPlaceId, mockScheduleStore, mockPlaceStore, mockReviewStore, mockMailStore, paginatedOf,
   mockTokenBalance, setMockTokenBalance,
 } from './mockData';
 
@@ -59,6 +59,38 @@ export const userApi = {
       return mock({ token_balance: mockTokenBalance });
     }
     return apiClient.post<{ token_balance: number }>('/api/users/reset-token/');
+  },
+  watchAd: (reward: number) => {
+    if (USE_MOCK) {
+      setMockTokenBalance(mockTokenBalance + reward);
+      return mock({ token_balance: mockTokenBalance });
+    }
+    return apiClient.post<{ token_balance: number }>('/api/users/watch-ad/');
+  },
+};
+
+export const mailApi = {
+  getList: () =>
+    USE_MOCK ? mock([...mockMailStore]) : apiClient.get<MailItem[]>('/api/mailbox/'),
+  claim: (id: number) => {
+    if (USE_MOCK) {
+      const idx = mockMailStore.findIndex(m => m.id === id);
+      if (idx !== -1) {
+        setMockTokenBalance(mockTokenBalance + mockMailStore[idx].tokenAmount);
+        mockMailStore.splice(idx, 1);
+      }
+      return mock({ token_balance: mockTokenBalance });
+    }
+    return apiClient.post<{ token_balance: number }>(`/api/mailbox/${id}/claim/`);
+  },
+  claimAll: () => {
+    if (USE_MOCK) {
+      const total = mockMailStore.reduce((sum, m) => sum + m.tokenAmount, 0);
+      setMockTokenBalance(mockTokenBalance + total);
+      mockMailStore.length = 0;
+      return mock({ token_balance: mockTokenBalance });
+    }
+    return apiClient.post<{ token_balance: number }>('/api/mailbox/claim-all/');
   },
 };
 

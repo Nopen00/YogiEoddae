@@ -1,4 +1,4 @@
-import type { Media, Place, MediaPlace, Photo, Review, Schedule, PaginatedResponse } from './types';
+import type { Media, Place, MediaPlace, Photo, Review, Schedule, PaginatedResponse, MailItem } from './types';
 
 const MOCK_TAGS = [
   { id: 1, category: 'mood', name: '감성' },
@@ -533,6 +533,12 @@ export const mockReviewStore: Review[] = [
 export function paginatedOf<T>(results: T[]): PaginatedResponse<T> {
   return { count: results.length, next: null, previous: null, results };
 }
+
+// 우편함 mutable store — 받기/일괄받기 시 실제로 항목이 제거됨
+export const mockMailStore: MailItem[] = [
+  { id: 1, action: '퀴즈 제출', tokenAmount: 3 },
+  { id: 2, action: '리뷰 작성', tokenAmount: 5 },
+];
 
 // 보유 토큰 mutable store — 충전 시 실제로 값이 증가
 export let mockTokenBalance = 120;

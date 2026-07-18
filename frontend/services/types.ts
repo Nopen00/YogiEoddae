@@ -96,6 +96,12 @@ export interface Schedule {
   created_at: string;
 }
 
+export interface MailItem {
+  id: number;
+  action: string;
+  tokenAmount: number;
+}
+
 export interface PaginatedResponse<T> {
   count: number;
   next: string | null;
