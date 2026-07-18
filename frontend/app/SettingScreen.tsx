@@ -30,7 +30,7 @@ const SettingScreen = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScreenHeader title="마이" onBack={() => router.back()} />
+      <ScreenHeader title="MY" onBack={() => router.back()} />
 
       <View style={styles.profileSection}>
         <View style={styles.avatarCircle}>

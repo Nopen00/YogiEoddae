@@ -47,7 +47,7 @@ const TAB_ITEMS: {
     activePatterns: ['/ScheduleScreen'],
   },
   {
-    label: '마이',
+    label: 'MY',
     Icon: User,
     href: '/SettingScreen',
     activePatterns: ['/SettingScreen', '/AccountScreen'],
