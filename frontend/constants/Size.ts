@@ -7,6 +7,7 @@ export const Size = {
   header: 56,    // ScreenHeader · SearchBar 고정 높이
   circleMd: 48,  // 원형 썸네일 직경 — borderRadius: Size.circleMd / 2
   avatarLg: 50,  // MY 페이지 유저 프로필 이미지 직경
+  avatarXl: 100, // 내 정보 화면 프로필 이미지 직경
   thumbSquare: 86, // 리스트 카드용 정사각 썸네일 (코스/장소/일정 상세)
   reviewUpload: 90, // 리뷰 작성 화면 업로드 그리드 정사각 썸네일
   reviewThumbW: 120, // 리뷰 카드 표시용 썸네일 너비 (고정, 가로 스크롤 나열용이라 반응형 미적용)
