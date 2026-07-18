@@ -211,7 +211,7 @@ const PhotoSpotDetailScreen = () => {
                 <Text style={styles.placeCardTitle} numberOfLines={1}>{place?.name ?? '로딩 중...'}</Text>
                 <View style={styles.placeInfoRow}>
                   <Text style={styles.placeInfoText}>{place ? (CATEGORY_LABEL[place.category] ?? place.category) : ''}</Text>
-                  <Text style={styles.placeInfoSep}>|</Text>
+                  <TextSeparator />
                   <Text style={styles.placeInfoText} numberOfLines={1}>{place ? shortAddress(place.address) : ''}</Text>
                 </View>
                 {placeTags.length > 0 && (
@@ -534,9 +534,8 @@ const styles = StyleSheet.create({
   placeImage: { width: '100%', height: '100%' },
   placeCardContent: { flex: 1, marginLeft: Spacing.h.medium },
   placeCardTitle: { ...Typography.title1, color: Colors.light.black },
-  placeInfoRow: { flexDirection: 'row', alignItems: 'center', marginTop: Spacing.v.small, gap: Spacing.h.xsmall },
+  placeInfoRow: { flexDirection: 'row', alignItems: 'center', marginTop: Spacing.v.small },
   placeInfoText: { ...Typography.subtitle1, color: Colors.light.grayDark, flexShrink: 1 },
-  placeInfoSep: { ...Typography.subtitle1, color: Colors.light.grayDark },
   placePhotoSectionHeader: {
     marginTop: Spacing.v.large,
   },
