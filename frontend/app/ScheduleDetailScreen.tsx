@@ -3,10 +3,11 @@ import { KakaoMap } from '@/components/ui/KakaoMap';
 import { AddPlaceAlert } from '@/components/modals/AddPlaceAlert';
 import { ScheduleEditNameAlert } from '@/components/modals/ScheduleEditNameAlert';
 import { Divider } from '@/components/ui/Divider';
+import { MediaMetaText } from '@/components/ui/MediaMetaText';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { TagRow } from '@/components/ui/TagRow';
 import { TextSeparator } from '@/components/ui/TextSeparator';
-import { CATEGORY_LABEL, MEDIA_TYPE_LABEL, shortAddress } from '@/constants/labels';
+import { CATEGORY_LABEL, shortAddress } from '@/constants/labels';
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
 import { Size } from '@/constants/Size';
@@ -685,9 +686,7 @@ export default function ScheduleDetailScreen() {
                       <View style={styles.importedCourseContent}>
                         <Text style={styles.importedCourseTitle} numberOfLines={1}>{schedule.media.title}</Text>
                         <View style={styles.importedCourseInfoRow}>
-                          <Text style={styles.importedCourseInfoText}>{schedule.media.place_count ?? 0}개 장소</Text>
-                          <TextSeparator />
-                          <Text style={styles.importedCourseInfoText}>{MEDIA_TYPE_LABEL[schedule.media.media_type] ?? schedule.media.media_type}</Text>
+                          <MediaMetaText media={schedule.media} />
                         </View>
                         {schedule.media.tags.length > 0 && (
                           <TagRow>
@@ -898,10 +897,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: Spacing.v.small,
     gap: Spacing.h.xsmall,
-  },
-  importedCourseInfoText: {
-    ...Typography.subtitle1,
-    color: Colors.light.grayDark,
   },
   importedCourseTagText: {
     ...Typography.body2,

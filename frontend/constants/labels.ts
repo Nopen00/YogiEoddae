@@ -1,5 +1,7 @@
 // constants/labels.ts
 
+import type { Media } from '@/services/types';
+
 export const CITY_SHORT: Record<string, string> = {
   '서울특별시': '서울', '부산광역시': '부산', '대구광역시': '대구',
   '인천광역시': '인천', '광주광역시': '광주', '대전광역시': '대전',
@@ -26,4 +28,10 @@ export const shortAddress = (address: string): string => {
   const parts = address.split(' ');
   if (parts[0] && CITY_SHORT[parts[0]]) parts[0] = CITY_SHORT[parts[0]];
   return parts.slice(0, 2).join(' ');
+};
+
+// 코스 카드의 축약 메타 정보(미디어 형식 → 장소 수) — 순서/포맷의 단일 기준점
+export const getMediaMetaParts = (media: Pick<Media, 'media_type' | 'place_count'>): string[] => {
+  const typeLabel = MEDIA_TYPE_LABEL[media.media_type] ?? media.media_type;
+  return [typeLabel, `${media.place_count ?? 0}개 장소`];
 };

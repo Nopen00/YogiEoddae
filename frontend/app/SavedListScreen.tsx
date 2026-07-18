@@ -8,7 +8,7 @@ import { TagRow } from '@/components/ui/TagRow';
 import { TextSeparator } from '@/components/ui/TextSeparator';
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
-import { CATEGORY_LABEL, MEDIA_TYPE_LABEL, shortAddress } from '@/constants/labels';
+import { CATEGORY_LABEL, getMediaMetaParts, shortAddress } from '@/constants/labels';
 import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
@@ -94,7 +94,7 @@ export default function SavedListScreen() {
           id: m.id,
           title: m.title,
           imageUrl: m.thumbnail_url,
-          infoParts: [`${m.place_count ?? 0}개 장소`, MEDIA_TYPE_LABEL[m.media_type] ?? m.media_type],
+          infoParts: getMediaMetaParts(m),
           tags: m.tags,
         }))
       : listType === 'place'
