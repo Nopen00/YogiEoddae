@@ -8,6 +8,7 @@ import { MoreMenuAlert } from '@/components/modals/MoreMenuAlert';
 import { ScheduleAlert } from '@/components/modals/ScheduleAlert';
 import { SortAlert } from '@/components/modals/SortAlert';
 import { getReviewLikeCount, ReviewCard } from '@/components/ui/ReviewCard';
+import { KakaoMap } from '@/components/ui/KakaoMap';
 import PagerView from '@/components/ui/PagerViewWrapper';
 import { SaveHeart32 } from '@/components/icons/SaveHeart'; // 기존 저장 아이콘 가정
 import { UnSaveHeart32 } from '@/components/icons/UnSaveHeart'; // 기존 저장 아이콘 가정
@@ -19,14 +20,16 @@ import { Typography } from '@/constants/Typography';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Calendar, Check, ChevronDown, Edit3, Heart, Star } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
-import { mediaApi, reviewApi, scheduleApi } from '../services/api';
-import type { Media, MediaPlace, Review, Schedule } from '../services/types';
+import { mediaApi, placeApi, photoApi, reviewApi, scheduleApi } from '../services/api';
+import { pseudoRating } from '../services/mockData';
+import type { Media, MediaPlace, Photo, Review, Schedule } from '../services/types';
 import { Image, Linking, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CATEGORY_LABEL, MEDIA_TYPE_LABEL, shortAddress } from '@/constants/labels';
 
 const REVIEW_SORT_OPTIONS = ['추천순', '최신 여행 순', '최신 리뷰 순', '별점 높은 순', '별점 낮은 순'] as const;
 type ReviewSortOption = typeof REVIEW_SORT_OPTIONS[number];
+type PhotoSpotItem = Photo & { rating: number; like_count: number };
 
 const formatLikeCount = (count: number): string => {
   if (count < 100) return count.toString();
@@ -49,6 +52,7 @@ const CourseDetailScreen = () => {
   const [savedPhotoSpots, setSavedPhotoSpots] = useState<Record<number, boolean>>({});
   const [media, setMedia] = useState<Media | null>(null);
   const [mediaPlaces, setMediaPlaces] = useState<MediaPlace[]>([]);
+  const [photoSpots, setPhotoSpots] = useState<PhotoSpotItem[]>([]);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [photoOnly, setPhotoOnly] = useState(false);
@@ -97,6 +101,30 @@ const CourseDetailScreen = () => {
     }, [])
   );
 
+  useEffect(() => {
+    if (mediaPlaces.length === 0) return;
+    Promise.all(mediaPlaces.map(mp => placeApi.getPhotos(mp.place.id).then(res => res.data)))
+      .then(results => {
+        const photos: PhotoSpotItem[] = results.flat().map(p => ({ ...p, rating: pseudoRating(p), like_count: p.likes }));
+        setPhotoSpots(photos);
+        setSavedPhotoSpots(prev => {
+          const next = { ...prev };
+          photos.forEach(p => { next[p.id] = p.is_bookmarked ?? false; });
+          return next;
+        });
+      })
+      .catch(() => {});
+  }, [mediaPlaces]);
+
+  const toggleSavedPhotoSpot = async (photoId: number) => {
+    const isSavedNow = savedPhotoSpots[photoId];
+    try {
+      if (isSavedNow) await photoApi.unbookmark(photoId);
+      else await photoApi.bookmark(photoId);
+      setSavedPhotoSpots(prev => ({ ...prev, [photoId]: !isSavedNow }));
+    } catch {}
+  };
+
   // day 번호 기준으로 장소 그룹핑
   const dayGroups = mediaPlaces.reduce<Record<number, MediaPlace[]>>((acc, mp) => {
     const key = mp.day ?? 1;
@@ -105,6 +133,7 @@ const CourseDetailScreen = () => {
     return acc;
   }, {});
   const sortedDays = Object.keys(dayGroups).map(Number).sort((a, b) => a - b);
+  const mapPlaces = mediaPlaces.map((mp) => mp.place);
 
   const closeMenu = () => { if (isMenuVisible) setIsMenuVisible(false); };
 
@@ -231,6 +260,11 @@ const CourseDetailScreen = () => {
           <View style={styles.infoContainer}>
             <Divider marginTop={Spacing.v.large} />
 
+            {/* 코스 지도 */}
+            <View style={styles.mapWrapper}>
+              <KakaoMap places={mapPlaces} />
+            </View>
+
             {/* 코스 섹션 */}
             <Text style={styles.courseSectionTitle}>코스</Text>
 
@@ -280,7 +314,7 @@ const CourseDetailScreen = () => {
             ))}
 
             {/* 포토스팟 섹션 */}
-            {mediaPlaces.length > 0 && (
+            {photoSpots.length > 0 && (
               <>
                 <Divider marginTop={Spacing.v.large} />
                 <View style={styles.photoSpotSectionHeader}>
@@ -289,32 +323,32 @@ const CourseDetailScreen = () => {
                 </View>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: Spacing.v.medium }}
                   contentContainerStyle={styles.photoSpotScrollContent}>
-                  {mediaPlaces.map((mp) => (
+                  {photoSpots.map((photo) => (
                     <TouchableOpacity
-                      key={mp.id}
+                      key={photo.id}
                       style={{ width: smallImageWidth }}
                       activeOpacity={0.9}
-                      onPress={() => router.push({ pathname: '/PlaceDetailScreen', params: { id: mp.place.id, name: mp.place.name } })}
+                      onPress={() => router.push({ pathname: '/PhotoSpotDetailScreen', params: { id: photo.id, name: photo.description } })}
                     >
                       <View style={[styles.photoSpotImageBox, { width: smallImageWidth, height: smallImageHeight }]}>
-                        <Image source={{ uri: mp.place.image_url ?? undefined }} style={styles.photoSpotImage} resizeMode="cover" />
+                        <Image source={{ uri: photo.image_url ?? undefined }} style={styles.photoSpotImage} resizeMode="cover" />
                         <TouchableOpacity
                           style={styles.photoSpotHeart}
-                          onPress={(e) => { e.stopPropagation(); setSavedPhotoSpots(prev => ({ ...prev, [mp.place.id]: !prev[mp.place.id] })); }}
+                          onPress={(e) => { e.stopPropagation(); toggleSavedPhotoSpot(photo.id); }}
                           activeOpacity={0.8}
                         >
                           <Heart
                             size={IconSize.large}
-                            color={savedPhotoSpots[mp.place.id] ? Colors.light.heart : Colors.light.white}
-                            fill={savedPhotoSpots[mp.place.id] ? Colors.light.heart : 'transparent'}
+                            color={savedPhotoSpots[photo.id] ? Colors.light.heart : Colors.light.white}
+                            fill={savedPhotoSpots[photo.id] ? Colors.light.heart : 'transparent'}
                             strokeWidth={IconStroke.thin}
                           />
                         </TouchableOpacity>
                       </View>
-                      <Text style={styles.photoSpotItemTitle} numberOfLines={1}>{mp.place.name}</Text>
-                      {mp.place.tags.length > 0 && (
+                      <Text style={styles.photoSpotItemTitle} numberOfLines={1}>{photo.description}</Text>
+                      {photo.tags.length > 0 && (
                         <TagRow>
-                          {mp.place.tags.map((tag) => (
+                          {photo.tags.map((tag) => (
                             <Text key={tag.id} style={styles.photoSpotTag}>#{tag.name}</Text>
                           ))}
                         </TagRow>
@@ -528,10 +562,18 @@ const styles = StyleSheet.create({
     ...Typography.body2,
     color: Colors.light.black,
   },
+  mapWrapper: {
+    marginTop: Spacing.v.large,
+    marginBottom: Spacing.v.medium,
+    width: '100%',
+    aspectRatio: 4 / 3,
+    borderRadius: Spacing.r.small,
+    overflow: 'hidden',
+    backgroundColor: Colors.light.grayLight,
+  },
   courseSectionTitle: {
     ...Typography.title1,
     color: Colors.light.black,
-    marginTop: Spacing.v.large,
   },
   dayRow: {
     flexDirection: 'row',
