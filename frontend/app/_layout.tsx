@@ -36,7 +36,12 @@ function RootLayoutNav() {
             <Stack.Screen name="ReviewWriteScreen" options={{ headerShown: false }} />
             <Stack.Screen name="ScheduleScreen" options={{ headerShown: false }} />
             <Stack.Screen name="SavedListScreen" options={{ headerShown: false }} />
+            <Stack.Screen name="QuizListScreen" options={{ headerShown: false }} />
+            <Stack.Screen name="QuizDetailScreen" options={{ headerShown: false }} />
             <Stack.Screen name="SettingScreen" options={{ headerShown: false }} />
+            <Stack.Screen name="MailboxScreen" options={{ headerShown: false }} />
+            <Stack.Screen name="TokenChargeScreen" options={{ headerShown: false }} />
+            <Stack.Screen name="ReviewManageScreen" options={{ headerShown: false }} />
             <Stack.Screen name="AccountScreen" options={{ headerShown: false }} />
             <Stack.Screen name="ScheduleDetailScreen" options={{ headerShown: false }} />
             <Stack.Screen name="CourseScreen" options={{ headerShown: false }} />
