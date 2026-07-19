@@ -5,6 +5,9 @@ import {
   MOCK_MEDIA_LIST, MOCK_MEDIA_PLACES_MAP, MOCK_PHOTOS, MOCK_PHOTOS_BY_PLACE, mockPhotoStore, mockPhotoPlaceName,
   mockPhotoPlaceId, mockScheduleStore, mockPlaceStore, mockReviewStore, mockMailStore, paginatedOf,
   mockTokenBalance, setMockTokenBalance,
+  mockNickname, setMockNickname,
+  mockUserId, setMockUserId,
+  mockEmail, setMockEmail,
 } from './mockData';
 
 // 토큰 충전 상품 카탈로그 — 백엔드 TOKEN_PACKAGES(users/views.py)와 동일하게 유지
@@ -47,7 +50,9 @@ export const userApi = {
   createUser: () =>
     USE_MOCK ? mock({ device_id: 'mock-device' }) : apiClient.post<{ device_id: string }>('/api/users/'),
   getMe: () =>
-    USE_MOCK ? mock({ token_balance: mockTokenBalance }) : apiClient.get<{ token_balance: number }>('/api/users/me/'),
+    USE_MOCK
+      ? mock({ token_balance: mockTokenBalance, nickname: mockNickname, user_id: mockUserId, email: mockEmail })
+      : apiClient.get<{ token_balance: number; nickname: string; user_id: string; email: string }>('/api/users/me/'),
   chargeToken: (packageId: string) => {
     if (USE_MOCK) {
       const pkg = TOKEN_PACKAGES.find(p => p.id === packageId);
@@ -75,6 +80,27 @@ export const userApi = {
       return mock({ success: password === MOCK_PASSWORD });
     }
     return apiClient.post<{ success: boolean }>('/api/users/verify-password/', { password });
+  },
+  updateNickname: (nickname: string) => {
+    if (USE_MOCK) {
+      setMockNickname(nickname);
+      return mock({ nickname: mockNickname });
+    }
+    return apiClient.patch<{ nickname: string }>('/api/users/me/', { nickname });
+  },
+  updateUserId: (userId: string) => {
+    if (USE_MOCK) {
+      setMockUserId(userId);
+      return mock({ user_id: mockUserId });
+    }
+    return apiClient.patch<{ user_id: string }>('/api/users/me/', { user_id: userId });
+  },
+  updateEmail: (email: string) => {
+    if (USE_MOCK) {
+      setMockEmail(email);
+      return mock({ email: mockEmail });
+    }
+    return apiClient.patch<{ email: string }>('/api/users/me/', { email });
   },
 };
 

@@ -545,3 +545,21 @@ export let mockTokenBalance = 120;
 export function setMockTokenBalance(next: number) {
   mockTokenBalance = next;
 }
+
+// 닉네임 mutable store — 화면을 나갔다 들어와도 변경값 유지 (앱 재시작 시엔 초기화)
+export let mockNickname = '내이름은김철수';
+export function setMockNickname(next: string) {
+  mockNickname = next;
+}
+
+// 아이디 mutable store — 화면을 나갔다 들어와도 변경값 유지 (앱 재시작 시엔 초기화)
+export let mockUserId = 'id1234';
+export function setMockUserId(next: string) {
+  mockUserId = next;
+}
+
+// 이메일 mutable store — 화면을 나갔다 들어와도 변경값 유지 (앱 재시작 시엔 초기화)
+export let mockEmail = '1234@1234.com';
+export function setMockEmail(next: string) {
+  mockEmail = next;
+}

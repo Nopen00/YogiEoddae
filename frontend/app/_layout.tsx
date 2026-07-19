@@ -45,6 +45,12 @@ function RootLayoutNav() {
             <Stack.Screen name="AccountScreen" options={{ headerShown: false }} />
             <Stack.Screen name="PasswordConfirmScreen" options={{ headerShown: false }} />
             <Stack.Screen name="PasswordChangeScreen" options={{ headerShown: false }} />
+            <Stack.Screen name="IdChangeScreen" options={{ headerShown: false }} />
+            <Stack.Screen name="PasswordEditScreen" options={{ headerShown: false }} />
+            <Stack.Screen name="PasswordResetScreen" options={{ headerShown: false }} />
+            <Stack.Screen name="EmailChangeScreen" options={{ headerShown: false }} />
+            <Stack.Screen name="EmailVerifyScreen" options={{ headerShown: false }} />
+            <Stack.Screen name="WithdrawalScreen" options={{ headerShown: false }} />
             <Stack.Screen name="ScheduleDetailScreen" options={{ headerShown: false }} />
             <Stack.Screen name="CourseScreen" options={{ headerShown: false }} />
           </Stack>

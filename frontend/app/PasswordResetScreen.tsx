@@ -1,0 +1,303 @@
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { Colors } from '@/constants/Colors';
+import { IconSize } from '@/constants/IconSize';
+import { Shadows } from '@/constants/Shadows';
+import { Size } from '@/constants/Size';
+import { Spacing } from '@/constants/Spacing';
+import { Typography } from '@/constants/Typography';
+import { userApi } from '@/services/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
+import { AlertCircle, Eye, EyeOff } from 'lucide-react-native';
+import React, { useEffect, useState } from 'react';
+import { Dimensions, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+// 최근 사용한 비밀번호 mock 목록 — 실제 이력 대신 더미 값으로 비교
+const RECENT_PASSWORDS = ['123456', 'past1234!'];
+
+type NewPasswordError = 'tooShort' | 'notMixed' | 'sameAsUserId' | 'recentlyUsed' | null;
+
+const getNewPasswordError = (password: string, userId: string): NewPasswordError => {
+  if (password.length < 8) return 'tooShort';
+  const hasLetter = /[a-zA-Z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+  const hasSpecial = /[^a-zA-Z0-9]/.test(password);
+  if (!hasLetter || !hasNumber || !hasSpecial) return 'notMixed';
+  if (password === userId) return 'sameAsUserId';
+  if (RECENT_PASSWORDS.includes(password)) return 'recentlyUsed';
+  return null;
+};
+
+const NEW_PASSWORD_ERROR_MESSAGE: Record<Exclude<NewPasswordError, null>, string> = {
+  tooShort: '8자 이상으로 입력해주세요.',
+  notMixed: '영문, 숫자, 특수문자를 혼합사용하여 입력해주세요.',
+  sameAsUserId: '아이디와 같은 비밀번호는 사용할 수 없습니다.',
+  recentlyUsed: '최근에 사용했던 비밀번호는 사용할 수 없습니다.',
+};
+
+interface PasswordInputBoxProps {
+  label: string;
+  value: string;
+  onChangeText: (text: string) => void;
+  visible: boolean;
+  onToggleVisible: () => void;
+  errorMessage?: string;
+}
+
+const PasswordInputBox = ({ label, value, onChangeText, visible, onToggleVisible, errorMessage }: PasswordInputBoxProps) => (
+  <>
+    <View style={[styles.passwordBox, errorMessage && styles.passwordBoxError]}>
+      <View style={styles.inputSection}>
+        {value.length > 0 && (
+          <Text style={[styles.inputLabel, errorMessage && styles.inputLabelError]}>{label}</Text>
+        )}
+        <TextInput
+          style={[styles.passwordInput, { color: value ? Colors.light.black : Colors.light.grayLight }]}
+          placeholder={label}
+          placeholderTextColor={Colors.light.grayLight}
+          value={value}
+          onChangeText={onChangeText}
+          secureTextEntry={!visible}
+        />
+      </View>
+      <View style={styles.boxRightIcons}>
+        <TouchableOpacity activeOpacity={0.7} onPress={onToggleVisible}>
+          {visible ? (
+            <EyeOff size={IconSize.large} color={Colors.light.grayLight} />
+          ) : (
+            <Eye size={IconSize.large} color={Colors.light.grayLight} />
+          )}
+        </TouchableOpacity>
+        {errorMessage && (
+          <AlertCircle size={IconSize.large} color={Colors.light.error} style={styles.errorIcon} />
+        )}
+      </View>
+    </View>
+    {errorMessage && (
+      <View style={styles.errorRow}>
+        <AlertCircle size={IconSize.xsmall} color={Colors.light.error} />
+        <Text style={styles.errorText}>{errorMessage}</Text>
+      </View>
+    )}
+  </>
+);
+
+const PasswordResetScreen = () => {
+  const router = useRouter();
+  const [newPassword, setNewPassword] = useState('');
+  const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
+  const [newVisible, setNewVisible] = useState(false);
+  const [newConfirmVisible, setNewConfirmVisible] = useState(false);
+  const [newPasswordError, setNewPasswordError] = useState<NewPasswordError>(null);
+  const [newPasswordConfirmError, setNewPasswordConfirmError] = useState(false);
+  const [userId, setUserId] = useState('');
+  const [confirmPopupVisible, setConfirmPopupVisible] = useState(false);
+  const [successPopupVisible, setSuccessPopupVisible] = useState(false);
+
+  useEffect(() => {
+    userApi.getMe().then((res) => setUserId(res.data.user_id));
+  }, []);
+
+  const isActive = newPassword.trim().length > 0 && newPasswordConfirm.trim().length > 0;
+
+  const handleChangeNewPassword = (text: string) => {
+    setNewPassword(text);
+    if (newPasswordError) setNewPasswordError(null);
+  };
+
+  const handleChangeNewPasswordConfirm = (text: string) => {
+    setNewPasswordConfirm(text);
+    if (newPasswordConfirmError) setNewPasswordConfirmError(false);
+  };
+
+  const handleConfirm = () => {
+    if (!isActive) return;
+    const nextNewPasswordError = getNewPasswordError(newPassword, userId);
+    setNewPasswordError(nextNewPasswordError);
+
+    const isNewPasswordConfirmError = newPasswordConfirm !== newPassword;
+    setNewPasswordConfirmError(isNewPasswordConfirmError);
+
+    if (nextNewPasswordError || isNewPasswordConfirmError) return;
+    setConfirmPopupVisible(true);
+  };
+
+  return (
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <ScreenHeader onBack={() => router.back()} title="비밀번호 변경" />
+
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Spacing.v.screenBottom }}>
+      <View style={styles.body}>
+        <Text style={styles.title}>비밀번호를 변경해주세요.</Text>
+        <Text style={styles.subtitle}>비밀번호를 변경할 시, 7일 간 재변경이 불가능합니다.</Text>
+
+        <PasswordInputBox
+          label="새 비밀번호"
+          value={newPassword}
+          onChangeText={handleChangeNewPassword}
+          visible={newVisible}
+          onToggleVisible={() => setNewVisible(!newVisible)}
+          errorMessage={newPasswordError ? NEW_PASSWORD_ERROR_MESSAGE[newPasswordError] : undefined}
+        />
+
+        <PasswordInputBox
+          label="새 비밀번호 확인"
+          value={newPasswordConfirm}
+          onChangeText={handleChangeNewPasswordConfirm}
+          visible={newConfirmVisible}
+          onToggleVisible={() => setNewConfirmVisible(!newConfirmVisible)}
+          errorMessage={newPasswordConfirmError ? '입력한 비밀번호가 다릅니다.' : undefined}
+        />
+
+        <TouchableOpacity
+          style={[styles.confirmButton, !isActive && styles.confirmButtonDisabled]}
+          activeOpacity={0.8}
+          disabled={!isActive}
+          onPress={handleConfirm}
+        >
+          <Text style={[styles.confirmButtonText, !isActive && styles.confirmButtonTextDisabled]}>변경</Text>
+        </TouchableOpacity>
+      </View>
+      </ScrollView>
+      </KeyboardAvoidingView>
+
+      <Modal visible={confirmPopupVisible} transparent animationType="fade">
+        <View style={styles.confirmOverlay}>
+          <View style={styles.confirmPopup}>
+            <Text style={styles.confirmTitle}>비밀번호를 변경하시겠습니까?</Text>
+            <Text style={styles.confirmDesc}>비밀번호를 변경할 시, 7일 간 재변경이 불가능합니다.</Text>
+            <View style={styles.confirmButtons}>
+              <TouchableOpacity
+                style={styles.btnConfirm}
+                activeOpacity={0.8}
+                onPress={() => {
+                  setConfirmPopupVisible(false);
+                  setSuccessPopupVisible(true);
+                }}
+              >
+                <Text style={styles.btnConfirmText}>변경</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.btnCancel}
+                activeOpacity={0.8}
+                onPress={() => setConfirmPopupVisible(false)}
+              >
+                <Text style={styles.btnCancelText}>취소</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={successPopupVisible} transparent animationType="none">
+        <TouchableOpacity
+          style={styles.resultOverlay}
+          activeOpacity={1}
+          onPress={async () => {
+            setSuccessPopupVisible(false);
+            await AsyncStorage.removeItem('device_id');
+            router.replace('/');
+          }}
+        >
+          <View style={styles.resultPopupBox}>
+            <Text style={styles.resultTitle}>비밀번호가 변경되었습니다.</Text>
+            <Text style={styles.resultSub1}>보안을 위해 다시 로그인해 주세요.</Text>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+    </SafeAreaView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: Colors.light.background },
+  body: {
+    marginTop: Spacing.v.medium,
+    paddingHorizontal: Spacing.h.medium,
+  },
+  title: { ...Typography.title1, color: Colors.light.black },
+  subtitle: { ...Typography.body2, color: Colors.light.grayDark, marginTop: Spacing.v.small },
+  passwordBox: {
+    marginTop: Spacing.v.large,
+    minHeight: Size.buttonSm,
+    paddingHorizontal: Spacing.h.medium,
+    paddingVertical: Spacing.v.medium,
+    borderWidth: Spacing.lw.small,
+    borderColor: Colors.light.grayLight,
+    borderRadius: Spacing.r.small,
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+  },
+  passwordBoxError: { borderColor: Colors.light.error },
+  inputSection: { flex: 1 },
+  inputLabel: { ...Typography.body1, color: Colors.light.grayLight, marginBottom: Spacing.v.small },
+  inputLabelError: { color: Colors.light.error },
+  passwordInput: { padding: 0, ...Typography.body3 },
+  boxRightIcons: { flexDirection: 'row', alignItems: 'center' },
+  errorIcon: { marginLeft: Spacing.h.small },
+  errorRow: {
+    marginTop: Spacing.v.medium,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  errorText: { ...Typography.body2, color: Colors.light.error, marginLeft: Spacing.h.small },
+  confirmButton: {
+    marginTop: Spacing.v.large,
+    minHeight: Size.buttonMd,
+    paddingVertical: Spacing.v.medium,
+    borderRadius: Spacing.r.small,
+    backgroundColor: Colors.light.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  confirmButtonDisabled: { backgroundColor: Colors.light.grayLight },
+  confirmButtonText: { ...Typography.button2, color: Colors.light.white },
+  confirmButtonTextDisabled: { color: Colors.light.grayDark },
+
+  confirmOverlay: { flex: 1, backgroundColor: Colors.light.overlay, justifyContent: 'center', alignItems: 'center' },
+  confirmPopup: {
+    width: SCREEN_WIDTH - 64,
+    borderRadius: Spacing.r.small,
+    borderWidth: Spacing.lw.small,
+    borderColor: Colors.light.grayLight,
+    backgroundColor: Colors.light.white,
+    paddingTop: Spacing.v.medium,
+    paddingHorizontal: Spacing.h.medium,
+    paddingBottom: Spacing.v.medium,
+    ...Shadows.card,
+  },
+  confirmTitle: { ...Typography.subtitle2, color: Colors.light.black, textAlign: 'center' },
+  confirmDesc: { ...Typography.body2, color: Colors.light.primary, marginTop: Spacing.v.medium, textAlign: 'center' },
+  confirmButtons: { flexDirection: 'row', justifyContent: 'center', gap: Spacing.h.medium, marginTop: Spacing.v.medium },
+  btnConfirm: { width: 80, height: Size.buttonSm, borderRadius: Spacing.r.small, backgroundColor: Colors.light.grayLight, justifyContent: 'center', alignItems: 'center' },
+  btnConfirmText: { ...Typography.button2, color: Colors.light.grayDark },
+  btnCancel: { width: 80, height: Size.buttonSm, borderRadius: Spacing.r.small, backgroundColor: Colors.light.primary, justifyContent: 'center', alignItems: 'center' },
+  btnCancelText: { ...Typography.button2, color: Colors.light.white },
+
+  resultOverlay: {
+    flex: 1,
+    backgroundColor: Colors.light.overlay,
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.h.xlarge,
+  },
+  resultPopupBox: {
+    backgroundColor: Colors.light.white,
+    borderRadius: Spacing.r.small,
+    borderWidth: Spacing.lw.small,
+    borderColor: Colors.light.grayLight,
+    alignItems: 'center',
+    paddingVertical: Spacing.v.medium,
+    paddingHorizontal: Spacing.h.medium,
+  },
+  resultTitle: { ...Typography.subtitle2, color: Colors.light.black, textAlign: 'center' },
+  resultSub1: { ...Typography.body2, color: Colors.light.primary, marginTop: Spacing.v.medium, textAlign: 'center' },
+});
+
+export default PasswordResetScreen;

@@ -17,10 +17,14 @@ const SettingScreen = () => {
   const [tokenBalance, setTokenBalance] = useState(0);
   const [isLargeIconMode, setIsLargeIconMode] = useState(false);
   const [hasMail, setHasMail] = useState(false);
+  const [hasEmail, setHasEmail] = useState(true);
 
   useFocusEffect(
     useCallback(() => {
-      userApi.getMe().then(res => setTokenBalance(res.data.token_balance)).catch(() => {});
+      userApi.getMe().then(res => {
+        setTokenBalance(res.data.token_balance);
+        setHasEmail(res.data.email.trim().length > 0);
+      }).catch(() => {});
       mailApi.getList().then(res => setHasMail(res.data.length > 0)).catch(() => {});
     }, [])
   );
@@ -36,7 +40,10 @@ const SettingScreen = () => {
         <View style={styles.userInfoColumn}>
           <Text style={styles.nickname}>내이름은김철수</Text>
           <TouchableOpacity style={styles.infoDetailButton} activeOpacity={0.7} onPress={() => router.push('/PasswordConfirmScreen')}>
-            <Text style={styles.infoDetailText}>내 정보</Text>
+            <View style={styles.infoDetailTextWrapper}>
+              <Text style={styles.infoDetailText}>내 정보</Text>
+              {!hasEmail && <View style={styles.infoDetailDot} />}
+            </View>
             <ChevronRight size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
           </TouchableOpacity>
         </View>
@@ -120,7 +127,17 @@ const styles = StyleSheet.create({
     marginTop: Spacing.v.small,
     alignSelf: 'flex-start',
   },
+  infoDetailTextWrapper: { position: 'relative' },
   infoDetailText: { ...Typography.button4, color: Colors.light.grayDark },
+  infoDetailDot: {
+    position: 'absolute',
+    top: 0,
+    right: -8,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.light.primary,
+  },
   mailboxButton: {
     width: 80,
     height: Size.buttonSm,

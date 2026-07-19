@@ -8,7 +8,7 @@ import { userApi } from '@/services/api';
 import { useRouter } from 'expo-router';
 import { AlertCircle, Eye, EyeOff } from 'lucide-react-native';
 import React, { useState } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const PasswordConfirmScreen = () => {
@@ -41,6 +41,11 @@ const PasswordConfirmScreen = () => {
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScreenHeader onBack={() => router.back()} title="비밀번호 재확인" />
 
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Spacing.v.screenBottom }}>
       <View style={styles.body}>
         <Text style={styles.title}>비밀번호를 다시 확인해 주세요.</Text>
         <Text style={styles.subtitle}>회원님의 정보를 보호하기 위해 인증이 필요합니다.</Text>
@@ -96,6 +101,8 @@ const PasswordConfirmScreen = () => {
           <Text style={styles.changeLink}>123456</Text>
         </View>
       </View>
+      </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
