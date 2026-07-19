@@ -13,6 +13,10 @@ import { ActivityIndicator, Modal, ScrollView, StyleSheet, Text, TouchableOpacit
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const AD_REWARD_TOKENS = 10;
+// mock 응답이 거의 즉시 와서 로딩 스피너가 한 프레임만 스치듯 지나가는 것을 막기 위한 최소 노출 시간
+const MIN_LOADING_MS = 400;
+
+const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 const TokenChargeScreen = () => {
   const router = useRouter();
@@ -32,11 +36,14 @@ const TokenChargeScreen = () => {
 
   const handlePick = async (packageId: string, tokens: number) => {
     setChargingId(packageId);
+    const start = Date.now();
     try {
       const res = await userApi.chargeToken(packageId);
+      await wait(Math.max(0, MIN_LOADING_MS - (Date.now() - start)));
       setTokenBalance(res.data.token_balance);
       setChargeResult({ tokens, balance: res.data.token_balance });
     } catch {
+      await wait(Math.max(0, MIN_LOADING_MS - (Date.now() - start)));
       setIsChargeFailed(true);
     }
     setChargingId(null);
@@ -44,11 +51,14 @@ const TokenChargeScreen = () => {
 
   const handleWatchAd = async () => {
     setIsWatchingAd(true);
+    const start = Date.now();
     try {
       const res = await userApi.watchAd(AD_REWARD_TOKENS);
+      await wait(Math.max(0, MIN_LOADING_MS - (Date.now() - start)));
       setTokenBalance(res.data.token_balance);
       setAdResult({ tokens: AD_REWARD_TOKENS, balance: res.data.token_balance });
     } catch {
+      await wait(Math.max(0, MIN_LOADING_MS - (Date.now() - start)));
       setIsAdFailed(true);
     }
     setIsWatchingAd(false);
@@ -178,6 +188,7 @@ const styles = StyleSheet.create({
   packageTokenText: { ...Typography.subtitle2, color: Colors.light.black },
   priceButton: {
     height: Size.buttonSm,
+    minWidth: 96,
     paddingHorizontal: Spacing.h.medium,
     borderRadius: Spacing.r.small,
     backgroundColor: Colors.light.primary,
