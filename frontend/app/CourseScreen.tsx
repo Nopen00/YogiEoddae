@@ -410,7 +410,10 @@ const CourseScreen = () => {
     <TouchableOpacity
       style={styles.photoTagItemContainer}
       activeOpacity={0.7}
-      onPress={() => setSelectedPhotoTag(item)}
+      onPress={() => {
+        setSelectedPhotoTag(item);
+        handleTabPress(4);
+      }}
     >
       <View style={styles.photoTagCircle} />
       <Text style={styles.photoTagTitleText} numberOfLines={1}>{item}</Text>
@@ -418,7 +421,7 @@ const CourseScreen = () => {
   );
 
   const renderPhotoTagSection = (marginTop: number, keyPrefix: string) =>
-    selectedPhotoTag ? (
+    selectedPhotoTag && keyPrefix === 'photo-spot-theme' ? (
       <View style={[styles.photoTagPillBox, { marginTop }]}>
         <View style={styles.photoTagPillLeftGroup}>
           <Text style={styles.photoTagPillTitle} numberOfLines={1}>{selectedPhotoTag}</Text>
