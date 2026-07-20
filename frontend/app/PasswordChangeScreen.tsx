@@ -74,7 +74,7 @@ const PasswordChangeScreen = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScreenHeader onBack={() => router.back()} title="비밀번호 변경" />
+      <ScreenHeader onBack={() => router.back()} title="비밀번호 재설정" />
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}

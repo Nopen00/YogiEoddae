@@ -14,6 +14,21 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 // 이미 사용 중인 이메일 mock 목록 — 실제 회원 조회 대신 더미 값으로 비교
 const EXISTING_EMAILS = ['1234@1234.com', 'test@test.com'];
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+type EmailError = 'invalidFormat' | 'duplicate' | null;
+
+const getEmailError = (email: string): EmailError => {
+  if (!EMAIL_REGEX.test(email)) return 'invalidFormat';
+  if (EXISTING_EMAILS.includes(email)) return 'duplicate';
+  return null;
+};
+
+const EMAIL_ERROR_MESSAGE: Record<Exclude<EmailError, null>, string> = {
+  invalidFormat: '이메일의 형식이 아닙니다.',
+  duplicate: '이미 사용중인 이메일 입니다.',
+};
+
 interface InputBoxProps {
   label: string;
   placeholder: string;
@@ -73,13 +88,13 @@ const EmailChangeScreen = () => {
   const [password, setPassword] = useState('');
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [passwordError, setPasswordError] = useState(false);
-  const [emailError, setEmailError] = useState(false);
+  const [emailError, setEmailError] = useState<EmailError>(null);
 
   const isActive = newEmail.trim().length > 0 && password.trim().length > 0;
 
   const handleChangeNewEmail = (text: string) => {
     setNewEmail(text);
-    if (emailError) setEmailError(false);
+    if (emailError) setEmailError(null);
   };
 
   const handleChangePassword = (text: string) => {
@@ -89,7 +104,7 @@ const EmailChangeScreen = () => {
 
   const handleBlurNewEmail = () => {
     if (!newEmail.trim()) return;
-    setEmailError(EXISTING_EMAILS.includes(newEmail.trim()));
+    setEmailError(getEmailError(newEmail.trim()));
   };
 
   const handleBlurPassword = async () => {
@@ -104,10 +119,10 @@ const EmailChangeScreen = () => {
     const isPasswordError = !res.data.success;
     setPasswordError(isPasswordError);
 
-    const isEmailError = EXISTING_EMAILS.includes(newEmail.trim());
-    setEmailError(isEmailError);
+    const nextEmailError = getEmailError(newEmail.trim());
+    setEmailError(nextEmailError);
 
-    if (isPasswordError || isEmailError) return;
+    if (isPasswordError || nextEmailError) return;
     router.push({ pathname: '/EmailVerifyScreen', params: { email: newEmail, mode } });
   };
 
@@ -132,7 +147,7 @@ const EmailChangeScreen = () => {
           value={newEmail}
           onChangeText={handleChangeNewEmail}
           onBlur={handleBlurNewEmail}
-          errorMessage={emailError ? '이미 사용중인 이메일 입니다.' : undefined}
+          errorMessage={emailError ? EMAIL_ERROR_MESSAGE[emailError] : undefined}
         />
 
         <InputBox

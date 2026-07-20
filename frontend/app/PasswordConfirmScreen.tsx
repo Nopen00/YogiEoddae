@@ -106,7 +106,7 @@ const PasswordConfirmScreen = () => {
         <View style={styles.changeRow}>
           <Text style={styles.changeText}>비밀번호가 기억나지 않으신가요?</Text>
           <TouchableOpacity activeOpacity={0.7} onPress={() => router.push('/PasswordChangeScreen')}>
-            <Text style={styles.changeLink}>비밀번호 변경</Text>
+            <Text style={styles.changeLink}>비밀번호 재설정</Text>
           </TouchableOpacity>
         </View>
 
