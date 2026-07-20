@@ -61,15 +61,18 @@ const PasswordConfirmScreen = () => {
         <Text style={styles.subtitle}>회원님의 정보를 보호하기 위해 인증이 필요합니다.</Text>
 
         <View style={[styles.passwordBox, hasError && styles.passwordBoxError]}>
-          <TextInput
-            style={[styles.passwordInput, { color: password ? Colors.light.black : Colors.light.grayLight }]}
-            placeholder="비밀번호"
-            placeholderTextColor={Colors.light.grayLight}
-            value={password}
-            onChangeText={handleChangePassword}
-            onBlur={handleBlurPassword}
-            secureTextEntry={!isVisible}
-          />
+          <View style={styles.inputSection}>
+            <Text style={[styles.inputLabel, hasError && styles.inputLabelError]}>비밀번호</Text>
+            <TextInput
+              style={[styles.passwordInput, { color: password ? Colors.light.black : Colors.light.grayLight }]}
+              placeholder="현재 비밀번호를 입력해주세요."
+              placeholderTextColor={Colors.light.grayLight}
+              value={password}
+              onChangeText={handleChangePassword}
+              onBlur={handleBlurPassword}
+              secureTextEntry={!isVisible}
+            />
+          </View>
           <View style={styles.boxRightIcons}>
             <TouchableOpacity activeOpacity={0.7} onPress={() => setIsVisible(!isVisible)}>
               {isVisible ? (
@@ -135,11 +138,14 @@ const styles = StyleSheet.create({
     borderColor: Colors.light.grayLight,
     borderRadius: Spacing.r.small,
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     justifyContent: 'space-between',
   },
   passwordBoxError: { borderColor: Colors.light.error },
-  passwordInput: { flex: 1, padding: 0, ...Typography.body3 },
+  inputSection: { flex: 1 },
+  inputLabel: { ...Typography.body1, color: Colors.light.grayLight, marginBottom: Spacing.v.small },
+  inputLabelError: { color: Colors.light.error },
+  passwordInput: { padding: 0, ...Typography.body3 },
   boxRightIcons: { flexDirection: 'row', alignItems: 'center' },
   errorIcon: { marginLeft: Spacing.h.small },
   errorRow: {

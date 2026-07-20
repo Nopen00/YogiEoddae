@@ -56,14 +56,17 @@ const IdChangeScreen = () => {
         <Text style={styles.subtitle}>아이디를 변경할 시, 7일 간 재변경이 불가능합니다.</Text>
 
         <View style={[styles.idBox, hasError && styles.idBoxError]}>
-          <TextInput
-            style={[styles.idInput, { color: userId ? Colors.light.black : Colors.light.grayLight }]}
-            placeholder="아이디"
-            placeholderTextColor={Colors.light.grayLight}
-            value={userId}
-            onChangeText={handleChangeUserId}
-            onBlur={handleBlurUserId}
-          />
+          <View style={styles.inputSection}>
+            <Text style={[styles.inputLabel, hasError && styles.inputLabelError]}>아이디</Text>
+            <TextInput
+              style={[styles.idInput, { color: userId ? Colors.light.black : Colors.light.grayLight }]}
+              placeholder="5~20자의 영문과 숫자를 혼합해주세요."
+              placeholderTextColor={Colors.light.grayLight}
+              value={userId}
+              onChangeText={handleChangeUserId}
+              onBlur={handleBlurUserId}
+            />
+          </View>
           {hasError && (
             <AlertCircle size={IconSize.large} color={Colors.light.error} />
           )}
@@ -72,7 +75,7 @@ const IdChangeScreen = () => {
         {hasError && (
           <View style={styles.errorRow}>
             <AlertCircle size={IconSize.xsmall} color={Colors.light.error} />
-            <Text style={styles.errorText}>5~20자의 영문과 숫자로만 입력해주세요</Text>
+            <Text style={styles.errorText}>5~20자의 영문과 숫자의 혼합으로 입력해주세요.</Text>
           </View>
         )}
 
@@ -152,10 +155,13 @@ const styles = StyleSheet.create({
     borderColor: Colors.light.grayLight,
     borderRadius: Spacing.r.small,
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
   },
   idBoxError: { borderColor: Colors.light.error },
-  idInput: { flex: 1, padding: 0, ...Typography.body3 },
+  inputSection: { flex: 1 },
+  inputLabel: { ...Typography.body1, color: Colors.light.grayLight, marginBottom: Spacing.v.small },
+  inputLabelError: { color: Colors.light.error },
+  idInput: { padding: 0, ...Typography.body3 },
   errorRow: {
     marginTop: Spacing.v.medium,
     flexDirection: 'row',

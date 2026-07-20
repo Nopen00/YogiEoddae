@@ -16,6 +16,7 @@ const EXISTING_EMAILS = ['1234@1234.com', 'test@test.com'];
 
 interface InputBoxProps {
   label: string;
+  placeholder: string;
   value: string;
   onChangeText: (text: string) => void;
   onBlur?: () => void;
@@ -25,16 +26,14 @@ interface InputBoxProps {
   errorMessage?: string;
 }
 
-const InputBox = ({ label, value, onChangeText, onBlur, secure, visible, onToggleVisible, errorMessage }: InputBoxProps) => (
+const InputBox = ({ label, placeholder, value, onChangeText, onBlur, secure, visible, onToggleVisible, errorMessage }: InputBoxProps) => (
   <>
     <View style={[styles.inputBox, errorMessage && styles.inputBoxError]}>
       <View style={styles.inputSection}>
-        {value.length > 0 && (
-          <Text style={[styles.inputLabel, errorMessage && styles.inputLabelError]}>{label}</Text>
-        )}
+        <Text style={[styles.inputLabel, errorMessage && styles.inputLabelError]}>{label}</Text>
         <TextInput
           style={[styles.input, { color: value ? Colors.light.black : Colors.light.grayLight }]}
-          placeholder={label}
+          placeholder={placeholder}
           placeholderTextColor={Colors.light.grayLight}
           value={value}
           onChangeText={onChangeText}
@@ -125,6 +124,7 @@ const EmailChangeScreen = () => {
 
         <InputBox
           label="새 이메일 주소"
+          placeholder="이메일 주소를 입력해주세요."
           value={newEmail}
           onChangeText={handleChangeNewEmail}
           onBlur={handleBlurNewEmail}
@@ -133,6 +133,7 @@ const EmailChangeScreen = () => {
 
         <InputBox
           label="비밀번호"
+          placeholder="현재 비밀번호를 입력해주세요."
           value={password}
           onChangeText={handleChangePassword}
           onBlur={handleBlurPassword}

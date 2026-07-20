@@ -39,6 +39,11 @@ const PasswordChangeScreen = () => {
     if (hasError) setHasError(false);
   };
 
+  const handleBlurCode = () => {
+    if (!code.trim()) return;
+    setHasError(code.trim() !== DUMMY_CODE);
+  };
+
   const handleConfirm = () => {
     if (!isActive) return;
     if (code.trim() === DUMMY_CODE) {
@@ -82,13 +87,17 @@ const PasswordChangeScreen = () => {
         <Text style={styles.subtitle}>전송된 이메일 주소 : {email || '이메일이 없습니다.'}</Text>
 
         <View style={[styles.codeBox, hasError && styles.codeBoxError]}>
-          <TextInput
-            style={[styles.codeInput, { color: code ? Colors.light.black : Colors.light.grayLight }]}
-            placeholder="인증 코드"
-            placeholderTextColor={Colors.light.grayLight}
-            value={code}
-            onChangeText={handleChangeCode}
-          />
+          <View style={styles.inputSection}>
+            <Text style={[styles.inputLabel, hasError && styles.inputLabelError]}>인증 코드</Text>
+            <TextInput
+              style={[styles.codeInput, { color: code ? Colors.light.black : Colors.light.grayLight }]}
+              placeholder="인증 코드를 입력해주세요."
+              placeholderTextColor={Colors.light.grayLight}
+              value={code}
+              onChangeText={handleChangeCode}
+              onBlur={handleBlurCode}
+            />
+          </View>
           {hasError && (
             <AlertCircle size={IconSize.large} color={Colors.light.error} />
           )}
@@ -151,11 +160,14 @@ const styles = StyleSheet.create({
     borderColor: Colors.light.grayLight,
     borderRadius: Spacing.r.small,
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     justifyContent: 'space-between',
   },
   codeBoxError: { borderColor: Colors.light.error },
-  codeInput: { flex: 1, padding: 0, ...Typography.body3 },
+  inputSection: { flex: 1 },
+  inputLabel: { ...Typography.body1, color: Colors.light.grayLight, marginBottom: Spacing.v.small },
+  inputLabelError: { color: Colors.light.error },
+  codeInput: { padding: 0, ...Typography.body3 },
   errorRow: {
     marginTop: Spacing.v.medium,
     flexDirection: 'row',

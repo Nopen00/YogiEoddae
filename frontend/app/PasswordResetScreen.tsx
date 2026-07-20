@@ -40,6 +40,7 @@ const NEW_PASSWORD_ERROR_MESSAGE: Record<Exclude<NewPasswordError, null>, string
 
 interface PasswordInputBoxProps {
   label: string;
+  placeholder: string;
   value: string;
   onChangeText: (text: string) => void;
   onBlur?: () => void;
@@ -48,16 +49,14 @@ interface PasswordInputBoxProps {
   errorMessage?: string;
 }
 
-const PasswordInputBox = ({ label, value, onChangeText, onBlur, visible, onToggleVisible, errorMessage }: PasswordInputBoxProps) => (
+const PasswordInputBox = ({ label, placeholder, value, onChangeText, onBlur, visible, onToggleVisible, errorMessage }: PasswordInputBoxProps) => (
   <>
     <View style={[styles.passwordBox, errorMessage && styles.passwordBoxError]}>
       <View style={styles.inputSection}>
-        {value.length > 0 && (
-          <Text style={[styles.inputLabel, errorMessage && styles.inputLabelError]}>{label}</Text>
-        )}
+        <Text style={[styles.inputLabel, errorMessage && styles.inputLabelError]}>{label}</Text>
         <TextInput
           style={[styles.passwordInput, { color: value ? Colors.light.black : Colors.light.grayLight }]}
-          placeholder={label}
+          placeholder={placeholder}
           placeholderTextColor={Colors.light.grayLight}
           value={value}
           onChangeText={onChangeText}
@@ -152,6 +151,7 @@ const PasswordResetScreen = () => {
 
         <PasswordInputBox
           label="새 비밀번호"
+          placeholder="영문과 숫자, 특수문자를 혼합해주세요."
           value={newPassword}
           onChangeText={handleChangeNewPassword}
           onBlur={handleBlurNewPassword}
@@ -162,6 +162,7 @@ const PasswordResetScreen = () => {
 
         <PasswordInputBox
           label="새 비밀번호 확인"
+          placeholder="변경할 비밀번호를 입력해주세요."
           value={newPasswordConfirm}
           onChangeText={handleChangeNewPasswordConfirm}
           onBlur={handleBlurNewPasswordConfirm}

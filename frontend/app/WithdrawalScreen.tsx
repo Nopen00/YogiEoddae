@@ -42,6 +42,12 @@ const WithdrawalScreen = () => {
     if (passwordError) setPasswordError(false);
   };
 
+  const handleBlurPassword = async () => {
+    if (!password.trim()) return;
+    const res = await userApi.verifyPassword(password);
+    setPasswordError(!res.data.success);
+  };
+
   const handleWithdraw = async () => {
     if (!isWithdrawActive) return;
     const res = await userApi.verifyPassword(password);
@@ -114,15 +120,14 @@ const WithdrawalScreen = () => {
 
           <View style={[styles.passwordBox, passwordError && styles.passwordBoxError]}>
             <View style={styles.inputSection}>
-              {password.length > 0 && (
-                <Text style={[styles.inputLabel, passwordError && styles.inputLabelError]}>비밀번호</Text>
-              )}
+              <Text style={[styles.inputLabel, passwordError && styles.inputLabelError]}>비밀번호</Text>
               <TextInput
                 style={[styles.passwordInput, { color: password ? Colors.light.black : Colors.light.grayLight }]}
-                placeholder="비밀번호"
+                placeholder="비밀번호를 입력해주세요."
                 placeholderTextColor={Colors.light.grayLight}
                 value={password}
                 onChangeText={handleChangePassword}
+                onBlur={handleBlurPassword}
                 secureTextEntry={!passwordVisible}
               />
             </View>
