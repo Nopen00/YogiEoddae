@@ -60,6 +60,11 @@ export const NicknameEditAlert = ({
     if (error) setError(null);
   };
 
+  const handleBlurNickname = () => {
+    if (!nickname.trim()) return;
+    setError(getNicknameError(nickname));
+  };
+
   const handleConfirm = () => {
     const nextError = getNicknameError(nickname);
     if (nextError) {
@@ -94,6 +99,7 @@ export const NicknameEditAlert = ({
                   style={styles.input}
                   value={nickname}
                   onChangeText={handleChangeNickname}
+                  onBlur={handleBlurNickname}
                   placeholder="닉네임을 입력해 주세요."
                   placeholderTextColor={Colors.light.grayLight}
                   autoFocus

@@ -18,13 +18,14 @@ interface InputBoxProps {
   label: string;
   value: string;
   onChangeText: (text: string) => void;
+  onBlur?: () => void;
   secure?: boolean;
   visible?: boolean;
   onToggleVisible?: () => void;
   errorMessage?: string;
 }
 
-const InputBox = ({ label, value, onChangeText, secure, visible, onToggleVisible, errorMessage }: InputBoxProps) => (
+const InputBox = ({ label, value, onChangeText, onBlur, secure, visible, onToggleVisible, errorMessage }: InputBoxProps) => (
   <>
     <View style={[styles.inputBox, errorMessage && styles.inputBoxError]}>
       <View style={styles.inputSection}>
@@ -37,6 +38,7 @@ const InputBox = ({ label, value, onChangeText, secure, visible, onToggleVisible
           placeholderTextColor={Colors.light.grayLight}
           value={value}
           onChangeText={onChangeText}
+          onBlur={onBlur}
           secureTextEntry={secure ? !visible : false}
         />
       </View>
@@ -84,6 +86,17 @@ const EmailChangeScreen = () => {
     if (passwordError) setPasswordError(false);
   };
 
+  const handleBlurNewEmail = () => {
+    if (!newEmail.trim()) return;
+    setEmailError(EXISTING_EMAILS.includes(newEmail.trim()));
+  };
+
+  const handleBlurPassword = async () => {
+    if (!password.trim()) return;
+    const res = await userApi.verifyPassword(password);
+    setPasswordError(!res.data.success);
+  };
+
   const handleConfirm = async () => {
     if (!isActive) return;
     const res = await userApi.verifyPassword(password);
@@ -114,6 +127,7 @@ const EmailChangeScreen = () => {
           label="새 이메일 주소"
           value={newEmail}
           onChangeText={handleChangeNewEmail}
+          onBlur={handleBlurNewEmail}
           errorMessage={emailError ? '이미 사용중인 이메일 입니다.' : undefined}
         />
 
@@ -121,6 +135,7 @@ const EmailChangeScreen = () => {
           label="비밀번호"
           value={password}
           onChangeText={handleChangePassword}
+          onBlur={handleBlurPassword}
           secure
           visible={passwordVisible}
           onToggleVisible={() => setPasswordVisible(!passwordVisible)}

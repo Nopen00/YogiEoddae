@@ -23,6 +23,16 @@ const PasswordConfirmScreen = () => {
     if (hasError) setHasError(false);
   };
 
+  const handleBlurPassword = async () => {
+    if (!password.trim()) return;
+    try {
+      const res = await userApi.verifyPassword(password);
+      setHasError(!res.data.success);
+    } catch {
+      setHasError(true);
+    }
+  };
+
   const handleConfirm = async () => {
     if (!isActive) return;
     try {
@@ -57,6 +67,7 @@ const PasswordConfirmScreen = () => {
             placeholderTextColor={Colors.light.grayLight}
             value={password}
             onChangeText={handleChangePassword}
+            onBlur={handleBlurPassword}
             secureTextEntry={!isVisible}
           />
           <View style={styles.boxRightIcons}>

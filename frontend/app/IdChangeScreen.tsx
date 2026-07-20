@@ -28,6 +28,11 @@ const IdChangeScreen = () => {
     if (hasError) setHasError(false);
   };
 
+  const handleBlurUserId = () => {
+    if (!userId.trim()) return;
+    setHasError(!ID_REGEX.test(userId));
+  };
+
   const handleConfirm = () => {
     if (!isActive) return;
     if (!ID_REGEX.test(userId)) {
@@ -57,6 +62,7 @@ const IdChangeScreen = () => {
             placeholderTextColor={Colors.light.grayLight}
             value={userId}
             onChangeText={handleChangeUserId}
+            onBlur={handleBlurUserId}
           />
           {hasError && (
             <AlertCircle size={IconSize.large} color={Colors.light.error} />

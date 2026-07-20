@@ -42,12 +42,13 @@ interface PasswordInputBoxProps {
   label: string;
   value: string;
   onChangeText: (text: string) => void;
+  onBlur?: () => void;
   visible: boolean;
   onToggleVisible: () => void;
   errorMessage?: string;
 }
 
-const PasswordInputBox = ({ label, value, onChangeText, visible, onToggleVisible, errorMessage }: PasswordInputBoxProps) => (
+const PasswordInputBox = ({ label, value, onChangeText, onBlur, visible, onToggleVisible, errorMessage }: PasswordInputBoxProps) => (
   <>
     <View style={[styles.passwordBox, errorMessage && styles.passwordBoxError]}>
       <View style={styles.inputSection}>
@@ -60,6 +61,7 @@ const PasswordInputBox = ({ label, value, onChangeText, visible, onToggleVisible
           placeholderTextColor={Colors.light.grayLight}
           value={value}
           onChangeText={onChangeText}
+          onBlur={onBlur}
           secureTextEntry={!visible}
         />
       </View>
@@ -113,6 +115,16 @@ const PasswordResetScreen = () => {
     if (newPasswordConfirmError) setNewPasswordConfirmError(false);
   };
 
+  const handleBlurNewPassword = () => {
+    if (!newPassword.trim()) return;
+    setNewPasswordError(getNewPasswordError(newPassword, userId));
+  };
+
+  const handleBlurNewPasswordConfirm = () => {
+    if (!newPassword.trim() || !newPasswordConfirm.trim()) return;
+    setNewPasswordConfirmError(newPasswordConfirm !== newPassword);
+  };
+
   const handleConfirm = () => {
     if (!isActive) return;
     const nextNewPasswordError = getNewPasswordError(newPassword, userId);
@@ -142,6 +154,7 @@ const PasswordResetScreen = () => {
           label="새 비밀번호"
           value={newPassword}
           onChangeText={handleChangeNewPassword}
+          onBlur={handleBlurNewPassword}
           visible={newVisible}
           onToggleVisible={() => setNewVisible(!newVisible)}
           errorMessage={newPasswordError ? NEW_PASSWORD_ERROR_MESSAGE[newPasswordError] : undefined}
@@ -151,6 +164,7 @@ const PasswordResetScreen = () => {
           label="새 비밀번호 확인"
           value={newPasswordConfirm}
           onChangeText={handleChangeNewPasswordConfirm}
+          onBlur={handleBlurNewPasswordConfirm}
           visible={newConfirmVisible}
           onToggleVisible={() => setNewConfirmVisible(!newConfirmVisible)}
           errorMessage={newPasswordConfirmError ? '입력한 비밀번호가 다릅니다.' : undefined}
