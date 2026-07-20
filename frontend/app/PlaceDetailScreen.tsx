@@ -22,7 +22,6 @@ import { Calendar, Check, ChevronDown, Edit3, Heart, Star } from 'lucide-react-n
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   Image,
-  Linking,
   Modal,
   ScrollView,
   StyleSheet,
@@ -270,22 +269,6 @@ const PlaceDetailScreen = () => {
                 </View>
               </Shadow>
             </View>
-
-            <Divider marginTop={Spacing.v.large} />
-
-            {/* 소개 / 카카오 리뷰 */}
-            <Text style={styles.placeTitle}>{isToggled ? '이용자 리뷰' : place?.name}</Text>
-            {isToggled ? (
-              place?.kakao_place_url ? (
-                <TouchableOpacity style={styles.kakaoLinkButton} onPress={() => Linking.openURL(place.kakao_place_url!)}>
-                  <Text style={styles.kakaoLinkText}>카카오맵에서 리뷰 보기</Text>
-                </TouchableOpacity>
-              ) : (
-                <Text style={styles.placeDesc}>카카오맵 정보가 없습니다.</Text>
-              )
-            ) : (
-              <Text style={styles.placeDesc}>{place?.address}</Text>
-            )}
 
             {/* 근처 추천 장소 */}
             <Divider marginTop={Spacing.v.large} />
@@ -580,16 +563,6 @@ const styles = StyleSheet.create({
     marginLeft: Spacing.h.medium,
     flex: 1,
   },
-  placeTitle: {
-    ...Typography.title1,
-    color: Colors.light.black,
-    marginTop: Spacing.v.large,
-  },
-  placeDesc: {
-    ...Typography.body2,
-    color: Colors.light.black,
-    marginTop: Spacing.v.medium,
-  },
   nearbyTitle: {
     ...Typography.title1,
     color: Colors.light.black,
@@ -638,16 +611,6 @@ const styles = StyleSheet.create({
   },
   reviewMoreButton: { alignSelf: 'flex-end', paddingVertical: Spacing.v.small },
   reviewMoreText: { ...Typography.button4, color: Colors.light.primary },
-  kakaoLinkButton: {
-    marginTop: Spacing.v.medium,
-    paddingVertical: 12,
-    paddingHorizontal: Spacing.h.medium,
-    borderRadius: Spacing.r.small,
-    borderWidth: Spacing.lw.small,
-    borderColor: Colors.light.primary,
-    alignSelf: 'flex-start',
-  },
-  kakaoLinkText: { ...Typography.button3, color: Colors.light.primary },
   nearbyScrollContent: {
     gap: Spacing.h.medium,
   },
