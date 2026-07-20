@@ -729,6 +729,13 @@ export default function ScheduleDetailScreen() {
             <Text style={styles.unsavedDesc}>저장되지 않은 변동사항은 반영되지 않습니다.</Text>
             <View style={styles.unsavedButtons}>
               <TouchableOpacity
+                style={styles.btnStay}
+                activeOpacity={0.8}
+                onPress={() => setIsUnsavedWarningVisible(false)}
+              >
+                <Text style={styles.btnStayText}>취소</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
                 style={styles.btnDiscard}
                 activeOpacity={0.8}
                 onPress={() => {
@@ -741,13 +748,6 @@ export default function ScheduleDetailScreen() {
               >
                 <Text style={styles.btnDiscardText}>무시</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.btnStay}
-                activeOpacity={0.8}
-                onPress={() => setIsUnsavedWarningVisible(false)}
-              >
-                <Text style={styles.btnStayText}>취소</Text>
-              </TouchableOpacity>
             </View>
           </View>
         </View>
@@ -759,6 +759,13 @@ export default function ScheduleDetailScreen() {
             <Text style={styles.unsavedDesc}>삭제된 장소는 되돌릴 수 없습니다.</Text>
             <View style={styles.unsavedButtons}>
               <TouchableOpacity
+                style={styles.btnStay}
+                activeOpacity={0.8}
+                onPress={() => setPlaceDeleteTarget(null)}
+              >
+                <Text style={styles.btnStayText}>취소</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
                 style={styles.btnDiscard}
                 activeOpacity={0.8}
                 onPress={() => {
@@ -767,13 +774,6 @@ export default function ScheduleDetailScreen() {
                 }}
               >
                 <Text style={styles.btnDiscardText}>확인</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.btnStay}
-                activeOpacity={0.8}
-                onPress={() => setPlaceDeleteTarget(null)}
-              >
-                <Text style={styles.btnStayText}>취소</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -1068,18 +1068,18 @@ const styles = StyleSheet.create({
     width: 80,
     height: Size.buttonSm,
     borderRadius: Spacing.r.small,
-    backgroundColor: Colors.light.grayLight,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  btnDiscardText: { ...Typography.button2, color: Colors.light.grayDark },
-  btnStay: {
-    width: 80,
-    height: Size.buttonSm,
-    borderRadius: Spacing.r.small,
     backgroundColor: Colors.light.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  btnStayText: { ...Typography.button2, color: Colors.light.white },
+  btnDiscardText: { ...Typography.button2, color: Colors.light.white },
+  btnStay: {
+    width: 80,
+    height: Size.buttonSm,
+    borderRadius: Spacing.r.small,
+    backgroundColor: Colors.light.grayLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  btnStayText: { ...Typography.button2, color: Colors.light.grayDark },
 });

@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.v.large,
     marginHorizontal: Spacing.h.medium,
     height: 48,
-    backgroundColor: Colors.light.dark,
+    backgroundColor: Colors.light.primary,
     borderRadius: Spacing.r.small,
     alignItems: 'center',
     justifyContent: 'center',

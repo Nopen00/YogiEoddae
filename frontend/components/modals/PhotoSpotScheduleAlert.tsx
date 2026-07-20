@@ -59,11 +59,11 @@ export const PhotoSpotScheduleAlert = ({ visible, onClose, onConfirm, place }: P
               <Text style={styles.questionText}>이 장소를 추가하시겠습니까?</Text>
 
               <View style={styles.buttonRow}>
-                <TouchableOpacity style={styles.confirmButton} onPress={onConfirm}>
-                  <Text style={styles.confirmButtonText}>다음 단계</Text>
-                </TouchableOpacity>
                 <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
                   <Text style={styles.cancelButtonText}>취소</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.confirmButton} onPress={onConfirm}>
+                  <Text style={styles.confirmButtonText}>다음 단계</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
   confirmButton: {
     flex: 1,
     height: 48,
-    backgroundColor: Colors.light.dark,
+    backgroundColor: Colors.light.primary,
     borderRadius: Spacing.r.small,
     alignItems: 'center',
     justifyContent: 'center',

@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.v.large,
     marginHorizontal: Spacing.h.medium,
     height: Size.buttonMd,
-    backgroundColor: Colors.light.dark,
+    backgroundColor: Colors.light.primary,
     borderRadius: Spacing.r.small,
     alignItems: 'center',
     justifyContent: 'center',

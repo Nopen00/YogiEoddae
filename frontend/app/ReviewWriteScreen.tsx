@@ -243,6 +243,13 @@ const ReviewWriteScreen = () => {
             <Text style={styles.unsavedDesc}>저장되지 않은 변동사항은 반영되지 않습니다.</Text>
             <View style={styles.unsavedButtons}>
               <TouchableOpacity
+                style={styles.btnStay}
+                activeOpacity={0.8}
+                onPress={() => setIsUnsavedWarningVisible(false)}
+              >
+                <Text style={styles.btnStayText}>취소</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
                 style={styles.btnDiscard}
                 activeOpacity={0.8}
                 onPress={() => {
@@ -251,13 +258,6 @@ const ReviewWriteScreen = () => {
                 }}
               >
                 <Text style={styles.btnDiscardText}>무시</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.btnStay}
-                activeOpacity={0.8}
-                onPress={() => setIsUnsavedWarningVisible(false)}
-              >
-                <Text style={styles.btnStayText}>취소</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.v.large,
     borderRadius: Spacing.r.small,
     paddingVertical: Spacing.v.medium,
-    backgroundColor: Colors.light.dark,
+    backgroundColor: Colors.light.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -343,8 +343,8 @@ const styles = StyleSheet.create({
   unsavedTitle: { ...Typography.subtitle2, color: Colors.light.black, textAlign: 'center' },
   unsavedDesc: { ...Typography.body2, color: Colors.light.primary, marginTop: Spacing.v.medium, textAlign: 'center' },
   unsavedButtons: { flexDirection: 'row', justifyContent: 'center', gap: Spacing.h.medium, marginTop: Spacing.v.medium },
-  btnDiscard: { width: 80, height: Size.buttonSm, borderRadius: Spacing.r.small, backgroundColor: Colors.light.grayLight, justifyContent: 'center', alignItems: 'center' },
-  btnDiscardText: { ...Typography.button2, color: Colors.light.grayDark },
-  btnStay: { width: 80, height: Size.buttonSm, borderRadius: Spacing.r.small, backgroundColor: Colors.light.primary, justifyContent: 'center', alignItems: 'center' },
-  btnStayText: { ...Typography.button2, color: Colors.light.white },
+  btnDiscard: { width: 80, height: Size.buttonSm, borderRadius: Spacing.r.small, backgroundColor: Colors.light.primary, justifyContent: 'center', alignItems: 'center' },
+  btnDiscardText: { ...Typography.button2, color: Colors.light.white },
+  btnStay: { width: 80, height: Size.buttonSm, borderRadius: Spacing.r.small, backgroundColor: Colors.light.grayLight, justifyContent: 'center', alignItems: 'center' },
+  btnStayText: { ...Typography.button2, color: Colors.light.grayDark },
 });

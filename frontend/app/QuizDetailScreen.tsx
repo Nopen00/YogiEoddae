@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
     marginHorizontal: Spacing.h.medium,
     paddingVertical: Spacing.v.medium,
     borderRadius: Spacing.r.small,
-    backgroundColor: Colors.light.dark,
+    backgroundColor: Colors.light.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },

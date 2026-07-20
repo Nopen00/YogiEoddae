@@ -186,11 +186,11 @@ const WithdrawalScreen = () => {
             <Text style={styles.popupTitle}>회원탈퇴를 진행하시겠습니까?</Text>
             <Text style={styles.popupDesc}>모든 데이터가 사라지며 복구 할 수 없습니다.{'\n'}계속 진행하시겠습니까?</Text>
             <View style={styles.popupButtons}>
-              <TouchableOpacity style={styles.btnComplete} activeOpacity={0.8} onPress={handleConfirmWithdraw}>
-                <Text style={styles.btnCompleteText}>예</Text>
-              </TouchableOpacity>
               <TouchableOpacity style={styles.btnCancel} activeOpacity={0.8} onPress={() => setWithdrawConfirmVisible(false)}>
                 <Text style={styles.btnCancelText}>아니오</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.btnComplete} activeOpacity={0.8} onPress={handleConfirmWithdraw}>
+                <Text style={styles.btnCompleteText}>예</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -328,20 +328,20 @@ const styles = StyleSheet.create({
     width: 80,
     height: Size.buttonSm,
     borderRadius: Spacing.r.small,
-    backgroundColor: Colors.light.grayLight,
+    backgroundColor: Colors.light.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  btnCompleteText: { ...Typography.button2, color: Colors.light.grayDark },
+  btnCompleteText: { ...Typography.button2, color: Colors.light.white },
   btnCancel: {
     width: 80,
     height: Size.buttonSm,
     borderRadius: Spacing.r.small,
-    backgroundColor: Colors.light.error,
+    backgroundColor: Colors.light.grayLight,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  btnCancelText: { ...Typography.button2, color: Colors.light.white },
+  btnCancelText: { ...Typography.button2, color: Colors.light.grayDark },
 });
 
 export default WithdrawalScreen;

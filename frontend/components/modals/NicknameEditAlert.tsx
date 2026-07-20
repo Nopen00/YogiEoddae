@@ -136,19 +136,19 @@ export const NicknameEditAlert = ({
 
               <View style={styles.buttonRow}>
                 <TouchableOpacity
+                  style={styles.cancelButton}
+                  activeOpacity={0.8}
+                  onPress={onClose}
+                >
+                  <Text style={styles.cancelButtonText}>취소</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
                   style={[styles.confirmButton, !nickname.trim() && styles.buttonDisabled]}
                   disabled={!nickname.trim()}
                   activeOpacity={0.8}
                   onPress={handleConfirm}
                 >
                   <Text style={styles.confirmButtonText}>변경</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.cancelButton}
-                  activeOpacity={0.8}
-                  onPress={onClose}
-                >
-                  <Text style={styles.cancelButtonText}>취소</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
   confirmButton: {
     flex: 1,
     height: Size.buttonMd,
-    backgroundColor: Colors.light.dark,
+    backgroundColor: Colors.light.primary,
     borderRadius: Spacing.r.small,
     alignItems: 'center',
     justifyContent: 'center',

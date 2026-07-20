@@ -66,11 +66,11 @@ export const NewScheduleStep3Alert = ({ visible, onClose, onBack, onConfirm, med
               </View>
               <Text style={styles.questionText}>이 코스를 선택하시겠습니까?</Text>
               <View style={styles.buttonRow}>
-                <TouchableOpacity style={styles.confirmButton} onPress={onConfirm}>
-                  <Text style={styles.confirmButtonText}>만들기</Text>
-                </TouchableOpacity>
                 <TouchableOpacity style={styles.cancelButton} onPress={onBack}>
                   <Text style={styles.cancelButtonText}>취소</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.confirmButton} onPress={onConfirm}>
+                  <Text style={styles.confirmButtonText}>만들기</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
   confirmButton: {
     flex: 1,
     height: 48,
-    backgroundColor: Colors.light.dark,
+    backgroundColor: Colors.light.primary,
     borderRadius: Spacing.r.small,
     alignItems: 'center',
     justifyContent: 'center',

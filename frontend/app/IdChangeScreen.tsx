@@ -95,6 +95,13 @@ const IdChangeScreen = () => {
             <Text style={styles.confirmDesc}>아이디를 변경할 시, 7일 간 재변경이 불가능합니다.</Text>
             <View style={styles.confirmButtons}>
               <TouchableOpacity
+                style={styles.btnCancel}
+                activeOpacity={0.8}
+                onPress={() => setConfirmPopupVisible(false)}
+              >
+                <Text style={styles.btnCancelText}>취소</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
                 style={styles.btnConfirm}
                 activeOpacity={0.8}
                 onPress={async () => {
@@ -104,13 +111,6 @@ const IdChangeScreen = () => {
                 }}
               >
                 <Text style={styles.btnConfirmText}>변경</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.btnCancel}
-                activeOpacity={0.8}
-                onPress={() => setConfirmPopupVisible(false)}
-              >
-                <Text style={styles.btnCancelText}>취소</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -190,10 +190,10 @@ const styles = StyleSheet.create({
   confirmTitle: { ...Typography.subtitle2, color: Colors.light.black, textAlign: 'center' },
   confirmDesc: { ...Typography.body2, color: Colors.light.primary, marginTop: Spacing.v.medium, textAlign: 'center' },
   confirmButtons: { flexDirection: 'row', justifyContent: 'center', gap: Spacing.h.medium, marginTop: Spacing.v.medium },
-  btnConfirm: { width: 80, height: Size.buttonSm, borderRadius: Spacing.r.small, backgroundColor: Colors.light.grayLight, justifyContent: 'center', alignItems: 'center' },
-  btnConfirmText: { ...Typography.button2, color: Colors.light.grayDark },
-  btnCancel: { width: 80, height: Size.buttonSm, borderRadius: Spacing.r.small, backgroundColor: Colors.light.primary, justifyContent: 'center', alignItems: 'center' },
-  btnCancelText: { ...Typography.button2, color: Colors.light.white },
+  btnConfirm: { width: 80, height: Size.buttonSm, borderRadius: Spacing.r.small, backgroundColor: Colors.light.primary, justifyContent: 'center', alignItems: 'center' },
+  btnConfirmText: { ...Typography.button2, color: Colors.light.white },
+  btnCancel: { width: 80, height: Size.buttonSm, borderRadius: Spacing.r.small, backgroundColor: Colors.light.grayLight, justifyContent: 'center', alignItems: 'center' },
+  btnCancelText: { ...Typography.button2, color: Colors.light.grayDark },
 
   successOverlay: { flex: 1, backgroundColor: Colors.light.overlay, justifyContent: 'center', alignItems: 'center' },
   successPopup: {

@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
   },
 
   lastPageButton: {
-    backgroundColor: Colors.light.dark,
+    backgroundColor: Colors.light.primary,
     borderWidth: 0,
   },
 

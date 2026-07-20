@@ -471,6 +471,13 @@ const PlaceDetailScreen = () => {
               <Text style={styles.deleteDesc}>삭제된 리뷰는 되돌릴 수 없습니다.</Text>
               <View style={styles.deleteButtons}>
                 <TouchableOpacity
+                  style={styles.btnCancel}
+                  activeOpacity={0.8}
+                  onPress={() => setReviewDeleteTarget(null)}
+                >
+                  <Text style={styles.btnCancelText}>취소</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
                   style={styles.btnConfirm}
                   activeOpacity={0.8}
                   onPress={async () => {
@@ -484,13 +491,6 @@ const PlaceDetailScreen = () => {
                   }}
                 >
                   <Text style={styles.btnConfirmText}>확인</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.btnCancel}
-                  activeOpacity={0.8}
-                  onPress={() => setReviewDeleteTarget(null)}
-                >
-                  <Text style={styles.btnCancelText}>취소</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -747,10 +747,10 @@ const styles = StyleSheet.create({
   deleteTitle: { ...Typography.subtitle2, color: Colors.light.black, textAlign: 'center' },
   deleteDesc: { ...Typography.body2, color: Colors.light.primary, marginTop: Spacing.v.medium, textAlign: 'center' },
   deleteButtons: { flexDirection: 'row', justifyContent: 'center', gap: Spacing.h.medium, marginTop: Spacing.v.medium },
-  btnConfirm: { width: 80, height: Size.buttonSm, borderRadius: Spacing.r.small, backgroundColor: Colors.light.grayLight, justifyContent: 'center', alignItems: 'center' },
-  btnConfirmText: { ...Typography.button2, color: Colors.light.grayDark },
-  btnCancel: { width: 80, height: Size.buttonSm, borderRadius: Spacing.r.small, backgroundColor: Colors.light.primary, justifyContent: 'center', alignItems: 'center' },
-  btnCancelText: { ...Typography.button2, color: Colors.light.white },
+  btnConfirm: { width: 80, height: Size.buttonSm, borderRadius: Spacing.r.small, backgroundColor: Colors.light.primary, justifyContent: 'center', alignItems: 'center' },
+  btnConfirmText: { ...Typography.button2, color: Colors.light.white },
+  btnCancel: { width: 80, height: Size.buttonSm, borderRadius: Spacing.r.small, backgroundColor: Colors.light.grayLight, justifyContent: 'center', alignItems: 'center' },
+  btnCancelText: { ...Typography.button2, color: Colors.light.grayDark },
 });
 
 export default PlaceDetailScreen;

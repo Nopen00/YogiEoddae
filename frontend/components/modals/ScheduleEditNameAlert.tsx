@@ -82,19 +82,19 @@ export const ScheduleEditNameAlert = ({
 
               <View style={styles.buttonRow}>
                 <TouchableOpacity
+                  style={styles.cancelButton}
+                  activeOpacity={0.8}
+                  onPress={onClose}
+                >
+                  <Text style={styles.cancelButtonText}>취소</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
                   style={[styles.confirmButton, !name.trim() && styles.buttonDisabled]}
                   disabled={!name.trim()}
                   activeOpacity={0.8}
                   onPress={() => onConfirm(name.trim())}
                 >
                   <Text style={styles.confirmButtonText}>변경</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.cancelButton}
-                  activeOpacity={0.8}
-                  onPress={onClose}
-                >
-                  <Text style={styles.cancelButtonText}>취소</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
   confirmButton: {
     flex: 1,
     height: Size.buttonMd,
-    backgroundColor: Colors.light.dark,
+    backgroundColor: Colors.light.primary,
     borderRadius: Spacing.r.small,
     alignItems: 'center',
     justifyContent: 'center',
