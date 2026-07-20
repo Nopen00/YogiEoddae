@@ -8,7 +8,7 @@ import { Typography } from '@/constants/Typography';
 import { userApi } from '@/services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
-import { AlertCircle, Eye, EyeOff } from 'lucide-react-native';
+import { AlertCircle, CheckCircle, Circle, Eye, EyeOff } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { Dimensions, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,22 +18,23 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 // 최근 사용한 비밀번호 mock 목록 — 실제 이력 대신 더미 값으로 비교
 const RECENT_PASSWORDS = ['123456', 'past1234!'];
 
-type NewPasswordError = 'tooShort' | 'notMixed' | 'sameAsUserId' | 'recentlyUsed' | null;
-
-const getNewPasswordError = (password: string, userId: string): NewPasswordError => {
-  if (password.length < 8) return 'tooShort';
+const hasMinLength = (password: string) => password.length >= 8;
+const hasMixedChars = (password: string) => {
   const hasLetter = /[a-zA-Z]/.test(password);
   const hasNumber = /[0-9]/.test(password);
   const hasSpecial = /[^a-zA-Z0-9]/.test(password);
-  if (!hasLetter || !hasNumber || !hasSpecial) return 'notMixed';
+  return hasLetter && hasNumber && hasSpecial;
+};
+
+type NewPasswordError = 'sameAsUserId' | 'recentlyUsed' | null;
+
+const getNewPasswordError = (password: string, userId: string): NewPasswordError => {
   if (password === userId) return 'sameAsUserId';
   if (RECENT_PASSWORDS.includes(password)) return 'recentlyUsed';
   return null;
 };
 
 const NEW_PASSWORD_ERROR_MESSAGE: Record<Exclude<NewPasswordError, null>, string> = {
-  tooShort: '8자 이상으로 입력해주세요.',
-  notMixed: '영문, 숫자, 특수문자를 혼합사용하여 입력해주세요.',
   sameAsUserId: '아이디와 같은 비밀번호는 사용할 수 없습니다.',
   recentlyUsed: '최근에 사용했던 비밀번호는 사용할 수 없습니다.',
 };
@@ -108,7 +109,9 @@ const PasswordEditScreen = () => {
   const isActive =
     currentPassword.trim().length > 0 &&
     newPassword.trim().length > 0 &&
-    newPasswordConfirm.trim().length > 0;
+    newPasswordConfirm.trim().length > 0 &&
+    hasMinLength(newPassword) &&
+    hasMixedChars(newPassword);
 
   const handleChangeCurrentPassword = (text: string) => {
     setCurrentPassword(text);
@@ -191,6 +194,23 @@ const PasswordEditScreen = () => {
           onToggleVisible={() => setNewVisible(!newVisible)}
           errorMessage={newPasswordError ? NEW_PASSWORD_ERROR_MESSAGE[newPasswordError] : undefined}
         />
+
+        <View style={styles.checklistRow}>
+          {hasMinLength(newPassword) ? (
+            <CheckCircle size={IconSize.xsmall} color={Colors.light.primary} />
+          ) : (
+            <Circle size={IconSize.xsmall} color={Colors.light.grayDark} />
+          )}
+          <Text style={[styles.checklistText, hasMinLength(newPassword) && styles.checklistTextMet]}>8자 이상입니다.</Text>
+        </View>
+        <View style={styles.checklistRowSpaced}>
+          {hasMixedChars(newPassword) ? (
+            <CheckCircle size={IconSize.xsmall} color={Colors.light.primary} />
+          ) : (
+            <Circle size={IconSize.xsmall} color={Colors.light.grayDark} />
+          )}
+          <Text style={[styles.checklistText, hasMixedChars(newPassword) && styles.checklistTextMet]}>영문, 숫자, 특수문자가 포함되었습니다.</Text>
+        </View>
 
         <PasswordInputBox
           label="새 비밀번호 확인"
@@ -295,6 +315,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   errorText: { ...Typography.body2, color: Colors.light.error, marginLeft: Spacing.h.small },
+  checklistRow: {
+    marginTop: Spacing.v.medium,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  checklistRowSpaced: {
+    marginTop: Spacing.v.small,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  checklistText: { ...Typography.body2, color: Colors.light.grayDark, marginLeft: Spacing.h.small },
+  checklistTextMet: { color: Colors.light.primary },
   confirmButton: {
     marginTop: Spacing.v.large,
     minHeight: Size.buttonMd,
