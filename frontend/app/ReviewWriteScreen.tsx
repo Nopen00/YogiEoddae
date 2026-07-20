@@ -225,7 +225,7 @@ const ReviewWriteScreen = () => {
           activeOpacity={isSubmitEnabled ? 0.8 : 1}
           onPress={handleSubmit}
         >
-          <Text style={styles.submitButtonText}>작성 완료</Text>
+          <Text style={[styles.submitButtonText, !isSubmitEnabled && styles.submitButtonTextDisabled]}>작성 완료</Text>
         </TouchableOpacity>
       </ScrollView>
 
@@ -328,6 +328,7 @@ const styles = StyleSheet.create({
   },
   submitButtonDisabled: { backgroundColor: Colors.light.grayLight },
   submitButtonText: { ...Typography.button2, color: Colors.light.white },
+  submitButtonTextDisabled: { color: Colors.light.grayDark },
   overlay: { flex: 1, backgroundColor: Colors.light.overlay, justifyContent: 'center', alignItems: 'center' },
   unsavedPopup: {
     width: SCREEN_WIDTH - 64,

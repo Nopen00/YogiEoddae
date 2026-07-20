@@ -92,7 +92,7 @@ export const NewScheduleStep2Alert = ({ visible, onClose, onBack, onConfirm, ran
                 disabled={!name.trim() || !selectedCourse}
                 onPress={() => selectedCourse && onConfirm(selectedCourse, name)}
               >
-                <Text style={styles.nextButtonText}>다음 단계</Text>
+                <Text style={[styles.nextButtonText, (!name.trim() || !selectedCourse) && styles.nextButtonTextDisabled]}>다음 단계</Text>
               </TouchableOpacity>
             </View>
           </TouchableWithoutFeedback>
@@ -210,5 +210,8 @@ const styles = StyleSheet.create({
   nextButtonText: {
     ...Typography.button2,
     color: Colors.light.white,
+  },
+  nextButtonTextDisabled: {
+    color: Colors.light.grayDark,
   },
 });

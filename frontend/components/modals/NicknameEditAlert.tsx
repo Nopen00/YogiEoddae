@@ -148,7 +148,7 @@ export const NicknameEditAlert = ({
                   activeOpacity={0.8}
                   onPress={handleConfirm}
                 >
-                  <Text style={styles.confirmButtonText}>변경</Text>
+                  <Text style={[styles.confirmButtonText, !nickname.trim() && styles.confirmButtonTextDisabled]}>변경</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -232,6 +232,9 @@ const styles = StyleSheet.create({
   confirmButtonText: {
     ...Typography.button2,
     color: Colors.light.white,
+  },
+  confirmButtonTextDisabled: {
+    color: Colors.light.grayDark,
   },
   cancelButton: {
     flex: 1,

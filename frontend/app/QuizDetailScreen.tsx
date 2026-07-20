@@ -100,7 +100,7 @@ export default function QuizDetailScreen() {
           disabled={!allAnswered}
           onPress={handleSubmit}
         >
-          <Text style={styles.submitButtonText}>제출하기</Text>
+          <Text style={[styles.submitButtonText, !allAnswered && styles.submitButtonTextDisabled]}>제출하기</Text>
         </TouchableOpacity>
       </ScrollView>
 
@@ -173,6 +173,7 @@ const styles = StyleSheet.create({
   },
   submitButtonDisabled: { backgroundColor: Colors.light.grayLight },
   submitButtonText: { ...Typography.button2, color: Colors.light.white },
+  submitButtonTextDisabled: { color: Colors.light.grayDark },
   resultOverlay: {
     flex: 1,
     backgroundColor: Colors.light.overlay,

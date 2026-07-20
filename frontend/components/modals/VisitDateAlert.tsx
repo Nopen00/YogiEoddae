@@ -170,7 +170,7 @@ export const VisitDateAlert = ({ visible, onClose, onConfirm, initialDate }: Vis
                 style={[styles.confirmButton, !selectedDate && styles.confirmButtonDisabled]}
                 onPress={handleConfirm}
               >
-                <Text style={styles.confirmButtonText}>확인</Text>
+                <Text style={[styles.confirmButtonText, !selectedDate && styles.confirmButtonTextDisabled]}>확인</Text>
               </TouchableOpacity>
             </View>
           </TouchableWithoutFeedback>
@@ -280,5 +280,6 @@ const styles = StyleSheet.create({
   },
   confirmButtonDisabled: { backgroundColor: Colors.light.grayLight },
   confirmButtonText: { ...Typography.button2, color: Colors.light.white },
+  confirmButtonTextDisabled: { color: Colors.light.grayDark },
   pickerOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0, 0, 0, 0.2)' },
 });

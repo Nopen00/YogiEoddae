@@ -57,7 +57,7 @@ export const AddPlaceAlert = ({ visible, onClose, onConfirm }: AddPlaceAlertProp
               disabled={!selected}
               onPress={() => { if (selected) { onConfirm(selected); handleClose(); } }}
             >
-              <Text style={styles.confirmButtonText}>추가하기</Text>
+              <Text style={[styles.confirmButtonText, !selected && styles.confirmButtonTextDisabled]}>추가하기</Text>
             </TouchableOpacity>
           </View>
         </TouchableWithoutFeedback>
@@ -143,5 +143,8 @@ const styles = StyleSheet.create({
   confirmButtonText: {
     ...Typography.button2,
     color: Colors.light.white,
+  },
+  confirmButtonTextDisabled: {
+    color: Colors.light.grayDark,
   },
 });

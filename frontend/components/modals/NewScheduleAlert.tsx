@@ -421,7 +421,7 @@ export const NewScheduleAlert = ({ visible, onClose, onConfirm }: NewScheduleAle
                   style={[styles.nextButton, !range && styles.nextButtonDisabled]}
                   onPress={() => range && setIsStep2Visible(true)}
                 >
-                  <Text style={styles.nextButtonText}>다음 단계</Text>
+                  <Text style={[styles.nextButtonText, !range && styles.nextButtonTextDisabled]}>다음 단계</Text>
                 </TouchableOpacity>
               </View>
             </TouchableWithoutFeedback>
@@ -568,6 +568,9 @@ const styles = StyleSheet.create({
   nextButtonText: {
     ...Typography.button2,
     color: Colors.light.white,
+  },
+  nextButtonTextDisabled: {
+    color: Colors.light.grayDark,
   },
   pickerOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0, 0, 0, 0.2)' },
 });
