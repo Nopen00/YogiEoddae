@@ -24,7 +24,7 @@ const AccountScreen = () => {
   const [nickname, setNickname] = useState('내이름은김철수');
   const [nicknameEditVisible, setNicknameEditVisible] = useState(false);
   const [userId, setUserId] = useState('id1234');
-  const [email, setEmail] = useState('1234@1234.com');
+  const [email, setEmail] = useState('');
   const [nicknameSuccessVisible, setNicknameSuccessVisible] = useState(false);
   const [logoutConfirmVisible, setLogoutConfirmVisible] = useState(false);
 
@@ -89,10 +89,13 @@ const AccountScreen = () => {
           <ChevronRight size={IconSize.medium} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.sectionRow} activeOpacity={0.7} onPress={() => router.push('/EmailChangeScreen')}>
+        <TouchableOpacity
+          style={styles.sectionRow}
+          activeOpacity={0.7}
+          onPress={() => router.push({ pathname: '/EmailChangeScreen', params: { mode: email ? 'change' : 'setup' } })}
+        >
           <View style={styles.sectionRowTitleWrapper}>
-            <Text style={styles.sectionRowTitle}>연동 이메일 변경</Text>
-            {!email && <View style={styles.sectionRowTitleDot} />}
+            <Text style={styles.sectionRowTitle}>{email ? '연동 이메일 변경' : '연동 이메일 설정'}</Text>
           </View>
           <View style={styles.sectionRowRight}>
             <Text style={styles.sectionRowValue}>{email || '이메일이 없습니다.'}</Text>
@@ -206,15 +209,6 @@ const styles = StyleSheet.create({
   sectionRowTitle: { ...Typography.title1, color: Colors.light.black },
   sectionRowTitleGray: { ...Typography.title1, color: Colors.light.grayDark },
   sectionRowTitleWrapper: { position: 'relative' },
-  sectionRowTitleDot: {
-    position: 'absolute',
-    top: 0,
-    right: -8,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.light.primary,
-  },
   sectionRowRight: { flexDirection: 'row', alignItems: 'center', gap: Spacing.h.small },
   sectionRowValue: { ...Typography.subtitle2, color: Colors.light.grayDark },
 

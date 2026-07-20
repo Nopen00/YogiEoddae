@@ -7,7 +7,7 @@ import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { mailApi, userApi } from '@/services/api';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { ChevronRight, HelpCircle } from 'lucide-react-native';
+import { AlertCircle, ChevronRight, HelpCircle } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -42,7 +42,6 @@ const SettingScreen = () => {
           <TouchableOpacity style={styles.infoDetailButton} activeOpacity={0.7} onPress={() => router.push('/PasswordConfirmScreen')}>
             <View style={styles.infoDetailTextWrapper}>
               <Text style={styles.infoDetailText}>내 정보</Text>
-              {!hasEmail && <View style={styles.infoDetailDot} />}
             </View>
             <ChevronRight size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
           </TouchableOpacity>
@@ -53,6 +52,19 @@ const SettingScreen = () => {
           {hasMail && <View style={styles.mailboxDot} />}
         </TouchableOpacity>
       </View>
+
+      {!hasEmail && (
+        <View style={styles.emailAlertRow}>
+          <AlertCircle size={IconSize.xsmall} color={Colors.light.error} />
+          <Text style={styles.emailAlertText}>이메일 연동이 비활성화되어 있습니다.</Text>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => router.push({ pathname: '/EmailChangeScreen', params: { mode: 'setup' } })}
+          >
+            <Text style={styles.emailAlertLink}>연동하러 가기</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       <Divider marginTop={Spacing.v.large} style={{ marginHorizontal: Spacing.h.medium }} />
 
@@ -129,15 +141,6 @@ const styles = StyleSheet.create({
   },
   infoDetailTextWrapper: { position: 'relative' },
   infoDetailText: { ...Typography.button4, color: Colors.light.grayDark },
-  infoDetailDot: {
-    position: 'absolute',
-    top: 0,
-    right: -8,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.light.primary,
-  },
   mailboxButton: {
     width: 80,
     height: Size.buttonSm,
@@ -159,6 +162,16 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: Colors.light.primary,
   },
+  emailAlertRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.h.medium,
+    marginTop: Spacing.v.medium,
+    gap: Spacing.h.small,
+  },
+  emailAlertText: { ...Typography.body2, color: Colors.light.error },
+  emailAlertLink: { ...Typography.button1, color: Colors.light.error },
   tokenSection: {
     flexDirection: 'row',
     justifyContent: 'space-between',

@@ -5,7 +5,7 @@ import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { userApi } from '@/services/api';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { AlertCircle, Eye, EyeOff } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -67,6 +67,8 @@ const InputBox = ({ label, placeholder, value, onChangeText, onBlur, secure, vis
 
 const EmailChangeScreen = () => {
   const router = useRouter();
+  const { mode } = useLocalSearchParams<{ mode?: string }>();
+  const isSetup = mode === 'setup';
   const [newEmail, setNewEmail] = useState('');
   const [password, setPassword] = useState('');
   const [passwordVisible, setPasswordVisible] = useState(false);
@@ -106,12 +108,12 @@ const EmailChangeScreen = () => {
     setEmailError(isEmailError);
 
     if (isPasswordError || isEmailError) return;
-    router.push({ pathname: '/EmailVerifyScreen', params: { email: newEmail } });
+    router.push({ pathname: '/EmailVerifyScreen', params: { email: newEmail, mode } });
   };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScreenHeader onBack={() => router.back()} title="연동 이메일 변경" />
+      <ScreenHeader onBack={() => router.back()} title={isSetup ? '연동 이메일 설정' : '연동 이메일 변경'} />
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -119,11 +121,13 @@ const EmailChangeScreen = () => {
       >
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Spacing.v.screenBottom }}>
       <View style={styles.body}>
-        <Text style={styles.title}>이메일을 변경해주세요.</Text>
-        <Text style={styles.subtitle}>이메일을 변경할 시, 7일 간 재변경이 불가능합니다.</Text>
+        <Text style={styles.title}>{isSetup ? '이메일을 설정해주세요.' : '이메일을 변경해주세요.'}</Text>
+        <Text style={styles.subtitle}>
+          {isSetup ? '이메일을 연동할 시, 계정 찾기에 사용됩니다.' : '이메일을 변경할 시, 7일 간 재변경이 불가능합니다.'}
+        </Text>
 
         <InputBox
-          label="새 이메일 주소"
+          label={isSetup ? '이메일 주소' : '새 이메일 주소'}
           placeholder="이메일 주소를 입력해주세요."
           value={newEmail}
           onChangeText={handleChangeNewEmail}

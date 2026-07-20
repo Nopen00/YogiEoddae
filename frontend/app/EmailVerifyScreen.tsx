@@ -26,7 +26,8 @@ const formatTime = (seconds: number) => {
 
 const EmailVerifyScreen = () => {
   const router = useRouter();
-  const { email } = useLocalSearchParams<{ email?: string }>();
+  const { email, mode } = useLocalSearchParams<{ email?: string; mode?: string }>();
+  const isSetup = mode === 'setup';
   const [code, setCode] = useState('');
   const [hasError, setHasError] = useState(false);
   const [remainingSeconds, setRemainingSeconds] = useState(CODE_TIMEOUT_SECONDS);
@@ -45,11 +46,21 @@ const EmailVerifyScreen = () => {
     setHasError(code.trim() !== DUMMY_CODE);
   };
 
+  const handleUpdateEmail = async () => {
+    if (email) await userApi.updateEmail(email);
+    setConfirmPopupVisible(false);
+    setSuccessPopupVisible(true);
+  };
+
   const handleConfirm = () => {
     if (!isActive) return;
     if (code.trim() === DUMMY_CODE) {
       setHasError(false);
-      setConfirmPopupVisible(true);
+      if (isSetup) {
+        handleUpdateEmail();
+      } else {
+        setConfirmPopupVisible(true);
+      }
     } else {
       setHasError(true);
     }
@@ -75,7 +86,7 @@ const EmailVerifyScreen = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScreenHeader onBack={() => router.back()} title="연동 이메일 변경" />
+      <ScreenHeader onBack={() => router.back()} title={isSetup ? '연동 이메일 설정' : '연동 이메일 변경'} />
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -157,11 +168,7 @@ const EmailVerifyScreen = () => {
               <TouchableOpacity
                 style={styles.btnConfirm}
                 activeOpacity={0.8}
-                onPress={async () => {
-                  if (email) await userApi.updateEmail(email);
-                  setConfirmPopupVisible(false);
-                  setSuccessPopupVisible(true);
-                }}
+                onPress={handleUpdateEmail}
               >
                 <Text style={styles.btnConfirmText}>변경</Text>
               </TouchableOpacity>
@@ -180,7 +187,7 @@ const EmailVerifyScreen = () => {
           }}
         >
           <View style={styles.successPopup}>
-            <Text style={styles.successTitle}>이메일이 변경되었습니다.</Text>
+            <Text style={styles.successTitle}>{isSetup ? '이메일이 설정되었습니다.' : '이메일이 변경되었습니다.'}</Text>
           </View>
         </TouchableOpacity>
       </Modal>

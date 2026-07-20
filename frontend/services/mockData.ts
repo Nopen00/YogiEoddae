@@ -559,7 +559,7 @@ export function setMockUserId(next: string) {
 }
 
 // 이메일 mutable store — 화면을 나갔다 들어와도 변경값 유지 (앱 재시작 시엔 초기화)
-export let mockEmail = '1234@1234.com';
+export let mockEmail = '';
 export function setMockEmail(next: string) {
   mockEmail = next;
 }
