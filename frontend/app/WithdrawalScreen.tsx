@@ -333,7 +333,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: Size.buttonSm,
     borderRadius: Spacing.r.small,
-    backgroundColor: Colors.light.primary,
+    backgroundColor: Colors.light.error,
     justifyContent: 'center',
     alignItems: 'center',
   },

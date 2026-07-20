@@ -28,32 +28,30 @@ const getNicknameError = (nickname: string): NicknameError => {
 };
 
 const ERROR_MESSAGE: Record<Exclude<NicknameError, null>, string> = {
-  invalidChar: '닉네임은 한글, 영문, 숫자만 입력가능합니다.',
-  invalidLength: '닉네임을 2~10자로 입력해주세요.',
+  invalidChar: '한글, 영문, 숫자만 입력가능합니다.',
+  invalidLength: '2~10자로 입력해주세요.',
 };
 
 interface NicknameEditAlertProps {
   visible: boolean;
-  currentNickname: string;
   onConfirm: (newNickname: string) => void;
   onClose: () => void;
 }
 
 export const NicknameEditAlert = ({
   visible,
-  currentNickname,
   onConfirm,
   onClose,
 }: NicknameEditAlertProps) => {
-  const [nickname, setNickname] = useState(currentNickname);
+  const [nickname, setNickname] = useState('');
   const [error, setError] = useState<NicknameError>(null);
 
   useEffect(() => {
     if (visible) {
-      setNickname(currentNickname);
+      setNickname('');
       setError(null);
     }
-  }, [visible, currentNickname]);
+  }, [visible]);
 
   const handleChangeNickname = (text: string) => {
     setNickname(text);
@@ -95,15 +93,18 @@ export const NicknameEditAlert = ({
               </View>
 
               <View style={[styles.inputBox, error && styles.inputBoxError]}>
-                <TextInput
-                  style={styles.input}
-                  value={nickname}
-                  onChangeText={handleChangeNickname}
-                  onBlur={handleBlurNickname}
-                  placeholder="닉네임을 입력해 주세요."
-                  placeholderTextColor={Colors.light.grayLight}
-                  autoFocus
-                />
+                <View style={styles.inputSection}>
+                  <Text style={[styles.inputLabel, error && styles.inputLabelError]}>닉네임</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={nickname}
+                    onChangeText={handleChangeNickname}
+                    onBlur={handleBlurNickname}
+                    placeholder="한글, 영문, 숫자만 입력가능합니다."
+                    placeholderTextColor={Colors.light.grayLight}
+                    autoFocus
+                  />
+                </View>
                 <View style={styles.boxRightIcons}>
                   {nickname.length > 0 && (
                     <TouchableOpacity
@@ -190,21 +191,27 @@ const styles = StyleSheet.create({
     borderWidth: Spacing.lw.small,
     borderColor: Colors.light.grayLight,
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
   },
   inputBoxError: { borderColor: Colors.light.error },
-  input: {
+  inputSection: {
     flex: 1,
+    paddingLeft: Spacing.h.medium,
+    paddingVertical: Spacing.v.small,
+  },
+  inputLabel: { ...Typography.body1, color: Colors.light.grayLight, marginBottom: Spacing.v.small },
+  inputLabelError: { color: Colors.light.error },
+  input: {
     ...Typography.body3,
     color: Colors.light.black,
-    paddingLeft: Spacing.h.medium,
+    padding: 0,
     paddingRight: Spacing.h.xsmall,
-    paddingVertical: 14,
   },
   boxRightIcons: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingRight: Spacing.h.medium,
+    paddingBottom: Spacing.v.small,
   },
   errorIcon: { marginLeft: Spacing.h.small },
   errorRow: {

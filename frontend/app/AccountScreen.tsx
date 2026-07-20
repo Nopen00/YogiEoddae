@@ -91,7 +91,7 @@ const AccountScreen = () => {
 
         <TouchableOpacity style={styles.sectionRow} activeOpacity={0.7} onPress={() => router.push('/EmailChangeScreen')}>
           <View style={styles.sectionRowTitleWrapper}>
-            <Text style={styles.sectionRowTitle}>이메일 변경</Text>
+            <Text style={styles.sectionRowTitle}>연동 이메일 변경</Text>
             {!email && <View style={styles.sectionRowTitleDot} />}
           </View>
           <View style={styles.sectionRowRight}>
@@ -115,7 +115,6 @@ const AccountScreen = () => {
 
       <NicknameEditAlert
         visible={nicknameEditVisible}
-        currentNickname={nickname}
         onConfirm={async (newNickname) => {
           await userApi.updateNickname(newNickname);
           setNickname(newNickname);

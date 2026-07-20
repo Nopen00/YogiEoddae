@@ -75,7 +75,7 @@ const EmailVerifyScreen = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScreenHeader onBack={() => router.back()} title="이메일 변경" />
+      <ScreenHeader onBack={() => router.back()} title="연동 이메일 변경" />
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
