@@ -13,9 +13,11 @@ interface MoreMenuAlertProps {
   isSaved: boolean;
   onSavePress: () => void;
   onSchedulePress?: () => void;
+  isToggled?: boolean;
+  onTogglePress?: () => void;
 }
 
-export const MoreMenuAlert = ({ isSaved, onSavePress, onSchedulePress }: MoreMenuAlertProps) => {
+export const MoreMenuAlert = ({ isSaved, onSavePress, onSchedulePress, isToggled, onTogglePress }: MoreMenuAlertProps) => {
   return (
     <View style={styles.container}>
       <TouchableOpacity style={styles.menuItem} onPress={onSavePress} activeOpacity={0.7}>
@@ -36,6 +38,18 @@ export const MoreMenuAlert = ({ isSaved, onSavePress, onSchedulePress }: MoreMen
         <Star size={IconSize.large} color={Colors.light.black} strokeWidth={IconStroke.regular} />
         <Text style={styles.menuText}>리뷰쓰기</Text>
       </TouchableOpacity>
+
+      {onTogglePress && (
+        <>
+          <View style={styles.separator} />
+          <TouchableOpacity style={styles.menuItem} onPress={onTogglePress} activeOpacity={0.7}>
+            <View style={[styles.togglePill, { backgroundColor: isToggled ? Colors.light.primary : Colors.light.grayLight }]}>
+              <View style={[styles.toggleCircle, { left: isToggled ? 26 : 2 }]} />
+            </View>
+            <Text style={styles.menuText}>{isToggled ? '카카오' : '관광공사'}</Text>
+          </TouchableOpacity>
+        </>
+      )}
     </View>
   );
 };
@@ -79,5 +93,18 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.grayLight,
     marginHorizontal: -Spacing.h.medium,
     marginVertical: Spacing.v.small,
+  },
+  togglePill: {
+    width: 48,
+    height: 24,
+    borderRadius: 12,
+  },
+  toggleCircle: {
+    position: 'absolute',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: Colors.light.white,
+    top: 2,
   },
 });

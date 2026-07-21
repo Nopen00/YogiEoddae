@@ -5,7 +5,7 @@ import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { authApi, userApi } from '@/services/api';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { AlertCircle } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -22,6 +22,8 @@ const formatTime = (seconds: number) => {
 
 const PasswordChangeScreen = () => {
   const router = useRouter();
+  const { username: paramUsername, maskedEmail, fromPublic } = useLocalSearchParams<{ username?: string; maskedEmail?: string; fromPublic?: string }>();
+  const isFromPublic = fromPublic === '1';
   const [code, setCode] = useState('');
   const [hasError, setHasError] = useState(false);
   const [errorText, setErrorText] = useState('인증코드가 일치하지 않습니다.');
@@ -32,6 +34,14 @@ const PasswordChangeScreen = () => {
   const isActive = code.trim().length > 0;
 
   useEffect(() => {
+    // 아이디 찾기 → 비밀번호 재설정 진입(비로그인)은 이전 화면에서 이미 인증코드를 발송했으므로
+    // getMe()/재발송을 건너뛰고 마스킹된 이메일만 표시한다.
+    if (isFromPublic) {
+      setUsername(paramUsername ?? '');
+      setEmail(maskedEmail ?? '');
+      setResendCooldown(RESEND_COOLDOWN_SECONDS);
+      return;
+    }
     userApi.getMe().then((res) => {
       setUsername(res.data.username);
       setEmail(res.data.email);
@@ -41,7 +51,7 @@ const PasswordChangeScreen = () => {
           .catch(() => {});
       }
     });
-  }, []);
+  }, [isFromPublic, paramUsername, maskedEmail]);
 
   const handleChangeCode = (text: string) => {
     setCode(text);
@@ -60,7 +70,7 @@ const PasswordChangeScreen = () => {
       const res = await authApi.verifyPasswordReset(username, code.trim());
       if (res.data.verified) {
         setHasError(false);
-        router.replace({ pathname: '/PasswordResetScreen', params: { username } });
+        router.replace({ pathname: '/PasswordResetScreen', params: { username, fromPublic: isFromPublic ? '1' : undefined } });
       } else {
         setErrorText('인증코드가 일치하지 않습니다.');
         setHasError(true);
@@ -94,14 +104,16 @@ const PasswordChangeScreen = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScreenHeader onBack={() => router.back()} title="비밀번호 재설정" />
+      {!isFromPublic && (
+        <ScreenHeader onBack={() => router.back()} title="비밀번호 재설정" />
+      )}
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Spacing.v.screenBottom }}>
-      <View style={styles.body}>
+      <View style={[styles.body, isFromPublic && styles.bodyNoHeader]}>
         <Text style={styles.title}>인증 코드를 메일로 전송했습니다.</Text>
         <Text style={styles.subtitle}>5분 내에, 이메일로 전송받은 코드를 입력해 주세요.</Text>
         <Text style={styles.subtitle}>전송된 이메일 주소 : {email || '이메일이 없습니다.'}</Text>
@@ -140,7 +152,7 @@ const PasswordChangeScreen = () => {
           disabled={!isActive}
           onPress={handleConfirm}
         >
-          <Text style={[styles.confirmButtonText, !isActive && styles.confirmButtonTextDisabled]}>확인</Text>
+          <Text style={[styles.confirmButtonText, !isActive && styles.confirmButtonTextDisabled]}>다음</Text>
         </TouchableOpacity>
 
         <View style={styles.resendRow}>
@@ -150,6 +162,14 @@ const PasswordChangeScreen = () => {
         </View>
         {resendCooldown > 0 && (
           <Text style={styles.resendNotice}>{resendCooldown}초 이후 재전송이 가능합니다.</Text>
+        )}
+
+        {isFromPublic && (
+          <View style={styles.bottomRow}>
+            <Text style={styles.bottomLinkText} onPress={() => router.push('/SignUpScreen')}>회원가입</Text>
+            <View style={styles.bottomDivider} />
+            <Text style={styles.bottomLinkText} onPress={() => router.push('/SignInScreen')}>로그인</Text>
+          </View>
         )}
       </View>
       </ScrollView>
@@ -163,6 +183,11 @@ const styles = StyleSheet.create({
   body: {
     marginTop: Spacing.v.medium,
     paddingHorizontal: Spacing.h.medium,
+  },
+  bodyNoHeader: {
+    // ScreenHeader가 없는 화면이지만, 다른 화면(SignUpStep2Screen 등)의 헤더+16 위치와
+    // 동일한 세로 위치에 맞추기 위해 헤더의 marginTop(8)+height(56)만큼 미리 띄움
+    marginTop: Spacing.v.small + Size.header + Spacing.v.medium,
   },
   title: { ...Typography.title1, color: Colors.light.black },
   subtitle: { ...Typography.body2, color: Colors.light.grayDark, marginTop: Spacing.v.small },
@@ -210,6 +235,19 @@ const styles = StyleSheet.create({
   },
   resendText: { ...Typography.button2, color: Colors.light.grayDark },
   resendNotice: { ...Typography.body2, color: Colors.light.grayDark, marginTop: Spacing.v.small, textAlign: 'center' },
+  bottomRow: {
+    marginTop: Spacing.v.large,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bottomLinkText: { ...Typography.button1, color: Colors.light.grayDark },
+  bottomDivider: {
+    width: 1,
+    height: 12,
+    backgroundColor: Colors.light.grayLight,
+    marginHorizontal: Spacing.h.small,
+  },
 });
 
 export default PasswordChangeScreen;

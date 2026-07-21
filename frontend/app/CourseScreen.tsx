@@ -10,7 +10,7 @@ import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { sortByOption } from '@/utils/sortByOption';
 import { useRouter } from 'expo-router';
-import { ArrowUpDown, Heart, Star, X } from 'lucide-react-native';
+import { ArrowUpDown, Edit2, Heart, Star, X } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated,
@@ -669,6 +669,13 @@ const CourseScreen = () => {
           )}
         </ScrollView>
       </PagerView>
+
+      {selectedIndex === 4 && (
+        <TouchableOpacity style={styles.fabButton} activeOpacity={0.8}>
+          <Edit2 size={IconSize.xlarge} color={Colors.light.white} strokeWidth={IconStroke.regular} />
+        </TouchableOpacity>
+      )}
+
       <SortAlert
         visible={isSortVisible}
         options={COURSE_SORT_OPTIONS}
@@ -695,6 +702,18 @@ const styles = StyleSheet.create({
   indicator: { position: 'absolute', bottom: 0, left: 0, height: Spacing.lw.small, backgroundColor: Colors.light.black, zIndex: 1 },
   mainContent: { flex: 1 },
   scrollContainer: { paddingBottom: Spacing.v.screenBottom },
+  fabButton: {
+    position: 'absolute',
+    right: Spacing.h.medium,
+    bottom: Spacing.v.medium,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: Colors.light.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...Shadows.card,
+  },
   themeBox: {
     marginTop: Spacing.v.medium,
     marginHorizontal: Spacing.h.medium,

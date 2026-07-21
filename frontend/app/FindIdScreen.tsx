@@ -11,35 +11,32 @@ import React, { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const SignInScreen = () => {
+const FindIdScreen = () => {
   const router = useRouter();
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [passwordVisible, setPasswordVisible] = useState(false);
-  const [loginError, setLoginError] = useState(false);
+  const [findError, setFindError] = useState(false);
 
-  const isActive = username.trim().length > 0 && password.trim().length > 0;
+  const isActive = email.trim().length > 0 && password.trim().length > 0;
 
-  const handleChangeUsername = (text: string) => {
-    setUsername(text);
-    if (loginError) setLoginError(false);
+  const handleChangeEmail = (text: string) => {
+    setEmail(text);
+    if (findError) setFindError(false);
   };
 
   const handleChangePassword = (text: string) => {
     setPassword(text);
-    if (loginError) setLoginError(false);
+    if (findError) setFindError(false);
   };
 
-  const handleLogin = async () => {
+  const handleFindId = async () => {
     if (!isActive) return;
     try {
-      const res = await authApi.login({ username, password });
-      router.replace({
-        pathname: '/MainScreen',
-        params: { welcome: '1', nickname: res.data.nickname, welcomeSource: 'login' },
-      });
+      const res = await authApi.findId(email, password);
+      router.push({ pathname: '/FindIdResultScreen', params: { maskedUsername: res.data.masked_username } });
     } catch (e: any) {
-      setLoginError(true);
+      setFindError(true);
     }
   };
 
@@ -48,15 +45,15 @@ const SignInScreen = () => {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Spacing.v.screenBottom }}>
           <View style={styles.body}>
-            <Text style={styles.title}>미디어 속 경험을 현실에서</Text>
-            <Text style={styles.subtitle}>미디어에서 보기만 했던 장소들을 현실에서 만나보세요.</Text>
+            <Text style={styles.title}>아이디를 잊으셨나요?</Text>
+            <Text style={styles.subtitle}>등록하신 정보를 입력하여 본인 확인을 진행합니다.</Text>
 
             <LabeledInputBox
-              label="아이디"
-              placeholder="아이디"
-              value={username}
-              onChangeText={handleChangeUsername}
-              hasError={loginError}
+              label="이메일 주소"
+              placeholder="example@email.com"
+              value={email}
+              onChangeText={handleChangeEmail}
+              hasError={findError}
             />
 
             <LabeledInputBox
@@ -67,27 +64,29 @@ const SignInScreen = () => {
               secure
               visible={passwordVisible}
               onToggleVisible={() => setPasswordVisible(!passwordVisible)}
-              hasError={loginError}
+              hasError={findError}
             />
 
-            {loginError && (
-              <View style={styles.loginErrorRow}>
+            {findError && (
+              <View style={styles.findErrorRow}>
                 <AlertCircle size={IconSize.xsmall} color={Colors.light.error} />
-                <Text style={styles.loginErrorText}>등록되지 않은 아이디이거나, 비밀번호가 올바르지 않습니다.</Text>
+                <Text style={styles.findErrorText}>입력하신 정보와 일치하는 계정을 찾을 수 없습니다.</Text>
               </View>
             )}
 
             <TouchableOpacity
-              style={[styles.loginButton, loginError && styles.loginButtonWithError, !isActive && styles.loginButtonDisabled]}
+              style={[styles.findButton, findError && styles.findButtonWithError, !isActive && styles.findButtonDisabled]}
               activeOpacity={0.8}
               disabled={!isActive}
-              onPress={handleLogin}
+              onPress={handleFindId}
             >
-              <Text style={[styles.loginButtonText, !isActive && styles.loginButtonTextDisabled]}>로그인</Text>
+              <Text style={[styles.findButtonText, !isActive && styles.findButtonTextDisabled]}>아이디 찾기</Text>
             </TouchableOpacity>
 
             <View style={styles.bottomRow}>
-              <Text style={styles.bottomLinkText} onPress={() => router.push('/FindIdScreen')}>아이디 찾기</Text>
+              <Text style={styles.bottomLinkText} onPress={() => router.push('/SignUpScreen')}>회원가입</Text>
+              <View style={styles.bottomDivider} />
+              <Text style={styles.bottomLinkText} onPress={() => router.push('/SignInScreen')}>로그인</Text>
               <View style={styles.bottomDivider} />
               <Text style={styles.bottomLinkText} onPress={() => router.push('/FindPasswordScreen')}>비밀번호 재설정</Text>
             </View>
@@ -108,13 +107,13 @@ const styles = StyleSheet.create({
   },
   title: { ...Typography.title1, color: Colors.light.black },
   subtitle: { ...Typography.body2, color: Colors.light.grayDark, marginTop: Spacing.v.small },
-  loginErrorRow: {
+  findErrorRow: {
     marginTop: Spacing.v.large,
     flexDirection: 'row',
     alignItems: 'center',
   },
-  loginErrorText: { ...Typography.body2, color: Colors.light.error, marginLeft: Spacing.h.small },
-  loginButton: {
+  findErrorText: { ...Typography.body2, color: Colors.light.error, marginLeft: Spacing.h.small },
+  findButton: {
     marginTop: Spacing.v.large,
     minHeight: Size.buttonMd,
     paddingVertical: Spacing.v.medium,
@@ -123,10 +122,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  loginButtonWithError: { marginTop: Spacing.v.medium },
-  loginButtonDisabled: { backgroundColor: Colors.light.grayLight },
-  loginButtonText: { ...Typography.button2, color: Colors.light.white },
-  loginButtonTextDisabled: { color: Colors.light.grayDark },
+  findButtonWithError: { marginTop: Spacing.v.medium },
+  findButtonDisabled: { backgroundColor: Colors.light.grayLight },
+  findButtonText: { ...Typography.button2, color: Colors.light.white },
+  findButtonTextDisabled: { color: Colors.light.grayDark },
   bottomRow: {
     marginTop: Spacing.v.large,
     flexDirection: 'row',
@@ -142,4 +141,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SignInScreen;
+export default FindIdScreen;

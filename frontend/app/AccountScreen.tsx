@@ -34,8 +34,7 @@ const AccountScreen = () => {
         setUserId(res.data.username);
         setEmail(res.data.email);
       }).catch(() => {
-        // 로그인 안 된 상태(401) — 정식 로그인 화면이 아직 없어 테스트용 화면으로 보냄
-        router.replace('/DevAuthScreen');
+        router.replace('/LoginScreen');
       });
     }, [])
   );

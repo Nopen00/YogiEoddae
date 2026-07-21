@@ -85,7 +85,8 @@ const PasswordInputBox = ({ label, placeholder, value, onChangeText, onBlur, vis
 
 const PasswordResetScreen = () => {
   const router = useRouter();
-  const { username: paramUsername } = useLocalSearchParams<{ username?: string }>();
+  const { username: paramUsername, fromPublic } = useLocalSearchParams<{ username?: string; fromPublic?: string }>();
+  const isFromPublic = fromPublic === '1';
   const [newPassword, setNewPassword] = useState('');
   const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
   const [newVisible, setNewVisible] = useState(false);
@@ -130,6 +131,20 @@ const PasswordResetScreen = () => {
     setNewPasswordConfirmError(newPasswordConfirm !== newPassword);
   };
 
+  const submitPasswordReset = async () => {
+    try {
+      await authApi.confirmPasswordReset(userId, newPassword);
+      setConfirmPopupVisible(false);
+      setSuccessPopupVisible(true);
+    } catch (e: any) {
+      setConfirmPopupVisible(false);
+      const serverError = e?.response?.data?.new_password?.[0];
+      if (serverError) {
+        setNewPasswordError('recentlyUsed');
+      }
+    }
+  };
+
   const handleConfirm = () => {
     if (!isActive) return;
     const nextNewPasswordError = getNewPasswordError(newPassword, userId);
@@ -139,21 +154,32 @@ const PasswordResetScreen = () => {
     setNewPasswordConfirmError(isNewPasswordConfirmError);
 
     if (nextNewPasswordError || isNewPasswordConfirmError) return;
+
+    // 비로그인(아이디 찾기 → 비밀번호 재설정) 흐름은 백엔드에 실제로 강제되지 않는
+    // 7일 재변경 제한 경고가 맥락상 불필요해 확인 팝업 없이 바로 제출한다.
+    if (isFromPublic) {
+      submitPasswordReset();
+      return;
+    }
     setConfirmPopupVisible(true);
   };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScreenHeader onBack={() => router.back()} title="비밀번호 변경" />
+      {!isFromPublic && (
+        <ScreenHeader onBack={() => router.back()} title="비밀번호 변경" />
+      )}
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Spacing.v.screenBottom }}>
-      <View style={styles.body}>
-        <Text style={styles.title}>비밀번호를 변경해주세요.</Text>
-        <Text style={styles.subtitle}>비밀번호를 변경할 시, 7일 간 재변경이 불가능합니다.</Text>
+      <View style={[styles.body, isFromPublic && styles.bodyNoHeader]}>
+        <Text style={styles.title}>{isFromPublic ? '비밀번호를 재설정합니다.' : '비밀번호를 변경해주세요.'}</Text>
+        <Text style={styles.subtitle}>
+          {isFromPublic ? '사용할 새로운 비밀번호를 입력해 주세요.' : '비밀번호를 변경할 시, 7일 간 재변경이 불가능합니다.'}
+        </Text>
 
         <PasswordInputBox
           label="새 비밀번호"
@@ -200,7 +226,7 @@ const PasswordResetScreen = () => {
           disabled={!isActive}
           onPress={handleConfirm}
         >
-          <Text style={[styles.confirmButtonText, !isActive && styles.confirmButtonTextDisabled]}>변경</Text>
+          <Text style={[styles.confirmButtonText, !isActive && styles.confirmButtonTextDisabled]}>{isFromPublic ? '완료' : '변경'}</Text>
         </TouchableOpacity>
       </View>
       </ScrollView>
@@ -222,19 +248,7 @@ const PasswordResetScreen = () => {
               <TouchableOpacity
                 style={styles.btnConfirm}
                 activeOpacity={0.8}
-                onPress={async () => {
-                  try {
-                    await authApi.confirmPasswordReset(userId, newPassword);
-                    setConfirmPopupVisible(false);
-                    setSuccessPopupVisible(true);
-                  } catch (e: any) {
-                    setConfirmPopupVisible(false);
-                    const serverError = e?.response?.data?.new_password?.[0];
-                    if (serverError) {
-                      setNewPasswordError('recentlyUsed');
-                    }
-                  }
-                }}
+                onPress={submitPasswordReset}
               >
                 <Text style={styles.btnConfirmText}>변경</Text>
               </TouchableOpacity>
@@ -249,13 +263,21 @@ const PasswordResetScreen = () => {
           activeOpacity={1}
           onPress={async () => {
             setSuccessPopupVisible(false);
+            if (isFromPublic) {
+              router.replace('/SignInScreen');
+              return;
+            }
             await authApi.logout();
             router.replace('/');
           }}
         >
           <View style={styles.resultPopupBox}>
-            <Text style={styles.resultTitle}>비밀번호가 변경되었습니다.</Text>
-            <Text style={styles.resultSub1}>보안을 위해 다시 로그인해 주세요.</Text>
+            <Text style={styles.resultTitle}>
+              {isFromPublic ? '비밀번호 재설정이 완료되었습니다.' : '비밀번호가 변경되었습니다.'}
+            </Text>
+            <Text style={styles.resultSub1}>
+              {isFromPublic ? '새로운 비밀번호로 로그인해 주세요.' : '보안을 위해 다시 로그인해 주세요.'}
+            </Text>
           </View>
         </TouchableOpacity>
       </Modal>
@@ -268,6 +290,11 @@ const styles = StyleSheet.create({
   body: {
     marginTop: Spacing.v.medium,
     paddingHorizontal: Spacing.h.medium,
+  },
+  bodyNoHeader: {
+    // ScreenHeader가 없는 화면이지만, 다른 화면(SignUpStep2Screen 등)의 헤더+16 위치와
+    // 동일한 세로 위치에 맞추기 위해 헤더의 marginTop(8)+height(56)만큼 미리 띄움
+    marginTop: Spacing.v.small + Size.header + Spacing.v.medium,
   },
   title: { ...Typography.title1, color: Colors.light.black },
   subtitle: { ...Typography.body2, color: Colors.light.grayDark, marginTop: Spacing.v.small },

@@ -9,6 +9,9 @@ interface KakaoMapProps {
   places?: KakaoMapPlace[];
   height?: number;
   style?: StyleProp<ViewStyle>;
+  // 네이티브 KakaoMap과 props 형태를 맞추기 위한 용도 — 웹은 부모가 RN ScrollView가 아니라 실제 문제가 없다.
+  onTouchStart?: () => void;
+  onTouchEnd?: () => void;
 }
 
 export function KakaoMap({ latitude, longitude, markerTitle, places, height, style }: KakaoMapProps) {

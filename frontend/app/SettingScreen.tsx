@@ -27,8 +27,7 @@ const SettingScreen = () => {
         setTokenBalance(res.data.token_balance);
         setHasEmail(res.data.email.trim().length > 0);
       }).catch(() => {
-        // 로그인 안 된 상태(401) — 정식 로그인 화면이 아직 없어 테스트용 화면으로 보냄
-        router.replace('/DevAuthScreen');
+        router.replace('/LoginScreen');
       });
       mailApi.getList().then(res => setHasMail(res.data.length > 0)).catch(() => {});
     }, [])
@@ -93,12 +92,6 @@ const SettingScreen = () => {
       {/* 포토스팟 관리 섹션 */}
       <TouchableOpacity style={styles.menuRow} activeOpacity={0.7}>
         <Text style={styles.menuRowText}>작성한 포토스팟 관리</Text>
-        <ChevronRight size={IconSize.medium} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
-      </TouchableOpacity>
-
-      {/* 임시 — JWT 연동 테스트용, 정식 로그인 화면 나오면 제거 */}
-      <TouchableOpacity style={styles.menuRow} activeOpacity={0.7} onPress={() => router.push('/DevAuthScreen')}>
-        <Text style={styles.menuRowText}>[테스트] 로그인/회원가입</Text>
         <ChevronRight size={IconSize.medium} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
       </TouchableOpacity>
 

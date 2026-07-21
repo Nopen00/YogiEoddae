@@ -10,9 +10,13 @@ interface KakaoMapProps {
   places?: KakaoMapPlace[];
   height?: number;
   style?: StyleProp<ViewStyle>;
+  // 지도가 부모 ScrollView 안에 있을 때, 드래그 중엔 부모 스크롤을 잠깐 꺼줘야
+  // 스크롤 제스처가 지도의 드래그(팬)를 가로채지 않는다.
+  onTouchStart?: () => void;
+  onTouchEnd?: () => void;
 }
 
-export function KakaoMap({ latitude, longitude, markerTitle, places, height, style }: KakaoMapProps) {
+export function KakaoMap({ latitude, longitude, markerTitle, places, height, style, onTouchStart, onTouchEnd }: KakaoMapProps) {
   // 지도가 스크롤 제스처를 가로채지 않도록, 탭하기 전까진 터치를 아예 안 받는다.
   const [active, setActive] = useState(false);
   const html = useMemo(
@@ -21,7 +25,12 @@ export function KakaoMap({ latitude, longitude, markerTitle, places, height, sty
   );
 
   return (
-    <View style={[styles.wrapper, height != null ? { height } : { flex: 1 }, style]}>
+    <View
+      style={[styles.wrapper, height != null ? { height } : { flex: 1 }, style]}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+      onTouchCancel={onTouchEnd}
+    >
       <WebView
         originWhitelist={['*']}
         // baseUrl 없이 인라인 html만 로드하면 WebView의 origin이 비어서(about:blank 등)

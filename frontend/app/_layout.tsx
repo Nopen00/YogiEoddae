@@ -1,5 +1,5 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack, usePathname } from 'expo-router';
+import { Stack, useGlobalSearchParams, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -12,14 +12,21 @@ export const unstable_settings = {
   anchor: '(tabs)',
 };
 
-const HIDDEN_TAB_ROUTES = ['/SearchScreen', '/tutorial', '/LoginScreen', '/SignInScreen', '/SignUpScreen', '/SignUpStep2Screen', '/EmailSetupScreen'];
+const HIDDEN_TAB_ROUTES = ['/SearchScreen', '/tutorial', '/LoginScreen', '/SignInScreen', '/SignUpScreen', '/SignUpStep2Screen', '/EmailSetupScreen', '/FindIdScreen', '/FindIdResultScreen', '/FindPasswordScreen'];
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const pathname = usePathname();
+  const { fromPublic } = useGlobalSearchParams<{ fromPublic?: string }>();
+  // PasswordChangeScreen/PasswordResetScreen은 MY페이지(로그인 상태)와 비밀번호 찾기(비로그인)
+  // 양쪽에서 재사용되는데, 비로그인 진입(fromPublic) 시에는 다른 인증 화면들처럼 탭바를 숨겨야 함
+  const isSharedPasswordScreenFromPublic =
+    (pathname.startsWith('/PasswordChangeScreen') || pathname.startsWith('/PasswordResetScreen')) &&
+    fromPublic === '1';
 
   const showTabBar =
     pathname !== '/' &&
+    !isSharedPasswordScreenFromPublic &&
     !HIDDEN_TAB_ROUTES.some((route) => pathname.startsWith(route));
 
   return (
@@ -42,12 +49,14 @@ function RootLayoutNav() {
             <Stack.Screen name="MailboxScreen" options={{ headerShown: false }} />
             <Stack.Screen name="TokenChargeScreen" options={{ headerShown: false }} />
             <Stack.Screen name="ReviewManageScreen" options={{ headerShown: false }} />
-            <Stack.Screen name="DevAuthScreen" options={{ headerShown: false }} />
             <Stack.Screen name="LoginScreen" options={{ headerShown: false }} />
             <Stack.Screen name="SignInScreen" options={{ headerShown: false }} />
             <Stack.Screen name="SignUpScreen" options={{ headerShown: false }} />
             <Stack.Screen name="SignUpStep2Screen" options={{ headerShown: false }} />
             <Stack.Screen name="EmailSetupScreen" options={{ headerShown: false }} />
+            <Stack.Screen name="FindIdScreen" options={{ headerShown: false }} />
+            <Stack.Screen name="FindIdResultScreen" options={{ headerShown: false }} />
+            <Stack.Screen name="FindPasswordScreen" options={{ headerShown: false }} />
             <Stack.Screen name="AccountScreen" options={{ headerShown: false }} />
             <Stack.Screen name="PasswordConfirmScreen" options={{ headerShown: false }} />
             <Stack.Screen name="PasswordChangeScreen" options={{ headerShown: false }} />
