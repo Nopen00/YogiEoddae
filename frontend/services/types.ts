@@ -54,6 +54,18 @@ export interface PhotoSpotDetail {
   relatedPhotos: Photo[];
 }
 
+export type ReviewTargetType = 'course' | 'place' | 'photospot';
+
+export interface ReviewTarget {
+  type: ReviewTargetType;
+  id: number;
+  title: string;
+  subtitle?: string;
+  category?: string;
+  imageUrl?: string;
+  tags: { id: number; name: string; category: string }[];
+}
+
 export interface Review {
   id: number;
   author: string;
@@ -65,6 +77,7 @@ export interface Review {
   hasPhoto: boolean;
   likeCount: number;
   isMine: boolean;
+  target?: ReviewTarget;
 }
 
 export interface MediaPlace {

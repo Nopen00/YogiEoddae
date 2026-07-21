@@ -75,15 +75,20 @@ export const ReviewCard = ({
       )}
 
       <View style={styles.ratingRow}>
-        {[1, 2, 3, 4, 5].map((n) => (
-          <Star
-            key={n}
-            size={20}
-            color={n <= review.rating ? Colors.light.star : Colors.light.grayDark}
-            fill={n <= review.rating ? Colors.light.star : 'none'}
-            strokeWidth={IconStroke.regular}
-          />
-        ))}
+        {[1, 2, 3, 4, 5].map((n) => {
+          const isFull = n <= review.rating;
+          const isHalf = !isFull && n - 0.5 <= review.rating;
+          return (
+            <View key={n} style={{ width: 20, height: 20 }}>
+              <Star size={20} color={Colors.light.grayDark} fill="none" strokeWidth={IconStroke.regular} style={{ position: 'absolute' }} />
+              {(isFull || isHalf) && (
+                <View style={{ position: 'absolute', width: isFull ? 20 : 10, height: 20, overflow: 'hidden' }}>
+                  <Star size={20} color={Colors.light.star} fill={Colors.light.star} strokeWidth={IconStroke.regular} />
+                </View>
+              )}
+            </View>
+          );
+        })}
       </View>
 
       <Text style={styles.contentText} numberOfLines={isExpanded ? undefined : 4}>

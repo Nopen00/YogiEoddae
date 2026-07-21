@@ -1,6 +1,6 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { Media, Place, Photo, MediaPlace, PhotoSpotDetail, Review, Schedule, PaginatedResponse, MailItem } from './types';
+import type { Media, Place, Photo, MediaPlace, PhotoSpotDetail, Review, ReviewTarget, ReviewTargetType, Schedule, PaginatedResponse, MailItem } from './types';
 import {
   MOCK_MEDIA_LIST, MOCK_MEDIA_PLACES_MAP, MOCK_PHOTOS, MOCK_PHOTOS_BY_PLACE, mockPhotoStore, mockPhotoPlaceName,
   mockPhotoPlaceId, mockScheduleStore, mockPlaceStore, mockReviewStore, mockMailStore, paginatedOf,
@@ -363,8 +363,8 @@ export const placeApi = {
 };
 
 export const photoApi = {
-  getList: () =>
-    USE_MOCK ? mock([...mockPhotoStore]) : apiClient.get<Photo[]>('/api/photos/'),
+  getList: (params?: { keyword?: string }) =>
+    USE_MOCK ? mock([...mockPhotoStore]) : apiClient.get<Photo[]>('/api/photos/', { params }),
   getDetail: (id: number) => {
     if (USE_MOCK) {
       const photo = mockPhotoStore.find(p => p.id === id) ?? mockPhotoStore[0];
@@ -377,7 +377,39 @@ export const photoApi = {
       );
       return mock<PhotoSpotDetail>({ photo, place, placePhotos, relatedPhotos });
     }
-    return apiClient.get<PhotoSpotDetail>(`/api/photos/${id}/detail/`);
+    return apiClient.get<PhotoSpotDetail>(`/api/photos/${id}/`);
+  },
+  upload: (data: { place_id: number; image_url: string; description?: string; tag_ids?: number[] }) => {
+    if (USE_MOCK) {
+      const newPhoto: Photo = {
+        id: nextMockId(),
+        image_url: data.image_url,
+        description: data.description ?? '',
+        likes: 0,
+        tags: [],
+        is_bookmarked: false,
+        created_at: new Date().toISOString(),
+      };
+      mockPhotoStore.unshift(newPhoto);
+      return mock(newPhoto);
+    }
+    return apiClient.post<Photo>('/api/photos/', data);
+  },
+  like: (id: number) => {
+    if (USE_MOCK) {
+      const item = mockPhotoStore.find(p => p.id === id);
+      if (item) item.likes += 1;
+      return mock({ likes: item?.likes ?? 0 });
+    }
+    return apiClient.post<{ likes: number }>(`/api/photos/${id}/like/`);
+  },
+  unlike: (id: number) => {
+    if (USE_MOCK) {
+      const item = mockPhotoStore.find(p => p.id === id);
+      if (item) item.likes = Math.max(0, item.likes - 1);
+      return mock({ likes: item?.likes ?? 0 });
+    }
+    return apiClient.delete<{ likes: number }>(`/api/photos/${id}/like/`);
   },
   bookmark: (id: number) => {
     if (USE_MOCK) {
@@ -395,6 +427,12 @@ export const photoApi = {
     }
     return apiClient.delete(`/api/photos/${id}/bookmark/`);
   },
+};
+
+export const settlementApi = {
+  getList: () => apiClient.get<MailItem[]>('/api/settlements/'),
+  claim: (id: number) => apiClient.post<{ token_balance: number }>(`/api/settlements/${id}/claim/`),
+  claimAll: () => apiClient.post<{ token_balance: number }>('/api/settlements/claim-all/'),
 };
 
 export const scheduleApi = {
@@ -535,14 +573,62 @@ export const bookmarkApi = {
 const formatDateDots = (date: Date) =>
   `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
 
+// 프론트 화면들이 쓰는 타입 이름 ↔ 백엔드 리뷰 엔드포인트 type 파라미터
+const REVIEW_TYPE_TO_BACKEND: Record<ReviewTargetType, string> = {
+  course: 'media',
+  place: 'place',
+  photospot: 'photo',
+};
+
+// 백엔드가 리뷰마다 같이 내려주는 대상(장소/코스/포토스팟) 정보를 화면에서 쓰기 편한 ReviewTarget 모양으로 정리
+const normalizeReview = (raw: any, type: ReviewTargetType): Review => {
+  const backendKey = REVIEW_TYPE_TO_BACKEND[type];
+  const t = raw[backendKey];
+  let target: ReviewTarget | undefined;
+  if (t) {
+    if (backendKey === 'media') {
+      target = { type: 'course', id: t.id, title: t.title, subtitle: t.media_type, imageUrl: t.thumbnail_url, tags: t.tags };
+    } else if (backendKey === 'place') {
+      target = { type: 'place', id: t.id, title: t.name, subtitle: t.address, category: t.category, imageUrl: t.image_url, tags: t.tags };
+    } else {
+      target = { type: 'photospot', id: t.id, title: t.description, subtitle: t.place_name, imageUrl: t.image_url, tags: t.tags };
+    }
+  }
+  return {
+    id: raw.id,
+    author: raw.author,
+    travelDate: raw.travelDate,
+    writtenDate: raw.writtenDate,
+    rating: Number(raw.rating),
+    content: raw.content,
+    images: raw.images,
+    hasPhoto: raw.hasPhoto,
+    likeCount: raw.likeCount,
+    isMine: raw.isMine,
+    target,
+  };
+};
+
 export const reviewApi = {
-  getList: () =>
-    USE_MOCK ? mock([...mockReviewStore]) : apiClient.get<Review[]>('/api/reviews/'),
-  getDetail: (id: number) =>
-    USE_MOCK
-      ? mock(mockReviewStore.find(r => r.id === id) ?? null)
-      : apiClient.get<Review>(`/api/reviews/${id}/`),
-  create: (data: { rating: number; content: string; images: string[]; visitDate?: string }) => {
+  getList: (type: ReviewTargetType, id: number) => {
+    if (USE_MOCK) return mock(mockReviewStore.filter(r => !r.target || (r.target.type === type && r.target.id === id)));
+    return apiClient
+      .get<any[]>('/api/reviews/', { params: { type: REVIEW_TYPE_TO_BACKEND[type], id } })
+      .then(res => ({ ...res, data: res.data.map(r => normalizeReview(r, type)) }));
+  },
+  getMine: (type: ReviewTargetType) => {
+    if (USE_MOCK) return mock(mockReviewStore.filter(r => r.isMine && (!r.target || r.target.type === type)));
+    return apiClient
+      .get<any[]>('/api/reviews/mine/', { params: { type: REVIEW_TYPE_TO_BACKEND[type] } })
+      .then(res => ({ ...res, data: res.data.map(r => normalizeReview(r, type)) }));
+  },
+  getDetail: (type: ReviewTargetType, id: number) => {
+    if (USE_MOCK) return mock(mockReviewStore.find(r => r.id === id) ?? null);
+    return apiClient
+      .get<any>(`/api/reviews/${REVIEW_TYPE_TO_BACKEND[type]}/${id}/`)
+      .then(res => ({ ...res, data: normalizeReview(res.data, type) }));
+  },
+  create: (type: ReviewTargetType, targetId: number, data: { rating: number; content: string; images: string[]; visitDate?: string }) => {
     if (USE_MOCK) {
       const newReview: Review = {
         id: nextMockId(),
@@ -559,9 +645,18 @@ export const reviewApi = {
       mockReviewStore.unshift(newReview);
       return mock(newReview);
     }
-    return apiClient.post<Review>('/api/reviews/', data);
+    return apiClient
+      .post<any>('/api/reviews/', {
+        type: REVIEW_TYPE_TO_BACKEND[type],
+        id: targetId,
+        rating: data.rating,
+        content: data.content,
+        images: data.images,
+        visit_date: data.visitDate,
+      })
+      .then(res => ({ ...res, data: normalizeReview(res.data, type) }));
   },
-  update: (id: number, data: { rating: number; content: string; images: string[]; visitDate?: string }) => {
+  update: (type: ReviewTargetType, id: number, data: { rating: number; content: string; images: string[]; visitDate?: string }) => {
     if (USE_MOCK) {
       const idx = mockReviewStore.findIndex(r => r.id === id);
       if (idx !== -1) {
@@ -576,14 +671,21 @@ export const reviewApi = {
       }
       return mock(mockReviewStore[idx] ?? null);
     }
-    return apiClient.patch<Review>(`/api/reviews/${id}/`, data);
+    return apiClient
+      .patch<any>(`/api/reviews/${REVIEW_TYPE_TO_BACKEND[type]}/${id}/`, {
+        rating: data.rating,
+        content: data.content,
+        images: data.images,
+        visit_date: data.visitDate,
+      })
+      .then(res => ({ ...res, data: normalizeReview(res.data, type) }));
   },
-  remove: (id: number) => {
+  remove: (type: ReviewTargetType, id: number) => {
     if (USE_MOCK) {
       const idx = mockReviewStore.findIndex(r => r.id === id);
       if (idx !== -1) mockReviewStore.splice(idx, 1);
       return mock({});
     }
-    return apiClient.delete(`/api/reviews/${id}/`);
+    return apiClient.delete(`/api/reviews/${REVIEW_TYPE_TO_BACKEND[type]}/${id}/`);
   },
 };

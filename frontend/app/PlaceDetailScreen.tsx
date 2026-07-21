@@ -117,8 +117,8 @@ const PlaceDetailScreen = () => {
 
   useFocusEffect(
     useCallback(() => {
-      reviewApi.getList().then(res => setReviews(res.data)).catch(() => {});
-    }, [])
+      reviewApi.getList('place', Number(id)).then(res => setReviews(res.data)).catch(() => {});
+    }, [id])
   );
 
   const toggleNearby = async (placeId: number) => {
@@ -143,8 +143,7 @@ const PlaceDetailScreen = () => {
   };
 
   return (
-    <TouchableWithoutFeedback onPress={closeMenu}>
-      <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['top']}>
         {/* 헤더 */}
         <ScreenHeader
           onBack={() => router.dismiss()}
@@ -174,6 +173,12 @@ const PlaceDetailScreen = () => {
             </>
           }
         />
+
+        {isMenuVisible && (
+          <TouchableWithoutFeedback onPress={closeMenu}>
+            <View style={styles.menuBackdrop} />
+          </TouchableWithoutFeedback>
+        )}
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Spacing.v.screenBottom }}>
           {/* 대표 이미지 */}
@@ -468,7 +473,7 @@ const PlaceDetailScreen = () => {
                     const target = reviewDeleteTarget;
                     setReviewDeleteTarget(null);
                     try {
-                      await reviewApi.remove(target.id);
+                      await reviewApi.remove('place', target.id);
                       setReviews((prev) => prev.filter((r) => r.id !== target.id));
                     } catch {}
                   }}
@@ -480,13 +485,13 @@ const PlaceDetailScreen = () => {
           </View>
         </Modal>
       </SafeAreaView>
-    </TouchableWithoutFeedback>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.light.background },
   moreButtonWrapper: { position: 'relative', alignItems: 'flex-end' },
+  menuBackdrop: { ...StyleSheet.absoluteFillObject, zIndex: 5 },
   toggleGroup: { flexDirection: 'row', alignItems: 'center' },
   toggle: {
     width: 48,

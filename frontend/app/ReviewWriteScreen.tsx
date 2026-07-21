@@ -8,7 +8,9 @@ import { Shadows } from '@/constants/Shadows';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { VisitDate, VisitDateAlert } from '@/components/modals/VisitDateAlert';
-import { reviewApi } from '../services/api';
+import { mediaApi, placeApi, photoApi, reviewApi } from '../services/api';
+import type { ReviewTargetType } from '../services/types';
+import { CATEGORY_LABEL, getMediaMetaParts, shortAddress } from '@/constants/labels';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { Calendar, ChevronRight, Plus, Star, X } from 'lucide-react-native';
@@ -19,12 +21,11 @@ import { runOnJS } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Shadow } from 'react-native-shadow-2';
 
-// TODO: 목데이터. 실제 데이터 연동 시 리뷰 작성 대상(명소/코스/포토스팟) 정보로 교체
-const MOCK_REVIEW_TARGET = {
-  title: '광화문 광장',
-  detail: '관광지 | 서울 종로구',
-  tags: ['로맨스', '드라마', '야경'],
-};
+interface ReviewTargetInfo {
+  title: string;
+  detail: string;
+  tags: string[];
+}
 
 const REVIEW_TEXT_PLACEHOLDER =
   '- 솔직한 소감을 남겨주세요.\n- 여러 팁들을 적을 수 있어요.\n- 사진을 최대 10장 첨부할 수 있어요. (선택)';
@@ -52,18 +53,38 @@ const STAR_ROW_WIDTH = STAR_SIZE * STAR_COUNT + STAR_GAP * (STAR_COUNT - 1);
 
 const ReviewWriteScreen = () => {
   const router = useRouter();
-  const { reviewId } = useLocalSearchParams<{ type?: string; id?: string; reviewId?: string }>();
+  const { type, id, reviewId } = useLocalSearchParams<{ type?: ReviewTargetType; id?: string; reviewId?: string }>();
   const [rating, setRating] = useState(0);
   const [reviewText, setReviewText] = useState('');
   const [visitDate, setVisitDate] = useState<VisitDate | null>(null);
   const [isDateVisible, setIsDateVisible] = useState(false);
   const [reviewImages, setReviewImages] = useState<string[]>([]);
   const [isUnsavedWarningVisible, setIsUnsavedWarningVisible] = useState(false);
+  const [targetInfo, setTargetInfo] = useState<ReviewTargetInfo | null>(null);
   const initialSnapshotRef = useRef({ rating: 0, reviewText: '', visitDate: null as VisitDate | null, reviewImages: [] as string[] });
 
   useEffect(() => {
-    if (!reviewId) return;
-    reviewApi.getDetail(Number(reviewId)).then((res) => {
+    if (!id) return;
+    if (type === 'course') {
+      mediaApi.getDetail(Number(id)).then((media) => {
+        setTargetInfo({ title: media.data.title, detail: getMediaMetaParts(media.data).join(' | '), tags: media.data.tags.map(t => t.name) });
+      }).catch(() => {});
+    } else if (type === 'place') {
+      placeApi.getDetail(Number(id)).then((place) => {
+        const p = place.data;
+        setTargetInfo({ title: p.name, detail: `${CATEGORY_LABEL[p.category] ?? p.category} | ${shortAddress(p.address)}`, tags: p.tags.map(t => t.name) });
+      }).catch(() => {});
+    } else if (type === 'photospot') {
+      photoApi.getDetail(Number(id)).then((res) => {
+        const { photo, place } = res.data;
+        setTargetInfo({ title: photo.description || place.name, detail: place.name, tags: photo.tags.map(t => t.name) });
+      }).catch(() => {});
+    }
+  }, [type, id]);
+
+  useEffect(() => {
+    if (!reviewId || !type) return;
+    reviewApi.getDetail(type, Number(reviewId)).then((res) => {
       const review = res.data;
       if (!review) return;
       setRating(review.rating);
@@ -76,7 +97,7 @@ const ReviewWriteScreen = () => {
       }
       initialSnapshotRef.current = { rating: review.rating, reviewText: review.content, visitDate: parsedDate, reviewImages: review.images };
     }).catch(() => {});
-  }, [reviewId]);
+  }, [type, reviewId]);
 
   const hasUnsavedChanges = () => {
     const snap = initialSnapshotRef.current;
@@ -113,8 +134,11 @@ const ReviewWriteScreen = () => {
 
   const updateRatingFromX = (x: number) => {
     const cell = STAR_SIZE + STAR_GAP;
-    const index = Math.floor(x / cell);
-    setRating(Math.min(STAR_COUNT, Math.max(1, index + 1)));
+    const rawIndex = x / cell;
+    const index = Math.floor(rawIndex);
+    const fraction = rawIndex - index;
+    const value = index + (fraction < 0.5 ? 0.5 : 1);
+    setRating(Math.min(STAR_COUNT, Math.max(0.5, value)));
   };
 
   const ratingGesture = useMemo(
@@ -129,7 +153,7 @@ const ReviewWriteScreen = () => {
   const isSubmitEnabled = rating > 0 && visitDate !== null;
 
   const handleSubmit = async () => {
-    if (!isSubmitEnabled) return;
+    if (!isSubmitEnabled || !type) return;
     try {
       const payload = {
         rating,
@@ -137,8 +161,8 @@ const ReviewWriteScreen = () => {
         images: reviewImages,
         visitDate: visitDate ? formatVisitDateValue(visitDate) : undefined,
       };
-      if (reviewId) await reviewApi.update(Number(reviewId), payload);
-      else await reviewApi.create(payload);
+      if (reviewId) await reviewApi.update(type, Number(reviewId), payload);
+      else if (id) await reviewApi.create(type, Number(id), payload);
       router.back();
     } catch {}
   };
@@ -148,10 +172,10 @@ const ReviewWriteScreen = () => {
       <ScreenHeader onBack={handleBack} />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        <Text style={styles.titleText}>{MOCK_REVIEW_TARGET.title}</Text>
-        <Text style={styles.detailText}>{MOCK_REVIEW_TARGET.detail}</Text>
+        <Text style={styles.titleText}>{targetInfo?.title ?? ''}</Text>
+        <Text style={styles.detailText}>{targetInfo?.detail ?? ''}</Text>
         <TagRow>
-          {MOCK_REVIEW_TARGET.tags.map((tag) => (
+          {(targetInfo?.tags ?? []).map((tag) => (
             <Text key={tag} style={styles.tagText}>#{tag}</Text>
           ))}
         </TagRow>
@@ -161,15 +185,20 @@ const ReviewWriteScreen = () => {
         <Text style={styles.ratingTitle}>별점</Text>
         <GestureDetector gesture={ratingGesture}>
           <View style={styles.starRow}>
-            {Array.from({ length: STAR_COUNT }, (_, i) => i + 1).map((n) => (
-              <Star
-                key={n}
-                size={STAR_SIZE}
-                color={n <= rating ? Colors.light.star : Colors.light.grayDark}
-                fill={n <= rating ? Colors.light.star : 'none'}
-                strokeWidth={IconStroke.regular}
-              />
-            ))}
+            {Array.from({ length: STAR_COUNT }, (_, i) => i + 1).map((n) => {
+              const isFull = n <= rating;
+              const isHalf = !isFull && n - 0.5 <= rating;
+              return (
+                <View key={n} style={{ width: STAR_SIZE, height: STAR_SIZE }}>
+                  <Star size={STAR_SIZE} color={Colors.light.grayDark} fill="none" strokeWidth={IconStroke.regular} style={{ position: 'absolute' }} />
+                  {(isFull || isHalf) && (
+                    <View style={{ position: 'absolute', width: isFull ? STAR_SIZE : STAR_SIZE / 2, height: STAR_SIZE, overflow: 'hidden' }}>
+                      <Star size={STAR_SIZE} color={Colors.light.star} fill={Colors.light.star} strokeWidth={IconStroke.regular} />
+                    </View>
+                  )}
+                </View>
+              );
+            })}
           </View>
         </GestureDetector>
 

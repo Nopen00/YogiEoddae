@@ -9,15 +9,13 @@ import { CATEGORY_LABEL, shortAddress } from '@/constants/labels';
 import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
-import { mediaApi, photoApi, placeApi, reviewApi } from '@/services/api';
-import type { Media, Photo, Place, Review } from '@/services/types';
+import { reviewApi } from '@/services/api';
+import type { Review, ReviewTargetType } from '@/services/types';
 import { useFocusEffect, useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { Animated, Dimensions, Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-// 리뷰가 어느 코스/명소/포토스팟에 대한 것인지 알려주는 필드가 아직 없어([[project_review_target_scoping]]),
-// 탭별 실제 대상 매칭 대신 대표 항목 1개를 자리표시자로 보여준다. 백엔드에 대상 필드가 추가되면 실제 데이터로 교체.
 const TABS = ['코스', '명소', '포토스팟'];
 const { width } = Dimensions.get('window');
 const TAB_WIDTH = width / TABS.length;
@@ -34,21 +32,13 @@ const ReviewManageScreen = () => {
   const [imagePopup, setImagePopup] = useState<{ reviewId: number; index: number } | null>(null);
   const [reviewDeleteTarget, setReviewDeleteTarget] = useState<Review | null>(null);
 
-  const [coursePreview, setCoursePreview] = useState<Media | null>(null);
-  const [placePreview, setPlacePreview] = useState<Place | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<Photo | null>(null);
-
   useFocusEffect(
     useCallback(() => {
-      reviewApi.getList().then(res => setReviews(res.data.filter(r => r.isMine))).catch(() => {});
+      Promise.all(REVIEW_TARGET_TYPES.map(type => reviewApi.getMine(type)))
+        .then(results => setReviews(results.flatMap(res => res.data)))
+        .catch(() => {});
     }, [])
   );
-
-  useEffect(() => {
-    mediaApi.getList().then(res => setCoursePreview(res.data.results[0] ?? null)).catch(() => {});
-    placeApi.getList().then(res => setPlacePreview(res.data.results[0] ?? null)).catch(() => {});
-    photoApi.getList().then(res => setPhotoPreview(res.data[0] ?? null)).catch(() => {});
-  }, []);
 
   const popupReview = imagePopup ? reviews.find((r) => r.id === imagePopup.reviewId) : null;
 
@@ -71,84 +61,60 @@ const ReviewManageScreen = () => {
     animateIndicatorTo(index);
   };
 
-  const renderSectionCard = (tabIndex: number) => {
-    if (tabIndex === 0 && coursePreview) {
-      return (
-        <View style={styles.sectionCard}>
-          <View style={styles.sectionImageWrapper}>
-            <Image source={{ uri: coursePreview.thumbnail_url }} style={styles.sectionImage} />
-          </View>
-          <View style={styles.sectionContent}>
-            <Text style={styles.sectionTitle} numberOfLines={1}>{coursePreview.title}</Text>
-            <View style={styles.sectionInfoRow}>
-              <MediaMetaText media={coursePreview} />
-            </View>
-            {coursePreview.tags.length > 0 && (
-              <TagRow>
-                {coursePreview.tags.map(tag => (
-                  <Text key={tag.id} style={styles.sectionTag}>#{tag.name}</Text>
-                ))}
-              </TagRow>
-            )}
-          </View>
-        </View>
-      );
-    }
-    if (tabIndex === 1 && placePreview) {
-      return (
-        <View style={styles.sectionCard}>
-          <View style={styles.sectionImageWrapper}>
-            <Image source={{ uri: placePreview.image_url }} style={styles.sectionImage} />
-          </View>
-          <View style={styles.sectionContent}>
-            <Text style={styles.sectionTitle} numberOfLines={1}>{placePreview.name}</Text>
-            <View style={styles.sectionInfoRow}>
-              <Text style={styles.sectionInfoText}>{CATEGORY_LABEL[placePreview.category] ?? placePreview.category}</Text>
-              <TextSeparator />
-              <Text style={styles.sectionInfoText}>{shortAddress(placePreview.address)}</Text>
-            </View>
-            {placePreview.tags.length > 0 && (
-              <TagRow>
-                {placePreview.tags.map(tag => (
-                  <Text key={tag.id} style={styles.sectionTag}>#{tag.name}</Text>
-                ))}
-              </TagRow>
-            )}
-          </View>
-        </View>
-      );
-    }
-    if (tabIndex === 2 && photoPreview) {
-      return (
-        <View style={styles.sectionCard}>
-          <View style={styles.sectionImageWrapper}>
-            <Image source={{ uri: photoPreview.image_url }} style={styles.sectionImage} />
-          </View>
-          <View style={styles.sectionContent}>
-            <Text style={styles.sectionTitle} numberOfLines={1}>{photoPreview.description}</Text>
-            {photoPreview.tags.length > 0 && (
-              <TagRow>
-                {photoPreview.tags.map(tag => (
-                  <Text key={tag.id} style={styles.sectionTag}>#{tag.name}</Text>
-                ))}
-              </TagRow>
-            )}
-          </View>
-        </View>
-      );
-    }
-    return null;
+  const TARGET_SCREEN: Record<ReviewTargetType, string> = {
+    course: '/CourseDetailScreen',
+    place: '/PlaceDetailScreen',
+    photospot: '/PhotoSpotDetailScreen',
   };
 
-  const renderReviewList = (tabIndex: number) => (
+  const renderTargetCard = (review: Review) => {
+    const target = review.target;
+    if (!target) return null;
+    return (
+      <TouchableOpacity
+        style={styles.sectionCard}
+        activeOpacity={0.7}
+        onPress={() => router.push({ pathname: TARGET_SCREEN[target.type] as any, params: { id: target.id } })}
+      >
+        <View style={styles.sectionImageWrapper}>
+          <Image source={{ uri: target.imageUrl }} style={styles.sectionImage} />
+        </View>
+        <View style={styles.sectionContent}>
+          <Text style={styles.sectionTitle} numberOfLines={1}>{target.title}</Text>
+          {target.type === 'place' ? (
+            <View style={styles.sectionInfoRow}>
+              <Text style={styles.sectionInfoText}>{CATEGORY_LABEL[target.category ?? ''] ?? target.category}</Text>
+              <TextSeparator />
+              <Text style={styles.sectionInfoText}>{shortAddress(target.subtitle ?? '')}</Text>
+            </View>
+          ) : target.subtitle ? (
+            <View style={styles.sectionInfoRow}>
+              <Text style={styles.sectionInfoText}>{target.subtitle}</Text>
+            </View>
+          ) : null}
+          {target.tags.length > 0 && (
+            <TagRow>
+              {target.tags.map(tag => (
+                <Text key={tag.id} style={styles.sectionTag}>#{tag.name}</Text>
+              ))}
+            </TagRow>
+          )}
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  const renderReviewList = (tabIndex: number) => {
+    const tabReviews = reviews.filter((r) => r.target?.type === REVIEW_TARGET_TYPES[tabIndex]);
+    return (
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-      {reviews.length === 0 ? (
+      {tabReviews.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyTitle}>작성한 리뷰가 없습니다.</Text>
           <Text style={styles.emptySubtitle}>리뷰를 작성해보세요.</Text>
         </View>
       ) : (
-        reviews.map((review) => (
+        tabReviews.map((review) => (
           <ReviewCard
             key={review.id}
             review={review}
@@ -158,7 +124,7 @@ const ReviewManageScreen = () => {
             onToggleLike={() => {}}
             likeDisabled
             hideAuthor
-            sectionCard={renderSectionCard(tabIndex)}
+            sectionCard={renderTargetCard(review)}
             onImagePress={(index) => setImagePopup({ reviewId: review.id, index })}
             onEditPress={() => router.push({ pathname: '/ReviewWriteScreen', params: { type: REVIEW_TARGET_TYPES[tabIndex], reviewId: review.id } })}
             onDeletePress={() => setReviewDeleteTarget(review)}
@@ -166,7 +132,8 @@ const ReviewManageScreen = () => {
         ))
       )}
     </ScrollView>
-  );
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -238,8 +205,9 @@ const ReviewManageScreen = () => {
                   if (!reviewDeleteTarget) return;
                   const target = reviewDeleteTarget;
                   setReviewDeleteTarget(null);
+                  if (!target.target) return;
                   try {
-                    await reviewApi.remove(target.id);
+                    await reviewApi.remove(target.target.type, target.id);
                     setReviews((prev) => prev.filter((r) => r.id !== target.id));
                   } catch {}
                 }}

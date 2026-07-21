@@ -97,8 +97,8 @@ const CourseDetailScreen = () => {
 
   useFocusEffect(
     useCallback(() => {
-      reviewApi.getList().then(res => setReviews(res.data)).catch(() => {});
-    }, [])
+      reviewApi.getList('course', Number(id)).then(res => setReviews(res.data)).catch(() => {});
+    }, [id])
   );
 
   useEffect(() => {
@@ -158,21 +158,27 @@ const CourseDetailScreen = () => {
   };
 
   return (
-    <TouchableWithoutFeedback onPress={closeMenu}>
-      <SafeAreaView style={styles.container} edges={['top']}>
-        {/* 헤더 */}
-        <ScreenHeader
-          onBack={() => router.dismiss()}
-          style={{ zIndex: 10 }}
-          right={
-            <View style={styles.moreButtonWrapper}>
-              <MoreButton onPress={() => setIsMenuVisible(!isMenuVisible)} />
-              {isMenuVisible && <MoreMenuAlert isSaved={isSaved} onSavePress={handleSaveToggle} onSchedulePress={handleSchedulePress} />}
-            </View>
-          }
-        />
+    <SafeAreaView style={styles.container} edges={['top']}>
+      {/* 헤더 */}
+      <ScreenHeader
+        onBack={() => router.dismiss()}
+        style={{ zIndex: 10 }}
+        right={
+          <View style={styles.moreButtonWrapper}>
+            <MoreButton onPress={() => setIsMenuVisible(!isMenuVisible)} />
+            {isMenuVisible && <MoreMenuAlert isSaved={isSaved} onSavePress={handleSaveToggle} onSchedulePress={handleSchedulePress} />}
+          </View>
+        }
+      />
 
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Spacing.v.screenBottom }}>
+      {/* 더보기 메뉴 열렸을 때만 바깥 탭으로 닫기 — 항상 화면 전체를 덮으면 스크롤 제스처를 가로채버림 */}
+      {isMenuVisible && (
+        <TouchableWithoutFeedback onPress={closeMenu}>
+          <View style={styles.menuBackdrop} />
+        </TouchableWithoutFeedback>
+      )}
+
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Spacing.v.screenBottom }}>
           {/* 메인 이미지 */}
           <View style={[styles.imageContainer, { width: imageWidth, height: imageHeight }]}>
             <Image source={{ uri: media?.thumbnail_url ?? undefined }} style={styles.mainImage} resizeMode="cover" />
@@ -479,7 +485,7 @@ const CourseDetailScreen = () => {
                     const target = reviewDeleteTarget;
                     setReviewDeleteTarget(null);
                     try {
-                      await reviewApi.remove(target.id);
+                      await reviewApi.remove('course', target.id);
                       setReviews((prev) => prev.filter((r) => r.id !== target.id));
                     } catch {}
                   }}
@@ -490,14 +496,14 @@ const CourseDetailScreen = () => {
             </View>
           </View>
         </Modal>
-      </SafeAreaView>
-    </TouchableWithoutFeedback>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.light.background },
   moreButtonWrapper: { position: 'relative', alignItems: 'flex-end' },
+  menuBackdrop: { ...StyleSheet.absoluteFillObject, zIndex: 5 },
   imageContainer: {
     marginTop: Spacing.v.small,
     marginHorizontal: Spacing.h.medium,

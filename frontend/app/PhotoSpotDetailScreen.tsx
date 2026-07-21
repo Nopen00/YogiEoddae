@@ -98,8 +98,8 @@ const PhotoSpotDetailScreen = () => {
 
   useFocusEffect(
     useCallback(() => {
-      reviewApi.getList().then(res => setReviews(res.data)).catch(() => {});
-    }, [])
+      reviewApi.getList('photospot', Number(id)).then(res => setReviews(res.data)).catch(() => {});
+    }, [id])
   );
 
   useEffect(() => {
@@ -122,16 +122,18 @@ const PhotoSpotDetailScreen = () => {
   const toggleSaved = async () => {
     if (!id) return;
     try {
-      if (isSaved) await photoApi.unbookmark(Number(id));
-      else await photoApi.bookmark(Number(id));
+      if (isSaved) {
+        await Promise.all([photoApi.unbookmark(Number(id)), photoApi.unlike(Number(id))]);
+      } else {
+        await Promise.all([photoApi.bookmark(Number(id)), photoApi.like(Number(id))]);
+      }
       setIsSaved(!isSaved);
       setDetail(prev => prev ? { ...prev, photo: { ...prev.photo, likes: prev.photo.likes + (isSaved ? -1 : 1) } } : prev);
     } catch {}
   };
 
   return (
-    <TouchableWithoutFeedback onPress={closeMenu}>
-      <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['top']}>
         <ScreenHeader
           onBack={() => router.dismiss()}
           style={{ zIndex: 10 }}
@@ -148,6 +150,12 @@ const PhotoSpotDetailScreen = () => {
             </View>
           }
         />
+
+        {isMenuVisible && (
+          <TouchableWithoutFeedback onPress={closeMenu}>
+            <View style={styles.menuBackdrop} />
+          </TouchableWithoutFeedback>
+        )}
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
           <View style={[styles.imageContainer, { width: imageWidth, height: imageHeight }]}>
@@ -459,7 +467,7 @@ const PhotoSpotDetailScreen = () => {
                     const target = reviewDeleteTarget;
                     setReviewDeleteTarget(null);
                     try {
-                      await reviewApi.remove(target.id);
+                      await reviewApi.remove('photospot', target.id);
                       setReviews((prev) => prev.filter((r) => r.id !== target.id));
                     } catch {}
                   }}
@@ -471,7 +479,6 @@ const PhotoSpotDetailScreen = () => {
           </View>
         </Modal>
       </SafeAreaView>
-    </TouchableWithoutFeedback>
   );
 };
 
@@ -480,6 +487,7 @@ export default PhotoSpotDetailScreen;
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.light.white },
   moreButtonWrapper: { position: 'relative' },
+  menuBackdrop: { ...StyleSheet.absoluteFillObject, zIndex: 5 },
   scrollContent: { paddingBottom: Spacing.v.screenBottom },
   imageContainer: {
     marginTop: Spacing.v.small,

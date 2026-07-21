@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { StyleProp, StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { buildKakaoMapHtml, buildKakaoMapHtmlMulti, KakaoMapPlace } from './kakaoMapHtml';
 
@@ -13,6 +13,8 @@ interface KakaoMapProps {
 }
 
 export function KakaoMap({ latitude, longitude, markerTitle, places, height, style }: KakaoMapProps) {
+  // 지도가 스크롤 제스처를 가로채지 않도록, 탭하기 전까진 터치를 아예 안 받는다.
+  const [active, setActive] = useState(false);
   const html = useMemo(
     () => (places ? buildKakaoMapHtmlMulti(places) : buildKakaoMapHtml(latitude ?? 0, longitude ?? 0, markerTitle)),
     [places, latitude, longitude, markerTitle]
@@ -22,10 +24,19 @@ export function KakaoMap({ latitude, longitude, markerTitle, places, height, sty
     <View style={[styles.wrapper, height != null ? { height } : { flex: 1 }, style]}>
       <WebView
         originWhitelist={['*']}
-        source={{ html }}
+        // baseUrl 없이 인라인 html만 로드하면 WebView의 origin이 비어서(about:blank 등)
+        // 카카오 JS SDK 도메인 화이트리스트에 걸린 도메인이 하나도 아닌 걸로 처리돼 조용히 막힌다.
+        // 카카오 콘솔에 등록해둔 도메인으로 baseUrl을 지정해서 그 도메인에서 로드된 것처럼 맞춰준다.
+        source={{ html, baseUrl: 'http://localhost' }}
         style={styles.webview}
         scrollEnabled={false}
+        pointerEvents={active ? 'auto' : 'none'}
       />
+      {!active && (
+        <TouchableOpacity style={styles.overlay} activeOpacity={0.8} onPress={() => setActive(true)}>
+          <Text style={styles.overlayText}>지도를 눌러 조작하기</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -33,4 +44,18 @@ export function KakaoMap({ latitude, longitude, markerTitle, places, height, sty
 const styles = StyleSheet.create({
   wrapper: { width: '100%', overflow: 'hidden' },
   webview: { flex: 1, backgroundColor: 'transparent' },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    paddingBottom: 8,
+  },
+  overlayText: {
+    fontSize: 12,
+    color: '#666',
+    backgroundColor: 'rgba(255,255,255,0.85)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
 });

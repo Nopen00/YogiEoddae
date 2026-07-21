@@ -72,10 +72,7 @@ const SearchResultScreen = () => {
     if (!searchKeyword) return;
     mediaApi.getList({ keyword: searchKeyword }).then(res => setCourses(res.data.results)).catch((e) => console.error('media error:', e));
     placeApi.getList({ keyword: searchKeyword }).then(res => setAttractions(res.data.results)).catch((e) => console.error('place error:', e));
-  }, [searchKeyword]);
-
-  useEffect(() => {
-    photoApi.getList().then(res => {
+    photoApi.getList({ keyword: searchKeyword }).then(res => {
       setPhotoSpots(res.data.map(photo => ({
         id: photo.id,
         name: photo.description,
@@ -84,7 +81,7 @@ const SearchResultScreen = () => {
         tags: photo.tags.map(t => t.name),
       })));
     }).catch(() => {});
-  }, []);
+  }, [searchKeyword]);
 
   const handleSearch = () => {
     const trimmed = inputText.trim();
