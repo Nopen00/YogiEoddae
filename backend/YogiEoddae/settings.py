@@ -92,6 +92,21 @@ DATABASES = {
 }
 
 
+# Password hashing
+# https://docs.djangoproject.com/en/4.2/topics/auth/passwords/#using-bcrypt-with-django
+
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+]
+
+
+# JWT (커스텀 User 모델용 — PyJWT로 직접 발급/검증, djangorestframework-simplejwt 미사용)
+
+JWT_ACCESS_TOKEN_LIFETIME_MINUTES = 30
+JWT_REFRESH_TOKEN_LIFETIME_DAYS = 14
+
+
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 
@@ -141,6 +156,11 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
+    # JWT를 넣어 보내면 request.user가 채워지고, 안 보내면 AnonymousUser로 남는다
+    # (permission_classes로 IsAuthenticated를 명시한 뷰에서만 로그인이 강제됨).
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'users.authentication.JWTAuthentication',
+    ],
 }
 
 # .env에서 읽어온 환경 변수들을 장고 설정값으로 등록

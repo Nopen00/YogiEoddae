@@ -1,4 +1,5 @@
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
@@ -6,48 +7,35 @@ from django.shortcuts import get_object_or_404
 from .models import Schedule, DailyPlace, ScheduleBookmark
 from .serializers import ScheduleSerializer, ScheduleCreateSerializer, DailyPlaceSerializer
 from places.models import Media, MediaPlace
-from users.utils import get_user_by_device_id
-
-
-def get_user(request):
-    return get_user_by_device_id(request.headers.get('X-Device-ID'))
 
 
 class ScheduleListCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def get(self, request):
-        user = get_user(request)
-        if not user:
-            return Response({'error': '유저 정보가 없습니다.'}, status=status.HTTP_401_UNAUTHORIZED)
-        schedules = Schedule.objects.filter(user=user).prefetch_related('daily_places__place')
+        schedules = Schedule.objects.filter(user=request.user).prefetch_related('daily_places__place')
         return Response(ScheduleSerializer(schedules, many=True, context={'request': request}).data)
 
     def post(self, request):
-        user = get_user(request)
-        if not user:
-            return Response({'error': '유저 정보가 없습니다.'}, status=status.HTTP_401_UNAUTHORIZED)
         serializer = ScheduleCreateSerializer(data=request.data)
         if serializer.is_valid():
-            schedule = serializer.save(user=user)
+            schedule = serializer.save(user=request.user)
             return Response(ScheduleSerializer(schedule, context={'request': request}).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ScheduleDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def _get_schedule(self, pk, user):
         return get_object_or_404(Schedule, pk=pk, user=user)
 
     def get(self, request, pk):
-        user = get_user(request)
-        if not user:
-            return Response({'error': '유저 정보가 없습니다.'}, status=status.HTTP_401_UNAUTHORIZED)
-        schedule = self._get_schedule(pk, user)
+        schedule = self._get_schedule(pk, request.user)
         return Response(ScheduleSerializer(schedule, context={'request': request}).data)
 
     def patch(self, request, pk):
-        user = get_user(request)
-        if not user:
-            return Response({'error': '유저 정보가 없습니다.'}, status=status.HTTP_401_UNAUTHORIZED)
-        schedule = self._get_schedule(pk, user)
+        schedule = self._get_schedule(pk, request.user)
         serializer = ScheduleCreateSerializer(schedule, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -55,20 +43,16 @@ class ScheduleDetailView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        user = get_user(request)
-        if not user:
-            return Response({'error': '유저 정보가 없습니다.'}, status=status.HTTP_401_UNAUTHORIZED)
-        schedule = self._get_schedule(pk, user)
+        schedule = self._get_schedule(pk, request.user)
         schedule.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class DailyPlaceCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request, pk):
-        user = get_user(request)
-        if not user:
-            return Response({'error': '유저 정보가 없습니다.'}, status=status.HTTP_401_UNAUTHORIZED)
-        schedule = get_object_or_404(Schedule, pk=pk, user=user)
+        schedule = get_object_or_404(Schedule, pk=pk, user=request.user)
         serializer = DailyPlaceSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(schedule=schedule)
@@ -77,11 +61,10 @@ class DailyPlaceCreateView(APIView):
 
 
 class DailyPlaceDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def patch(self, request, pk, dp_pk):
-        user = get_user(request)
-        if not user:
-            return Response({'error': '유저 정보가 없습니다.'}, status=status.HTTP_401_UNAUTHORIZED)
-        schedule = get_object_or_404(Schedule, pk=pk, user=user)
+        schedule = get_object_or_404(Schedule, pk=pk, user=request.user)
         daily_place = get_object_or_404(DailyPlace, pk=dp_pk, schedule=schedule)
         serializer = DailyPlaceSerializer(daily_place, data=request.data, partial=True)
         if serializer.is_valid():
@@ -90,10 +73,7 @@ class DailyPlaceDetailView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk, dp_pk):
-        user = get_user(request)
-        if not user:
-            return Response({'error': '유저 정보가 없습니다.'}, status=status.HTTP_401_UNAUTHORIZED)
-        schedule = get_object_or_404(Schedule, pk=pk, user=user)
+        schedule = get_object_or_404(Schedule, pk=pk, user=request.user)
         daily_place = get_object_or_404(DailyPlace, pk=dp_pk, schedule=schedule)
         daily_place.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -101,13 +81,12 @@ class DailyPlaceDetailView(APIView):
 
 class MediaImportView(APIView):
     """미디어 코스 → 내 일정으로 가져오기"""
+    permission_classes = [IsAuthenticated]
+
     def post(self, request, pk):
-        user = get_user(request)
-        if not user:
-            return Response({'error': '유저 정보가 없습니다.'}, status=status.HTTP_401_UNAUTHORIZED)
         media = get_object_or_404(Media, pk=pk)
         schedule = Schedule.objects.create(
-            user=user,
+            user=request.user,
             title=request.data.get('title', media.title),
             media=media,
             start_date=request.data.get('start_date'),
@@ -129,13 +108,12 @@ class MediaImportView(APIView):
 
 class ScheduleImportView(APIView):
     """다른 유저의 일정 → 내 일정으로 가져오기"""
+    permission_classes = [IsAuthenticated]
+
     def post(self, request, pk):
-        user = get_user(request)
-        if not user:
-            return Response({'error': '유저 정보가 없습니다.'}, status=status.HTTP_401_UNAUTHORIZED)
         source = get_object_or_404(Schedule, pk=pk)
         new_schedule = Schedule.objects.create(
-            user=user,
+            user=request.user,
             title=request.data.get('title', f'{source.title} (복사)'),
             media=source.media,
             start_date=request.data.get('start_date'),
@@ -154,11 +132,10 @@ class ScheduleImportView(APIView):
 
 class DailyPlaceBulkReorderView(APIView):
     """POST /api/schedules/{id}/places/reorder/  장소 순서 일괄 변경"""
+    permission_classes = [IsAuthenticated]
+
     def post(self, request, pk):
-        user = get_user(request)
-        if not user:
-            return Response({'error': '유저 정보가 없습니다.'}, status=status.HTTP_401_UNAUTHORIZED)
-        schedule = get_object_or_404(Schedule, pk=pk, user=user)
+        schedule = get_object_or_404(Schedule, pk=pk, user=request.user)
         items = request.data
         if not isinstance(items, list):
             return Response({'error': '리스트 형태로 전송해주세요.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -175,30 +152,25 @@ class DailyPlaceBulkReorderView(APIView):
 
 
 class ScheduleBookmarkView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request, pk):
-        user = get_user(request)
-        if not user:
-            return Response({'error': '유저 정보가 없습니다.'}, status=status.HTTP_401_UNAUTHORIZED)
         schedule = get_object_or_404(Schedule, pk=pk)
-        _, created = ScheduleBookmark.objects.get_or_create(user=user, schedule=schedule)
+        _, created = ScheduleBookmark.objects.get_or_create(user=request.user, schedule=schedule)
         if not created:
             return Response({'message': '이미 저장된 일정입니다.'}, status=status.HTTP_200_OK)
         return Response({'message': '저장되었습니다.'}, status=status.HTTP_201_CREATED)
 
     def delete(self, request, pk):
-        user = get_user(request)
-        if not user:
-            return Response({'error': '유저 정보가 없습니다.'}, status=status.HTTP_401_UNAUTHORIZED)
         schedule = get_object_or_404(Schedule, pk=pk)
-        ScheduleBookmark.objects.filter(user=user, schedule=schedule).delete()
+        ScheduleBookmark.objects.filter(user=request.user, schedule=schedule).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class BookmarkedScheduleListView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def get(self, request):
-        user = get_user(request)
-        if not user:
-            return Response({'error': '유저 정보가 없습니다.'}, status=status.HTTP_401_UNAUTHORIZED)
-        bookmarks = ScheduleBookmark.objects.filter(user=user).select_related('schedule').prefetch_related('schedule__daily_places__place')
+        bookmarks = ScheduleBookmark.objects.filter(user=request.user).select_related('schedule').prefetch_related('schedule__daily_places__place')
         schedules = [b.schedule for b in bookmarks]
         return Response(ScheduleSerializer(schedules, many=True, context={'request': request}).data)

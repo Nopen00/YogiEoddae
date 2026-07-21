@@ -3,16 +3,13 @@ from .models import MediaPlace, Place, Media, Tag, Photo
 
 
 def _get_user_from_context(context):
-    """request context에서 유저를 추출한다. 한 직렬화 패스에서 한 번만 DB 조회하도록 캐싱."""
+    """request context에서 로그인된 유저를 추출한다. 한 직렬화 패스에서 한 번만 계산하도록 캐싱."""
     if 'resolved_user' in context:
         return context['resolved_user']
-    user = None
     request = context.get('request')
-    if request:
-        device_id = request.headers.get('X-Device-ID')
-        if device_id:
-            from users.utils import get_user_by_device_id
-            user = get_user_by_device_id(device_id)
+    user = getattr(request, 'user', None) if request else None
+    if not user or not user.is_authenticated:
+        user = None
     context['resolved_user'] = user
     return user
 
