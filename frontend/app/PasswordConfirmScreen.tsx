@@ -109,11 +109,6 @@ const PasswordConfirmScreen = () => {
             <Text style={styles.changeLink}>비밀번호 재설정</Text>
           </TouchableOpacity>
         </View>
-
-        <View style={styles.dummyRow}>
-          <Text style={styles.changeText}>더미 비밀번호</Text>
-          <Text style={styles.changeLink}>123456</Text>
-        </View>
       </View>
       </ScrollView>
       </KeyboardAvoidingView>
@@ -174,12 +169,6 @@ const styles = StyleSheet.create({
   },
   changeText: { ...Typography.body2, color: Colors.light.grayDark },
   changeLink: { ...Typography.button2, color: Colors.light.grayDark, marginLeft: Spacing.h.small },
-  dummyRow: {
-    marginTop: Spacing.v.small,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
 });
 
 export default PasswordConfirmScreen;

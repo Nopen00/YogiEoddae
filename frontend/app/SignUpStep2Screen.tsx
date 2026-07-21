@@ -1,13 +1,18 @@
 import { LabeledInputBox } from '@/components/ui/LabeledInputBox';
 import { Colors } from '@/constants/Colors';
 import { IconSize } from '@/constants/IconSize';
+import { Shadows } from '@/constants/Shadows';
 import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
+import { authApi } from '@/services/api';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { CheckCircle, Circle } from 'lucide-react-native';
 import React, { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // 백엔드 규칙(영문 소문자+숫자+_/., 4~20자) 기준
 const USERNAME_REGEX = /^[a-z0-9_.]*$/;
@@ -29,8 +34,12 @@ const hasMixedChars = (password: string) => {
 };
 
 const SignUpStep2Screen = () => {
+  const router = useRouter();
+  const { nickname } = useLocalSearchParams<{ nickname?: string }>();
   const [username, setUsername] = useState('');
   const [usernameErrors, setUsernameErrors] = useState<string[]>([]);
+  const [confirmPopupVisible, setConfirmPopupVisible] = useState(false);
+  const [setupLaterPopupVisible, setSetupLaterPopupVisible] = useState(false);
 
   const handleChangeUsername = (text: string) => {
     setUsername(text);
@@ -70,6 +79,33 @@ const SignUpStep2Screen = () => {
     setPasswordConfirmError(passwordConfirm !== password);
   };
 
+  const isActive = username.trim().length > 0 && password.trim().length > 0 && passwordConfirm.trim().length > 0;
+
+  const handleNext = async () => {
+    if (!isActive) return;
+
+    const errors = getUsernameErrors(username);
+    setUsernameErrors(errors);
+
+    const sameAsUsername = password === username;
+    setPasswordError(sameAsUsername);
+
+    const mismatch = passwordConfirm !== password;
+    setPasswordConfirmError(mismatch);
+
+    if (errors.length > 0 || sameAsUsername || !hasMinLength(password) || !hasMixedChars(password) || mismatch) return;
+
+    try {
+      await authApi.signup({ username, nickname: nickname ?? '', password });
+      setConfirmPopupVisible(true);
+    } catch (e: any) {
+      const duplicateUsername = e?.response?.data?.username?.[0];
+      if (duplicateUsername) {
+        setUsernameErrors([duplicateUsername]);
+      }
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
@@ -80,7 +116,7 @@ const SignUpStep2Screen = () => {
 
             <LabeledInputBox
               label="아이디"
-              placeholder="영문 소문자, 숫자, _, . (4~20자)"
+              placeholder="영문 소문자, 숫자, 특수문자(_, .) (4~20자)"
               value={username}
               onChangeText={handleChangeUsername}
               onBlur={handleBlurUsername}
@@ -89,7 +125,7 @@ const SignUpStep2Screen = () => {
 
             <LabeledInputBox
               label="비밀번호"
-              placeholder="영문, 숫자, 특수문자(“_”,”.”) 조합 (8자 이상)"
+              placeholder="영문, 숫자, 특수문자 조합 (8자 이상)"
               value={password}
               onChangeText={handleChangePassword}
               onBlur={handleBlurPassword}
@@ -113,7 +149,7 @@ const SignUpStep2Screen = () => {
               ) : (
                 <Circle size={IconSize.xsmall} color={Colors.light.grayDark} />
               )}
-              <Text style={[styles.checklistText, hasMixedChars(password) && styles.checklistTextMet]}>영문, 숫자, 특수문자가 포함되었습니다.</Text>
+              <Text style={[styles.checklistText, hasMixedChars(password) && styles.checklistTextMet]}>영문, 숫자, 특수문자(!, @, #, _, ^)가 포함되었습니다.</Text>
             </View>
 
             <LabeledInputBox
@@ -127,9 +163,75 @@ const SignUpStep2Screen = () => {
               onToggleVisible={() => setPasswordConfirmVisible(!passwordConfirmVisible)}
               errorMessage={passwordConfirmError ? '입력한 비밀번호가 다릅니다.' : undefined}
             />
+
+            <TouchableOpacity
+              style={[styles.nextButton, !isActive && styles.nextButtonDisabled]}
+              activeOpacity={0.8}
+              disabled={!isActive}
+              onPress={handleNext}
+            >
+              <Text style={[styles.nextButtonText, !isActive && styles.nextButtonTextDisabled]}>회원가입</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.signInRow}
+              activeOpacity={0.7}
+              onPress={() => router.push('/SignInScreen')}
+            >
+              <Text style={styles.signInPrompt}>이미 회원이라면?</Text>
+              <Text style={styles.signInLink}>로그인</Text>
+            </TouchableOpacity>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <Modal visible={confirmPopupVisible} transparent animationType="fade">
+        <View style={styles.confirmOverlay}>
+          <View style={styles.confirmPopup}>
+            <Text style={styles.confirmTitle}>이메일을 연동하시겠습니까?</Text>
+            <Text style={styles.confirmDesc}>계정을 찾거나 비밀번호를 재설정할 때 사용됩니다.</Text>
+            <Text style={styles.confirmDescSpaced}>MY페이지에서 언제든 연동 가능합니다.</Text>
+            <View style={styles.confirmButtons}>
+              <TouchableOpacity
+                style={styles.btnCancel}
+                activeOpacity={0.8}
+                onPress={() => {
+                  setConfirmPopupVisible(false);
+                  setSetupLaterPopupVisible(true);
+                }}
+              >
+                <Text style={styles.btnCancelText}>다음에</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.btnConfirm}
+                activeOpacity={0.8}
+                onPress={() => {
+                  setConfirmPopupVisible(false);
+                  router.push({ pathname: '/EmailSetupScreen', params: { nickname: nickname ?? '' } });
+                }}
+              >
+                <Text style={styles.btnConfirmText}>연동하기</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={setupLaterPopupVisible} transparent animationType="none">
+        <TouchableOpacity
+          style={styles.resultOverlay}
+          activeOpacity={1}
+          onPress={() => {
+            setSetupLaterPopupVisible(false);
+            router.replace({ pathname: '/MainScreen', params: { welcome: '1', nickname: nickname ?? '' } });
+          }}
+        >
+          <View style={styles.resultPopupBox}>
+            <Text style={styles.resultTitle}>다음에 설정하기로 완료되었습니다.</Text>
+            <Text style={styles.resultSub1}>MY페이지에서 언제든지 이메일을 연동하실 수 있어요.</Text>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -156,6 +258,65 @@ const styles = StyleSheet.create({
   },
   checklistText: { ...Typography.body2, color: Colors.light.grayDark, marginLeft: Spacing.h.small },
   checklistTextMet: { color: Colors.light.primary },
+  nextButton: {
+    marginTop: Spacing.v.large,
+    minHeight: Size.buttonMd,
+    paddingVertical: Spacing.v.medium,
+    borderRadius: Spacing.r.small,
+    backgroundColor: Colors.light.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  nextButtonDisabled: { backgroundColor: Colors.light.grayLight },
+  nextButtonText: { ...Typography.button2, color: Colors.light.white },
+  nextButtonTextDisabled: { color: Colors.light.grayDark },
+  signInRow: {
+    marginTop: Spacing.v.large,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  signInPrompt: { ...Typography.body2, color: Colors.light.grayDark },
+  signInLink: { ...Typography.button1, color: Colors.light.grayDark, marginLeft: Spacing.h.small },
+
+  confirmOverlay: { flex: 1, backgroundColor: Colors.light.overlay, justifyContent: 'center', alignItems: 'center' },
+  confirmPopup: {
+    width: SCREEN_WIDTH - 64,
+    borderRadius: Spacing.r.small,
+    borderWidth: Spacing.lw.small,
+    borderColor: Colors.light.grayLight,
+    backgroundColor: Colors.light.white,
+    paddingTop: Spacing.v.medium,
+    paddingHorizontal: Spacing.h.medium,
+    paddingBottom: Spacing.v.medium,
+    ...Shadows.card,
+  },
+  confirmTitle: { ...Typography.subtitle2, color: Colors.light.black, textAlign: 'center' },
+  confirmDesc: { ...Typography.body2, color: Colors.light.primary, marginTop: Spacing.v.medium, textAlign: 'center' },
+  confirmDescSpaced: { ...Typography.body2, color: Colors.light.primary, marginTop: Spacing.v.small, textAlign: 'center' },
+  confirmButtons: { flexDirection: 'row', justifyContent: 'center', gap: Spacing.h.medium, marginTop: Spacing.v.medium },
+  btnConfirm: { width: 80, height: Size.buttonSm, borderRadius: Spacing.r.small, backgroundColor: Colors.light.primary, justifyContent: 'center', alignItems: 'center' },
+  btnConfirmText: { ...Typography.button2, color: Colors.light.white },
+  btnCancel: { width: 80, height: Size.buttonSm, borderRadius: Spacing.r.small, backgroundColor: Colors.light.grayLight, justifyContent: 'center', alignItems: 'center' },
+  btnCancelText: { ...Typography.button2, color: Colors.light.grayDark },
+
+  resultOverlay: {
+    flex: 1,
+    backgroundColor: Colors.light.overlay,
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.h.xlarge,
+  },
+  resultPopupBox: {
+    backgroundColor: Colors.light.white,
+    borderRadius: Spacing.r.small,
+    borderWidth: Spacing.lw.small,
+    borderColor: Colors.light.grayLight,
+    alignItems: 'center',
+    paddingVertical: Spacing.v.medium,
+    paddingHorizontal: Spacing.h.medium,
+  },
+  resultTitle: { ...Typography.subtitle2, color: Colors.light.black, textAlign: 'center' },
+  resultSub1: { ...Typography.body2, color: Colors.light.primary, marginTop: Spacing.v.medium, textAlign: 'center' },
 });
 
 export default SignUpStep2Screen;

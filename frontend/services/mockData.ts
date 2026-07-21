@@ -569,3 +569,18 @@ export let mockEmail = '';
 export function setMockEmail(next: string) {
   mockEmail = next;
 }
+
+// 비밀번호 mutable store — 회원가입/비밀번호 변경 시 갱신, 비밀번호 재확인·회원탈퇴에서 실제 값과 비교
+export let mockPassword = '123456';
+export function setMockPassword(next: string) {
+  mockPassword = next;
+}
+
+// 회원탈퇴 시 계정 관련 mock 데이터를 최초 실행 시드값으로 되돌림
+export function resetMockAccount() {
+  mockTokenBalance = 120;
+  mockNickname = '내이름은김철수';
+  mockUserId = 'id1234';
+  mockEmail = '';
+  mockPassword = '123456';
+}

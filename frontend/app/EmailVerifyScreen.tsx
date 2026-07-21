@@ -25,8 +25,9 @@ const formatTime = (seconds: number) => {
 
 const EmailVerifyScreen = () => {
   const router = useRouter();
-  const { email, mode } = useLocalSearchParams<{ email?: string; mode?: string }>();
+  const { email, mode, fromSignup, nickname } = useLocalSearchParams<{ email?: string; mode?: string; fromSignup?: string; nickname?: string }>();
   const isSetup = mode === 'setup';
+  const hideHeader = fromSignup === '1';
   const [code, setCode] = useState('');
   const [hasError, setHasError] = useState(false);
   const [remainingSeconds, setRemainingSeconds] = useState(CODE_TIMEOUT_SECONDS);
@@ -88,14 +89,16 @@ const EmailVerifyScreen = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScreenHeader onBack={() => router.back()} title={isSetup ? '연동 이메일 설정' : '연동 이메일 변경'} />
+      {!hideHeader && (
+        <ScreenHeader onBack={() => router.back()} title={isSetup ? '연동 이메일 설정' : '연동 이메일 변경'} />
+      )}
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Spacing.v.screenBottom }}>
-      <View style={styles.body}>
+      <View style={[styles.body, hideHeader && styles.bodyNoHeader]}>
         <Text style={styles.title}>인증 코드를 메일로 전송했습니다.</Text>
         <Text style={styles.subtitle}>5분 내에, 이메일로 전송받은 코드를 입력해 주세요.</Text>
         <Text style={styles.subtitle}>전송된 이메일 주소 : {email}</Text>
@@ -181,7 +184,11 @@ const EmailVerifyScreen = () => {
           activeOpacity={1}
           onPress={() => {
             setSuccessPopupVisible(false);
-            router.dismiss(2);
+            if (fromSignup === '1') {
+              router.replace({ pathname: '/MainScreen', params: { welcome: '1', nickname: nickname ?? '' } });
+            } else {
+              router.dismiss(2);
+            }
           }}
         >
           <View style={styles.successPopup}>
@@ -198,6 +205,11 @@ const styles = StyleSheet.create({
   body: {
     marginTop: Spacing.v.medium,
     paddingHorizontal: Spacing.h.medium,
+  },
+  bodyNoHeader: {
+    // ScreenHeader가 없는 화면이지만, 다른 화면(SignUpScreen 등)의 헤더+16 위치와
+    // 동일한 세로 위치에 맞추기 위해 헤더의 marginTop(8)+height(56)만큼 미리 띄움
+    marginTop: Spacing.v.small + Size.header + Spacing.v.medium,
   },
   title: { ...Typography.title1, color: Colors.light.black },
   subtitle: { ...Typography.body2, color: Colors.light.grayDark, marginTop: Spacing.v.small },

@@ -63,7 +63,7 @@ const IdChangeScreen = () => {
             <Text style={[styles.inputLabel, hasError && styles.inputLabelError]}>아이디</Text>
             <TextInput
               style={[styles.idInput, { color: userId ? Colors.light.black : Colors.light.grayLight }]}
-              placeholder="영문 소문자, 숫자, _, . (4~20자)"
+              placeholder="영문 소문자, 숫자, 특수문자(_, .) (4~20자)"
               placeholderTextColor={Colors.light.grayLight}
               value={userId}
               onChangeText={handleChangeUserId}

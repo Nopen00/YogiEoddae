@@ -157,7 +157,7 @@ const PasswordResetScreen = () => {
 
         <PasswordInputBox
           label="새 비밀번호"
-          placeholder="영문, 숫자, 특수문자(“_”,”.”) 조합 (8자 이상)"
+          placeholder="영문, 숫자, 특수문자 조합 (8자 이상)"
           value={newPassword}
           onChangeText={handleChangeNewPassword}
           onBlur={handleBlurNewPassword}
@@ -180,7 +180,7 @@ const PasswordResetScreen = () => {
           ) : (
             <Circle size={IconSize.xsmall} color={Colors.light.grayDark} />
           )}
-          <Text style={[styles.checklistText, hasMixedChars(newPassword) && styles.checklistTextMet]}>영문, 숫자, 특수문자가 포함되었습니다.</Text>
+          <Text style={[styles.checklistText, hasMixedChars(newPassword) && styles.checklistTextMet]}>영문, 숫자, 특수문자(!, @, #, _, ^)가 포함되었습니다.</Text>
         </View>
 
         <PasswordInputBox

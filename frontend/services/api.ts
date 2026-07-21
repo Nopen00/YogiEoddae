@@ -8,6 +8,7 @@ import {
   mockNickname, setMockNickname,
   mockUserId, setMockUserId,
   mockEmail, setMockEmail,
+  mockPassword, setMockPassword, resetMockAccount,
 } from './mockData';
 
 // 토큰 충전 상품 카탈로그 — 백엔드 TOKEN_PACKAGES(users/views.py)와 동일하게 유지
@@ -18,10 +19,7 @@ export const TOKEN_PACKAGES: { id: string; tokens: number; price: number }[] = [
 ];
 
 // 서버 없이 UI 테스트할 때 true로 설정
-const USE_MOCK = process.env.EXPO_PUBLIC_USE_MOCK === 'true';
-
-// 비밀번호 재확인 mock 검증용 — 실제 계정 비밀번호와 무관, UI 테스트 전용
-const MOCK_PASSWORD = '123456';
+export const USE_MOCK = process.env.EXPO_PUBLIC_USE_MOCK === 'true';
 
 // mock 데이터 id 생성기 — Date.now()는 같은 ms 안에 여러 번 호출되면(반복문 등) 값이 겹쳐 중복 id를 만들 수 있어 카운터로 대체
 let mockIdCounter = Date.now();
@@ -109,6 +107,7 @@ export const authApi = {
     if (USE_MOCK) {
       setMockUserId(data.username);
       setMockNickname(data.nickname);
+      setMockPassword(data.password);
       return mock({ id: 1, username: data.username, nickname: data.nickname, access: 'mock-access', refresh: 'mock-refresh' });
     }
     const res = await apiClient.post<{ id: number; username: string; nickname: string; access: string; refresh: string }>(
@@ -119,7 +118,11 @@ export const authApi = {
   },
   login: async (data: { username: string; password: string }) => {
     if (USE_MOCK) {
-      setMockUserId(data.username);
+      if (data.username !== mockUserId || data.password !== mockPassword) {
+        return Promise.reject({
+          response: { data: { detail: '등록되지 않은 아이디이거나, 비밀번호가 올바르지 않습니다.' } },
+        });
+      }
       return mock({ id: 1, username: data.username, nickname: mockNickname, access: 'mock-access', refresh: 'mock-refresh' });
     }
     const res = await apiClient.post<{ id: number; username: string; nickname: string; access: string; refresh: string }>(
@@ -149,6 +152,7 @@ export const authApi = {
   },
   confirmPasswordReset: (username: string, newPassword: string) => {
     if (USE_MOCK) {
+      setMockPassword(newPassword);
       return mock({ detail: '비밀번호 재설정이 완료되었습니다.' });
     }
     return apiClient.post<{ detail: string }>('/api/users/password-reset/confirm/', {
@@ -189,12 +193,13 @@ export const userApi = {
   },
   verifyPassword: (password: string) => {
     if (USE_MOCK) {
-      return mock({ success: password === MOCK_PASSWORD });
+      return mock({ success: password === mockPassword });
     }
     return apiClient.post<{ success: boolean }>('/api/users/verify-password/', { password });
   },
   changePassword: (currentPassword: string, newPassword: string) => {
     if (USE_MOCK) {
+      setMockPassword(newPassword);
       return mock({ detail: '비밀번호가 변경되었습니다.' });
     }
     return apiClient.post<{ detail: string }>('/api/users/change-password/', {
@@ -231,6 +236,7 @@ export const userApi = {
   },
   withdraw: (password: string) => {
     if (USE_MOCK) {
+      resetMockAccount();
       return mock({});
     }
     return apiClient.post('/api/users/withdraw/', { password });

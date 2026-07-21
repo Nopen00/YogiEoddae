@@ -5,6 +5,7 @@ import {
   Dimensions,
   FlatList,
   Image,
+  Modal,
   NativeScrollEvent,
   NativeSyntheticEvent,
   ScrollView,
@@ -15,7 +16,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
@@ -34,6 +35,8 @@ const COURSE_ITEM_HEIGHT = Math.round(COURSE_ITEM_WIDTH * 3 / 4);
 
 const MainScreen = () => {
   const router = useRouter();
+  const { welcome, nickname, welcomeSource } = useLocalSearchParams<{ welcome?: string; nickname?: string; welcomeSource?: string }>();
+  const [welcomePopupVisible, setWelcomePopupVisible] = useState(welcome === '1');
 
   const [activeIndex, setActiveIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
@@ -231,6 +234,19 @@ const MainScreen = () => {
           style={styles.courseList}
         />
       </ScrollView>
+
+      <Modal visible={welcomePopupVisible} transparent animationType="none">
+        <TouchableOpacity
+          style={styles.resultOverlay}
+          activeOpacity={1}
+          onPress={() => setWelcomePopupVisible(false)}
+        >
+          <View style={styles.resultPopupBox}>
+            <Text style={styles.resultTitle}>{nickname}님 환영합니다.</Text>
+            <Text style={styles.resultSub1}>{welcomeSource === 'login' ? '로그인이 완료되었습니다.' : '회원가입이 완료되었습니다.'}</Text>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -427,6 +443,24 @@ const styles = StyleSheet.create({
     color: Colors.light.grayDark,
     textAlign: 'left',
   },
+
+  resultOverlay: {
+    flex: 1,
+    backgroundColor: Colors.light.overlay,
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.h.xlarge,
+  },
+  resultPopupBox: {
+    backgroundColor: Colors.light.white,
+    borderRadius: Spacing.r.small,
+    borderWidth: Spacing.lw.small,
+    borderColor: Colors.light.grayLight,
+    alignItems: 'center',
+    paddingVertical: Spacing.v.medium,
+    paddingHorizontal: Spacing.h.medium,
+  },
+  resultTitle: { ...Typography.subtitle2, color: Colors.light.black, textAlign: 'center' },
+  resultSub1: { ...Typography.body2, color: Colors.light.primary, marginTop: Spacing.v.medium, textAlign: 'center' },
 });
 
 export default MainScreen;

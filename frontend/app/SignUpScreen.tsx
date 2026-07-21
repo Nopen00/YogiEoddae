@@ -38,7 +38,7 @@ const SignUpScreen = () => {
     const errors = getNicknameErrors(nickname);
     setNicknameErrors(errors);
     if (errors.length > 0) return;
-    router.push('/SignUpStep2Screen');
+    router.push({ pathname: '/SignUpStep2Screen', params: { nickname } });
   };
 
   return (

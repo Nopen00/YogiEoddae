@@ -17,6 +17,8 @@ interface LabeledInputBoxProps {
   visible?: boolean;
   onToggleVisible?: () => void;
   errorMessage?: string | string[];
+  noTopMargin?: boolean;
+  hasError?: boolean;
 }
 
 export function LabeledInputBox({
@@ -29,13 +31,15 @@ export function LabeledInputBox({
   visible,
   onToggleVisible,
   errorMessage,
+  noTopMargin,
+  hasError: hasErrorProp,
 }: LabeledInputBoxProps) {
   const errorMessages = (Array.isArray(errorMessage) ? errorMessage : errorMessage ? [errorMessage] : []).filter(Boolean);
-  const hasError = errorMessages.length > 0;
+  const hasError = hasErrorProp || errorMessages.length > 0;
 
   return (
     <>
-      <View style={[styles.box, hasError && styles.boxError]}>
+      <View style={[styles.box, noTopMargin && styles.boxNoTopMargin, hasError && styles.boxError]}>
         <View style={styles.inputSection}>
           <Text style={[styles.inputLabel, hasError && styles.inputLabelError]}>{label}</Text>
           <TextInput
@@ -86,6 +90,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   boxError: { borderColor: Colors.light.error },
+  boxNoTopMargin: { marginTop: 0 },
   inputSection: { flex: 1 },
   inputLabel: { ...Typography.body1, color: Colors.light.grayLight, marginBottom: Spacing.v.small },
   inputLabelError: { color: Colors.light.error },
