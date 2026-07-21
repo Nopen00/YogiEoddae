@@ -154,6 +154,113 @@ class WithdrawView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+class VerifyPasswordView(APIView):
+    """POST /api/users/verify-password/  { password } → 로그인한 유저의 현재 비밀번호 확인"""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        password = request.data.get('password') or ''
+        user = request.user
+        success = bool(user.password_hash) and check_password(password, user.password_hash)
+        return Response({'success': success})
+
+
+class ChangePasswordView(APIView):
+    """POST /api/users/change-password/  { current_password, new_password } — 로그인 상태에서 바로 변경"""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        current_password = request.data.get('current_password') or ''
+        new_password = request.data.get('new_password') or ''
+        user = request.user
+
+        if not user.password_hash or not check_password(current_password, user.password_hash):
+            return Response(
+                {'current_password': ['현재 비밀번호와 일치하지 않습니다.']},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        errors = {}
+        password_errors = validate_password(new_password, username=user.username)
+        if password_errors:
+            errors['new_password'] = password_errors
+        elif is_password_reused(user, new_password):
+            errors['new_password'] = ['최근에 사용했던 비밀번호는 사용할 수 없습니다.']
+
+        if errors:
+            return Response(errors, status=status.HTTP_400_BAD_REQUEST)
+
+        PasswordHistory.objects.create(user=user, password_hash=user.password_hash)
+        user.password_hash = make_password(new_password)
+        user.save(update_fields=['password_hash'])
+        return Response({'detail': '비밀번호가 변경되었습니다.'})
+
+
+class EmailLinkRequestView(APIView):
+    """POST /api/users/email/request/  { email } → 로그인한 유저에게 이메일 연동/변경용 인증코드 발송"""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        email = (request.data.get('email') or '').strip()
+        user = request.user
+
+        if not email:
+            return Response({'email': ['이메일을 입력해주세요.']}, status=status.HTTP_400_BAD_REQUEST)
+        if User.objects.filter(email=email).exclude(pk=user.pk).exists():
+            return Response({'email': ['이미 사용중인 이메일 입니다.']}, status=status.HTTP_400_BAD_REQUEST)
+
+        last_code = user.email_verification_codes.filter(
+            purpose=EmailVerificationCode.PURPOSE_LINK_EMAIL,
+        ).order_by('-created_at').first()
+        if last_code and (timezone.now() - last_code.created_at).total_seconds() < RESEND_COOLDOWN_SECONDS:
+            return Response(
+                {'detail': '인증 메일은 60초 후에 재전송할 수 있습니다.'},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+
+        code = generate_verification_code()
+        EmailVerificationCode.objects.create(
+            user=user,
+            email=email,
+            code=code,
+            purpose=EmailVerificationCode.PURPOSE_LINK_EMAIL,
+            expires_at=timezone.now() + timedelta(minutes=CODE_TTL_MINUTES),
+        )
+        send_verification_email(email, code, EmailVerificationCode.PURPOSE_LINK_EMAIL)
+        return Response({'email': email})
+
+
+class EmailLinkConfirmView(APIView):
+    """POST /api/users/email/confirm/  { email, code } → 인증코드 확인 후 이메일 연동/변경 확정"""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        email = (request.data.get('email') or '').strip()
+        code = (request.data.get('code') or '').strip()
+        user = request.user
+
+        verification = user.email_verification_codes.filter(
+            purpose=EmailVerificationCode.PURPOSE_LINK_EMAIL,
+            email=email,
+            is_used=False,
+        ).order_by('-created_at').first()
+
+        if not verification:
+            return Response({'detail': '인증코드가 일치하지 않습니다.'}, status=status.HTTP_400_BAD_REQUEST)
+        if verification.expires_at < timezone.now():
+            return Response({'detail': '인증 코드가 만료되었습니다.'}, status=status.HTTP_400_BAD_REQUEST)
+        if verification.code != code:
+            return Response({'detail': '인증코드가 일치하지 않습니다.'}, status=status.HTTP_400_BAD_REQUEST)
+        if User.objects.filter(email=email).exclude(pk=user.pk).exists():
+            return Response({'email': ['이미 사용중인 이메일 입니다.']}, status=status.HTTP_400_BAD_REQUEST)
+
+        verification.is_used = True
+        verification.save(update_fields=['is_used'])
+        user.email = email
+        user.save(update_fields=['email'])
+        return Response({'email': user.email})
+
+
 class PasswordResetRequestView(APIView):
     """POST /api/users/password-reset/request/  { username } → 연동된 이메일로 인증코드 발송"""
     def post(self, request):
@@ -282,11 +389,48 @@ class UserCreateView(APIView):
 
 
 class UserMeView(APIView):
-    """GET /api/users/me/  내 프로필/토큰 정보 조회"""
+    """GET /api/users/me/  내 프로필/토큰 정보 조회, PATCH로 닉네임/아이디 변경 (이메일은 email/request·confirm으로만 변경)"""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         user = request.user
+        return Response({
+            'id': user.id,
+            'username': user.username,
+            'nickname': user.nickname,
+            'email': user.email,
+            'token_balance': user.token_balance,
+        })
+
+    def patch(self, request):
+        user = request.user
+        errors = {}
+        update_fields = []
+
+        if 'nickname' in request.data:
+            user.nickname = (request.data.get('nickname') or '').strip()
+            update_fields.append('nickname')
+
+        if 'username' in request.data:
+            username = (request.data.get('username') or '').strip()
+            if User.objects.filter(username=username).exclude(pk=user.pk).exists():
+                errors['username'] = ['이미 사용 중인 아이디입니다.']
+            else:
+                user.username = username
+                update_fields.append('username')
+
+        if update_fields and not errors:
+            try:
+                user.full_clean(validate_unique=False)
+            except DjangoValidationError as e:
+                errors.update(e.message_dict)
+
+        if errors:
+            return Response(errors, status=status.HTTP_400_BAD_REQUEST)
+
+        if update_fields:
+            user.save(update_fields=update_fields)
+
         return Response({
             'id': user.id,
             'username': user.username,
