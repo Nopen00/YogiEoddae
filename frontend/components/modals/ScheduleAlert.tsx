@@ -135,6 +135,7 @@ export const ScheduleAlert = ({ visible, onClose, schedules, onConfirm, checkMed
   const [selectedDay, setSelectedDay] = useState<{ scheduleId: number; dayIndex: number } | null>(null);
   const [resultVisible, setResultVisible] = useState(false);
   const [failVisible, setFailVisible] = useState(false);
+  const [genericFailVisible, setGenericFailVisible] = useState(false);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -167,7 +168,7 @@ export const ScheduleAlert = ({ visible, onClose, schedules, onConfirm, checkMed
       onClose();
       setResultVisible(true);
     } catch {
-      setFailVisible(true);
+      setGenericFailVisible(true);
     }
   };
 
@@ -302,6 +303,19 @@ export const ScheduleAlert = ({ visible, onClose, schedules, onConfirm, checkMed
           <View style={styles.failPopupBox}>
             <Text style={styles.failTitle}>일정 추가에 실패했습니다.</Text>
             <Text style={styles.failDesc}>한 일정당 하나의 미디어 코스만 가능합니다.</Text>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      <Modal visible={genericFailVisible} transparent animationType="none">
+        <TouchableOpacity
+          style={styles.resultOverlay}
+          activeOpacity={1}
+          onPress={() => setGenericFailVisible(false)}
+        >
+          <View style={styles.failPopupBox}>
+            <Text style={styles.failTitle}>일정에 추가를 실패했습니다.</Text>
+            <Text style={styles.failDesc}>잠시 후 다시 시도해주세요.</Text>
           </View>
         </TouchableOpacity>
       </Modal>

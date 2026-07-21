@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { StyleProp, StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
 import { WebView } from 'react-native-webview';
+import { Colors } from '@/constants/Colors';
 import { buildKakaoMapHtml, buildKakaoMapHtmlMulti, KakaoMapPlace } from './kakaoMapHtml';
 
 interface KakaoMapProps {
@@ -61,7 +62,7 @@ const styles = StyleSheet.create({
   },
   overlayText: {
     fontSize: 12,
-    color: '#666',
+    color: Colors.light.grayDark,
     backgroundColor: 'rgba(255,255,255,0.85)',
     paddingHorizontal: 8,
     paddingVertical: 4,

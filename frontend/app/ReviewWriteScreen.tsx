@@ -60,6 +60,7 @@ const ReviewWriteScreen = () => {
   const [isDateVisible, setIsDateVisible] = useState(false);
   const [reviewImages, setReviewImages] = useState<string[]>([]);
   const [isUnsavedWarningVisible, setIsUnsavedWarningVisible] = useState(false);
+  const [isSubmitSuccessVisible, setIsSubmitSuccessVisible] = useState(false);
   const [targetInfo, setTargetInfo] = useState<ReviewTargetInfo | null>(null);
   const initialSnapshotRef = useRef({ rating: 0, reviewText: '', visitDate: null as VisitDate | null, reviewImages: [] as string[] });
 
@@ -163,7 +164,7 @@ const ReviewWriteScreen = () => {
       };
       if (reviewId) await reviewApi.update(type, Number(reviewId), payload);
       else if (id) await reviewApi.create(type, Number(id), payload);
-      router.back();
+      setIsSubmitSuccessVisible(true);
     } catch {}
   };
 
@@ -292,6 +293,18 @@ const ReviewWriteScreen = () => {
           </View>
         </View>
       </Modal>
+
+      <Modal visible={isSubmitSuccessVisible} transparent animationType="none">
+        <TouchableOpacity
+          style={styles.submitResultOverlay}
+          activeOpacity={1}
+          onPress={() => { setIsSubmitSuccessVisible(false); router.back(); }}
+        >
+          <View style={styles.submitResultPopupBox}>
+            <Text style={styles.submitResultText}>리뷰가 작성되었습니다.</Text>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -377,4 +390,20 @@ const styles = StyleSheet.create({
   btnDiscardText: { ...Typography.button2, color: Colors.light.white },
   btnStay: { width: 80, height: Size.buttonSm, borderRadius: Spacing.r.small, backgroundColor: Colors.light.grayLight, justifyContent: 'center', alignItems: 'center' },
   btnStayText: { ...Typography.button2, color: Colors.light.grayDark },
+  submitResultOverlay: {
+    flex: 1,
+    backgroundColor: Colors.light.overlay,
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.h.xlarge,
+  },
+  submitResultPopupBox: {
+    backgroundColor: Colors.light.white,
+    borderRadius: Spacing.r.small,
+    borderWidth: Spacing.lw.small,
+    borderColor: Colors.light.grayLight,
+    alignItems: 'center',
+    paddingVertical: Spacing.v.medium,
+    paddingHorizontal: Spacing.h.medium,
+  },
+  submitResultText: { ...Typography.subtitle2, color: Colors.light.black },
 });

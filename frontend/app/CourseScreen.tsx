@@ -389,8 +389,8 @@ const CourseScreen = () => {
           >
             <Heart
               size={IconSize.large}
-              color={savedPhotos[item.id] ? '#F24C54' : Colors.light.white}
-              fill={savedPhotos[item.id] ? '#F24C54' : 'none'}
+              color={savedPhotos[item.id] ? Colors.light.heart : Colors.light.white}
+              fill={savedPhotos[item.id] ? Colors.light.heart : 'none'}
               strokeWidth={IconStroke.regular}
             />
           </TouchableOpacity>
@@ -777,7 +777,6 @@ const styles = StyleSheet.create({
   metadataRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', rowGap: Spacing.h.xsmall, marginBottom: Spacing.h.xsmall },
   metaText: { ...Typography.subtitle1, color: Colors.light.grayDark },
   metaChip: { flexDirection: 'row', alignItems: 'center' },
-  tagRow: { flexDirection: 'row', alignItems: 'center' },
   tagText: { ...Typography.body2, color: Colors.light.primary, marginRight: Spacing.h.xsmall },
   emptyState: { paddingTop: Spacing.v.medium, alignItems: 'center' },
   emptyTitle: { ...Typography.subtitle2, color: Colors.light.black },

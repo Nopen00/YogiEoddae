@@ -1,9 +1,10 @@
 // components/modals/ScheduleMoreMenuAlert.tsx
 import React from 'react';
-import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Pencil, Trash2 } from 'lucide-react-native';
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
+import { Shadows } from '@/constants/Shadows';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 
@@ -44,15 +45,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.h.medium,
     paddingVertical: Spacing.v.small,
     zIndex: 9999,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.25,
-        shadowRadius: 2,
-      },
-      android: { elevation: 30 },
-    }),
+    ...Shadows.dropdown,
   },
   menuItem: {
     flexDirection: 'row',

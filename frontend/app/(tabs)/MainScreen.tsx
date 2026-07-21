@@ -118,7 +118,7 @@ const MainScreen = () => {
     >
       <View style={styles.carouselInner}>
         <Image source={{ uri: item.thumbnail_url ?? undefined }} style={styles.fullImage} resizeMode="cover" />
-        <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} style={styles.gradientOverlay}>
+        <LinearGradient colors={['transparent', 'rgba(0,0,0,0.75)']} style={styles.gradientOverlay}>
           <View style={styles.textOverlay}>
             <Text style={styles.carouselSubtitleText}>{MEDIA_TYPE_LABEL[item.media_type] ?? item.media_type}</Text>
             <Text style={styles.carouselTitleText}>{item.title}</Text>
