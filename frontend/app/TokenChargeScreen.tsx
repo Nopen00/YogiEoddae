@@ -77,7 +77,7 @@ const TokenChargeScreen = () => {
         <TouchableOpacity style={styles.adButton} activeOpacity={0.8} disabled={isWatchingAd} onPress={handleWatchAd}>
           <Film size={20} color={Colors.light.white} strokeWidth={IconStroke.regular} />
           <Text style={styles.adButtonText}>광고 보고 토큰 받기</Text>
-          <Text style={styles.adButtonReward}>{AD_REWARD_TOKENS} 토큰</Text>
+          <Text style={styles.adButtonReward}>+{AD_REWARD_TOKENS} 토큰</Text>
         </TouchableOpacity>
 
         <View style={styles.packageSection}>

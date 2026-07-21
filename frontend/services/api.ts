@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Media, Place, Photo, MediaPlace, PhotoSpotDetail, Review, ReviewTarget, ReviewTargetType, Schedule, PaginatedResponse, MailItem } from './types';
 import {
   MOCK_MEDIA_LIST, MOCK_MEDIA_PLACES_MAP, MOCK_PHOTOS, MOCK_PHOTOS_BY_PLACE, mockPhotoStore, mockPhotoPlaceName,
-  mockPhotoPlaceId, mockScheduleStore, mockPlaceStore, mockReviewStore, mockMailStore, paginatedOf,
+  mockPhotoPlaceId, mockScheduleStore, mockPlaceStore, mockReviewStore, mockMailStore, mockSettlementStore, paginatedOf,
   mockTokenBalance, setMockTokenBalance,
   mockNickname, setMockNickname,
   mockUserId, setMockUserId,
@@ -430,9 +430,28 @@ export const photoApi = {
 };
 
 export const settlementApi = {
-  getList: () => apiClient.get<MailItem[]>('/api/settlements/'),
-  claim: (id: number) => apiClient.post<{ token_balance: number }>(`/api/settlements/${id}/claim/`),
-  claimAll: () => apiClient.post<{ token_balance: number }>('/api/settlements/claim-all/'),
+  getList: () =>
+    USE_MOCK ? mock([...mockSettlementStore]) : apiClient.get<MailItem[]>('/api/settlements/'),
+  claim: (id: number) => {
+    if (USE_MOCK) {
+      const idx = mockSettlementStore.findIndex(m => m.id === id);
+      if (idx !== -1) {
+        setMockTokenBalance(mockTokenBalance + mockSettlementStore[idx].tokenAmount);
+        mockSettlementStore.splice(idx, 1);
+      }
+      return mock({ token_balance: mockTokenBalance });
+    }
+    return apiClient.post<{ token_balance: number }>(`/api/settlements/${id}/claim/`);
+  },
+  claimAll: () => {
+    if (USE_MOCK) {
+      const total = mockSettlementStore.reduce((sum, m) => sum + m.tokenAmount, 0);
+      setMockTokenBalance(mockTokenBalance + total);
+      mockSettlementStore.length = 0;
+      return mock({ token_balance: mockTokenBalance });
+    }
+    return apiClient.post<{ token_balance: number }>('/api/settlements/claim-all/');
+  },
 };
 
 export const scheduleApi = {

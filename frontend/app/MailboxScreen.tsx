@@ -3,39 +3,61 @@ import { Colors } from '@/constants/Colors';
 import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
-import { mailApi } from '@/services/api';
+import { mailApi, settlementApi } from '@/services/api';
 import type { MailItem } from '@/services/types';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+type MailSource = 'mail' | 'settlement';
+type MergedMailItem = MailItem & { source: MailSource };
+
+interface TokenPopupState {
+  amount: number;
+  balance: number;
+  breakdown?: { action: string; tokenAmount: number }[];
+}
+
 const MailboxScreen = () => {
   const router = useRouter();
-  const [mailItems, setMailItems] = useState<MailItem[]>([]);
+  const [mailItems, setMailItems] = useState<MergedMailItem[]>([]);
   const isEmpty = mailItems.length === 0;
-  const [tokenPopup, setTokenPopup] = useState<{ amount: number; balance: number } | null>(null);
+  const [tokenPopup, setTokenPopup] = useState<TokenPopupState | null>(null);
 
   useFocusEffect(
     useCallback(() => {
-      mailApi.getList().then(res => setMailItems(res.data)).catch(() => {});
+      Promise.all([
+        mailApi.getList().catch(() => ({ data: [] as MailItem[] })),
+        settlementApi.getList().catch(() => ({ data: [] as MailItem[] })),
+      ]).then(([mailRes, settlementRes]) => {
+        setMailItems([
+          ...mailRes.data.map((item) => ({ ...item, source: 'mail' as const })),
+          ...settlementRes.data.map((item) => ({ ...item, source: 'settlement' as const })),
+        ]);
+      });
     }, [])
   );
 
-  const claimItem = async (item: MailItem) => {
+  const claimItem = async (item: MergedMailItem) => {
     try {
-      const res = await mailApi.claim(item.id);
-      setMailItems((prev) => prev.filter((i) => i.id !== item.id));
+      const res = item.source === 'mail' ? await mailApi.claim(item.id) : await settlementApi.claim(item.id);
+      setMailItems((prev) => prev.filter((i) => !(i.id === item.id && i.source === item.source)));
       setTokenPopup({ amount: item.tokenAmount, balance: res.data.token_balance });
     } catch {}
   };
 
   const claimAll = async () => {
+    const breakdown = mailItems.map((item) => ({ action: item.action, tokenAmount: item.tokenAmount }));
     const total = mailItems.reduce((sum, item) => sum + item.tokenAmount, 0);
+    const hasMail = mailItems.some((i) => i.source === 'mail');
+    const hasSettlement = mailItems.some((i) => i.source === 'settlement');
     try {
-      const res = await mailApi.claimAll();
+      let balance = 0;
+      if (hasMail) balance = (await mailApi.claimAll()).data.token_balance;
+      if (hasSettlement) balance = (await settlementApi.claimAll()).data.token_balance;
       setMailItems([]);
-      setTokenPopup({ amount: total, balance: res.data.token_balance });
+      setTokenPopup({ amount: total, balance, breakdown });
     } catch {}
   };
 
@@ -62,7 +84,7 @@ const MailboxScreen = () => {
       ) : (
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.listContent}>
           {mailItems.map((item) => (
-            <View key={item.id} style={styles.mailCard}>
+            <View key={`${item.source}-${item.id}`} style={styles.mailCard}>
               <Text style={styles.mailCardTitle}>{item.action} 보상 X {item.tokenAmount} 토큰</Text>
               <Text style={styles.mailCardBody}>{item.action} 보상으로 {item.tokenAmount} 토큰이 지급되었습니다.</Text>
               <TouchableOpacity style={styles.receiveButton} activeOpacity={0.8} onPress={() => claimItem(item)}>
@@ -77,6 +99,15 @@ const MailboxScreen = () => {
         <TouchableOpacity style={styles.resultOverlay} activeOpacity={1} onPress={() => setTokenPopup(null)}>
           <View style={styles.resultPopupBox}>
             <Text style={styles.resultTitle}>{tokenPopup?.amount}개의 토큰을 획득했습니다.</Text>
+            {!!tokenPopup?.breakdown?.length && (
+              <View style={styles.breakdownList}>
+                {tokenPopup.breakdown.map((entry, i) => (
+                  <Text key={i} style={[styles.breakdownText, i > 0 && styles.breakdownTextSpaced]}>
+                    {entry.action} 보상 : +{entry.tokenAmount} 토큰
+                  </Text>
+                ))}
+              </View>
+            )}
             <Text style={styles.resultSub}>현재 토큰 : {tokenPopup?.balance.toLocaleString()} 토큰</Text>
           </View>
         </TouchableOpacity>
@@ -144,6 +175,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.h.medium,
   },
   resultTitle: { ...Typography.subtitle2, color: Colors.light.black, textAlign: 'center' },
+  breakdownList: { marginTop: Spacing.v.medium, flexDirection: 'column' },
+  breakdownText: { ...Typography.body2, color: Colors.light.primary, textAlign: 'center' },
+  breakdownTextSpaced: { marginTop: Spacing.v.small },
   resultSub: { ...Typography.body2, color: Colors.light.primary, marginTop: Spacing.v.medium, textAlign: 'center' },
 });
 

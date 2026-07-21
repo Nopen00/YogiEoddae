@@ -540,6 +540,12 @@ export const mockMailStore: MailItem[] = [
   { id: 2, action: '리뷰 작성', tokenAmount: 5 },
 ];
 
+// 정산함 mutable store — 받기/일괄받기 시 실제로 항목이 제거됨
+export const mockSettlementStore: MailItem[] = [
+  { id: 1, action: '포토스팟 좋아요 50개 달성', tokenAmount: 100 },
+  { id: 2, action: '포토스팟 좋아요 60개 달성', tokenAmount: 10 },
+];
+
 // 보유 토큰 mutable store — 충전 시 실제로 값이 증가
 export let mockTokenBalance = 120;
 export function setMockTokenBalance(next: number) {
