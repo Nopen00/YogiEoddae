@@ -61,6 +61,7 @@ const ReviewWriteScreen = () => {
   const [reviewImages, setReviewImages] = useState<string[]>([]);
   const [isUnsavedWarningVisible, setIsUnsavedWarningVisible] = useState(false);
   const [isSubmitSuccessVisible, setIsSubmitSuccessVisible] = useState(false);
+  const [isSubmitFailVisible, setIsSubmitFailVisible] = useState(false);
   const [targetInfo, setTargetInfo] = useState<ReviewTargetInfo | null>(null);
   const initialSnapshotRef = useRef({ rating: 0, reviewText: '', visitDate: null as VisitDate | null, reviewImages: [] as string[] });
 
@@ -165,7 +166,9 @@ const ReviewWriteScreen = () => {
       if (reviewId) await reviewApi.update(type, Number(reviewId), payload);
       else if (id) await reviewApi.create(type, Number(id), payload);
       setIsSubmitSuccessVisible(true);
-    } catch {}
+    } catch {
+      setIsSubmitFailVisible(true);
+    }
   };
 
   return (
@@ -305,6 +308,19 @@ const ReviewWriteScreen = () => {
           </View>
         </TouchableOpacity>
       </Modal>
+
+      <Modal visible={isSubmitFailVisible} transparent animationType="none">
+        <TouchableOpacity
+          style={styles.submitResultOverlay}
+          activeOpacity={1}
+          onPress={() => setIsSubmitFailVisible(false)}
+        >
+          <View style={styles.submitFailPopupBox}>
+            <Text style={styles.submitFailTitle}>리뷰 작성을 실패했습니다.</Text>
+            <Text style={styles.submitFailDesc}>잠시 후 다시 시도해주세요.</Text>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -406,4 +422,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.h.medium,
   },
   submitResultText: { ...Typography.subtitle2, color: Colors.light.black },
+  submitFailPopupBox: {
+    backgroundColor: Colors.light.white,
+    borderRadius: Spacing.r.small,
+    borderWidth: Spacing.lw.small,
+    borderColor: Colors.light.grayLight,
+    alignItems: 'center',
+    paddingVertical: Spacing.v.medium,
+    paddingHorizontal: Spacing.h.medium,
+  },
+  submitFailTitle: { ...Typography.subtitle2, color: Colors.light.black },
+  submitFailDesc: { ...Typography.body2, color: Colors.light.primary, marginTop: Spacing.v.medium },
 });
