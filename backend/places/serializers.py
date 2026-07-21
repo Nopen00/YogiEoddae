@@ -43,10 +43,47 @@ class PlaceSerializer(serializers.ModelSerializer):
 
 class PhotoSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
+    is_bookmarked = serializers.SerializerMethodField()
 
     class Meta:
         model = Photo
-        fields = ['id', 'image_url', 'description', 'likes', 'tags', 'created_at']
+        fields = ['id', 'image_url', 'description', 'likes', 'tags', 'is_bookmarked', 'created_at']
+
+    def get_is_bookmarked(self, obj):
+        user = _get_user_from_context(self.context)
+        if not user:
+            return False
+        from bookmarks.models import PhotoBookmark
+        return PhotoBookmark.objects.filter(user=user, photo=obj).exists()
+
+
+class PhotoSpotDetailSerializer(serializers.Serializer):
+    """GET /api/photos/{id}/  포토스팟 상세 — 소속 장소 + 같은 장소의 다른 사진 + 태그 겹치는 관련 사진"""
+    photo = serializers.SerializerMethodField()
+    place = serializers.SerializerMethodField()
+    placePhotos = serializers.SerializerMethodField()
+    relatedPhotos = serializers.SerializerMethodField()
+
+    def get_photo(self, obj):
+        return PhotoSerializer(obj, context=self.context).data
+
+    def get_place(self, obj):
+        return PlaceSerializer(obj.place, context=self.context).data
+
+    def get_placePhotos(self, obj):
+        qs = Photo.objects.filter(place=obj.place, is_approved=True).exclude(pk=obj.pk).prefetch_related('tags')
+        return PhotoSerializer(qs, many=True, context=self.context).data
+
+    def get_relatedPhotos(self, obj):
+        tag_ids = list(obj.tags.values_list('id', flat=True))
+        if not tag_ids:
+            return []
+        qs = (Photo.objects
+              .filter(is_approved=True, tags__id__in=tag_ids)
+              .exclude(pk=obj.pk)
+              .distinct()
+              .prefetch_related('tags'))
+        return PhotoSerializer(qs, many=True, context=self.context).data
 
 
 class MediaSerializer(serializers.ModelSerializer):

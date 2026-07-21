@@ -31,7 +31,7 @@
 
 ---
 
-## 현재 구현 완료 상태 (2026-07-19 기준)
+## 현재 구현 완료 상태 (2026-07-21 기준)
 
 ### DB 모델
 
@@ -42,7 +42,9 @@
 | places | `Media` | title, media_type(drama/movie/youtube/etc), year, thumbnail_url, description, tags | ✅ 완료 |
 | places | `MediaPlace` | media FK, place FK, scene_description, confidence_score(0.0~1.0), is_confirmed, status(inferred/admin_approved/rejected/quiz_confirmed) | ✅ 완료 |
 | places | `Photo` | place FK, image_url, description, likes, tags | ✅ 완료 (퀴즈 연동은 미구현, Phase 3) |
-| users | `User` | device_id_hash(익명 기기 식별 HMAC), token_balance, created_at, last_active_at | ✅ 완료 (token_balance는 2026-07-17 추가) |
+| users | `User` | device_id_hash(익명, 이제 nullable) + username/nickname/email/password_hash(실계정), token_balance, created_at, last_active_at | ✅ 완료 (Phase 6, 2026-07-21) |
+| users | `PasswordHistory` | user FK, password_hash, created_at | ✅ 완료 (비밀번호 재사용 검사용) |
+| users | `EmailVerificationCode` | user FK, email, code, purpose(link_email/reset_password), is_used, expires_at | ✅ 완료 |
 | schedules | `Schedule` | user FK, title, media FK, start_date, end_date | ✅ 완료 |
 | schedules | `DailyPlace` | schedule FK, place FK, day_number, order, memo | ✅ 완료 |
 | schedules | `ScheduleBookmark` | user FK, schedule FK | ✅ 완료 |
@@ -61,13 +63,27 @@ GET  /api/media/{id}/          미디어 상세 + 촬영지 목록
 GET  /api/media/{id}/places/   특정 미디어의 촬영지만 조회
 GET  /api/tags/                태그 목록
 
-# users
-POST /api/users/                          익명 유저 생성 (device_id → 해시 저장)
-GET  /api/users/me/                       내 보유 토큰 등 유저 정보 조회 (X-Device-ID 필요)
-POST /api/users/charge-token/             토큰 충전 (mock PG, { package_id: p100/p500/p1000 })
-POST /api/users/reset-token/              토큰 잔액 0으로 초기화 (테스트용)
+# users — 익명(구버전, device_id 필요)
+POST /api/users/                          익명 유저 생성 (device_id → 해시 저장, 프론트 앱 부팅시 아직 호출 중)
 
-# schedules  (인증: 요청 헤더 X-Device-ID 필요)
+# users — 실계정 (Phase 6, JWT)
+POST /api/users/signup/                   회원가입 (username/nickname/password) → access+refresh 토큰 발급
+POST /api/users/login/                    로그인 → access+refresh 토큰 발급
+POST /api/users/token/refresh/            refresh 토큰으로 access 재발급
+GET/PATCH /api/users/me/                  내 프로필/토큰 조회, PATCH로 닉네임·아이디 변경 (JWT 필요)
+POST /api/users/verify-password/          현재 비밀번호 확인 (JWT 필요)
+POST /api/users/change-password/          로그인 상태에서 현재+새비번으로 직접 변경 (JWT 필요)
+POST /api/users/find-id/                  이메일+비밀번호 → 마스킹된 아이디 반환 (인증코드 없음)
+POST /api/users/password-reset/request/   아이디 → 연동 이메일로 인증코드 발송 (마스킹 이메일 반환)
+POST /api/users/password-reset/verify/    인증코드 확인
+POST /api/users/password-reset/confirm/   새 비밀번호로 재설정
+POST /api/users/email/request/            이메일 연동/변경용 인증코드 발송 (JWT 필요)
+POST /api/users/email/confirm/            인증코드 확인 후 이메일 연동/변경 확정 (JWT 필요)
+POST /api/users/withdraw/                 회원탈퇴, 비밀번호 재확인 (JWT 필요)
+POST /api/users/charge-token/             토큰 충전 (mock PG, { package_id: p100/p500/p1000 }) (JWT 필요)
+POST /api/users/reset-token/              토큰 잔액 0으로 초기화 (테스트용) (JWT 필요)
+
+# schedules  (인증: JWT — Authorization: Bearer <access token>)
 GET  /api/schedules/                      내 일정 목록 / POST 생성
 GET  /api/schedules/bookmarked/           북마크한 일정 목록
 GET  /api/schedules/{id}/                 일정 상세 / PATCH / DELETE
@@ -77,7 +93,7 @@ POST /api/schedules/{id}/import/          다른 유저의 일정 복제해서 �
 POST /api/media/{id}/import/              미디어의 촬영지들을 통째로 내 일정으로 가져오기
 POST/DELETE /api/schedules/{id}/bookmark/ 일정 북마크 추가/삭제
 
-# bookmarks  (인증: 요청 헤더 X-Device-ID 필요)
+# bookmarks  (인증: JWT — 명소/코스 조회 자체는 비로그인도 가능, 북마크 액션만 JWT 필요)
 GET  /api/bookmarks/                      내 북마크 전체 목록 (일정/명소/포토스팟)
 POST/DELETE /api/media/{id}/bookmark/     미디어 북마크 추가/삭제
 POST/DELETE /api/places/{id}/bookmark/    장소 북마크 추가/삭제
@@ -253,11 +269,13 @@ Phase 3(퀴즈)보다 먼저 구현 완료된 단계입니다. `users` 앱에 �
 
 ---
 
-### Phase 6 — 로그인 시스템 (익명 인증 → 실 계정 전환)
+### ✅ Phase 6 — 로그인 시스템 (익명 인증 → 실 계정 전환) (완료 2026-07-21)
 
 **현황 (2026-07-19):** 팀원이 정리한 확인 필요 목록 검토 중 발견 — 리뷰 작성자 구분을 하려면 지금의 `device_id_hash` 익명 시스템(기기 종속, 복구 수단 없음)으론 부족해서 선행 필요.
 
-**현황 (2026-07-21 갱신):** 프론트는 회원가입/로그인/비밀번호 재설정/이메일 인증코드 화면까지 Figma 및 UI 커밋(mock 동작)이 먼저 진행됨. **백엔드는 아직 착수 전** — `users/models.py`는 여전히 `device_id_hash` 구조 그대로라, 오늘부터 백엔드 쪽이 최우선 순위.
+**현황 (2026-07-21 완료):** 백엔드(회원가입/로그인/JWT/아이디찾기/비밀번호찾기/회원탈퇴/닉네임·아이디변경/이메일연동)와 프론트 계정관리 화면 8개(AccountScreen/EmailChangeScreen/EmailVerifyScreen/IdChangeScreen/PasswordEditScreen/PasswordChangeScreen/PasswordResetScreen/WithdrawalScreen) 실연동까지 실기 테스트로 확인 완료. `schedules`/`bookmarks`/`places`(북마크 액션)/`users`(me·토큰충전·초기화)는 전부 X-Device-ID에서 JWT 인증으로 전환됨.
+
+**⚠️ 잊지 말 것 — SMTP 미연동:** 이메일 발송은 실제 SMTP가 아니라 `users/email_service.py`의 `send_verification_email()`이 백엔드 터미널에 `print()`로 `[MOCK EMAIL] to=... code=......`를 찍는 것으로 대체돼 있음. 비밀번호 찾기/이메일 연동 인증코드를 실제로 유저 메일함에 보내려면 이 함수 내부만 실제 SMTP(또는 이메일 발송 서비스) 연동으로 교체하면 됨. **스토어 심사 제출 전(8월 20일 목표) 반드시 처리해야 하는 항목.**
 
 **왜 필요한가:**
 Review 신설(Phase 7)에서 작성자를 구분하려면 실 계정이 필요합니다. 지금은 기기를 바꾸거나 앱을 재설치하면 계정(토큰잔액·북마크·일정)이 통째로 사라지는 구조라, 로그인/복구 수단이 먼저 있어야 합니다.
@@ -278,13 +296,19 @@ Review 신설(Phase 7)에서 작성자를 구분하려면 실 계정이 필요�
 - 기존 `device_id_hash` 익명 테스트 데이터는 보존 불필요 — `User` 모델 새로 설계
 - 회원탈퇴: 동일 아이디/이메일로 재가입 가능, 탈퇴 시 데이터·토큰 소멸 및 환불 불가 (Figma 문구 기준)
 
-**구현할 것:**
-1. ~~`User` 모델 재설계~~ — 진행 중. `password_hash`(완료), `username`/`nickname`/`email` 추가 필요
-2. 비밀번호 이력 저장(재사용 검사용), 이메일 인증코드(연동/재설정 공용) 모델 추가
-3. 회원가입 / 로그인 / 로그아웃 / 아이디 찾기 / 비밀번호 찾기(이메일 인증코드) / 회원탈퇴 API
-4. JWT 발급·갱신, 기존 `X-Device-ID` 의존 코드(`users/middleware.py`, `users/utils.py`, `schedules/serializers.py` 등) 전환
-5. 프론트 `api.ts`의 `X-Device-ID` 헤더 로직을 로그인 토큰 방식으로 교체
-6. Figma 화면 반영: 설정/백업, 비밀번호 변경, 복구, 회원탈퇴 플로우, **개인정보 처리방침/이용약관 화면**(아직 Figma 디자인 없음, 회원가입 플로우에 필요)
+**구현 완료:**
+1. ~~`User` 모델 재설계~~ — ✅ `password_hash`/`username`/`nickname`/`email` 추가, `device_id_hash`는 nullable로 전환(익명 계정과 공존)
+2. ✅ `PasswordHistory`(재사용 검사), `EmailVerificationCode`(연동/재설정 공용, purpose 필드로 구분) 모델 추가
+3. ✅ 회원가입 / 로그인 / 아이디 찾기 / 비밀번호 찾기(이메일 인증코드 3단계) / 회원탈퇴 / 비밀번호 확인·직접변경 / 이메일 연동 API
+4. ✅ JWT(PyJWT 직접 구현, access 30분/refresh 14일) 발급·갱신, `schedules`/`bookmarks`/`places`(북마크 액션)/`users`(me·토큰충전·초기화) X-Device-ID → JWT 전환 완료. 단 익명 계정 생성(`POST /api/users/`)과 `users/middleware.py`는 프론트 앱 부팅 로직이 아직 의존 중이라 유지
+5. ✅ 프론트 `api.ts`에 토큰 저장소+`Authorization` 인터셉터+401 자동갱신 구축, 계정관리 화면 8개 실연동 완료
+
+**남은 것:**
+- **SMTP 실제 연동** (위 경고 참고 — 현재 콘솔 출력으로 대체 중)
+- 정식 로그인/회원가입 화면 디자인 반영 — 지금은 `frontend/app/DevAuthScreen.tsx` (디자인 없는 테스트 전용 화면, `SettingScreen` 하단에 임시로 연결됨)로 대체 중, Figma 디자인 나오면 이걸로 교체하고 DevAuthScreen은 삭제
+- 아이디 변경 7일 재변경 제한 — 프론트 디자인 작업과 함께 나중에 추가 예정 (지금은 프론트/백엔드 둘 다 미구현, 매번 변경 가능)
+- **개인정보 처리방침/이용약관 화면**(아직 Figma 디자인 없음, 회원가입 플로우에 필요)
+- `find-id`(아이디 찾기) API는 완료됐지만 아직 연결된 프론트 화면 없음
 
 ---
 
@@ -299,18 +323,18 @@ Review 신설(Phase 7)에서 작성자를 구분하려면 실 계정이 필요�
 
 ---
 
-### Phase 7 — 리뷰 시스템
+### ✅ Phase 7 — 리뷰 시스템 (완료 2026-07-21)
 
 **현황 (2026-07-19):** 프론트 `reviewApi`는 대상 구분 없이 전체 리뷰를 반환하는데, 실제로는 **백엔드에 Review 모델 자체가 없어서** `/api/reviews/`는 404 — 지금은 전부 mock 데이터(`mockReviewStore`)로만 동작 중.
 
 **왜 필요한가:** 코스/명소/포토스팟 상세화면과 마이 탭 리뷰관리창에서 실제 리뷰 데이터를 다루려면 필요.
 
-**결정된 사항:**
-- 리뷰 대상: 장소 / 코스(Media) / 포토스팟 3종 모두. 북마크와 동일한 패턴으로 `PlaceReview` / `MediaReview` / `PhotoReview` 3개 모델 분리
-- 필드: 작성자(User FK), 작성일자, 다녀온 날짜(텍스트, `Schedule` FK 아님), 별점(0.5~5, 0.5단위), 본문, 사진, 좋아요
-- 마이 탭에 "내가 쓴 리뷰" 관리창(목록/수정/삭제) 필요
-- 리뷰 작성 시 토큰 지급 연동 (mock 우편함에 '리뷰 작성' 5토큰 항목 존재 — 실제 지급 로직과 연결)
-- **Phase 6(로그인) 완료 후 진행** — 작성자 식별에 실 계정이 필요하므로 순서상 로그인이 선행
+**구현 완료:**
+- `reviews` 앱 신설. 리뷰 대상: 장소 / 코스(Media) / 포토스팟 3종. 북마크와 동일한 패턴으로 `PlaceReview` / `MediaReview` / `PhotoReview` 3개 모델 분리
+- 필드: 작성자(User FK), 작성일자, 다녀온 날짜(텍스트, `Schedule` FK 아님), 별점(0.5~5, 0.5단위 검증), 본문, 사진(JSONField로 URL 배열), 좋아요
+- API: `GET /api/reviews/?type=&id=`(대상별 목록, 공개), `POST /api/reviews/`(작성, JWT), `GET/PATCH/DELETE /api/reviews/<type>/<pk>/`(본인만 수정·삭제), `GET /api/reviews/mine/?type=`(마이 탭용 — 대상 무관 내 리뷰 전체, 대상 정보 포함해서 반환)
+- 프론트: `CourseDetailScreen`/`PlaceDetailScreen`/`PhotoSpotDetailScreen`/`ReviewManageScreen`/`ReviewWriteScreen` 5개 화면 전부 mock에서 실연동 전환. `ReviewManageScreen`은 원래 "대상 구분 필드 없어서 대표 항목 1개로 자리표시"하던 걸 실제 리뷰별 대상 정보로 교체, 카드 탭하면 해당 코스/장소/포토스팟 상세로 이동하는 것도 추가
+- 리뷰 작성 시 토큰 지급 — 아래 "우편함/정산함" 항목 참고 (10토큰으로 확정)
 
 ---
 
@@ -322,18 +346,19 @@ Review 신설(Phase 7)에서 작성자를 구분하려면 실 계정이 필요�
 
 ---
 
-### Phase 9 — 포토스팟 키워드 검색
+### ✅ Phase 9 — 포토스팟 키워드 검색 (완료 2026-07-21, Phase 10-2 작업 중 같이 처리됨)
 
-**현황:** `photoApi.getList()`가 파라미터를 받지 않아 `SearchResultScreen`의 포토스팟 탭 검색이 동작하지 않음. 백엔드에도 Photo 전용 검색 엔드포인트 없음.
+**현황 (2026-07-19):** `photoApi.getList()`가 파라미터를 받지 않아 `SearchResultScreen`의 포토스팟 탭 검색이 동작하지 않음. 백엔드에도 Photo 전용 검색 엔드포인트 없음.
 
-**결정된 사항:** 검색 대상은 포토스팟 설명(description) + 소속 장소 이름 둘 다 포함. `PhotoViewSet` 신설 또는 `keyword` 필터 추가.
+**구현 완료:** `PhotoViewSet` 신설(아래 Phase 10-2 항목 참고)에 `keyword` 필터 포함 — 포토스팟 설명(description) + 소속 장소 이름 둘 다 검색. `SearchResultScreen`도 `photoApi.getList({ keyword })`로 실제 검색되게 수정.
 
 ---
 
-### Phase 10 — 신규 요구사항 (2026-07-21 논의, 미착수)
+### Phase 10 — 신규 요구사항 (2026-07-21 논의)
 
-1. **코스 추가 건의함** — 사용자가 코스(장소) 추가를 건의할 수 있는 기능. 세부 설계 전 (건의 대상 필드, 관리자 검토 플로우 등 미정).
-2. **포토스팟 사용자 업로드** — 현재 `Photo`는 관리자(포토 담당자)만 업로드 가능한 구조. 사용자가 직접 포토스팟을 올리게 하려면 `Photo` 모델/권한 재설계 필요. 작성자 식별이 필요하므로 **Phase 6(로그인) 완료 후 진행**.
+1. **코스 추가 건의함** — 사용자가 코스(장소) 추가를 건의할 수 있는 기능. 세부 설계 전 (건의 대상 필드, 관리자 검토 플로우 등 미정). **미착수.**
+2. ✅ **포토스팟 사용자 업로드** (완료 2026-07-21) — `Photo`에 `uploaded_by`/`is_approved`/`last_rewarded_likes` 추가. `POST /api/photos/`로 업로드하면 승인 대기(`is_approved=False`) 상태로 생성, 목록/상세 API는 승인된 것만 노출. Django Admin에 `Photo` 등록 + "선택한 포토스팟 승인" 일괄 액션으로 관리자 승인. `PhotoViewSet` 신설(목록/상세/업로드/좋아요, `GET /api/photos/{id}/`가 장소+같은장소사진+관련사진까지 포함하는 `PhotoSpotDetail` 모양). 좋아요는 `PhotoLike`(user+photo unique)로 중복 방지, `POST/DELETE /api/photos/{id}/like/`. **프론트는 업로드 화면 자체가 아직 없어서(디자인 미정) API만 준비된 상태** — `PhotoSpotDetailScreen`의 기존 "저장" 버튼은 북마크와 함께 좋아요도 같이 호출하도록만 연결해둠.
+3. ✅ **우편함/정산함 보상 시스템** (완료 2026-07-21, 원래 로드맵엔 없던 신규 항목) — `mailbox` 앱 신설. `MailboxItem`(1회성 고정보상, 예: 리뷰 작성 10토큰 — 리뷰 생성 API에서 자동 지급)과 `SettlementItem`(누적/마일스톤 보상, 예: 유저 업로드 포토스팟이 좋아요 50개 달성 시 100토큰, 이후 10개마다 10토큰 — `Photo.last_rewarded_likes`로 중복 지급 방지)을 별도 모델로 분리(하나로 합치면 마일스톤 중복지급 버그 위험이 있어서 분리 결정). 각각 목록/개별수령/일괄수령 API. 프론트는 이미 있던 `MailboxScreen`이 API 계약과 정확히 일치해서 코드 수정 없이 바로 연동됨. **정산함 화면은 아직 없음**(`settlementApi`만 준비, `MailboxScreen` 구조 재사용하면 될 듯).
 
 ---
 
@@ -369,8 +394,18 @@ Place ──── DailyPlace ── Schedule ── User
 | Quiz | ❌ 없음 | Phase 3 (유일하게 남은 핵심 모델) |
 | Schedule | ✅ 있음 (`schedules` 앱) | Phase 4 완료 |
 | DailyPlace | ✅ 있음 (`schedules` 앱) | Phase 4 완료 |
-| User/Auth | ✅ 있음 (`users` 앱, 익명 device_id + token_balance) | Phase 4 완료, Phase 6에서 실 계정으로 전환 예정 |
+| User/Auth | ✅ 있음 (`users` 앱, 실계정 username/nickname/email/password_hash + JWT) | Phase 4·6 완료 |
 | MediaBookmark/PlaceBookmark/PhotoBookmark/ScheduleBookmark | ✅ 있음 (`bookmarks`, `schedules` 앱) | 원래 로드맵엔 없던 보너스 구현 |
+
+---
+
+## 2026-07-21 실기 테스트로 발견/수정한 버그 (Phase 6·7 작업 중)
+
+- **JWT 만료 시 403으로 응답되던 문제**: `JWTAuthentication`에 `authenticate_header()`가 없어서 DRF가 인증 실패를 401 대신 403으로 내려보냈고, 프론트의 401 기준 자동 refresh 로직이 못 걸려서 만료된 토큰이 공개 API까지 전부 막아버렸음. `authenticate_header()` 추가로 해결.
+- **웹에서 GET 캐시로 최신 데이터 미반영**: `apiClient`에 `Cache-Control: no-cache` 헤더 추가 (단, 이것 때문에 CORS 프리플라이트가 막히는 부작용 있었음 — 아래 항목 참고).
+- **CORS 프리플라이트 실패(웹)**: 위 `Cache-Control`/`Pragma` 헤더가 Django `CORS_ALLOW_HEADERS`에 없어서 웹에서 모든 API 호출이 막힘. 헤더 목록에 추가해서 해결.
+- **카카오맵이 화면 스크롤을 가로채는 문제**: `CourseDetailScreen`/`PlaceDetailScreen`/`PhotoSpotDetailScreen` 전체를 `TouchableWithoutFeedback`(더보기 메뉴 바깥탭 닫기용)으로 감싸놓은 게 스크롤 제스처 우선권을 계속 가져가던 게 근본 원인. 메뉴 열려있을 때만 오버레이 뜨도록 수정. 추가로 `KakaoMap`도 기본적으로 터치를 안 받다가(`pointerEvents: none`) 탭하면 그 안에서만 조작 가능하도록 변경.
+- **카카오맵 SDK 도메인 화이트리스트**: 카카오 JS 키는 등록된 도메인에서만 동작하는데, 앱(WebView)에서 인라인 HTML로 지도를 로드하면 origin이 없어서(about:blank 등) 화이트리스트 어디에도 안 걸려 조용히 실패함. `WebView`의 `source.baseUrl`을 카카오 콘솔에 등록해둔 도메인(`http://localhost`)으로 지정해서 그 도메인에서 로드된 것처럼 맞춰 해결. **다른 곳에서 카카오맵을 새로 붙일 때도 이 baseUrl 지정을 빠뜨리면 똑같이 조용히 실패하니 주의.**
 
 ---
 
@@ -381,7 +416,8 @@ Place ──── DailyPlace ── Schedule ── User
 | Naver Maps API 작동 안 함 | 미해결 | Kakao로 임시 대체. **신규 정보:** Ncloud "Application Services > Maps" 콘솔(2025-03-20 출시)에서 재등록 필요 가능성 — Phase 5 항목 참고 |
 | YouTube API 미연동 | ✅ 구현 완료 | Phase 2 완료, 최근 주소 교차검증으로 정확도 개선 |
 | confidence_score 업데이트 로직 없음 | 필드만 있음 | Phase 3, 현재 유일하게 남은 핵심 작업 |
-| 사용자 인증 없음 | ✅ 해결됨 | `users` 앱에 익명 device_id 기반 인증 구현 완료 (Phase 4) |
+| 사용자 인증 없음 | ✅ 해결됨 | `users` 앱에 익명 device_id 기반 인증 구현 완료 (Phase 4), Phase 6에서 JWT 실계정으로 전환 |
+| **이메일 SMTP 미연동** | ❌ 미해결 | 비밀번호 찾기/이메일 연동 인증코드가 실제 메일이 아니라 백엔드 터미널 `print()` 로그로만 나감 (`users/email_service.py`). 스토어 심사 제출 전 필수 처리 — Phase 6 항목 참고 |
 
 ---
 

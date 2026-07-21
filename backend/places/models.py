@@ -1,4 +1,5 @@
 from django.db import models
+from users.models import User
 
 
 class Tag(models.Model):
@@ -77,10 +78,25 @@ class Photo(models.Model):
     description = models.TextField(blank=True)
     likes = models.IntegerField(default=0)
     tags = models.ManyToManyField(Tag, blank=True, related_name='photos')
+    # 유저 업로드 지원 (null=관리자가 기존 방식으로 등록한 포토스팟)
+    uploaded_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name='uploaded_photos')
+    # 관리자 승인 전엔 목록에 노출 안 함. 기존/관리자 등록 건은 기본값 True로 그대로 노출.
+    is_approved = models.BooleanField(default=True)
+    # 좋아요 마일스톤 보상(정산함) 중복 지급 방지용 — 마지막으로 보상을 지급한 시점의 likes 값
+    last_rewarded_likes = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f'{self.place.name} - 사진'
+
+
+class PhotoLike(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='photo_likes')
+    photo = models.ForeignKey(Photo, on_delete=models.CASCADE, related_name='like_records')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'photo')
 
 
 class MediaPlace(models.Model):

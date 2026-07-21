@@ -49,6 +49,8 @@ INSTALLED_APPS = [
     'users',
     'schedules',
     'bookmarks',
+    'reviews',
+    'mailbox',
 ]
 
 MIDDLEWARE = [
@@ -192,4 +194,6 @@ CORS_ALLOW_HEADERS = [
     "x-requested-with",
     "x-device-id",
     "ngrok-skip-browser-warning",
+    "cache-control",
+    "pragma",
 ]

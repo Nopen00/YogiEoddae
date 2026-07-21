@@ -8,13 +8,14 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .models import Place, Media, MediaPlace, Tag, Photo
+from .models import Place, Media, MediaPlace, Tag, Photo, PhotoLike
 from .serializers import (
     PlaceSerializer, PlaceMapSerializer,
     MediaSerializer, MediaDetailSerializer, MediaPlaceSerializer,
-    TagSerializer, PhotoSerializer,
+    TagSerializer, PhotoSerializer, PhotoSpotDetailSerializer,
 )
 from bookmarks.models import MediaBookmark, PlaceBookmark
+from mailbox.services import check_and_grant_like_milestone
 
 
 def place_map_test(request):
@@ -413,11 +414,11 @@ class PlaceViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=True, methods=['get'])
     def photos(self, request, pk=None):
         """
-        GET /api/places/{id}/photos/   해당 장소의 포토스팟 목록
+        GET /api/places/{id}/photos/   해당 장소의 포토스팟 목록 (승인된 것만)
         """
         place = self.get_object()
-        qs = Photo.objects.filter(place=place).prefetch_related('tags')
-        return Response(PhotoSerializer(qs, many=True).data)
+        qs = Photo.objects.filter(place=place, is_approved=True).prefetch_related('tags')
+        return Response(PhotoSerializer(qs, many=True, context={'request': request}).data)
 
     @action(detail=False, methods=['get'], url_path='map')
     def map_data(self, request):
@@ -500,3 +501,69 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
         if category:
             qs = qs.filter(category=category)
         return qs
+
+
+class PhotoViewSet(viewsets.ModelViewSet):
+    """
+    GET  /api/photos/               전체 포토스팟 목록 (승인된 것만, keyword로 설명/장소명 검색)
+    GET  /api/photos/{id}/          포토스팟 상세 (장소 + 같은 장소 사진 + 관련 사진)
+    POST /api/photos/               포토스팟 업로드 (JWT 필요, 승인 대기 상태로 생성)
+    POST/DELETE /api/photos/{id}/like/   좋아요 토글 (JWT 필요)
+    """
+    queryset = Photo.objects.filter(is_approved=True).select_related('place').prefetch_related('tags')
+    http_method_names = ['get', 'post', 'delete']
+
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return PhotoSpotDetailSerializer
+        return PhotoSerializer
+
+    def get_serializer_context(self):
+        return {'request': self.request}
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        keyword = self.request.query_params.get('keyword')
+        if keyword:
+            qs = qs.filter(Q(description__icontains=keyword) | Q(place__name__icontains=keyword))
+        return qs
+
+    def create(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return Response({'error': '로그인이 필요합니다.'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        place = get_object_or_404(Place, pk=request.data.get('place_id'))
+        image_url = request.data.get('image_url', '')
+        if not image_url:
+            return Response({'image_url': ['이미지가 필요합니다.']}, status=status.HTTP_400_BAD_REQUEST)
+
+        photo = Photo.objects.create(
+            place=place,
+            image_url=image_url,
+            description=request.data.get('description', ''),
+            uploaded_by=request.user,
+            is_approved=False,
+        )
+        tag_ids = request.data.get('tag_ids') or []
+        if tag_ids:
+            photo.tags.set(tag_ids)
+        return Response(PhotoSerializer(photo, context={'request': request}).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['post', 'delete'])
+    def like(self, request, pk=None):
+        if not request.user.is_authenticated:
+            return Response({'error': '로그인이 필요합니다.'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        photo = self.get_object()
+        if request.method == 'POST':
+            _, created = PhotoLike.objects.get_or_create(user=request.user, photo=photo)
+            if created:
+                photo.likes += 1
+                photo.save(update_fields=['likes'])
+                check_and_grant_like_milestone(photo)
+        else:
+            deleted, _ = PhotoLike.objects.filter(user=request.user, photo=photo).delete()
+            if deleted:
+                photo.likes = max(0, photo.likes - 1)
+                photo.save(update_fields=['likes'])
+        return Response({'likes': photo.likes})
