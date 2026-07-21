@@ -11,16 +11,13 @@ import React, { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-// 이미 사용 중인 이메일 mock 목록 — 실제 회원 조회 대신 더미 값으로 비교
-const EXISTING_EMAILS = ['1234@1234.com', 'test@test.com'];
-
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// 형식만 클라이언트에서 사전 체크. 중복 여부는 서버(requestEmailLink) 응답으로 판단.
 type EmailError = 'invalidFormat' | 'duplicate' | null;
 
-const getEmailError = (email: string): EmailError => {
+const getEmailFormatError = (email: string): EmailError => {
   if (!EMAIL_REGEX.test(email)) return 'invalidFormat';
-  if (EXISTING_EMAILS.includes(email)) return 'duplicate';
   return null;
 };
 
@@ -104,7 +101,7 @@ const EmailChangeScreen = () => {
 
   const handleBlurNewEmail = () => {
     if (!newEmail.trim()) return;
-    setEmailError(getEmailError(newEmail.trim()));
+    setEmailError(getEmailFormatError(newEmail.trim()));
   };
 
   const handleBlurPassword = async () => {
@@ -119,11 +116,19 @@ const EmailChangeScreen = () => {
     const isPasswordError = !res.data.success;
     setPasswordError(isPasswordError);
 
-    const nextEmailError = getEmailError(newEmail.trim());
+    const nextEmailError = getEmailFormatError(newEmail.trim());
     setEmailError(nextEmailError);
 
     if (isPasswordError || nextEmailError) return;
-    router.push({ pathname: '/EmailVerifyScreen', params: { email: newEmail, mode } });
+
+    try {
+      await userApi.requestEmailLink(newEmail.trim());
+      router.push({ pathname: '/EmailVerifyScreen', params: { email: newEmail, mode } });
+    } catch (e: any) {
+      if (e?.response?.data?.email) {
+        setEmailError('duplicate');
+      }
+    }
   };
 
   return (

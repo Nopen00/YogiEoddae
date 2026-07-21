@@ -33,26 +33,138 @@ console.log('API BASE_URL:', BASE_URL, USE_MOCK ? '(MOCK MODE)' : '');
 export const apiClient = axios.create({
   baseURL: BASE_URL,
   timeout: 10000,
-  headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
+  // Cache-Control 없으면 웹(브라우저)에서 GET 요청이 캐시되어, 서버 데이터가 바뀌어도
+  // 화면엔 예전 응답이 그대로 뜨는 문제가 생긴다 (예: 닉네임 변경 후에도 MY페이지에 옛 값 표시).
+  headers: {
+    'Content-Type': 'application/json',
+    'ngrok-skip-browser-warning': 'true',
+    'Cache-Control': 'no-cache',
+    Pragma: 'no-cache',
+  },
 });
+
+// 로그인 토큰 저장/조회 — access는 매 요청 헤더에 붙이고, refresh는 access 만료시 갱신용
+const ACCESS_TOKEN_KEY = 'access_token';
+const REFRESH_TOKEN_KEY = 'refresh_token';
+
+export const setTokens = (access: string, refresh: string) =>
+  AsyncStorage.multiSet([[ACCESS_TOKEN_KEY, access], [REFRESH_TOKEN_KEY, refresh]]);
+
+export const clearTokens = () => AsyncStorage.multiRemove([ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY]);
+
+let refreshPromise: Promise<string | null> | null = null;
+
+const refreshAccessToken = (): Promise<string | null> => {
+  if (!refreshPromise) {
+    refreshPromise = (async () => {
+      const refreshToken = await AsyncStorage.getItem(REFRESH_TOKEN_KEY);
+      if (!refreshToken) return null;
+      try {
+        const res = await axios.post<{ access: string }>(`${BASE_URL}/api/users/token/refresh/`, { refresh: refreshToken });
+        await AsyncStorage.setItem(ACCESS_TOKEN_KEY, res.data.access);
+        return res.data.access;
+      } catch {
+        await clearTokens();
+        return null;
+      } finally {
+        refreshPromise = null;
+      }
+    })();
+  }
+  return refreshPromise;
+};
 
 apiClient.interceptors.request.use(async (config) => {
   const deviceId = await AsyncStorage.getItem('device_id');
   if (deviceId) {
     config.headers['X-Device-ID'] = deviceId;
   }
+  const accessToken = await AsyncStorage.getItem(ACCESS_TOKEN_KEY);
+  if (accessToken) {
+    config.headers['Authorization'] = `Bearer ${accessToken}`;
+  }
   return config;
 });
 
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const original = error.config;
+    if (!USE_MOCK && error.response?.status === 401 && original && !original._retry) {
+      original._retry = true;
+      const newAccess = await refreshAccessToken();
+      if (newAccess) {
+        original.headers['Authorization'] = `Bearer ${newAccess}`;
+        return apiClient(original);
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 const mock = <T>(data: T): Promise<{ data: T }> => Promise.resolve({ data });
+
+export const authApi = {
+  signup: async (data: { username: string; nickname: string; password: string }) => {
+    if (USE_MOCK) {
+      setMockUserId(data.username);
+      setMockNickname(data.nickname);
+      return mock({ id: 1, username: data.username, nickname: data.nickname, access: 'mock-access', refresh: 'mock-refresh' });
+    }
+    const res = await apiClient.post<{ id: number; username: string; nickname: string; access: string; refresh: string }>(
+      '/api/users/signup/', data
+    );
+    await setTokens(res.data.access, res.data.refresh);
+    return res;
+  },
+  login: async (data: { username: string; password: string }) => {
+    if (USE_MOCK) {
+      setMockUserId(data.username);
+      return mock({ id: 1, username: data.username, nickname: mockNickname, access: 'mock-access', refresh: 'mock-refresh' });
+    }
+    const res = await apiClient.post<{ id: number; username: string; nickname: string; access: string; refresh: string }>(
+      '/api/users/login/', data
+    );
+    await setTokens(res.data.access, res.data.refresh);
+    return res;
+  },
+  logout: () => clearTokens(),
+  findId: (email: string, password: string) => {
+    if (USE_MOCK) {
+      return mock({ masked_username: `${mockUserId.slice(0, 4)}******` });
+    }
+    return apiClient.post<{ masked_username: string }>('/api/users/find-id/', { email, password });
+  },
+  requestPasswordReset: (username: string) => {
+    if (USE_MOCK) {
+      return mock({ masked_email: '12****@n****.com' });
+    }
+    return apiClient.post<{ masked_email: string }>('/api/users/password-reset/request/', { username });
+  },
+  verifyPasswordReset: (username: string, code: string) => {
+    if (USE_MOCK) {
+      return mock({ verified: code === '1111' });
+    }
+    return apiClient.post<{ verified: boolean }>('/api/users/password-reset/verify/', { username, code });
+  },
+  confirmPasswordReset: (username: string, newPassword: string) => {
+    if (USE_MOCK) {
+      return mock({ detail: '비밀번호 재설정이 완료되었습니다.' });
+    }
+    return apiClient.post<{ detail: string }>('/api/users/password-reset/confirm/', {
+      username,
+      new_password: newPassword,
+    });
+  },
+};
 
 export const userApi = {
   createUser: () =>
     USE_MOCK ? mock({ device_id: 'mock-device' }) : apiClient.post<{ device_id: string }>('/api/users/'),
   getMe: () =>
     USE_MOCK
-      ? mock({ token_balance: mockTokenBalance, nickname: mockNickname, user_id: mockUserId, email: mockEmail })
-      : apiClient.get<{ token_balance: number; nickname: string; user_id: string; email: string }>('/api/users/me/'),
+      ? mock({ token_balance: mockTokenBalance, nickname: mockNickname, username: mockUserId, email: mockEmail })
+      : apiClient.get<{ id: number; token_balance: number; nickname: string; username: string; email: string }>('/api/users/me/'),
   chargeToken: (packageId: string) => {
     if (USE_MOCK) {
       const pkg = TOKEN_PACKAGES.find(p => p.id === packageId);
@@ -81,6 +193,15 @@ export const userApi = {
     }
     return apiClient.post<{ success: boolean }>('/api/users/verify-password/', { password });
   },
+  changePassword: (currentPassword: string, newPassword: string) => {
+    if (USE_MOCK) {
+      return mock({ detail: '비밀번호가 변경되었습니다.' });
+    }
+    return apiClient.post<{ detail: string }>('/api/users/change-password/', {
+      current_password: currentPassword,
+      new_password: newPassword,
+    });
+  },
   updateNickname: (nickname: string) => {
     if (USE_MOCK) {
       setMockNickname(nickname);
@@ -91,16 +212,28 @@ export const userApi = {
   updateUserId: (userId: string) => {
     if (USE_MOCK) {
       setMockUserId(userId);
-      return mock({ user_id: mockUserId });
+      return mock({ username: mockUserId });
     }
-    return apiClient.patch<{ user_id: string }>('/api/users/me/', { user_id: userId });
+    return apiClient.patch<{ username: string }>('/api/users/me/', { username: userId });
   },
-  updateEmail: (email: string) => {
+  requestEmailLink: (email: string) => {
+    if (USE_MOCK) {
+      return mock({ email });
+    }
+    return apiClient.post<{ email: string }>('/api/users/email/request/', { email });
+  },
+  confirmEmailLink: (email: string, code: string) => {
     if (USE_MOCK) {
       setMockEmail(email);
       return mock({ email: mockEmail });
     }
-    return apiClient.patch<{ email: string }>('/api/users/me/', { email });
+    return apiClient.post<{ email: string }>('/api/users/email/confirm/', { email, code });
+  },
+  withdraw: (password: string) => {
+    if (USE_MOCK) {
+      return mock({});
+    }
+    return apiClient.post('/api/users/withdraw/', { password });
   },
 };
 

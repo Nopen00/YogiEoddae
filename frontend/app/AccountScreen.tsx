@@ -7,8 +7,7 @@ import { Size } from '@/constants/Size';
 import { Shadows } from '@/constants/Shadows';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
-import { userApi } from '@/services/api';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { authApi, userApi } from '@/services/api';
 import { useFocusEffect, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { ChevronRight, Edit3 } from 'lucide-react-native';
@@ -21,9 +20,9 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const AccountScreen = () => {
   const router = useRouter();
   const [profileImage, setProfileImage] = useState<string | null>(null);
-  const [nickname, setNickname] = useState('내이름은김철수');
+  const [nickname, setNickname] = useState('');
   const [nicknameEditVisible, setNicknameEditVisible] = useState(false);
-  const [userId, setUserId] = useState('id1234');
+  const [userId, setUserId] = useState('');
   const [email, setEmail] = useState('');
   const [nicknameSuccessVisible, setNicknameSuccessVisible] = useState(false);
   const [logoutConfirmVisible, setLogoutConfirmVisible] = useState(false);
@@ -32,8 +31,11 @@ const AccountScreen = () => {
     useCallback(() => {
       userApi.getMe().then((res) => {
         setNickname(res.data.nickname);
-        setUserId(res.data.user_id);
+        setUserId(res.data.username);
         setEmail(res.data.email);
+      }).catch(() => {
+        // 로그인 안 된 상태(401) — 정식 로그인 화면이 아직 없어 테스트용 화면으로 보냄
+        router.replace('/DevAuthScreen');
       });
     }, [])
   );
@@ -156,7 +158,7 @@ const AccountScreen = () => {
                 activeOpacity={0.8}
                 onPress={async () => {
                   setLogoutConfirmVisible(false);
-                  await AsyncStorage.removeItem('device_id');
+                  await authApi.logout();
                   router.replace('/');
                 }}
               >

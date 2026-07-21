@@ -5,18 +5,14 @@ import { Shadows } from '@/constants/Shadows';
 import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
-import { userApi } from '@/services/api';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
+import { authApi, userApi } from '@/services/api';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { AlertCircle, CheckCircle, Circle, Eye, EyeOff } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { Dimensions, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-// 최근 사용한 비밀번호 mock 목록 — 실제 이력 대신 더미 값으로 비교
-const RECENT_PASSWORDS = ['123456', 'past1234!'];
 
 const hasMinLength = (password: string) => password.length >= 8;
 const hasMixedChars = (password: string) => {
@@ -28,9 +24,9 @@ const hasMixedChars = (password: string) => {
 
 type NewPasswordError = 'sameAsUserId' | 'recentlyUsed' | null;
 
+// 클라이언트 사전 체크는 아이디 동일 여부만. 재사용 이력 여부는 서버(confirmPasswordReset) 응답으로 판단.
 const getNewPasswordError = (password: string, userId: string): NewPasswordError => {
   if (password === userId) return 'sameAsUserId';
-  if (RECENT_PASSWORDS.includes(password)) return 'recentlyUsed';
   return null;
 };
 
@@ -89,6 +85,7 @@ const PasswordInputBox = ({ label, placeholder, value, onChangeText, onBlur, vis
 
 const PasswordResetScreen = () => {
   const router = useRouter();
+  const { username: paramUsername } = useLocalSearchParams<{ username?: string }>();
   const [newPassword, setNewPassword] = useState('');
   const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
   const [newVisible, setNewVisible] = useState(false);
@@ -100,8 +97,12 @@ const PasswordResetScreen = () => {
   const [successPopupVisible, setSuccessPopupVisible] = useState(false);
 
   useEffect(() => {
-    userApi.getMe().then((res) => setUserId(res.data.user_id));
-  }, []);
+    if (paramUsername) {
+      setUserId(paramUsername);
+    } else {
+      userApi.getMe().then((res) => setUserId(res.data.username));
+    }
+  }, [paramUsername]);
 
   const isActive =
     newPassword.trim().length > 0 &&
@@ -221,9 +222,18 @@ const PasswordResetScreen = () => {
               <TouchableOpacity
                 style={styles.btnConfirm}
                 activeOpacity={0.8}
-                onPress={() => {
-                  setConfirmPopupVisible(false);
-                  setSuccessPopupVisible(true);
+                onPress={async () => {
+                  try {
+                    await authApi.confirmPasswordReset(userId, newPassword);
+                    setConfirmPopupVisible(false);
+                    setSuccessPopupVisible(true);
+                  } catch (e: any) {
+                    setConfirmPopupVisible(false);
+                    const serverError = e?.response?.data?.new_password?.[0];
+                    if (serverError) {
+                      setNewPasswordError('recentlyUsed');
+                    }
+                  }
                 }}
               >
                 <Text style={styles.btnConfirmText}>변경</Text>
@@ -239,7 +249,7 @@ const PasswordResetScreen = () => {
           activeOpacity={1}
           onPress={async () => {
             setSuccessPopupVisible(false);
-            await AsyncStorage.removeItem('device_id');
+            await authApi.logout();
             router.replace('/');
           }}
         >

@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 const SettingScreen = () => {
   const router = useRouter();
+  const [nickname, setNickname] = useState('');
   const [tokenBalance, setTokenBalance] = useState(0);
   const [isLargeIconMode, setIsLargeIconMode] = useState(false);
   const [hasMail, setHasMail] = useState(false);
@@ -22,9 +23,13 @@ const SettingScreen = () => {
   useFocusEffect(
     useCallback(() => {
       userApi.getMe().then(res => {
+        setNickname(res.data.nickname);
         setTokenBalance(res.data.token_balance);
         setHasEmail(res.data.email.trim().length > 0);
-      }).catch(() => {});
+      }).catch(() => {
+        // 로그인 안 된 상태(401) — 정식 로그인 화면이 아직 없어 테스트용 화면으로 보냄
+        router.replace('/DevAuthScreen');
+      });
       mailApi.getList().then(res => setHasMail(res.data.length > 0)).catch(() => {});
     }, [])
   );
@@ -38,7 +43,7 @@ const SettingScreen = () => {
         <View style={styles.profileImage} />
 
         <View style={styles.userInfoColumn}>
-          <Text style={styles.nickname}>내이름은김철수</Text>
+          <Text style={styles.nickname}>{nickname}</Text>
           <TouchableOpacity style={styles.infoDetailButton} activeOpacity={0.7} onPress={() => router.push('/PasswordConfirmScreen')}>
             <View style={styles.infoDetailTextWrapper}>
               <Text style={styles.infoDetailText}>내 정보</Text>
@@ -88,6 +93,12 @@ const SettingScreen = () => {
       {/* 포토스팟 관리 섹션 */}
       <TouchableOpacity style={styles.menuRow} activeOpacity={0.7}>
         <Text style={styles.menuRowText}>작성한 포토스팟 관리</Text>
+        <ChevronRight size={IconSize.medium} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
+      </TouchableOpacity>
+
+      {/* 임시 — JWT 연동 테스트용, 정식 로그인 화면 나오면 제거 */}
+      <TouchableOpacity style={styles.menuRow} activeOpacity={0.7} onPress={() => router.push('/DevAuthScreen')}>
+        <Text style={styles.menuRowText}>[테스트] 로그인/회원가입</Text>
         <ChevronRight size={IconSize.medium} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
       </TouchableOpacity>
 

@@ -4,7 +4,7 @@ import { IconSize } from '@/constants/IconSize';
 import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
-import { userApi } from '@/services/api';
+import { authApi, userApi } from '@/services/api';
 import { useRouter } from 'expo-router';
 import { AlertCircle } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
@@ -13,7 +13,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 const CODE_TIMEOUT_SECONDS = 5 * 60;
 const RESEND_COOLDOWN_SECONDS = 60;
-const DUMMY_CODE = '1111';
 
 const formatTime = (seconds: number) => {
   const m = Math.floor(seconds / 60).toString().padStart(2, '0');
@@ -25,13 +24,23 @@ const PasswordChangeScreen = () => {
   const router = useRouter();
   const [code, setCode] = useState('');
   const [hasError, setHasError] = useState(false);
+  const [errorText, setErrorText] = useState('인증코드가 일치하지 않습니다.');
   const [remainingSeconds, setRemainingSeconds] = useState(CODE_TIMEOUT_SECONDS);
   const [resendCooldown, setResendCooldown] = useState(0);
   const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const isActive = code.trim().length > 0;
 
   useEffect(() => {
-    userApi.getMe().then((res) => setEmail(res.data.email));
+    userApi.getMe().then((res) => {
+      setUsername(res.data.username);
+      setEmail(res.data.email);
+      if (res.data.username) {
+        authApi.requestPasswordReset(res.data.username)
+          .then(() => setResendCooldown(RESEND_COOLDOWN_SECONDS))
+          .catch(() => {});
+      }
+    });
   }, []);
 
   const handleChangeCode = (text: string) => {
@@ -40,16 +49,24 @@ const PasswordChangeScreen = () => {
   };
 
   const handleBlurCode = () => {
-    if (!code.trim()) return;
-    setHasError(code.trim() !== DUMMY_CODE);
+    // 실제 검증은 확인 버튼(handleConfirm)에서만 수행한다.
+    // 여기서도 verify를 호출하면 코드가 "사용됨" 처리되어, 곧바로 이어지는
+    // 확인 버튼 클릭의 verify가 (정답이어도) 실패하는 레이스 컨디션이 생긴다.
   };
 
-  const handleConfirm = () => {
-    if (!isActive) return;
-    if (code.trim() === DUMMY_CODE) {
-      setHasError(false);
-      router.replace('/PasswordResetScreen');
-    } else {
+  const handleConfirm = async () => {
+    if (!isActive || !username) return;
+    try {
+      const res = await authApi.verifyPasswordReset(username, code.trim());
+      if (res.data.verified) {
+        setHasError(false);
+        router.replace({ pathname: '/PasswordResetScreen', params: { username } });
+      } else {
+        setErrorText('인증코드가 일치하지 않습니다.');
+        setHasError(true);
+      }
+    } catch (e: any) {
+      setErrorText(e?.response?.data?.detail ?? '인증코드가 일치하지 않습니다.');
       setHasError(true);
     }
   };
@@ -66,10 +83,13 @@ const PasswordChangeScreen = () => {
     return () => clearInterval(timer);
   }, [resendCooldown]);
 
-  const handleResend = () => {
-    if (resendCooldown > 0) return;
-    setRemainingSeconds(CODE_TIMEOUT_SECONDS);
-    setResendCooldown(RESEND_COOLDOWN_SECONDS);
+  const handleResend = async () => {
+    if (resendCooldown > 0 || !username) return;
+    try {
+      await authApi.requestPasswordReset(username);
+      setRemainingSeconds(CODE_TIMEOUT_SECONDS);
+      setResendCooldown(RESEND_COOLDOWN_SECONDS);
+    } catch {}
   };
 
   return (
@@ -106,7 +126,7 @@ const PasswordChangeScreen = () => {
         {hasError && (
           <View style={styles.errorRow}>
             <AlertCircle size={IconSize.xsmall} color={Colors.light.error} />
-            <Text style={styles.errorText}>인증코드가 일치하지 않습니다.</Text>
+            <Text style={styles.errorText}>{errorText}</Text>
           </View>
         )}
 
@@ -131,11 +151,6 @@ const PasswordChangeScreen = () => {
         {resendCooldown > 0 && (
           <Text style={styles.resendNotice}>{resendCooldown}초 이후 재전송이 가능합니다.</Text>
         )}
-
-        <View style={styles.dummyRow}>
-          <Text style={styles.dummyLabel}>더미 인증코드</Text>
-          <Text style={styles.dummyValue}>1111</Text>
-        </View>
       </View>
       </ScrollView>
       </KeyboardAvoidingView>

@@ -16,7 +16,6 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const CODE_TIMEOUT_SECONDS = 5 * 60;
 const RESEND_COOLDOWN_SECONDS = 60;
-const DUMMY_CODE = '1111';
 
 const formatTime = (seconds: number) => {
   const m = Math.floor(seconds / 60).toString().padStart(2, '0');
@@ -42,27 +41,27 @@ const EmailVerifyScreen = () => {
   };
 
   const handleBlurCode = () => {
-    if (!code.trim()) return;
-    setHasError(code.trim() !== DUMMY_CODE);
+    // 형식 사전체크만 — 실제 코드 일치 여부는 서버 확정(confirmEmailLink) 시점에 판정
   };
 
-  const handleUpdateEmail = async () => {
-    if (email) await userApi.updateEmail(email);
-    setConfirmPopupVisible(false);
-    setSuccessPopupVisible(true);
+  const handleConfirmEmail = async () => {
+    if (!email) return;
+    try {
+      await userApi.confirmEmailLink(email, code.trim());
+      setConfirmPopupVisible(false);
+      setSuccessPopupVisible(true);
+    } catch (e: any) {
+      setConfirmPopupVisible(false);
+      setHasError(true);
+    }
   };
 
   const handleConfirm = () => {
     if (!isActive) return;
-    if (code.trim() === DUMMY_CODE) {
-      setHasError(false);
-      if (isSetup) {
-        handleUpdateEmail();
-      } else {
-        setConfirmPopupVisible(true);
-      }
+    if (isSetup) {
+      handleConfirmEmail();
     } else {
-      setHasError(true);
+      setConfirmPopupVisible(true);
     }
   };
 
@@ -78,10 +77,13 @@ const EmailVerifyScreen = () => {
     return () => clearInterval(timer);
   }, [resendCooldown]);
 
-  const handleResend = () => {
-    if (resendCooldown > 0) return;
-    setRemainingSeconds(CODE_TIMEOUT_SECONDS);
-    setResendCooldown(RESEND_COOLDOWN_SECONDS);
+  const handleResend = async () => {
+    if (resendCooldown > 0 || !email) return;
+    try {
+      await userApi.requestEmailLink(email);
+      setRemainingSeconds(CODE_TIMEOUT_SECONDS);
+      setResendCooldown(RESEND_COOLDOWN_SECONDS);
+    } catch {}
   };
 
   return (
@@ -144,10 +146,6 @@ const EmailVerifyScreen = () => {
           <Text style={styles.resendNotice}>{resendCooldown}초 이후 재전송이 가능합니다.</Text>
         )}
 
-        <View style={styles.dummyRow}>
-          <Text style={styles.dummyLabel}>더미 인증코드</Text>
-          <Text style={styles.dummyValue}>1111</Text>
-        </View>
       </View>
       </ScrollView>
       </KeyboardAvoidingView>
@@ -168,7 +166,7 @@ const EmailVerifyScreen = () => {
               <TouchableOpacity
                 style={styles.btnConfirm}
                 activeOpacity={0.8}
-                onPress={handleUpdateEmail}
+                onPress={handleConfirmEmail}
               >
                 <Text style={styles.btnConfirmText}>변경</Text>
               </TouchableOpacity>

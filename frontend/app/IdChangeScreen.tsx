@@ -19,6 +19,7 @@ const IdChangeScreen = () => {
   const router = useRouter();
   const [userId, setUserId] = useState('');
   const [hasError, setHasError] = useState(false);
+  const [errorText, setErrorText] = useState('5~20자의 영문과 숫자의 혼합으로 입력해주세요.');
   const [confirmPopupVisible, setConfirmPopupVisible] = useState(false);
   const [successPopupVisible, setSuccessPopupVisible] = useState(false);
   const isActive = userId.trim().length > 0;
@@ -30,6 +31,7 @@ const IdChangeScreen = () => {
 
   const handleBlurUserId = () => {
     if (!userId.trim()) return;
+    setErrorText('5~20자의 영문과 숫자의 혼합으로 입력해주세요.');
     setHasError(!ID_REGEX.test(userId));
   };
 
@@ -75,7 +77,7 @@ const IdChangeScreen = () => {
         {hasError && (
           <View style={styles.errorRow}>
             <AlertCircle size={IconSize.xsmall} color={Colors.light.error} />
-            <Text style={styles.errorText}>5~20자의 영문과 숫자의 혼합으로 입력해주세요.</Text>
+            <Text style={styles.errorText}>{errorText}</Text>
           </View>
         )}
 
@@ -108,9 +110,15 @@ const IdChangeScreen = () => {
                 style={styles.btnConfirm}
                 activeOpacity={0.8}
                 onPress={async () => {
-                  await userApi.updateUserId(userId);
-                  setConfirmPopupVisible(false);
-                  setSuccessPopupVisible(true);
+                  try {
+                    await userApi.updateUserId(userId);
+                    setConfirmPopupVisible(false);
+                    setSuccessPopupVisible(true);
+                  } catch (e: any) {
+                    setConfirmPopupVisible(false);
+                    setErrorText(e?.response?.data?.username?.[0] ?? '이미 사용 중인 아이디입니다.');
+                    setHasError(true);
+                  }
                 }}
               >
                 <Text style={styles.btnConfirmText}>변경</Text>

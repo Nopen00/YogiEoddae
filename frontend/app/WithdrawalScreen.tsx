@@ -5,8 +5,7 @@ import { Shadows } from '@/constants/Shadows';
 import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
-import { userApi } from '@/services/api';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { authApi, userApi } from '@/services/api';
 import { useRouter } from 'expo-router';
 import { AlertCircle, Check, ChevronRight, Eye, EyeOff } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
@@ -32,7 +31,7 @@ const WithdrawalScreen = () => {
 
   useEffect(() => {
     userApi.getMe().then((res) => {
-      setUserId(res.data.user_id);
+      setUserId(res.data.username);
       setTokenBalance(res.data.token_balance);
     });
   }, []);
@@ -60,8 +59,13 @@ const WithdrawalScreen = () => {
 
   const handleConfirmWithdraw = async () => {
     setWithdrawConfirmVisible(false);
-    await AsyncStorage.removeItem('device_id');
-    router.replace('/');
+    try {
+      await userApi.withdraw(password);
+      await authApi.logout();
+      router.replace('/');
+    } catch (e: any) {
+      setPasswordError(true);
+    }
   };
 
   return (
