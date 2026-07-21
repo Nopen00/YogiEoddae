@@ -120,7 +120,7 @@ const gripIconStyle = StyleSheet.create({
 const DRAG_ROW_BASE: object = {
   flexDirection: 'row',
   alignItems: 'center',
-  marginTop: Spacing.v.small,
+  marginTop: Spacing.v.medium,
   paddingHorizontal: Spacing.h.medium,
 };
 const DRAG_ROW_ACTIVE: object = { opacity: 0.5, transform: [{ scale: 0.8 }] };
@@ -163,6 +163,7 @@ export default function ScheduleDetailScreen() {
   const [pendingRemovals, setPendingRemovals] = useState<Set<number>>(new Set());
   const [localPlaces, setLocalPlaces] = useState<DailyPlace[]>([]);
   const [isUnsavedWarningVisible, setIsUnsavedWarningVisible] = useState(false);
+  const [saveResultVisible, setSaveResultVisible] = useState(false);
   const [placeDeleteTarget, setPlaceDeleteTarget] = useState<number | null>(null);
   const [isAddPlaceVisible, setIsAddPlaceVisible] = useState(false);
   const [isEditNameVisible, setIsEditNameVisible] = useState(false);
@@ -286,6 +287,7 @@ export default function ScheduleDetailScreen() {
       }
       const res = await scheduleApi.getDetail(Number(id));
       setSchedule(res.data);
+      setSaveResultVisible(true);
     } catch {}
     setPendingRemovals(new Set());
     setLocalPlaces([]);
@@ -779,6 +781,17 @@ export default function ScheduleDetailScreen() {
           </View>
         </View>
       </Modal>
+      <Modal visible={saveResultVisible} transparent animationType="none">
+        <TouchableOpacity
+          style={styles.saveResultOverlay}
+          activeOpacity={1}
+          onPress={() => setSaveResultVisible(false)}
+        >
+          <View style={styles.saveResultPopupBox}>
+            <Text style={styles.saveResultText}>변경사항을 성공적으로 저장했습니다!</Text>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -920,7 +933,7 @@ const styles = StyleSheet.create({
   placeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: Spacing.v.small,
+    marginTop: Spacing.v.medium,
     paddingHorizontal: Spacing.h.medium,
   },
   placeNumberCol: {
@@ -1082,4 +1095,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   btnStayText: { ...Typography.button2, color: Colors.light.grayDark },
+  saveResultOverlay: {
+    flex: 1,
+    backgroundColor: Colors.light.overlay,
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.h.xlarge,
+  },
+  saveResultPopupBox: {
+    backgroundColor: Colors.light.white,
+    borderRadius: Spacing.r.small,
+    borderWidth: Spacing.lw.small,
+    borderColor: Colors.light.grayLight,
+    alignItems: 'center',
+    paddingVertical: Spacing.v.medium,
+    paddingHorizontal: Spacing.h.medium,
+  },
+  saveResultText: { ...Typography.subtitle2, color: Colors.light.black },
 });

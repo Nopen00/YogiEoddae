@@ -44,6 +44,7 @@ export interface Photo {
   likes: number;
   tags: Tag[];
   is_bookmarked?: boolean;
+  travel_date: string;
   created_at: string;
 }
 

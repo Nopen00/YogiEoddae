@@ -9,13 +9,16 @@ import { StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
 interface ScreenHeaderProps {
   onBack?: () => void;
   title?: string;
+  // 스크롤 시 본문 타이틀 대신 헤더에 뜨는 축약형 타이틀 — title과 달리 뒤로가기 옆에
+  // 좌측 정렬로 놓이고, 긴 텍스트는 더보기 아이콘 쪽 여백을 남기고 말줄임 처리된다.
+  scrollTitle?: string;
   right?: ReactNode;
   style?: StyleProp<ViewStyle>;
   children?: ReactNode;
 }
 
-export function ScreenHeader({ onBack, title, right, style, children }: ScreenHeaderProps) {
-  const hasFlexContent = !!(children || right);
+export function ScreenHeader({ onBack, title, scrollTitle, right, style, children }: ScreenHeaderProps) {
+  const hasFlexContent = !!(children || right || scrollTitle);
   return (
     <View style={[styles.header, style]}>
       {onBack ? <BackButton onPress={onBack} /> : <View style={styles.rightBalance} />}
@@ -24,7 +27,13 @@ export function ScreenHeader({ onBack, title, right, style, children }: ScreenHe
           <Text style={styles.title}>{title}</Text>
         </View>
       )}
-      {hasFlexContent && <View style={styles.fill}>{children}</View>}
+      {hasFlexContent && (
+        <View style={styles.fill}>
+          {scrollTitle ? (
+            <Text style={styles.scrollTitle} numberOfLines={1} ellipsizeMode="tail">{scrollTitle}</Text>
+          ) : children}
+        </View>
+      )}
       {right && <View style={styles.rightSlot}>{right}</View>}
       {children && !right && <View style={styles.rightBalance} />}
     </View>
@@ -55,6 +64,12 @@ const styles = StyleSheet.create({
   },
   fill: {
     flex: 1,
+  },
+  scrollTitle: {
+    ...Typography.HeadLine5,
+    color: Colors.light.black,
+    marginLeft: Spacing.h.medium,
+    marginRight: Spacing.h.xlarge,
   },
   rightSlot: {
     flexDirection: 'row',

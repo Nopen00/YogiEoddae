@@ -10,6 +10,7 @@ import { ScheduleAlert } from '@/components/modals/ScheduleAlert';
 import { SortAlert } from '@/components/modals/SortAlert';
 import { getReviewLikeCount, ReviewCard } from '@/components/ui/ReviewCard';
 import PagerView from '@/components/ui/PagerViewWrapper';
+import { useScrollHeaderTitle } from '@/hooks/useScrollHeaderTitle';
 import { SaveHeart32 } from '@/components/icons/SaveHeart';
 import { UnSaveHeart32 } from '@/components/icons/UnSaveHeart';
 import { Colors } from '@/constants/Colors';
@@ -55,12 +56,14 @@ const PlaceDetailScreen = () => {
   const smallImageWidth = imageWidth / 2;
   const smallImageHeight = (smallImageWidth * 3) / 4;
 
+  const { visible: headerTitleVisible, onContainerLayout, onTitleLayout, onScroll } = useScrollHeaderTitle();
   const [isMenuVisible, setIsMenuVisible] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [isScheduleVisible, setIsScheduleVisible] = useState(false);
   const [savedNearby, setSavedNearby] = useState<Record<number, boolean>>({});
   const [savedPhotoSpots, setSavedPhotoSpots] = useState<Record<number, boolean>>({});
   const [isToggled, setIsToggled] = useState(false);
+  const [isMapTouching, setIsMapTouching] = useState(false);
   const [place, setPlace] = useState<Place | null>(null);
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [nearbyPlaces, setNearbyPlaces] = useState<Place[]>([]);
@@ -148,29 +151,20 @@ const PlaceDetailScreen = () => {
         <ScreenHeader
           onBack={() => router.dismiss()}
           style={{ zIndex: 10 }}
+          scrollTitle={headerTitleVisible ? (place?.name ?? '') : undefined}
           right={
-            <>
-              <View style={styles.toggleGroup}>
-                <TouchableOpacity
-                  style={[styles.toggle, { backgroundColor: isToggled ? Colors.light.primary : Colors.light.grayLight }]}
-                  onPress={() => setIsToggled(!isToggled)}
-                  activeOpacity={0.8}
-                >
-                  <View style={[styles.toggleCircle, { left: isToggled ? 26 : 2 }]} />
-                </TouchableOpacity>
-                <Text style={styles.toggleLabel}>{isToggled ? '카카오' : '관광공사'}</Text>
-              </View>
-              <View style={[styles.moreButtonWrapper, { marginLeft: Spacing.h.medium }]}>
-                <MoreButton onPress={() => setIsMenuVisible(!isMenuVisible)} />
-                {isMenuVisible && (
-                  <MoreMenuAlert
-                    isSaved={isSaved}
-                    onSavePress={handleSaveToggle}
-                    onSchedulePress={() => { setIsMenuVisible(false); setIsScheduleVisible(true); }}
-                  />
-                )}
-              </View>
-            </>
+            <View style={styles.moreButtonWrapper}>
+              <MoreButton onPress={() => setIsMenuVisible(!isMenuVisible)} />
+              {isMenuVisible && (
+                <MoreMenuAlert
+                  isSaved={isSaved}
+                  onSavePress={handleSaveToggle}
+                  onSchedulePress={() => { setIsMenuVisible(false); setIsScheduleVisible(true); }}
+                  isToggled={isToggled}
+                  onTogglePress={() => { setIsToggled(!isToggled); setIsMenuVisible(false); }}
+                />
+              )}
+            </View>
           }
         />
 
@@ -180,15 +174,21 @@ const PlaceDetailScreen = () => {
           </TouchableWithoutFeedback>
         )}
 
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Spacing.v.screenBottom }}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: Spacing.v.screenBottom }}
+          scrollEnabled={!isMapTouching}
+          onScroll={onScroll}
+          scrollEventThrottle={16}
+        >
           {/* 대표 이미지 */}
           <View style={[styles.imageContainer, { width: imageWidth, height: imageHeight }]}>
             <Image source={{ uri: place?.image_url ?? undefined }} style={styles.mainImage} resizeMode="cover" />
           </View>
 
-          <View style={styles.infoContainer}>
+          <View style={styles.infoContainer} onLayout={onContainerLayout}>
             {/* 장소명 */}
-            <Text style={styles.titleText}>{place?.name ?? '로딩 중...'}</Text>
+            <Text style={styles.titleText} onLayout={onTitleLayout}>{place?.name ?? '로딩 중...'}</Text>
 
             {/* 카테고리 | 주소 | 별점 | 좋아요 */}
             <MetaRow>
@@ -242,7 +242,7 @@ const PlaceDetailScreen = () => {
               </TouchableOpacity>
             </View>
 
-            <Divider />
+            <Divider marginTop={Spacing.v.large} />
 
             {/* 기본 정보 */}
             <Text style={styles.basicInfoTitle}>기본 정보</Text>
@@ -253,6 +253,8 @@ const PlaceDetailScreen = () => {
                   longitude={Number(place.longitude)}
                   height={imageHeight}
                   markerTitle={place.name}
+                  onTouchStart={() => setIsMapTouching(true)}
+                  onTouchEnd={() => setIsMapTouching(false)}
                 />
               </View>
             )}
@@ -492,25 +494,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.light.background },
   moreButtonWrapper: { position: 'relative', alignItems: 'flex-end' },
   menuBackdrop: { ...StyleSheet.absoluteFillObject, zIndex: 5 },
-  toggleGroup: { flexDirection: 'row', alignItems: 'center' },
-  toggle: {
-    width: 48,
-    height: 24,
-    borderRadius: 12,
-  },
-  toggleCircle: {
-    position: 'absolute',
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: Colors.light.white,
-    top: 2,
-  },
-  toggleLabel: {
-    ...Typography.button3,
-    color: Colors.light.black,
-    marginLeft: Spacing.h.small,
-  },
   imageContainer: {
     marginTop: Spacing.v.small,
     marginHorizontal: Spacing.h.medium,
@@ -539,7 +522,7 @@ const styles = StyleSheet.create({
   basicInfoTitle: {
     ...Typography.title1,
     color: Colors.light.black,
-    marginTop: Spacing.v.medium,
+    marginTop: Spacing.v.large,
   },
   mapContainer: {
     marginTop: Spacing.v.medium,
@@ -638,12 +621,12 @@ const styles = StyleSheet.create({
   nearbyCategory: {
     ...Typography.body2,
     color: Colors.light.grayDark,
-    marginTop: 2,
+    marginTop: Spacing.h.xsmall,
   },
   nearbyAddress: {
     ...Typography.body2,
     color: Colors.light.grayDark,
-    marginTop: 2,
+    marginTop: Spacing.h.xsmall,
   },
   reviewHeaderRow: {
     flexDirection: 'row',

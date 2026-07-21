@@ -134,12 +134,22 @@ export const authApi = {
   logout: () => clearTokens(),
   findId: (email: string, password: string) => {
     if (USE_MOCK) {
+      if (!mockEmail || email !== mockEmail || password !== mockPassword) {
+        return Promise.reject({
+          response: { data: { detail: '입력하신 정보와 일치하는 계정을 찾을 수 없습니다.' } },
+        });
+      }
       return mock({ masked_username: `${mockUserId.slice(0, 4)}******` });
     }
     return apiClient.post<{ masked_username: string }>('/api/users/find-id/', { email, password });
   },
   requestPasswordReset: (username: string) => {
     if (USE_MOCK) {
+      if (username !== mockUserId || !mockEmail) {
+        return Promise.reject({
+          response: { data: { detail: '입력하신 정보와 일치하는 계정을 찾을 수 없습니다.' } },
+        });
+      }
       return mock({ masked_email: '12****@n****.com' });
     }
     return apiClient.post<{ masked_email: string }>('/api/users/password-reset/request/', { username });
@@ -385,7 +395,7 @@ export const photoApi = {
     }
     return apiClient.get<PhotoSpotDetail>(`/api/photos/${id}/`);
   },
-  upload: (data: { place_id: number; image_url: string; description?: string; tag_ids?: number[] }) => {
+  upload: (data: { place_id: number; image_url: string; description?: string; tag_ids?: number[]; travel_date?: string }) => {
     if (USE_MOCK) {
       const newPhoto: Photo = {
         id: nextMockId(),
@@ -394,6 +404,7 @@ export const photoApi = {
         likes: 0,
         tags: [],
         is_bookmarked: false,
+        travel_date: data.travel_date ?? new Date().toISOString(),
         created_at: new Date().toISOString(),
       };
       mockPhotoStore.unshift(newPhoto);

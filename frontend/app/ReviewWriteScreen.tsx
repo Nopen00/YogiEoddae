@@ -180,7 +180,7 @@ const ReviewWriteScreen = () => {
           ))}
         </TagRow>
 
-        <Divider />
+        <Divider marginTop={Spacing.v.large} />
 
         <Text style={styles.ratingTitle}>별점</Text>
         <GestureDetector gesture={ratingGesture}>
@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
     ...Typography.title1,
     color: Colors.light.black,
     textAlign: 'center',
-    marginTop: Spacing.v.medium,
+    marginTop: Spacing.v.large,
   },
   starRow: {
     flexDirection: 'row',

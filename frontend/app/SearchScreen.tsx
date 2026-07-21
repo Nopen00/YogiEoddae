@@ -218,11 +218,11 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.v.small,
     paddingBottom: Spacing.v.screenBottom,
   },
-  recentItemContainer: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    paddingVertical: 14 
+  recentItemContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: Spacing.v.medium
   },
   leftGroup: { 
     flexDirection: 'row', 
@@ -248,10 +248,10 @@ const styles = StyleSheet.create({
   emptyWrapper: { 
     flex: 1 
   },
-  emptyTextContainer: { 
+  emptyTextContainer: {
     alignItems: 'center',
-    marginTop: Spacing.v.xlarge, 
-    marginBottom: 40 
+    marginTop: Spacing.v.xlarge,
+    marginBottom: Spacing.v.xlarge
   },
   emptyMainText: { 
     ...Typography.subtitle2, 

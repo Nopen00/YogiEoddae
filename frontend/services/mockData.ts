@@ -332,6 +332,7 @@ export const MOCK_PHOTOS: Photo[] = [
     description: '아름다운 일몰',
     likes: 120,
     tags: [MOCK_TAGS[0]],
+    travel_date: '2023-12-28T00:00:00Z',
     created_at: '2024-01-01T00:00:00Z',
   },
   {
@@ -340,6 +341,7 @@ export const MOCK_PHOTOS: Photo[] = [
     description: '도심 야경',
     likes: 85,
     tags: [MOCK_TAGS[2]],
+    travel_date: '2023-12-30T00:00:00Z',
     created_at: '2024-01-02T00:00:00Z',
   },
 ];
@@ -347,28 +349,28 @@ export const MOCK_PHOTOS: Photo[] = [
 // 장소별 포토스팟 목데이터 — placeApi.getPhotos(id)가 장소마다 다른 사진을 반환하도록 함
 export const MOCK_PHOTOS_BY_PLACE: Record<number, Photo[]> = {
   1: [ // 광화문 광장
-    { id: 101, image_url: 'https://picsum.photos/seed/gwanghwamun1/400/300', description: '광화문 야경', likes: 210, tags: [MOCK_TAGS[8]], created_at: '2024-01-01T00:00:00Z' },
-    { id: 102, image_url: 'https://picsum.photos/seed/gwanghwamun2/400/300', description: '광화문 앞 도심 풍경', likes: 96, tags: [MOCK_TAGS[10]], created_at: '2024-01-01T00:00:00Z' },
+    { id: 101, image_url: 'https://picsum.photos/seed/gwanghwamun1/400/300', description: '광화문 야경', likes: 210, tags: [MOCK_TAGS[8]], travel_date: '2023-12-25T00:00:00Z', created_at: '2024-01-01T00:00:00Z' },
+    { id: 102, image_url: 'https://picsum.photos/seed/gwanghwamun2/400/300', description: '광화문 앞 도심 풍경', likes: 96, tags: [MOCK_TAGS[10]], travel_date: '2023-12-25T00:00:00Z', created_at: '2024-01-01T00:00:00Z' },
   ],
   2: [ // 해운대 해수욕장
-    { id: 103, image_url: 'https://picsum.photos/seed/haeundae1/400/300', description: '해운대 일몰', likes: 340, tags: [MOCK_TAGS[7]], created_at: '2024-01-01T00:00:00Z' },
-    { id: 104, image_url: 'https://picsum.photos/seed/haeundae2/400/300', description: '탁 트인 바다 풍경', likes: 188, tags: [MOCK_TAGS[5]], created_at: '2024-01-01T00:00:00Z' },
+    { id: 103, image_url: 'https://picsum.photos/seed/haeundae1/400/300', description: '해운대 일몰', likes: 340, tags: [MOCK_TAGS[7]], travel_date: '2023-12-25T00:00:00Z', created_at: '2024-01-01T00:00:00Z' },
+    { id: 104, image_url: 'https://picsum.photos/seed/haeundae2/400/300', description: '탁 트인 바다 풍경', likes: 188, tags: [MOCK_TAGS[5]], travel_date: '2023-12-25T00:00:00Z', created_at: '2024-01-01T00:00:00Z' },
   ],
   3: [ // 경복궁
-    { id: 105, image_url: 'https://picsum.photos/seed/gyeongbok1/400/300', description: '경복궁 단풍', likes: 275, tags: [MOCK_TAGS[11]], created_at: '2024-01-01T00:00:00Z' },
-    { id: 106, image_url: 'https://picsum.photos/seed/gyeongbok2/400/300', description: '한복 입고 궁궐 산책', likes: 152, tags: [MOCK_TAGS[10]], created_at: '2024-01-01T00:00:00Z' },
+    { id: 105, image_url: 'https://picsum.photos/seed/gyeongbok1/400/300', description: '경복궁 단풍', likes: 275, tags: [MOCK_TAGS[11]], travel_date: '2023-12-25T00:00:00Z', created_at: '2024-01-01T00:00:00Z' },
+    { id: 106, image_url: 'https://picsum.photos/seed/gyeongbok2/400/300', description: '한복 입고 궁궐 산책', likes: 152, tags: [MOCK_TAGS[10]], travel_date: '2023-12-25T00:00:00Z', created_at: '2024-01-01T00:00:00Z' },
   ],
   4: [ // 북촌 한옥마을
-    { id: 107, image_url: 'https://picsum.photos/seed/bukchon1/400/300', description: '북촌 골목 카페', likes: 130, tags: [MOCK_TAGS[9]], created_at: '2024-01-01T00:00:00Z' },
-    { id: 108, image_url: 'https://picsum.photos/seed/bukchon2/400/300', description: '한옥 지붕 풍경', likes: 98, tags: [MOCK_TAGS[11]], created_at: '2024-01-01T00:00:00Z' },
+    { id: 107, image_url: 'https://picsum.photos/seed/bukchon1/400/300', description: '북촌 골목 카페', likes: 130, tags: [MOCK_TAGS[9]], travel_date: '2023-12-25T00:00:00Z', created_at: '2024-01-01T00:00:00Z' },
+    { id: 108, image_url: 'https://picsum.photos/seed/bukchon2/400/300', description: '한옥 지붕 풍경', likes: 98, tags: [MOCK_TAGS[11]], travel_date: '2023-12-25T00:00:00Z', created_at: '2024-01-01T00:00:00Z' },
   ],
   5: [ // 남산타워
-    { id: 109, image_url: 'https://picsum.photos/seed/namsan1/400/300', description: '남산타워 야경', likes: 420, tags: [MOCK_TAGS[8]], created_at: '2024-01-01T00:00:00Z' },
-    { id: 110, image_url: 'https://picsum.photos/seed/namsan2/400/300', description: '전망대에서 본 자연 풍경', likes: 201, tags: [MOCK_TAGS[5]], created_at: '2024-01-01T00:00:00Z' },
+    { id: 109, image_url: 'https://picsum.photos/seed/namsan1/400/300', description: '남산타워 야경', likes: 420, tags: [MOCK_TAGS[8]], travel_date: '2023-12-25T00:00:00Z', created_at: '2024-01-01T00:00:00Z' },
+    { id: 110, image_url: 'https://picsum.photos/seed/namsan2/400/300', description: '전망대에서 본 자연 풍경', likes: 201, tags: [MOCK_TAGS[5]], travel_date: '2023-12-25T00:00:00Z', created_at: '2024-01-01T00:00:00Z' },
   ],
   6: [ // 인사동 거리
-    { id: 111, image_url: 'https://picsum.photos/seed/insadong1/400/300', description: '인사동 전통 디저트', likes: 87, tags: [MOCK_TAGS[6]], created_at: '2024-01-01T00:00:00Z' },
-    { id: 112, image_url: 'https://picsum.photos/seed/insadong2/400/300', description: '골목 찻집', likes: 64, tags: [MOCK_TAGS[9]], created_at: '2024-01-01T00:00:00Z' },
+    { id: 111, image_url: 'https://picsum.photos/seed/insadong1/400/300', description: '인사동 전통 디저트', likes: 87, tags: [MOCK_TAGS[6]], travel_date: '2023-12-25T00:00:00Z', created_at: '2024-01-01T00:00:00Z' },
+    { id: 112, image_url: 'https://picsum.photos/seed/insadong2/400/300', description: '골목 찻집', likes: 64, tags: [MOCK_TAGS[9]], travel_date: '2023-12-25T00:00:00Z', created_at: '2024-01-01T00:00:00Z' },
   ],
 };
 

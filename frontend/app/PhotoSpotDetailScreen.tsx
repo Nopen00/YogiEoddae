@@ -18,6 +18,7 @@ import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import PagerView from '@/components/ui/PagerViewWrapper';
+import { useScrollHeaderTitle } from '@/hooks/useScrollHeaderTitle';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Calendar, Check, ChevronDown, Edit3, Heart, Star } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -29,6 +30,8 @@ import type { PhotoSpotDetail, Review, Schedule } from '../services/types';
 
 const REVIEW_SORT_OPTIONS = ['추천순', '최신 여행 순', '최신 리뷰 순', '별점 높은 순', '별점 낮은 순'] as const;
 type ReviewSortOption = typeof REVIEW_SORT_OPTIONS[number];
+
+const formatDateDots = (dateStr: string) => dateStr.slice(0, 10).replace(/-/g, '.');
 
 const PhotoSpotDetailScreen = () => {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -54,9 +57,10 @@ const PhotoSpotDetailScreen = () => {
   const [isReviewSortVisible, setIsReviewSortVisible] = useState(false);
   const [expandedReviews, setExpandedReviews] = useState<Record<number, boolean>>({});
   const [likedReviews, setLikedReviews] = useState<Record<number, boolean>>({});
-  const [imagePopup, setImagePopup] = useState<{ reviewId: number; index: number } | null>(null);
+  const [imagePopup, setImagePopup] = useState<{ images: string[]; index: number } | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [reviewDeleteTarget, setReviewDeleteTarget] = useState<Review | null>(null);
+  const { visible: headerTitleVisible, onContainerLayout, onTitleLayout, onScroll } = useScrollHeaderTitle();
 
   const filteredReviews = (photoOnly ? reviews.filter((r) => r.hasPhoto) : reviews)
     .slice()
@@ -75,8 +79,6 @@ const PhotoSpotDetailScreen = () => {
           return getReviewLikeCount(b, likedReviews[b.id] ?? false) - getReviewLikeCount(a, likedReviews[a.id] ?? false);
       }
     });
-  const popupReview = imagePopup ? reviews.find((r) => r.id === imagePopup.reviewId) : null;
-
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) => {
       if (prev.includes(tag)) {
@@ -137,6 +139,7 @@ const PhotoSpotDetailScreen = () => {
         <ScreenHeader
           onBack={() => router.dismiss()}
           style={{ zIndex: 10 }}
+          scrollTitle={headerTitleVisible ? (photo?.description ?? '') : undefined}
           right={
             <View style={styles.moreButtonWrapper}>
               <MoreButton onPress={() => setIsMenuVisible(!isMenuVisible)} />
@@ -157,13 +160,18 @@ const PhotoSpotDetailScreen = () => {
           </TouchableWithoutFeedback>
         )}
 
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+          onScroll={onScroll}
+          scrollEventThrottle={16}
+        >
           <View style={[styles.imageContainer, { width: imageWidth, height: imageHeight }]}>
             <Image source={{ uri: photo?.image_url }} style={styles.mainImage} resizeMode="cover" />
           </View>
 
-          <View style={styles.infoContainer}>
-            <Text style={styles.titleText}>{photo?.description ?? '로딩 중...'}</Text>
+          <View style={styles.infoContainer} onLayout={onContainerLayout}>
+            <Text style={styles.titleText} onLayout={onTitleLayout}>{photo?.description ?? '로딩 중...'}</Text>
 
             <MetaRow>
               <Star size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
@@ -198,12 +206,38 @@ const PhotoSpotDetailScreen = () => {
               </TouchableOpacity>
             </View>
 
-            <Divider />
+            <Divider marginTop={Spacing.v.large} />
 
             <Text style={styles.photoInfoTitle}>포토스팟 정보</Text>
+            {photo && (
+              <View style={styles.photoInfoDateRow}>
+                <Text style={styles.photoInfoDateText}>{formatDateDots(photo.travel_date)} 여행</Text>
+                <TextSeparator color={Colors.light.grayDark} />
+                <Text style={styles.photoInfoDateText}>{formatDateDots(photo.created_at)} 작성</Text>
+              </View>
+            )}
+
+            {photo?.image_url && (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.photoInfoImagesScroll}
+                contentContainerStyle={styles.photoInfoImagesContent}
+              >
+                <TouchableOpacity
+                  onPress={() => setImagePopup({ images: [photo.image_url], index: 0 })}
+                  activeOpacity={0.9}
+                >
+                  <View style={[styles.photoInfoImageBox, { width: smallImageWidth, height: smallImageHeight }]}>
+                    <Image source={{ uri: photo.image_url }} style={styles.photoInfoImage} resizeMode="cover" />
+                  </View>
+                </TouchableOpacity>
+              </ScrollView>
+            )}
+
             <Text style={styles.photoInfoDesc}>{photo?.description ?? ''}</Text>
 
-            <Divider />
+            <Divider marginTop={Spacing.v.large} />
 
             <Text style={styles.sectionTitle}>장소</Text>
             <TouchableOpacity
@@ -376,7 +410,7 @@ const PhotoSpotDetailScreen = () => {
                 onToggleExpand={() => setExpandedReviews((prev) => ({ ...prev, [review.id]: !prev[review.id] }))}
                 isLiked={likedReviews[review.id] ?? false}
                 onToggleLike={() => setLikedReviews((prev) => ({ ...prev, [review.id]: !prev[review.id] }))}
-                onImagePress={(index) => setImagePopup({ reviewId: review.id, index })}
+                onImagePress={(index) => setImagePopup({ images: review.images, index })}
                 onEditPress={() => router.push({ pathname: '/ReviewWriteScreen', params: { type: 'photospot', id, reviewId: review.id } })}
                 onDeletePress={() => setReviewDeleteTarget(review)}
               />
@@ -422,7 +456,7 @@ const PhotoSpotDetailScreen = () => {
           <TouchableOpacity style={styles.imagePopupOverlay} activeOpacity={1} onPress={() => setImagePopup(null)}>
             <TouchableWithoutFeedback onPress={() => {}}>
               <View style={styles.imagePopupContainer}>
-                {popupReview && imagePopup && (
+                {imagePopup && (
                   <>
                     <PagerView
                       style={{ width: imageWidth, height: imageHeight }}
@@ -432,12 +466,12 @@ const PhotoSpotDetailScreen = () => {
                         setImagePopup((prev) => (prev ? { ...prev, index: position } : prev));
                       }}
                     >
-                      {popupReview.images.map((img) => (
+                      {imagePopup.images.map((img) => (
                         <Image key={img} source={{ uri: img }} style={styles.imagePopupImage} resizeMode="cover" />
                       ))}
                     </PagerView>
                     <Text style={styles.imagePopupIndexText}>
-                      {imagePopup.index + 1}/{popupReview.images.length}
+                      {imagePopup.index + 1}/{imagePopup.images.length}
                     </Text>
                   </>
                 )}
@@ -516,22 +550,39 @@ const styles = StyleSheet.create({
   photoInfoTitle: {
     ...Typography.title1,
     color: Colors.light.black,
-    marginTop: Spacing.v.medium,
+    marginTop: Spacing.v.large,
   },
   photoInfoDesc: {
     ...Typography.body2,
     color: Colors.light.black,
     marginTop: Spacing.v.medium,
   },
+  photoInfoDateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: Spacing.v.medium,
+  },
+  photoInfoDateText: {
+    ...Typography.body2,
+    color: Colors.light.grayDark,
+  },
+  photoInfoImagesScroll: { marginTop: Spacing.v.medium },
+  photoInfoImagesContent: { gap: Spacing.h.medium },
+  photoInfoImageBox: {
+    borderRadius: Spacing.r.small,
+    overflow: 'hidden',
+    backgroundColor: Colors.light.grayLight,
+  },
+  photoInfoImage: { width: '100%', height: '100%' },
   sectionTitle: {
     ...Typography.title1,
     color: Colors.light.black,
-    marginTop: Spacing.v.medium,
+    marginTop: Spacing.v.large,
   },
   placeCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginTop: Spacing.v.medium,
+    marginTop: Spacing.v.large,
     borderRadius: Spacing.r.small,
     borderWidth: Spacing.lw.small,
     borderColor: Colors.light.grayLight,

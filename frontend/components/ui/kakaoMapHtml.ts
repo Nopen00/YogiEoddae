@@ -23,8 +23,6 @@ export const buildKakaoMapHtml = (latitude: number, longitude: number, markerTit
     center: new kakao.maps.LatLng(${latitude}, ${longitude}),
     level: 3
   });
-  map.setDraggable(false);
-  map.setZoomable(false);
   var marker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(${latitude}, ${longitude}) });
   marker.setMap(map);
   ${markerTitle ? `
@@ -65,8 +63,6 @@ export const buildKakaoMapHtmlMulti = (places: KakaoMapPlace[]) => {
     center: new kakao.maps.LatLng(36.5, 127.8),
     level: 12
   });
-  map.setDraggable(false);
-  map.setZoomable(false);
   if (places.length > 0) {
     var bounds = new kakao.maps.LatLngBounds();
     places.forEach(function (p) {

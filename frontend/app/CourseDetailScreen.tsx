@@ -10,6 +10,7 @@ import { SortAlert } from '@/components/modals/SortAlert';
 import { getReviewLikeCount, ReviewCard } from '@/components/ui/ReviewCard';
 import { KakaoMap } from '@/components/ui/KakaoMap';
 import PagerView from '@/components/ui/PagerViewWrapper';
+import { useScrollHeaderTitle } from '@/hooks/useScrollHeaderTitle';
 import { SaveHeart32 } from '@/components/icons/SaveHeart'; // 기존 저장 아이콘 가정
 import { UnSaveHeart32 } from '@/components/icons/UnSaveHeart'; // 기존 저장 아이콘 가정
 import { Colors } from '@/constants/Colors';
@@ -46,6 +47,7 @@ const CourseDetailScreen = () => {
   const smallImageWidth = imageWidth / 2;
   const smallImageHeight = (smallImageWidth * 3) / 4;
 
+  const { visible: headerTitleVisible, onContainerLayout, onTitleLayout, onScroll } = useScrollHeaderTitle();
   const [isMenuVisible, setIsMenuVisible] = useState(false);
   const [isScheduleVisible, setIsScheduleVisible] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
@@ -60,8 +62,9 @@ const CourseDetailScreen = () => {
   const [isReviewSortVisible, setIsReviewSortVisible] = useState(false);
   const [expandedReviews, setExpandedReviews] = useState<Record<number, boolean>>({});
   const [likedReviews, setLikedReviews] = useState<Record<number, boolean>>({});
-  const [imagePopup, setImagePopup] = useState<{ reviewId: number; index: number } | null>(null);
+  const [imagePopup, setImagePopup] = useState<{ images: string[]; index: number } | null>(null);
   const [reviewDeleteTarget, setReviewDeleteTarget] = useState<Review | null>(null);
+  const [isMapTouching, setIsMapTouching] = useState(false);
 
   const filteredReviews = (photoOnly ? reviews.filter((r) => r.hasPhoto) : reviews)
     .slice()
@@ -80,8 +83,6 @@ const CourseDetailScreen = () => {
           return getReviewLikeCount(b, likedReviews[b.id] ?? false) - getReviewLikeCount(a, likedReviews[a.id] ?? false);
       }
     });
-  const popupReview = imagePopup ? reviews.find((r) => r.id === imagePopup.reviewId) : null;
-
   useEffect(() => {
     if (!id) return;
     mediaApi.getDetail(Number(id))
@@ -163,6 +164,7 @@ const CourseDetailScreen = () => {
       <ScreenHeader
         onBack={() => router.dismiss()}
         style={{ zIndex: 10 }}
+        scrollTitle={headerTitleVisible ? (media?.title ?? '') : undefined}
         right={
           <View style={styles.moreButtonWrapper}>
             <MoreButton onPress={() => setIsMenuVisible(!isMenuVisible)} />
@@ -178,15 +180,21 @@ const CourseDetailScreen = () => {
         </TouchableWithoutFeedback>
       )}
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Spacing.v.screenBottom }}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: Spacing.v.screenBottom }}
+        scrollEnabled={!isMapTouching}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+      >
           {/* 메인 이미지 */}
           <View style={[styles.imageContainer, { width: imageWidth, height: imageHeight }]}>
             <Image source={{ uri: media?.thumbnail_url ?? undefined }} style={styles.mainImage} resizeMode="cover" />
           </View>
 
           {/* 정보 섹션 */}
-          <View style={styles.infoContainer}>
-            <Text style={styles.titleText}>{media?.title ?? '로딩 중...'}</Text>
+          <View style={styles.infoContainer} onLayout={onContainerLayout}>
+            <Text style={styles.titleText} onLayout={onTitleLayout}>{media?.title ?? '로딩 중...'}</Text>
 
             <MetaRow>
               <Text style={styles.metaText}>{MEDIA_TYPE_LABEL[media?.media_type ?? ''] ?? media?.media_type}</Text>
@@ -234,7 +242,7 @@ const CourseDetailScreen = () => {
               </TouchableOpacity>
             </View>
 
-            <Divider />
+            <Divider marginTop={Spacing.v.large} />
 
             {/* 미디어 정보 */}
             <Text style={styles.mediaTitleText}>{media?.title}</Text>
@@ -256,10 +264,16 @@ const CourseDetailScreen = () => {
             contentContainerStyle={[styles.locationScrollContent, { paddingHorizontal: Spacing.h.medium }]}
             style={{ marginTop: Spacing.v.medium }}
           >
-            {mediaPlaces.map((mp) => (
-              <View key={mp.id} style={[styles.locationImageBox, { width: smallImageWidth, height: smallImageHeight }]}>
-                <Image source={{ uri: mp.place.image_url ?? undefined }} style={styles.locationImage} resizeMode="cover" />
-              </View>
+            {mediaPlaces.map((mp, index) => (
+              <TouchableOpacity
+                key={mp.id}
+                activeOpacity={0.9}
+                onPress={() => setImagePopup({ images: mediaPlaces.map((p) => p.place.image_url ?? ''), index })}
+              >
+                <View style={[styles.locationImageBox, { width: smallImageWidth, height: smallImageHeight }]}>
+                  <Image source={{ uri: mp.place.image_url ?? undefined }} style={styles.locationImage} resizeMode="cover" />
+                </View>
+              </TouchableOpacity>
             ))}
           </ScrollView>
 
@@ -268,7 +282,11 @@ const CourseDetailScreen = () => {
 
             {/* 코스 지도 */}
             <View style={styles.mapWrapper}>
-              <KakaoMap places={mapPlaces} />
+              <KakaoMap
+                places={mapPlaces}
+                onTouchStart={() => setIsMapTouching(true)}
+                onTouchEnd={() => setIsMapTouching(false)}
+              />
             </View>
 
             {/* 코스 섹션 */}
@@ -404,7 +422,7 @@ const CourseDetailScreen = () => {
                 onToggleExpand={() => setExpandedReviews((prev) => ({ ...prev, [review.id]: !prev[review.id] }))}
                 isLiked={likedReviews[review.id] ?? false}
                 onToggleLike={() => setLikedReviews((prev) => ({ ...prev, [review.id]: !prev[review.id] }))}
-                onImagePress={(index) => setImagePopup({ reviewId: review.id, index })}
+                onImagePress={(index) => setImagePopup({ images: review.images, index })}
                 onEditPress={() => router.push({ pathname: '/ReviewWriteScreen', params: { type: 'course', id, reviewId: review.id } })}
                 onDeletePress={() => setReviewDeleteTarget(review)}
               />
@@ -440,7 +458,7 @@ const CourseDetailScreen = () => {
           <TouchableOpacity style={styles.imagePopupOverlay} activeOpacity={1} onPress={() => setImagePopup(null)}>
             <TouchableWithoutFeedback onPress={() => {}}>
               <View style={styles.imagePopupContainer}>
-                {popupReview && imagePopup && (
+                {imagePopup && (
                   <>
                     <PagerView
                       style={{ width: imageWidth, height: imageHeight }}
@@ -450,12 +468,12 @@ const CourseDetailScreen = () => {
                         setImagePopup((prev) => (prev ? { ...prev, index: position } : prev));
                       }}
                     >
-                      {popupReview.images.map((img) => (
+                      {imagePopup.images.map((img) => (
                         <Image key={img} source={{ uri: img }} style={styles.imagePopupImage} resizeMode="cover" />
                       ))}
                     </PagerView>
                     <Text style={styles.imagePopupIndexText}>
-                      {imagePopup.index + 1}/{popupReview.images.length}
+                      {imagePopup.index + 1}/{imagePopup.images.length}
                     </Text>
                   </>
                 )}
@@ -535,7 +553,7 @@ const styles = StyleSheet.create({
   mediaTitleText: {
     ...Typography.title1,
     color: Colors.light.black,
-    marginTop: Spacing.v.medium,
+    marginTop: Spacing.v.large,
   },
   mediaImageContainer: {
     marginTop: Spacing.v.medium,
@@ -556,7 +574,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.v.large,
   },
   locationScrollContent: {
-    gap: Spacing.v.small,
+    gap: Spacing.h.medium,
   },
   locationImageBox: {
     borderRadius: Spacing.r.small,
@@ -598,7 +616,7 @@ const styles = StyleSheet.create({
   placeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: Spacing.v.small,
+    marginTop: Spacing.v.medium,
   },
   placeNumberColumn: {
     width: 32,

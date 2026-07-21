@@ -71,7 +71,7 @@ export default function QuizDetailScreen() {
             ))}
           </TagRow>
 
-          <Divider />
+          <Divider marginTop={Spacing.v.large} />
         </View>
 
         {mediaPlaces.map((mp, index) => (
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
   titleText: { ...Typography.HeadLine5, color: Colors.light.black },
   metaText: { ...Typography.body2, color: Colors.light.grayDark },
   tagText: { ...Typography.body2, color: Colors.light.primary },
-  questionBlock: { marginTop: Spacing.v.medium },
+  questionBlock: { marginTop: Spacing.v.large },
   questionBlockSpaced: { marginTop: Spacing.v.large },
   questionTitle: { ...Typography.title1, color: Colors.light.black, marginHorizontal: Spacing.h.medium },
   questionImageWrapper: {
