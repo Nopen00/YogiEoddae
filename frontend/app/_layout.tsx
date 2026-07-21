@@ -12,7 +12,7 @@ export const unstable_settings = {
   anchor: '(tabs)',
 };
 
-const HIDDEN_TAB_ROUTES = ['/SearchScreen', '/tutorial'];
+const HIDDEN_TAB_ROUTES = ['/SearchScreen', '/tutorial', '/LoginScreen', '/SignInScreen', '/SignUpScreen', '/SignUpStep2Screen'];
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
@@ -44,6 +44,9 @@ function RootLayoutNav() {
             <Stack.Screen name="ReviewManageScreen" options={{ headerShown: false }} />
             <Stack.Screen name="DevAuthScreen" options={{ headerShown: false }} />
             <Stack.Screen name="LoginScreen" options={{ headerShown: false }} />
+            <Stack.Screen name="SignInScreen" options={{ headerShown: false }} />
+            <Stack.Screen name="SignUpScreen" options={{ headerShown: false }} />
+            <Stack.Screen name="SignUpStep2Screen" options={{ headerShown: false }} />
             <Stack.Screen name="AccountScreen" options={{ headerShown: false }} />
             <Stack.Screen name="PasswordConfirmScreen" options={{ headerShown: false }} />
             <Stack.Screen name="PasswordChangeScreen" options={{ headerShown: false }} />

@@ -100,7 +100,7 @@ export const NicknameEditAlert = ({
                     value={nickname}
                     onChangeText={handleChangeNickname}
                     onBlur={handleBlurNickname}
-                    placeholder="한글, 영문, 숫자만 입력가능합니다."
+                    placeholder="한글, 영문, 숫자 (2~10자)"
                     placeholderTextColor={Colors.light.grayLight}
                     autoFocus
                   />

@@ -157,7 +157,7 @@ const PasswordResetScreen = () => {
 
         <PasswordInputBox
           label="새 비밀번호"
-          placeholder="영문과 숫자, 특수문자를 혼합해주세요."
+          placeholder="영문, 숫자, 특수문자(“_”,”.”) 조합 (8자 이상)"
           value={newPassword}
           onChangeText={handleChangeNewPassword}
           onBlur={handleBlurNewPassword}
@@ -185,7 +185,7 @@ const PasswordResetScreen = () => {
 
         <PasswordInputBox
           label="새 비밀번호 확인"
-          placeholder="변경할 비밀번호를 입력해주세요."
+          placeholder="비밀번호 재입력"
           value={newPasswordConfirm}
           onChangeText={handleChangeNewPasswordConfirm}
           onBlur={handleBlurNewPasswordConfirm}

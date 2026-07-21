@@ -12,14 +12,15 @@ import React, { useState } from 'react';
 import { Dimensions, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const ID_REGEX = /^(?=.*[a-zA-Z])(?=.*[0-9])[a-zA-Z0-9]{5,20}$/;
+// 백엔드 규칙(영문 소문자+숫자+_/., 4~20자) 기준
+const ID_REGEX = /^[a-z0-9_.]{4,20}$/;
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const IdChangeScreen = () => {
   const router = useRouter();
   const [userId, setUserId] = useState('');
   const [hasError, setHasError] = useState(false);
-  const [errorText, setErrorText] = useState('5~20자의 영문과 숫자의 혼합으로 입력해주세요.');
+  const [errorText, setErrorText] = useState("영문 소문자, 숫자, '_', '.'로 4~20자 입력해주세요.");
   const [confirmPopupVisible, setConfirmPopupVisible] = useState(false);
   const [successPopupVisible, setSuccessPopupVisible] = useState(false);
   const isActive = userId.trim().length > 0;
@@ -31,7 +32,7 @@ const IdChangeScreen = () => {
 
   const handleBlurUserId = () => {
     if (!userId.trim()) return;
-    setErrorText('5~20자의 영문과 숫자의 혼합으로 입력해주세요.');
+    setErrorText("영문 소문자, 숫자, '_', '.'로 4~20자 입력해주세요.");
     setHasError(!ID_REGEX.test(userId));
   };
 
@@ -62,7 +63,7 @@ const IdChangeScreen = () => {
             <Text style={[styles.inputLabel, hasError && styles.inputLabelError]}>아이디</Text>
             <TextInput
               style={[styles.idInput, { color: userId ? Colors.light.black : Colors.light.grayLight }]}
-              placeholder="5~20자의 영문과 숫자를 혼합해주세요."
+              placeholder="영문 소문자, 숫자, _, . (4~20자)"
               placeholderTextColor={Colors.light.grayLight}
               value={userId}
               onChangeText={handleChangeUserId}

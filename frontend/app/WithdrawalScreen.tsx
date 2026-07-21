@@ -127,7 +127,7 @@ const WithdrawalScreen = () => {
               <Text style={[styles.inputLabel, passwordError && styles.inputLabelError]}>비밀번호</Text>
               <TextInput
                 style={[styles.passwordInput, { color: password ? Colors.light.black : Colors.light.grayLight }]}
-                placeholder="비밀번호를 입력해주세요."
+                placeholder="현재 사용중인 비밀번호"
                 placeholderTextColor={Colors.light.grayLight}
                 value={password}
                 onChangeText={handleChangePassword}

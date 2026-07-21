@@ -148,7 +148,7 @@ const EmailChangeScreen = () => {
 
         <InputBox
           label={isSetup ? '이메일 주소' : '새 이메일 주소'}
-          placeholder="이메일 주소를 입력해주세요."
+          placeholder="example@email.com"
           value={newEmail}
           onChangeText={handleChangeNewEmail}
           onBlur={handleBlurNewEmail}
@@ -157,7 +157,7 @@ const EmailChangeScreen = () => {
 
         <InputBox
           label="비밀번호"
-          placeholder="현재 비밀번호를 입력해주세요."
+          placeholder="현재 사용중인 비밀번호"
           value={password}
           onChangeText={handleChangePassword}
           onBlur={handleBlurPassword}

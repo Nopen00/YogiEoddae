@@ -171,7 +171,7 @@ const PasswordEditScreen = () => {
 
         <PasswordInputBox
           label="현재 비밀번호"
-          placeholder="현재 비밀번호를 입력해주세요."
+          placeholder="현재 사용중인 비밀번호"
           value={currentPassword}
           onChangeText={handleChangeCurrentPassword}
           onBlur={handleBlurCurrentPassword}
@@ -182,7 +182,7 @@ const PasswordEditScreen = () => {
 
         <PasswordInputBox
           label="새 비밀번호"
-          placeholder="영문과 숫자, 특수문자를 혼합해주세요."
+          placeholder="영문, 숫자, 특수문자(“_”,”.”) 조합 (8자 이상)"
           value={newPassword}
           onChangeText={handleChangeNewPassword}
           onBlur={handleBlurNewPassword}
@@ -210,7 +210,7 @@ const PasswordEditScreen = () => {
 
         <PasswordInputBox
           label="새 비밀번호 확인"
-          placeholder="변경할 비밀번호를 입력해주세요."
+          placeholder="비밀번호 재입력"
           value={newPasswordConfirm}
           onChangeText={handleChangeNewPasswordConfirm}
           onBlur={handleBlurNewPasswordConfirm}

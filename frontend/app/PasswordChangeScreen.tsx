@@ -111,7 +111,7 @@ const PasswordChangeScreen = () => {
             <Text style={[styles.inputLabel, hasError && styles.inputLabelError]}>인증 코드</Text>
             <TextInput
               style={[styles.codeInput, { color: code ? Colors.light.black : Colors.light.grayLight }]}
-              placeholder="인증 코드를 입력해주세요."
+              placeholder="인증 코드 6자리"
               placeholderTextColor={Colors.light.grayLight}
               value={code}
               onChangeText={handleChangeCode}
@@ -210,14 +210,6 @@ const styles = StyleSheet.create({
   },
   resendText: { ...Typography.button2, color: Colors.light.grayDark },
   resendNotice: { ...Typography.body2, color: Colors.light.grayDark, marginTop: Spacing.v.small, textAlign: 'center' },
-  dummyRow: {
-    marginTop: Spacing.v.small,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  dummyLabel: { ...Typography.body2, color: Colors.light.grayDark },
-  dummyValue: { ...Typography.button2, color: Colors.light.grayDark, marginLeft: Spacing.h.small },
 });
 
 export default PasswordChangeScreen;

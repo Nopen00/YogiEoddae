@@ -16,7 +16,7 @@ interface LabeledInputBoxProps {
   secure?: boolean;
   visible?: boolean;
   onToggleVisible?: () => void;
-  errorMessage?: string;
+  errorMessage?: string | string[];
 }
 
 export function LabeledInputBox({
@@ -30,11 +30,14 @@ export function LabeledInputBox({
   onToggleVisible,
   errorMessage,
 }: LabeledInputBoxProps) {
+  const errorMessages = (Array.isArray(errorMessage) ? errorMessage : errorMessage ? [errorMessage] : []).filter(Boolean);
+  const hasError = errorMessages.length > 0;
+
   return (
     <>
-      <View style={[styles.box, errorMessage && styles.boxError]}>
+      <View style={[styles.box, hasError && styles.boxError]}>
         <View style={styles.inputSection}>
-          <Text style={[styles.inputLabel, errorMessage && styles.inputLabelError]}>{label}</Text>
+          <Text style={[styles.inputLabel, hasError && styles.inputLabelError]}>{label}</Text>
           <TextInput
             style={[styles.input, { color: value ? Colors.light.black : Colors.light.grayLight }]}
             placeholder={placeholder}
@@ -55,17 +58,17 @@ export function LabeledInputBox({
               )}
             </TouchableOpacity>
           )}
-          {errorMessage && (
+          {hasError && (
             <AlertCircle size={IconSize.large} color={Colors.light.error} style={styles.errorIcon} />
           )}
         </View>
       </View>
-      {errorMessage && (
-        <View style={styles.errorRow}>
+      {errorMessages.map((message, i) => (
+        <View key={i} style={[styles.errorRow, i > 0 && styles.errorRowSpaced]}>
           <AlertCircle size={IconSize.xsmall} color={Colors.light.error} />
-          <Text style={styles.errorText}>{errorMessage}</Text>
+          <Text style={styles.errorText}>{message}</Text>
         </View>
-      )}
+      ))}
     </>
   );
 }
@@ -93,6 +96,9 @@ const styles = StyleSheet.create({
     marginTop: Spacing.v.medium,
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  errorRowSpaced: {
+    marginTop: Spacing.v.small,
   },
   errorText: { ...Typography.body2, color: Colors.light.error, marginLeft: Spacing.h.small },
 });
