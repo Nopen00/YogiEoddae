@@ -34,11 +34,19 @@ class MediaPlaceAdmin(admin.ModelAdmin):
 
 @admin.register(Photo)
 class PhotoAdmin(admin.ModelAdmin):
-    list_display = ('place', 'description', 'uploaded_by', 'is_approved', 'likes', 'created_at')
-    list_filter = ('is_approved',)
+    list_display = ('place', 'description', 'uploaded_by', 'status', 'likes', 'created_at')
+    list_filter = ('status',)
     search_fields = ('place__name', 'description')
-    actions = ['approve_photos']
+    actions = ['approve_photos', 'reject_photos']
 
     @admin.action(description='선택한 포토스팟 승인')
     def approve_photos(self, request, queryset):
-        queryset.update(is_approved=True)
+        from mailbox.services import grant_photo_publish_reward
+        newly_approved = list(queryset.exclude(status=Photo.STATUS_APPROVED))
+        queryset.update(status=Photo.STATUS_APPROVED)
+        for photo in newly_approved:
+            grant_photo_publish_reward(photo)
+
+    @admin.action(description='선택한 포토스팟 반려')
+    def reject_photos(self, request, queryset):
+        queryset.update(status=Photo.STATUS_REJECTED)

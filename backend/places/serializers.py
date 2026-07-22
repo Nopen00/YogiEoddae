@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import MediaPlace, Place, Media, Tag, Photo
+from .models import MediaPlace, Place, Media, Tag, Photo, PhotoImage
 
 
 def _get_user_from_context(context):
@@ -41,13 +41,24 @@ class PlaceSerializer(serializers.ModelSerializer):
         return PlaceBookmark.objects.filter(user=user, place=obj).exists()
 
 
+class PhotoImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PhotoImage
+        fields = ['id', 'image_url', 'order']
+
+
 class PhotoSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
+    sub_images = PhotoImageSerializer(many=True, read_only=True)
     is_bookmarked = serializers.SerializerMethodField()
+    uploaded_by = serializers.SerializerMethodField()
 
     class Meta:
         model = Photo
-        fields = ['id', 'image_url', 'description', 'likes', 'tags', 'is_bookmarked', 'created_at']
+        fields = [
+            'id', 'image_url', 'sub_images', 'description', 'likes', 'tags',
+            'is_bookmarked', 'uploaded_by', 'status', 'created_at',
+        ]
 
     def get_is_bookmarked(self, obj):
         user = _get_user_from_context(self.context)
@@ -55,6 +66,11 @@ class PhotoSerializer(serializers.ModelSerializer):
             return False
         from bookmarks.models import PhotoBookmark
         return PhotoBookmark.objects.filter(user=user, photo=obj).exists()
+
+    def get_uploaded_by(self, obj):
+        if not obj.uploaded_by_id:
+            return None
+        return {'id': obj.uploaded_by_id, 'nickname': obj.uploaded_by.nickname}
 
 
 class PhotoSpotDetailSerializer(serializers.Serializer):
@@ -71,7 +87,7 @@ class PhotoSpotDetailSerializer(serializers.Serializer):
         return PlaceSerializer(obj.place, context=self.context).data
 
     def get_placePhotos(self, obj):
-        qs = Photo.objects.filter(place=obj.place, is_approved=True).exclude(pk=obj.pk).prefetch_related('tags')
+        qs = Photo.objects.filter(place=obj.place, status=Photo.STATUS_APPROVED).exclude(pk=obj.pk).prefetch_related('tags')
         return PhotoSerializer(qs, many=True, context=self.context).data
 
     def get_relatedPhotos(self, obj):
@@ -79,7 +95,7 @@ class PhotoSpotDetailSerializer(serializers.Serializer):
         if not tag_ids:
             return []
         qs = (Photo.objects
-              .filter(is_approved=True, tags__id__in=tag_ids)
+              .filter(status=Photo.STATUS_APPROVED, tags__id__in=tag_ids)
               .exclude(pk=obj.pk)
               .distinct()
               .prefetch_related('tags'))
