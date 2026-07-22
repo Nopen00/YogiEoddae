@@ -8,15 +8,28 @@ import { Typography } from '@/constants/Typography';
 import { TOKEN_PACKAGES, userApi } from '@/services/api';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Compass, Film } from 'lucide-react-native';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const AD_REWARD_TOKENS = 10;
+const AD_COOLDOWN_SEC = 60;
 // mock 응답이 거의 즉시 와서 로딩 스피너가 한 프레임만 스치듯 지나가는 것을 막기 위한 최소 노출 시간
 const MIN_LOADING_MS = 400;
 
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+const formatCooldown = (totalSec: number): string => {
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+};
+
+// 화면을 나갔다 들어와도 쿨타임이 유지되도록 화면 밖(모듈 스코프)에 종료 시각을 저장
+let adCooldownEndAt: number | null = null;
+
+const getAdCooldownRemainingSec = (): number =>
+  adCooldownEndAt ? Math.max(0, Math.ceil((adCooldownEndAt - Date.now()) / 1000)) : 0;
 
 const TokenChargeScreen = () => {
   const router = useRouter();
@@ -27,12 +40,23 @@ const TokenChargeScreen = () => {
   const [isChargeFailed, setIsChargeFailed] = useState(false);
   const [adResult, setAdResult] = useState<{ tokens: number; balance: number } | null>(null);
   const [isAdFailed, setIsAdFailed] = useState(false);
+  const [adCooldownSec, setAdCooldownSec] = useState(getAdCooldownRemainingSec);
 
   useFocusEffect(
     useCallback(() => {
       userApi.getMe().then(res => setTokenBalance(res.data.token_balance)).catch(() => {});
+      setAdCooldownSec(getAdCooldownRemainingSec());
     }, [])
   );
+
+  const isAdCoolingDown = adCooldownSec > 0;
+  useEffect(() => {
+    if (!isAdCoolingDown) return;
+    const timer = setInterval(() => {
+      setAdCooldownSec(prev => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [isAdCoolingDown]);
 
   const handlePick = async (packageId: string, tokens: number) => {
     setChargingId(packageId);
@@ -51,6 +75,8 @@ const TokenChargeScreen = () => {
 
   const handleWatchAd = async () => {
     setIsWatchingAd(true);
+    adCooldownEndAt = Date.now() + AD_COOLDOWN_SEC * 1000;
+    setAdCooldownSec(AD_COOLDOWN_SEC);
     const start = Date.now();
     try {
       const res = await userApi.watchAd(AD_REWARD_TOKENS);
@@ -74,10 +100,18 @@ const TokenChargeScreen = () => {
           <Text style={styles.myTokenValue}>{tokenBalance.toLocaleString()} 토큰</Text>
         </View>
 
-        <TouchableOpacity style={styles.adButton} activeOpacity={0.8} disabled={isWatchingAd} onPress={handleWatchAd}>
-          <Film size={20} color={Colors.light.white} strokeWidth={IconStroke.regular} />
-          <Text style={styles.adButtonText}>광고 보고 토큰 받기</Text>
-          <Text style={styles.adButtonReward}>+{AD_REWARD_TOKENS} 토큰</Text>
+        <TouchableOpacity
+          style={[styles.adButton, isAdCoolingDown && styles.adButtonCooldown]}
+          activeOpacity={0.8}
+          disabled={isWatchingAd || isAdCoolingDown}
+          onPress={handleWatchAd}
+        >
+          <Film size={20} color={isAdCoolingDown ? Colors.light.grayDark : Colors.light.white} strokeWidth={IconStroke.regular} />
+          <Text style={[styles.adButtonText, isAdCoolingDown && styles.adButtonTextCooldown]}>광고 보고 토큰 받기</Text>
+          <Text style={[styles.adButtonReward, isAdCoolingDown && styles.adButtonTextCooldown]}>+{AD_REWARD_TOKENS} 토큰</Text>
+          {isAdCoolingDown && (
+            <Text style={styles.adButtonCooldownText}>{formatCooldown(adCooldownSec)}</Text>
+          )}
         </TouchableOpacity>
 
         <View style={styles.packageSection}>
@@ -174,6 +208,9 @@ const styles = StyleSheet.create({
   },
   adButtonText: { ...Typography.button2, color: Colors.light.white, marginLeft: Spacing.h.small },
   adButtonReward: { ...Typography.button2, color: Colors.light.white, marginLeft: Spacing.h.small },
+  adButtonCooldown: { backgroundColor: Colors.light.grayLight },
+  adButtonTextCooldown: { color: Colors.light.grayDark },
+  adButtonCooldownText: { ...Typography.button2, color: Colors.light.grayDark, marginLeft: Spacing.h.small },
   packageSection: {
     marginTop: Spacing.v.large,
     paddingHorizontal: Spacing.h.medium,
