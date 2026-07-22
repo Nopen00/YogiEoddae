@@ -8,6 +8,7 @@ import { CITY_SHORT, MEDIA_TYPE_LABEL } from '@/constants/labels';
 import { Shadows } from '@/constants/Shadows';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
+import { getProcessedTags } from '@/utils/getProcessedTags';
 import { sortByOption } from '@/utils/sortByOption';
 import { useRouter } from 'expo-router';
 import { ArrowUpDown, Edit2, Heart, Star, X } from 'lucide-react-native';
@@ -28,7 +29,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import PagerView, { PagerViewHandle } from '@/components/ui/PagerViewWrapper';
 import { mediaApi, photoApi, placeApi } from '../services/api';
 import { pseudoRating } from '../services/mockData';
-import type { Media, Photo, Tag } from '../services/types';
+import type { Media, Photo } from '../services/types';
 import { Size } from '@/constants/Size';
 
 type PhotoSpotItem = Photo & { rating: number; like_count: number };
@@ -53,13 +54,6 @@ const PHOTO_TAGS = ['자연', '음식', '풍경', '야경', '감성', '카페', 
 const formatLikeCount = (count: number): string => {
   if (count < 100) return count.toString();
   return (Math.floor(count / 100) * 100).toLocaleString() + '+';
-};
-
-const getProcessedTags = (tags: Tag[] = []) => {
-  const names = tags.map(t => t.name);
-  const visibleTags = names.slice(0, 3);
-  const extraCount = names.length - 3;
-  return { visibleTags, extraCount };
 };
 
 const hasHypeTag = (media: Media): boolean =>

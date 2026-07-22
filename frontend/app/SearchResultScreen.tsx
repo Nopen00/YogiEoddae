@@ -2,6 +2,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { AddPlaceConfirmAlert } from '@/components/modals/AddPlaceConfirmAlert';
 import { CourseSelectPopup } from '@/components/modals/CourseSelectPopup';
 import { SORT_OPTIONS, SortAlert, SortOption } from '@/components/modals/SortAlert';
+import { getProcessedTags } from '@/utils/getProcessedTags';
 import { sortByOption } from '@/utils/sortByOption';
 import { ArrowUpDown, Heart, Star } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
@@ -29,7 +30,7 @@ import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { mediaApi, placeApi, photoApi, scheduleApi } from '../services/api';
 import { pseudoRating } from '../services/mockData';
-import type { Media, Place, Tag } from '../services/types';
+import type { Media, Place } from '../services/types';
 
 const CATEGORIES = ["전체", "코스", "명소", "포토스팟"];
 
@@ -110,13 +111,6 @@ const SearchResultScreen = () => {
     const index = e.nativeEvent.position;
     setSelectedIndex(index);
     animateIndicatorTo(index);
-  };
-
-  const getProcessedTags = (tags: Tag[] = []) => {
-    const names = tags.map(t => t.name);
-    const visibleTags = names.slice(0, 3);
-    const extraCount = names.length - 3;
-    return { visibleTags, extraCount };
   };
 
   const renderCourseCard = (course: Media) => {

@@ -8,6 +8,7 @@ import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { photoApi } from '@/services/api';
 import type { Photo } from '@/services/types';
+import { getProcessedTags } from '@/utils/getProcessedTags';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MoreVertical } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
@@ -40,7 +41,9 @@ const PhotoSpotManageScreen = () => {
           </View>
         ) : (
           <View style={styles.cardList}>
-            {photos.map((photo) => (
+            {photos.map((photo) => {
+              const { visibleTags, extraCount } = getProcessedTags(photo.tags);
+              return (
               <TouchableOpacity
                 key={photo.id}
                 style={[styles.sectionCard, openMenuId === photo.id && { zIndex: 100 }]}
@@ -55,11 +58,10 @@ const PhotoSpotManageScreen = () => {
                 </View>
                 <View style={styles.sectionContent}>
                   <Text style={styles.sectionTitle} numberOfLines={1}>{photo.description}</Text>
-                  {photo.tags.length > 0 && (
+                  {visibleTags.length > 0 && (
                     <TagRow>
-                      {photo.tags.map((tag) => (
-                        <Text key={tag.id} style={styles.sectionTag}>#{tag.name}</Text>
-                      ))}
+                      {visibleTags.map((tag, idx) => <Text key={idx} style={styles.sectionTag}>#{tag}</Text>)}
+                      {extraCount > 0 && <Text style={styles.sectionTag}>+{extraCount}</Text>}
                     </TagRow>
                   )}
                 </View>
@@ -85,7 +87,8 @@ const PhotoSpotManageScreen = () => {
                   )}
                 </View>
               </TouchableOpacity>
-            ))}
+              );
+            })}
           </View>
         )}
       </ScrollView>
