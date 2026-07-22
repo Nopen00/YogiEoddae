@@ -51,6 +51,7 @@ function RootLayoutNav() {
             <Stack.Screen name="TokenChargeScreen" options={{ headerShown: false }} />
             <Stack.Screen name="ReviewManageScreen" options={{ headerShown: false }} />
             <Stack.Screen name="PhotoSpotManageScreen" options={{ headerShown: false }} />
+            <Stack.Screen name="UserPhotoSpotsScreen" options={{ headerShown: false }} />
             <Stack.Screen name="LoginScreen" options={{ headerShown: false }} />
             <Stack.Screen name="SignInScreen" options={{ headerShown: false }} />
             <Stack.Screen name="SignUpScreen" options={{ headerShown: false }} />

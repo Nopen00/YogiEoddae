@@ -215,7 +215,11 @@ const PhotoSpotDetailScreen = () => {
 
             <Text style={styles.photoInfoTitle}>포토스팟 정보</Text>
             {photo && (
-              <View style={styles.uploaderCard}>
+              <TouchableOpacity
+                style={styles.uploaderCard}
+                activeOpacity={0.7}
+                onPress={() => router.push({ pathname: '/UserPhotoSpotsScreen', params: { author: photo.author ?? '익명 여행자', authorAvatar: photo.authorAvatar ?? '' } })}
+              >
                 {photo.authorAvatar ? (
                   <Image source={{ uri: photo.authorAvatar }} style={styles.uploaderAvatar} />
                 ) : (
@@ -229,7 +233,7 @@ const PhotoSpotDetailScreen = () => {
                     <Text style={styles.uploaderDateText}>{formatDateDots(photo.created_at)} 작성</Text>
                   </View>
                 </View>
-              </View>
+              </TouchableOpacity>
             )}
 
             {photo?.image_url && (
