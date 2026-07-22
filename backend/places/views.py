@@ -8,14 +8,14 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .models import Place, Media, MediaPlace, Tag, Photo, PhotoLike
+from .models import Place, Media, MediaPlace, Tag, Photo, PhotoImage, PhotoLike
 from .serializers import (
     PlaceSerializer, PlaceMapSerializer,
     MediaSerializer, MediaDetailSerializer, MediaPlaceSerializer,
     TagSerializer, PhotoSerializer, PhotoSpotDetailSerializer,
 )
 from bookmarks.models import MediaBookmark, PlaceBookmark
-from mailbox.services import check_and_grant_like_milestone
+from mailbox.services import check_and_grant_like_milestone, grant_photo_publish_reward
 
 
 def place_map_test(request):
@@ -417,7 +417,7 @@ class PlaceViewSet(viewsets.ReadOnlyModelViewSet):
         GET /api/places/{id}/photos/   해당 장소의 포토스팟 목록 (승인된 것만)
         """
         place = self.get_object()
-        qs = Photo.objects.filter(place=place, is_approved=True).prefetch_related('tags')
+        qs = Photo.objects.filter(place=place, status=Photo.STATUS_APPROVED).prefetch_related('tags')
         return Response(PhotoSerializer(qs, many=True, context={'request': request}).data)
 
     @action(detail=False, methods=['get'], url_path='map')
@@ -505,13 +505,17 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
 
 class PhotoViewSet(viewsets.ModelViewSet):
     """
-    GET  /api/photos/               전체 포토스팟 목록 (승인된 것만, keyword로 설명/장소명 검색)
-    GET  /api/photos/{id}/          포토스팟 상세 (장소 + 같은 장소 사진 + 관련 사진)
-    POST /api/photos/               포토스팟 업로드 (JWT 필요, 승인 대기 상태로 생성)
+    GET   /api/photos/               전체 포토스팟 목록 (승인된 것 + 내가 올린 것, keyword로 설명/장소명 검색)
+    GET   /api/photos/{id}/          포토스팟 상세 (장소 + 같은 장소 사진 + 관련 사진)
+    POST  /api/photos/               포토스팟 업로드 (JWT 필요, 심사중 상태로 생성, 부사진 최대 10장)
+    PATCH /api/photos/{id}/          포토스팟 수정 (작성자 본인만, 사진은 수정 불가 — 설명/태그만)
+    DELETE /api/photos/{id}/         포토스팟 삭제 (작성자 본인만)
     POST/DELETE /api/photos/{id}/like/   좋아요 토글 (JWT 필요)
     """
-    queryset = Photo.objects.filter(is_approved=True).select_related('place').prefetch_related('tags')
-    http_method_names = ['get', 'post', 'delete']
+    MAX_SUB_IMAGES = 10
+
+    queryset = Photo.objects.select_related('place', 'uploaded_by').prefetch_related('tags', 'sub_images')
+    http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_serializer_class(self):
         if self.action == 'retrieve':
@@ -523,10 +527,15 @@ class PhotoViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset()
+        user = self.request.user if self.request.user.is_authenticated else None
+        if user:
+            qs = qs.filter(Q(status=Photo.STATUS_APPROVED) | Q(uploaded_by=user))
+        else:
+            qs = qs.filter(status=Photo.STATUS_APPROVED)
         keyword = self.request.query_params.get('keyword')
         if keyword:
             qs = qs.filter(Q(description__icontains=keyword) | Q(place__name__icontains=keyword))
-        return qs
+        return qs.distinct()
 
     def create(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
@@ -537,17 +546,53 @@ class PhotoViewSet(viewsets.ModelViewSet):
         if not image_url:
             return Response({'image_url': ['이미지가 필요합니다.']}, status=status.HTTP_400_BAD_REQUEST)
 
+        sub_image_urls = request.data.get('sub_image_urls') or []
+        if len(sub_image_urls) > self.MAX_SUB_IMAGES:
+            return Response(
+                {'sub_image_urls': [f'부사진은 최대 {self.MAX_SUB_IMAGES}장까지 첨부할 수 있습니다.']},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         photo = Photo.objects.create(
             place=place,
             image_url=image_url,
             description=request.data.get('description', ''),
             uploaded_by=request.user,
-            is_approved=False,
+            status=Photo.STATUS_PENDING,
         )
         tag_ids = request.data.get('tag_ids') or []
         if tag_ids:
             photo.tags.set(tag_ids)
+        if sub_image_urls:
+            PhotoImage.objects.bulk_create([
+                PhotoImage(photo=photo, image_url=url, order=i)
+                for i, url in enumerate(sub_image_urls)
+            ])
         return Response(PhotoSerializer(photo, context={'request': request}).data, status=status.HTTP_201_CREATED)
+
+    def partial_update(self, request, *args, **kwargs):
+        photo = self.get_object()
+        if not request.user.is_authenticated or photo.uploaded_by_id != request.user.id:
+            return Response({'error': '수정 권한이 없습니다.'}, status=status.HTTP_403_FORBIDDEN)
+        if 'image_url' in request.data or 'sub_image_urls' in request.data:
+            return Response({'error': '사진은 수정할 수 없습니다.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        update_fields = []
+        if 'description' in request.data:
+            photo.description = request.data.get('description', '')
+            update_fields.append('description')
+        if update_fields:
+            photo.save(update_fields=update_fields)
+        if 'tag_ids' in request.data:
+            photo.tags.set(request.data.get('tag_ids') or [])
+
+        return Response(PhotoSerializer(photo, context={'request': request}).data)
+
+    def destroy(self, request, *args, **kwargs):
+        photo = self.get_object()
+        if not request.user.is_authenticated or photo.uploaded_by_id != request.user.id:
+            return Response({'error': '삭제 권한이 없습니다.'}, status=status.HTTP_403_FORBIDDEN)
+        return super().destroy(request, *args, **kwargs)
 
     @action(detail=True, methods=['post', 'delete'])
     def like(self, request, pk=None):

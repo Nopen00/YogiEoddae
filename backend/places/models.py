@@ -73,21 +73,43 @@ class Media(models.Model):
 
 
 class Photo(models.Model):
+    STATUS_APPROVED = 'approved'
+    STATUS_PENDING = 'pending'
+    STATUS_REJECTED = 'rejected'
+    STATUS_CHOICES = [
+        (STATUS_APPROVED, '승인'),
+        (STATUS_PENDING,  '심사중'),
+        (STATUS_REJECTED, '반려'),
+    ]
+
     place = models.ForeignKey(Place, on_delete=models.CASCADE, related_name='photos')
-    image_url = models.URLField(max_length=500)
+    image_url = models.URLField(max_length=500)  # 대표사진
     description = models.TextField(blank=True)
     likes = models.IntegerField(default=0)
     tags = models.ManyToManyField(Tag, blank=True, related_name='photos')
     # 유저 업로드 지원 (null=관리자가 기존 방식으로 등록한 포토스팟)
     uploaded_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name='uploaded_photos')
-    # 관리자 승인 전엔 목록에 노출 안 함. 기존/관리자 등록 건은 기본값 True로 그대로 노출.
-    is_approved = models.BooleanField(default=True)
+    # 심사 상태. 관리자/기존 등록 건은 기본값 approved로 그대로 노출, 유저 업로드는 생성 시 pending으로 시작.
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_APPROVED)
+    # 게시(최초 승인) 시 1회성 보상 지급 여부 — 관리자가 승인 액션을 재실행해도 중복 지급되지 않도록 방지
+    publish_reward_granted = models.BooleanField(default=False)
     # 좋아요 마일스톤 보상(정산함) 중복 지급 방지용 — 마지막으로 보상을 지급한 시점의 likes 값
     last_rewarded_likes = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f'{self.place.name} - 사진'
+
+
+class PhotoImage(models.Model):
+    """포토스팟 부사진 (대표사진 image_url 외 추가 사진, 최대 10장)."""
+    photo = models.ForeignKey(Photo, on_delete=models.CASCADE, related_name='sub_images')
+    image_url = models.URLField(max_length=500)
+    order = models.PositiveSmallIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['order', 'id']
 
 
 class PhotoLike(models.Model):

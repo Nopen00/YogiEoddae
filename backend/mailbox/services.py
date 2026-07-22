@@ -1,6 +1,7 @@
 from .models import MailboxItem, SettlementItem
 
 REVIEW_WRITE_REWARD = 10
+PHOTO_PUBLISH_REWARD = 20
 
 LIKE_MILESTONE_FIRST = 50
 LIKE_MILESTONE_FIRST_REWARD = 100
@@ -10,6 +11,15 @@ LIKE_MILESTONE_STEP_REWARD = 10
 
 def grant_review_write_reward(user):
     MailboxItem.objects.create(user=user, action='리뷰 작성', token_amount=REVIEW_WRITE_REWARD)
+
+
+def grant_photo_publish_reward(photo):
+    """포토스팟이 최초로 승인(게시)될 때 1회만 지급. 이후 보상은 좋아요 마일스톤 정산으로만 받는다."""
+    if not photo.uploaded_by_id or photo.publish_reward_granted:
+        return
+    MailboxItem.objects.create(user=photo.uploaded_by, action='포토스팟 게시', token_amount=PHOTO_PUBLISH_REWARD)
+    photo.publish_reward_granted = True
+    photo.save(update_fields=['publish_reward_granted'])
 
 
 def check_and_grant_like_milestone(photo):
