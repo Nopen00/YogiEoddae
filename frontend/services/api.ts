@@ -623,7 +623,7 @@ const normalizeReview = (raw: any, type: ReviewTargetType): Review => {
   let target: ReviewTarget | undefined;
   if (t) {
     if (backendKey === 'media') {
-      target = { type: 'course', id: t.id, title: t.title, subtitle: t.media_type, imageUrl: t.thumbnail_url, tags: t.tags };
+      target = { type: 'course', id: t.id, title: t.title, subtitle: t.media_type, placeCount: t.place_count, imageUrl: t.thumbnail_url, tags: t.tags };
     } else if (backendKey === 'place') {
       target = { type: 'place', id: t.id, title: t.name, subtitle: t.address, category: t.category, imageUrl: t.image_url, tags: t.tags };
     } else {
@@ -643,6 +643,23 @@ const normalizeReview = (raw: any, type: ReviewTargetType): Review => {
     isMine: raw.isMine,
     target,
   };
+};
+
+// mock 모드에서 리뷰 작성 시 대상 정보를 채워줌 — 없으면 "리뷰 관리" 화면 탭 필터링에서 걸러져 안 보임
+const buildMockReviewTarget = (type: ReviewTargetType, targetId: number): ReviewTarget | undefined => {
+  if (type === 'course') {
+    const media = MOCK_MEDIA_LIST.find(m => m.id === targetId);
+    if (!media) return undefined;
+    return { type, id: targetId, title: media.title, subtitle: media.media_type, placeCount: media.place_count, imageUrl: media.thumbnail_url, tags: media.tags };
+  }
+  if (type === 'place') {
+    const place = mockPlaceStore.find(p => p.id === targetId);
+    if (!place) return undefined;
+    return { type, id: targetId, title: place.name, subtitle: place.address, category: place.category, imageUrl: place.image_url, tags: place.tags };
+  }
+  const photo = mockPhotoStore.find(p => p.id === targetId);
+  if (!photo) return undefined;
+  return { type, id: targetId, title: photo.description, subtitle: mockPhotoPlaceName[targetId], imageUrl: photo.image_url, tags: photo.tags };
 };
 
 export const reviewApi = {
@@ -677,6 +694,7 @@ export const reviewApi = {
         hasPhoto: data.images.length > 0,
         likeCount: 0,
         isMine: true,
+        target: buildMockReviewTarget(type, targetId),
       };
       mockReviewStore.unshift(newReview);
       return mock(newReview);

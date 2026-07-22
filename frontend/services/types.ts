@@ -65,6 +65,7 @@ export interface ReviewTarget {
   category?: string;
   imageUrl?: string;
   tags: { id: number; name: string; category: string }[];
+  placeCount?: number | null;
 }
 
 export interface Review {

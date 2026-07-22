@@ -87,9 +87,9 @@ const ReviewManageScreen = () => {
               <TextSeparator />
               <Text style={styles.sectionInfoText}>{shortAddress(target.subtitle ?? '')}</Text>
             </View>
-          ) : target.subtitle ? (
+          ) : target.type === 'course' ? (
             <View style={styles.sectionInfoRow}>
-              <Text style={styles.sectionInfoText}>{target.subtitle}</Text>
+              <MediaMetaText media={{ media_type: (target.subtitle ?? '') as 'drama' | 'movie' | 'youtube' | 'etc', place_count: target.placeCount ?? null }} />
             </View>
           ) : null}
           {target.tags.length > 0 && (
@@ -126,7 +126,7 @@ const ReviewManageScreen = () => {
             hideAuthor
             sectionCard={renderTargetCard(review)}
             onImagePress={(index) => setImagePopup({ reviewId: review.id, index })}
-            onEditPress={() => router.push({ pathname: '/ReviewWriteScreen', params: { type: REVIEW_TARGET_TYPES[tabIndex], reviewId: review.id } })}
+            onEditPress={() => router.push({ pathname: '/ReviewWriteScreen', params: { type: REVIEW_TARGET_TYPES[tabIndex], id: review.target!.id, reviewId: review.id } })}
             onDeletePress={() => setReviewDeleteTarget(review)}
           />
         ))
