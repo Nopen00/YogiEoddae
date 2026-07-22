@@ -4,11 +4,12 @@ React Native (Expo) 기반 모바일 앱 프론트엔드입니다.
 
 ## TODO
 
-- [ ] **Photo에 `travel_date` 필드 추가 (백엔드 대기)** — 포토스팟 상세화면에 여행일 표시를 추가하면서 프론트 타입/mock에는 선반영해뒀음(`services/types.ts`, `mockData.ts`, `photoApi.upload`). 백엔드 `Photo` 모델에 실제 필드가 생기면 mock 우회 코드 제거.
+- [ ] **Photo에 `travel_date` 필드 추가 (백엔드 대기)** — 포토스팟 상세화면·작성화면에 여행일 표시/입력을 추가하면서 프론트 타입/mock에는 선반영해뒀음(`services/types.ts`, `mockData.ts`, `photoApi.upload`). 백엔드 `Photo` 모델에 실제 필드가 생기면 mock 우회 코드 제거.
+- [ ] **Photo에 `content`(긴 설명) 필드 추가 (백엔드 대기)** — 포토스팟 작성화면에서 "제목"(`description`)과 "설명"(`content`)을 분리해 입력받도록 만들었는데, 백엔드 `Photo` 모델은 아직 `description` 하나뿐. 필드가 생기면 `photoApi.upload`/`update`의 mock 우회 코드 제거.
+- [ ] **포토스팟 업로더 프로필(아바타) 실 연동 (백엔드 대기)** — 실제 `/api/photos/` 응답은 `uploaded_by: {id, nickname}`만 내려주고 아바타가 없음. 지금 프론트는 mock 전역 상태(`mockNickname`, `mockProfileImage`)로 `author`/`authorAvatar`를 흉내내는 중. 백엔드에 프로필 이미지 노출이 추가되면 연결.
+- [ ] **`photoApi.getList`의 `author` 필터 / `photoApi.getMine` (백엔드 대기)** — `UserPhotoSpotsScreen`(업로더 프로필 → 작성 목록)과 `PhotoSpotManageScreen`(내 포토스팟 관리)이 쓰는 이 두 조회는 mock에서만 동작. 실제 `/api/photos/`는 `keyword` 파라미터만 지원하고 작성자 필터·mine 전용 엔드포인트가 없음.
 - [ ] **코스 상세화면 4탭 리디자인** — 저장/일정추가 버튼 이미지 오버레이화 + 탭 스와이프. 백엔드 논의 전까지 착수 보류.
 - [ ] **포토스팟 인기순 정렬(백엔드 로드맵 Phase 8)** — 백엔드 미착수. 완료되면 `CourseScreen`/`SearchResultScreen` 정렬 옵션에 연결.
-- [ ] **포토스팟 업로드 화면** — API(`photoApi.upload`)는 준비됐고, 현재 디자인 제작 중. 디자인 나오면 착수.
-- [ ] **README `API 연동` 섹션 리뷰 관련 설명 최신화** — "대상(장소/코스/포토스팟)별로 분리된 실제 리뷰 엔드포인트는 아직 없습니다"는 Phase 7 완료로 이미 사실과 다름(실제 `reviewApi`는 `type`별 엔드포인트를 씀). mock 경로만 단일 스토어를 공유하는 구현 디테일이므로 문구 수정 필요.
 
 
 ---
@@ -46,12 +47,17 @@ app/
 ├── CourseScreen.tsx           # 코스 탐색 (추천·유튜브/드라마/영화 PICK·포토스팟 탭)
 ├── CourseDetailScreen.tsx     # 코스 상세
 ├── PlaceDetailScreen.tsx      # 명소 상세 (카카오맵 포함)
-├── PhotoSpotDetailScreen.tsx  # 포토스팟 상세 (장소·태그별 관련 포토스팟, 리뷰 목록)
+├── PhotoSpotDetailScreen.tsx  # 포토스팟 상세 (장소·태그별 관련 포토스팟, 리뷰 목록, 업로더 프로필)
+├── PhotoSpotWriteScreen.tsx   # 포토스팟 작성/수정 (제목·태그·장소·설명·부사진)
+├── PhotoSpotManageScreen.tsx  # 내가 작성한 포토스팟 관리 (수정/삭제)
+├── UserPhotoSpotsScreen.tsx   # 특정 유저가 작성한 포토스팟 목록 (업로더 프로필 카드에서 진입)
 ├── ReviewWriteScreen.tsx      # 리뷰 작성/수정 (별점·방문일·사진 첨부)
+├── ReviewManageScreen.tsx     # 내가 작성한 리뷰 관리 (수정/삭제)
 ├── ScheduleDetailScreen.tsx   # 일정 상세 (슬라이딩 패널 + 지도)
 ├── ScheduleScreen.tsx         # 내 일정 / 과거 일정 / 저장소
-├── SettingScreen.tsx          # 설정
-└── AccountScreen.tsx          # 계정 관리
+├── SettingScreen.tsx          # 설정 (MY 탭)
+├── AccountScreen.tsx          # 계정 관리 (내 정보)
+└── TokenChargeScreen.tsx      # 토큰 충전 (광고 시청 쿨타임, 인앱결제 데모)
 ```
 
 ### 탭 화면 스와이프 전환 (`react-native-pager-view`)
@@ -66,11 +72,11 @@ app/
 
 ### 정렬 기능 (`SortAlert`, `utils/sortByOption.ts`)
 
-`CourseScreen`·`SearchResultScreen`의 검색바 옆 정렬 버튼으로 진입하는 공용 정렬 팝업입니다.
+`CourseScreen`·`SearchResultScreen`의 검색바 옆 정렬 버튼, `UserPhotoSpotsScreen`의 헤더 정렬 버튼으로 진입하는 공용 정렬 팝업입니다.
 
-- `components/modals/SortAlert.tsx`: 옵션 목록(`options`)과 선택 불가 옵션(`disabledOptions`, 회색 처리 + "(선택 불가)" 표기)을 props로 받는 범용 팝업.
+- `components/modals/SortAlert.tsx`: 옵션 목록(`options`)과 선택 불가 옵션(`disabledOptions`, 회색 처리 + "(선택 불가)" 표기)을 props로 받는 범용 팝업. `options`를 좁혀서 넘기면 그 화면에 맞는 정렬 기준만 노출할 수 있습니다 (예: `UserPhotoSpotsScreen`은 "이름순·별점 높은 순·하트 많은 순" 3개만 사용).
 - `utils/sortByOption.ts`: `SortOption`에 따라 배열을 정렬하는 공용 비교 함수. 화면마다 정렬 대상 배열에 적용.
-- `CourseScreen`은 추천 탭에서 정렬 버튼 자체를 비활성화(회색)하고, 포토스팟 탭에서는 "장소 많은/적은 순" 옵션만 선택 불가 처리합니다.
+- `CourseScreen`은 추천 탭에서 정렬 버튼 자체를 비활성화(회색)하고, `CourseScreen`·`SearchResultScreen` 모두 포토스팟 탭에서는 "장소 많은/적은 순" 옵션만 선택 불가 처리합니다.
 
 ### 포토스팟 카드 & 태그 필터 (`CourseScreen`)
 
@@ -83,6 +89,16 @@ app/
 - 전체 탭의 포토태그 박스도 동일한 선택 상태를 공유해 같이 알약형으로 바뀌지만, 실제 필터링은 포토스팟 탭에서만 동작합니다.
 - 카드 탭 시 `photo.id`로 바로 `PhotoSpotDetailScreen`에 연결됩니다.
 
+### 포토스팟 작성/수정/관리 (`PhotoSpotWriteScreen`, `PhotoSpotManageScreen`, `UserPhotoSpotsScreen`)
+
+`CourseScreen` 포토스팟 탭의 FAB로 진입하는 작성 화면과, 이를 관리·열람하는 화면들입니다.
+
+- **작성** (`PhotoSpotWriteScreen`, `id` 파라미터 없음): 메인 이미지, 제목, 태그(`TagAddAlert` 팝업으로 추가, 알약형 칩 + X로 제거), 장소(`PlaceSelectAlert`로 검색·선택, 필수), 방문 날짜, 설명(`content`), 부사진(최대 10장, 선택)을 입력받습니다. 작성 완료 버튼은 메인 이미지·제목·태그 1개 이상·장소·설명(10자 이상)이 모두 채워져야 활성화됩니다.
+- **수정** (`PhotoSpotWriteScreen?id=...`): 기존 값을 프리필하되 **사진(메인/부사진)은 변경 불가**(텍스트 필드만 수정 가능, 사진 추가를 시도하면 안내 팝업). 상세화면 "더보기" 메뉴는 본인 포토스팟이면 "신고하기" 대신 "수정하기"를 보여줍니다(`MoreMenuAlert`의 `onEditPress`).
+- **관리** (`PhotoSpotManageScreen`): `ReviewManageScreen`과 동일한 레이아웃으로 내가 작성한 포토스팟을 나열하고, 카드별 더보기(`ScheduleMoreMenuAlert` 재사용)로 수정/삭제.
+- **업로더 프로필 목록** (`UserPhotoSpotsScreen`): 포토스팟 상세화면의 업로더 프로필 카드를 누르면 이동. 헤더에 정렬 버튼이 있고, 프로필(아바타·닉네임·작성 개수) 아래 구분선, 그 아래 해당 유저가 작성한 포토스팟(이미지·명칭·별점·하트수·태그)이 나열됩니다. `photoApi.getList({ author })`로 조회(mock 전용, 위 TODO 참고).
+- **태그 간략화**: 카드에 태그가 많으면 3개까지만 보여주고 나머지는 `+n`으로 표시하는 로직이 `utils/getProcessedTags.ts`로 공용화되어 있습니다 (`CourseScreen`·`SearchResultScreen`·`PhotoSpotManageScreen`·`UserPhotoSpotsScreen`에서 사용).
+
 ### 리뷰 작성/수정 (`ReviewWriteScreen`, `VisitDateAlert`)
 
 `PlaceDetailScreen`·`CourseDetailScreen`·`PhotoSpotDetailScreen`의 "리뷰쓰기" 버튼과 `PhotoSpotDetailScreen`의 "리뷰 작성" 버튼, 그리고 `ReviewCard`의 "수정" 버튼이 모두 `ReviewWriteScreen`으로 연결됩니다 (`params: { type, id, reviewId? }`, `reviewId`가 있으면 수정 모드).
@@ -92,7 +108,9 @@ app/
 - **이미지 첨부**: `expo-image-picker`로 최대 10장까지 첨부/삭제 가능. 90×90 정사각형 썸네일이 가로 스크롤로 나열됩니다.
 - **수정 모드 프리필**: `reviewApi.getDetail(reviewId)`로 기존 별점·내용·이미지·방문일을 불러와 폼에 채웁니다.
 - **미저장 경고**: 뒤로가기 시 처음 불러온 값(수정 모드) 또는 빈 값(새 작성)과 현재 값을 비교해 변경사항이 있으면 `ScheduleDetailScreen`과 동일한 형식의 경고 팝업이 뜹니다.
-- 리뷰 데이터는 `services/mockData.ts`의 `mockReviewStore`(전체 포토스팟이 공유하는 단일 목록, 대상별로 분리되어 있지 않음)에서 `reviewApi`(`getList`/`getDetail`/`create`/`update`/`remove`)로 관리됩니다. `ReviewCard`가 `review.isMine`이면 "수정"/"삭제" 버튼을 노출하고, 삭제는 `ScheduleDetailScreen`의 일정 삭제 팝업과 동일한 형식의 확인 팝업을 거칩니다.
+- 리뷰 데이터는 대상(장소/코스/포토스팟)별로 `reviewApi`(`getList`/`getMine`/`getDetail`/`create`/`update`/`remove`, 모두 `type` 인자를 받음)로 관리됩니다. `ReviewCard`가 `review.isMine`이면 "수정"/"삭제" 버튼을 노출하고, 삭제는 `ScheduleDetailScreen`의 일정 삭제 팝업과 동일한 형식의 확인 팝업을 거칩니다. mock 경로는 편의상 전체 대상이 공유하는 단일 배열(`mockData.ts`의 `mockReviewStore`)에 `target: { type, id }`로 필터를 걸어 흉내냅니다.
+- **신고** (`ReportReviewAlert`): `ReviewCard`의 "신고" 버튼과 포토스팟 상세화면의 "더보기 → 신고하기"가 공유하는 팝업. 사유 선택(사진 포함 여부 등 알약형 체크박스 + "기타" 자유 입력) → "정말 신고하시겠습니까?" 확인 → "신고가 접수되었습니다." 완료까지 3단계.
+- **관리** (`ReviewManageScreen`): "MY → 작성한 리뷰 관리"에서 대상별(장소/코스/포토스팟) 탭으로 내가 쓴 리뷰를 모아보고, 카드에서 바로 수정/삭제.
 
 ### 카카오맵 (`PlaceDetailScreen`, `components/ui/KakaoMap`)
 
@@ -121,19 +139,22 @@ components/
 │   ├── PagerViewWrapper # 탭 스와이프용 PagerView 웹 호환 래퍼 (.native.tsx로 네이티브 분리)
 │   └── KakaoMap         # 카카오맵 (.tsx=네이티브 WebView, .web.tsx=iframe, kakaoMapHtml.ts=공용 HTML)
 ├── modals/              # 팝업 및 알림
-│   ├── MoreMenuAlert          # 저장/일정추가 드롭다운 메뉴
+│   ├── MoreMenuAlert          # 저장/일정추가 드롭다운 메뉴 (isMine 여부에 따라 신고하기/수정하기 중 하나만 노출)
+│   ├── ReportReviewAlert      # 리뷰·포토스팟 신고 팝업 (사유 선택 → 확인 → 접수 완료 3단계)
 │   ├── ScheduleAlert          # 일정 선택 팝업
-│   ├── ScheduleMoreMenuAlert  # 일정 카드 더보기 메뉴 (편집/삭제)
+│   ├── ScheduleMoreMenuAlert  # 카드 더보기 메뉴 (편집/삭제, 일정·포토스팟 관리 화면 공용)
 │   ├── NewScheduleAlert       # 일정 만들기 스텝 1 (제목·날짜, 달력 UI를 VisitDateAlert와 공유)
 │   ├── NewScheduleStep2Alert  # 일정 만들기 스텝 2 (코스 선택)
 │   ├── NewScheduleStep3Alert  # 일정 만들기 스텝 3 (최종 확인)
 │   ├── VisitDateAlert         # 리뷰 작성용 단일 날짜 선택 팝업 (NewScheduleAlert 달력 단순화)
 │   ├── AddPlaceAlert          # 장소 추가 팝업
-│   ├── AddPlaceConfirmAlert   # 장소 추가 확인 팝업
+│   ├── AddPlaceConfirmAlert   # 장소 추가 확인 팝업 (title/questionText/confirmText로 문구 커스텀 가능)
+│   ├── PlaceSelectAlert       # 포토스팟 작성용 장소 검색·선택 팝업 (검색+페이지네이션, 카드 탭 시 AddPlaceConfirmAlert로 확인)
+│   ├── TagAddAlert            # 태그 추가 팝업 (스페이스로 알약형 칩 확정, X로 제거)
 │   ├── PhotoSpotScheduleAlert # 포토스팟 일정추가 확인 팝업
 │   ├── CourseSelectPopup      # 코스 선택 팝업
 │   ├── ScheduleEditNameAlert  # 일정 이름 수정 팝업 (편집 모드에서 제목 탭)
-│   └── SortAlert              # 정렬 기준 선택 팝업 (CourseScreen·SearchResultScreen 공용)
+│   └── SortAlert              # 정렬 기준 선택 팝업 (CourseScreen·SearchResultScreen·UserPhotoSpotsScreen 공용)
 ├── navigation/          # 네비게이션
 │   └── BottomTabBar     # 커스텀 하단 탭 바
 └── icons/               # 커스텀 아이콘
@@ -264,6 +285,9 @@ API 데이터를 한국어로 변환하는 매핑 상수입니다. 각 화면에
 | `types.ts` | 공통 타입 정의 (`Schedule`, `Media`, `Place`, `Photo`, `PhotoSpotDetail`, `Review`, `Tag` 등) |
 | `mockData.ts` | 개발용 목 데이터 + mutable store(`mockPlaceStore`, `mockPhotoStore`, `mockReviewStore` 등, 북마크/작성 등의 변경이 세션 내에서 유지되도록 함) |
 
-`EXPO_PUBLIC_USE_MOCK=true`(`.env`)일 때 각 API 함수는 실제 axios 호출 대신 `mockData.ts`의 값을 반환합니다. `photoApi.getList()`/`getDetail()`은 mock 전용이며 실제 백엔드 엔드포인트가 아직 없습니다 — 개별 장소의 사진은 실제로 연결된 `placeApi.getPhotos(placeId)`(`GET /api/places/{id}/photos/`)를 사용하세요. `reviewApi`도 현재 전체 화면이 공유하는 단일 mock 리스트이며, 대상(장소/코스/포토스팟)별로 분리된 실제 리뷰 엔드포인트는 아직 없습니다.
+`EXPO_PUBLIC_USE_MOCK=true`(`.env`)일 때 각 API 함수는 실제 axios 호출 대신 `mockData.ts`의 값을 반환합니다.
 
-`utils/sortByOption.ts`는 화면 전반에서 재사용하는 정렬 비교 함수입니다 (위 정렬 기능 참고).
+- `reviewApi`는 실제 백엔드에서도 대상(장소/코스/포토스팟)별로 분리된 엔드포인트(`/api/reviews/<review_type>/...`)를 씁니다. mock 경로는 구현 편의상 전체 대상이 공유하는 단일 리스트(`mockReviewStore`)에 `target: { type, id }`로 필터를 걸어 흉내냅니다.
+- `photoApi`도 실제 `/api/photos/` CRUD·좋아요(`like`) 엔드포인트가 있지만, `getList`의 `author` 파라미터와 `getMine`은 **mock 전용**입니다 — 실제 백엔드는 `keyword` 파라미터만 지원합니다 (위 TODO 참고). 개별 장소에 속한 사진은 실제로 연결된 `placeApi.getPhotos(placeId)`(`GET /api/places/{id}/photos/`)를 쓰세요.
+
+`utils/sortByOption.ts`는 화면 전반에서 재사용하는 정렬 비교 함수이고, `utils/getProcessedTags.ts`는 태그 목록을 3개 + `+n`으로 간략화하는 공용 함수입니다 (위 정렬 기능·포토스팟 섹션 참고).
