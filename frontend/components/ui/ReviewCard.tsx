@@ -35,6 +35,7 @@ interface ReviewCardProps {
   onImagePress: (index: number) => void;
   onEditPress?: () => void;
   onDeletePress?: () => void;
+  onReportPress?: () => void;
   likeDisabled?: boolean;
   hideAuthor?: boolean;
   sectionCard?: ReactNode;
@@ -49,6 +50,7 @@ export const ReviewCard = ({
   onImagePress,
   onEditPress,
   onDeletePress,
+  onReportPress,
   likeDisabled,
   hideAuthor,
   sectionCard,
@@ -138,7 +140,7 @@ export const ReviewCard = ({
           <Text style={styles.likeCount}>{likeCount}</Text>
         </View>
 
-        {review.isMine && (
+        {review.isMine ? (
           <View style={styles.myActionsRow}>
             <TouchableOpacity onPress={onEditPress} activeOpacity={0.7}>
               <Text style={styles.myActionText}>수정</Text>
@@ -147,6 +149,14 @@ export const ReviewCard = ({
               <Text style={styles.myActionText}>삭제</Text>
             </TouchableOpacity>
           </View>
+        ) : (
+          onReportPress && (
+            <View style={styles.myActionsRow}>
+              <TouchableOpacity onPress={onReportPress} activeOpacity={0.7}>
+                <Text style={styles.myActionText}>신고</Text>
+              </TouchableOpacity>
+            </View>
+          )
         )}
       </View>
     </View>

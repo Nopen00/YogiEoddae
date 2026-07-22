@@ -5,6 +5,7 @@ import { TagRow } from '@/components/ui/TagRow';
 import { TextSeparator } from '@/components/ui/TextSeparator';
 import { MoreButton } from '@/components/ui/MoreButton';
 import { MoreMenuAlert } from '@/components/modals/MoreMenuAlert';
+import { ReportReviewAlert } from '@/components/modals/ReportReviewAlert';
 import { ScheduleAlert } from '@/components/modals/ScheduleAlert';
 import { SortAlert } from '@/components/modals/SortAlert';
 import { getReviewLikeCount, ReviewCard } from '@/components/ui/ReviewCard';
@@ -64,6 +65,7 @@ const CourseDetailScreen = () => {
   const [likedReviews, setLikedReviews] = useState<Record<number, boolean>>({});
   const [imagePopup, setImagePopup] = useState<{ images: string[]; index: number } | null>(null);
   const [reviewDeleteTarget, setReviewDeleteTarget] = useState<Review | null>(null);
+  const [reviewReportTarget, setReviewReportTarget] = useState<Review | null>(null);
   const [isMapTouching, setIsMapTouching] = useState(false);
 
   const filteredReviews = (photoOnly ? reviews.filter((r) => r.hasPhoto) : reviews)
@@ -425,6 +427,7 @@ const CourseDetailScreen = () => {
                 onImagePress={(index) => setImagePopup({ images: review.images, index })}
                 onEditPress={() => router.push({ pathname: '/ReviewWriteScreen', params: { type: 'course', id, reviewId: review.id } })}
                 onDeletePress={() => setReviewDeleteTarget(review)}
+                onReportPress={() => setReviewReportTarget(review)}
               />
             ))}
           </View>
@@ -514,6 +517,17 @@ const CourseDetailScreen = () => {
             </View>
           </View>
         </Modal>
+
+        <ReportReviewAlert
+          visible={reviewReportTarget !== null}
+          onClose={() => setReviewReportTarget(null)}
+          onSubmit={async (reason) => {
+            if (!reviewReportTarget) return;
+            try {
+              await reviewApi.report('course', reviewReportTarget.id, reason);
+            } catch {}
+          }}
+        />
     </SafeAreaView>
   );
 };

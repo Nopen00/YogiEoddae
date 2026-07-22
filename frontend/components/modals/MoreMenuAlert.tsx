@@ -3,7 +3,7 @@ import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SaveHeart24 } from '@/components/icons/SaveHeart';
 import { UnSaveHeart24 } from '@/components/icons/UnSaveHeart';
-import { Calendar, Star } from 'lucide-react-native';
+import { AlertTriangle, Calendar, Star } from 'lucide-react-native';
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
 import { Shadows } from '@/constants/Shadows';
@@ -16,9 +16,10 @@ interface MoreMenuAlertProps {
   onSchedulePress?: () => void;
   isToggled?: boolean;
   onTogglePress?: () => void;
+  onReportPress?: () => void;
 }
 
-export const MoreMenuAlert = ({ isSaved, onSavePress, onSchedulePress, isToggled, onTogglePress }: MoreMenuAlertProps) => {
+export const MoreMenuAlert = ({ isSaved, onSavePress, onSchedulePress, isToggled, onTogglePress, onReportPress }: MoreMenuAlertProps) => {
   return (
     <View style={styles.container}>
       <TouchableOpacity style={styles.menuItem} onPress={onSavePress} activeOpacity={0.7}>
@@ -48,6 +49,16 @@ export const MoreMenuAlert = ({ isSaved, onSavePress, onSchedulePress, isToggled
               <View style={[styles.toggleCircle, { left: isToggled ? 26 : 2 }]} />
             </View>
             <Text style={styles.menuText}>{isToggled ? '카카오' : '관광공사'}</Text>
+          </TouchableOpacity>
+        </>
+      )}
+
+      {onReportPress && (
+        <>
+          <View style={styles.separator} />
+          <TouchableOpacity style={styles.menuItem} onPress={onReportPress} activeOpacity={0.7}>
+            <AlertTriangle size={IconSize.large} color={Colors.light.black} strokeWidth={IconStroke.regular} />
+            <Text style={styles.menuText}>신고하기</Text>
           </TouchableOpacity>
         </>
       )}

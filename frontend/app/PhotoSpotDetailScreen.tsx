@@ -5,6 +5,7 @@ import { MetaRow } from '@/components/ui/MetaRow';
 import { MoreButton } from '@/components/ui/MoreButton';
 import { MoreMenuAlert } from '@/components/modals/MoreMenuAlert';
 import { PhotoSpotScheduleAlert } from '@/components/modals/PhotoSpotScheduleAlert';
+import { ReportReviewAlert } from '@/components/modals/ReportReviewAlert';
 import { ScheduleAlert } from '@/components/modals/ScheduleAlert';
 import { SortAlert } from '@/components/modals/SortAlert';
 import { getReviewLikeCount, ReviewCard } from '@/components/ui/ReviewCard';
@@ -60,6 +61,8 @@ const PhotoSpotDetailScreen = () => {
   const [imagePopup, setImagePopup] = useState<{ images: string[]; index: number } | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [reviewDeleteTarget, setReviewDeleteTarget] = useState<Review | null>(null);
+  const [reviewReportTarget, setReviewReportTarget] = useState<Review | null>(null);
+  const [isPhotoReportVisible, setIsPhotoReportVisible] = useState(false);
   const { visible: headerTitleVisible, onContainerLayout, onTitleLayout, onScroll } = useScrollHeaderTitle();
 
   const filteredReviews = (photoOnly ? reviews.filter((r) => r.hasPhoto) : reviews)
@@ -148,6 +151,7 @@ const PhotoSpotDetailScreen = () => {
                   isSaved={isSaved}
                   onSavePress={() => { toggleSaved(); setIsMenuVisible(false); }}
                   onSchedulePress={() => { setIsMenuVisible(false); setIsScheduleVisible(true); }}
+                  onReportPress={() => { setIsMenuVisible(false); setIsPhotoReportVisible(true); }}
                 />
               )}
             </View>
@@ -210,10 +214,16 @@ const PhotoSpotDetailScreen = () => {
 
             <Text style={styles.photoInfoTitle}>포토스팟 정보</Text>
             {photo && (
-              <View style={styles.photoInfoDateRow}>
-                <Text style={styles.photoInfoDateText}>{formatDateDots(photo.travel_date)} 여행</Text>
-                <TextSeparator color={Colors.light.grayDark} />
-                <Text style={styles.photoInfoDateText}>{formatDateDots(photo.created_at)} 작성</Text>
+              <View style={styles.uploaderCard}>
+                <View style={styles.uploaderAvatar} />
+                <View style={styles.uploaderInfo}>
+                  <Text style={styles.uploaderName}>{photo.author ?? '익명 여행자'}</Text>
+                  <View style={styles.uploaderDateRow}>
+                    <Text style={styles.uploaderDateText}>{formatDateDots(photo.travel_date)} 여행</Text>
+                    <TextSeparator color={Colors.light.grayDark} />
+                    <Text style={styles.uploaderDateText}>{formatDateDots(photo.created_at)} 작성</Text>
+                  </View>
+                </View>
               </View>
             )}
 
@@ -413,6 +423,7 @@ const PhotoSpotDetailScreen = () => {
                 onImagePress={(index) => setImagePopup({ images: review.images, index })}
                 onEditPress={() => router.push({ pathname: '/ReviewWriteScreen', params: { type: 'photospot', id, reviewId: review.id } })}
                 onDeletePress={() => setReviewDeleteTarget(review)}
+                onReportPress={() => setReviewReportTarget(review)}
               />
             ))}
           </View>
@@ -512,6 +523,29 @@ const PhotoSpotDetailScreen = () => {
             </View>
           </View>
         </Modal>
+
+        <ReportReviewAlert
+          visible={reviewReportTarget !== null}
+          onClose={() => setReviewReportTarget(null)}
+          onSubmit={async (reason) => {
+            if (!reviewReportTarget) return;
+            try {
+              await reviewApi.report('photospot', reviewReportTarget.id, reason);
+            } catch {}
+          }}
+        />
+
+        <ReportReviewAlert
+          visible={isPhotoReportVisible}
+          onClose={() => setIsPhotoReportVisible(false)}
+          confirmTitle="이 포토스팟을 신고하시겠습니까?"
+          onSubmit={async (reason) => {
+            if (!id) return;
+            try {
+              await photoApi.report(Number(id), reason);
+            } catch {}
+          }}
+        />
       </SafeAreaView>
   );
 };
@@ -557,15 +591,26 @@ const styles = StyleSheet.create({
     color: Colors.light.black,
     marginTop: Spacing.v.medium,
   },
-  photoInfoDateRow: {
+  uploaderCard: {
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: Spacing.v.medium,
+    backgroundColor: Colors.light.white,
+    borderRadius: Spacing.r.small,
+    borderWidth: Spacing.lw.small,
+    borderColor: Colors.light.grayLight,
+    padding: Spacing.h.medium,
   },
-  photoInfoDateText: {
-    ...Typography.body2,
-    color: Colors.light.grayDark,
+  uploaderAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.light.grayLight,
   },
+  uploaderInfo: { flex: 1, marginLeft: Spacing.h.medium },
+  uploaderName: { ...Typography.subtitle2, color: Colors.light.black },
+  uploaderDateRow: { flexDirection: 'row', alignItems: 'center', marginTop: Spacing.v.small },
+  uploaderDateText: { ...Typography.body1, color: Colors.light.grayDark },
   photoInfoImagesScroll: { marginTop: Spacing.v.medium },
   photoInfoImagesContent: { gap: Spacing.h.medium },
   photoInfoImageBox: {

@@ -46,6 +46,7 @@ export interface Photo {
   is_bookmarked?: boolean;
   travel_date: string;
   created_at: string;
+  author?: string;
 }
 
 export interface PhotoSpotDetail {

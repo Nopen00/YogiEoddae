@@ -444,6 +444,10 @@ export const photoApi = {
     }
     return apiClient.delete(`/api/photos/${id}/bookmark/`);
   },
+  report: (id: number, reason: string) => {
+    if (USE_MOCK) return mock({});
+    return apiClient.post(`/api/photos/${id}/report/`, { reason });
+  },
 };
 
 export const settlementApi = {
@@ -741,5 +745,9 @@ export const reviewApi = {
       return mock({});
     }
     return apiClient.delete(`/api/reviews/${REVIEW_TYPE_TO_BACKEND[type]}/${id}/`);
+  },
+  report: (type: ReviewTargetType, id: number, reason: string) => {
+    if (USE_MOCK) return mock({});
+    return apiClient.post(`/api/reviews/${REVIEW_TYPE_TO_BACKEND[type]}/${id}/report/`, { reason });
   },
 };
