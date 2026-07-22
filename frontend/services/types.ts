@@ -47,6 +47,9 @@ export interface Photo {
   travel_date: string;
   created_at: string;
   author?: string;
+  authorAvatar?: string;
+  isMine?: boolean;
+  content?: string;
 }
 
 export interface PhotoSpotDetail {

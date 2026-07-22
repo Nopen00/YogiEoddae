@@ -41,6 +41,7 @@ function RootLayoutNav() {
             <Stack.Screen name="PlaceDetailScreen" options={{ headerShown: false }} />
             <Stack.Screen name="PhotoSpotDetailScreen" options={{ headerShown: false }} />
             <Stack.Screen name="ReviewWriteScreen" options={{ headerShown: false }} />
+            <Stack.Screen name="PhotoSpotWriteScreen" options={{ headerShown: false }} />
             <Stack.Screen name="ScheduleScreen" options={{ headerShown: false }} />
             <Stack.Screen name="SavedListScreen" options={{ headerShown: false }} />
             <Stack.Screen name="QuizListScreen" options={{ headerShown: false }} />
@@ -49,6 +50,7 @@ function RootLayoutNav() {
             <Stack.Screen name="MailboxScreen" options={{ headerShown: false }} />
             <Stack.Screen name="TokenChargeScreen" options={{ headerShown: false }} />
             <Stack.Screen name="ReviewManageScreen" options={{ headerShown: false }} />
+            <Stack.Screen name="PhotoSpotManageScreen" options={{ headerShown: false }} />
             <Stack.Screen name="LoginScreen" options={{ headerShown: false }} />
             <Stack.Screen name="SignInScreen" options={{ headerShown: false }} />
             <Stack.Screen name="SignUpScreen" options={{ headerShown: false }} />

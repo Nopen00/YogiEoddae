@@ -151,7 +151,8 @@ const PhotoSpotDetailScreen = () => {
                   isSaved={isSaved}
                   onSavePress={() => { toggleSaved(); setIsMenuVisible(false); }}
                   onSchedulePress={() => { setIsMenuVisible(false); setIsScheduleVisible(true); }}
-                  onReportPress={() => { setIsMenuVisible(false); setIsPhotoReportVisible(true); }}
+                  onReportPress={photo?.isMine ? undefined : () => { setIsMenuVisible(false); setIsPhotoReportVisible(true); }}
+                  onEditPress={photo?.isMine ? () => { setIsMenuVisible(false); router.push({ pathname: '/PhotoSpotWriteScreen', params: { id } }); } : undefined}
                 />
               )}
             </View>
@@ -215,7 +216,11 @@ const PhotoSpotDetailScreen = () => {
             <Text style={styles.photoInfoTitle}>포토스팟 정보</Text>
             {photo && (
               <View style={styles.uploaderCard}>
-                <View style={styles.uploaderAvatar} />
+                {photo.authorAvatar ? (
+                  <Image source={{ uri: photo.authorAvatar }} style={styles.uploaderAvatar} />
+                ) : (
+                  <View style={styles.uploaderAvatar} />
+                )}
                 <View style={styles.uploaderInfo}>
                   <Text style={styles.uploaderName}>{photo.author ?? '익명 여행자'}</Text>
                   <View style={styles.uploaderDateRow}>
@@ -245,7 +250,7 @@ const PhotoSpotDetailScreen = () => {
               </ScrollView>
             )}
 
-            <Text style={styles.photoInfoDesc}>{photo?.description ?? ''}</Text>
+            <Text style={styles.photoInfoDesc}>{photo?.content ?? ''}</Text>
 
             <Divider marginTop={Spacing.v.large} />
 

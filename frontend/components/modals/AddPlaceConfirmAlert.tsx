@@ -17,9 +17,21 @@ interface AddPlaceConfirmAlertProps {
   onBack: () => void;
   onConfirm: () => void;
   place: Place;
+  title?: string;
+  questionText?: string;
+  confirmText?: string;
 }
 
-export const AddPlaceConfirmAlert = ({ visible, onClose, onBack, onConfirm, place }: AddPlaceConfirmAlertProps) => {
+export const AddPlaceConfirmAlert = ({
+  visible,
+  onClose,
+  onBack,
+  onConfirm,
+  place,
+  title = '장소 추가하기',
+  questionText = '이 장소를 추가하시겠습니까?',
+  confirmText = '추가하기',
+}: AddPlaceConfirmAlertProps) => {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <TouchableWithoutFeedback onPress={onClose}>
@@ -30,7 +42,7 @@ export const AddPlaceConfirmAlert = ({ visible, onClose, onBack, onConfirm, plac
                 <TouchableOpacity onPress={onBack} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                   <ArrowLeft size={IconSize.large} color={Colors.light.grayLight} strokeWidth={IconStroke.regular} />
                 </TouchableOpacity>
-                <Text style={styles.title}>장소 추가하기</Text>
+                <Text style={styles.title}>{title}</Text>
                 <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                   <X size={IconSize.large} color={Colors.light.grayLight} strokeWidth={IconStroke.regular} />
                 </TouchableOpacity>
@@ -59,13 +71,13 @@ export const AddPlaceConfirmAlert = ({ visible, onClose, onBack, onConfirm, plac
                   )}
                 </View>
               </View>
-              <Text style={styles.questionText}>이 장소를 추가하시겠습니까?</Text>
+              <Text style={styles.questionText}>{questionText}</Text>
               <View style={styles.buttonRow}>
                 <TouchableOpacity style={styles.cancelButton} onPress={onBack}>
                   <Text style={styles.cancelButtonText}>취소</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.confirmButton} onPress={onConfirm}>
-                  <Text style={styles.confirmButtonText}>추가하기</Text>
+                  <Text style={styles.confirmButtonText}>{confirmText}</Text>
                 </TouchableOpacity>
               </View>
             </View>

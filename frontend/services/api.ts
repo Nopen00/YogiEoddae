@@ -6,6 +6,7 @@ import {
   mockPhotoPlaceId, mockScheduleStore, mockPlaceStore, mockReviewStore, mockMailStore, mockSettlementStore, paginatedOf,
   mockTokenBalance, setMockTokenBalance,
   mockNickname, setMockNickname,
+  mockProfileImage, setMockProfileImage,
   mockUserId, setMockUserId,
   mockEmail, setMockEmail,
   mockPassword, setMockPassword, resetMockAccount,
@@ -177,8 +178,8 @@ export const userApi = {
     USE_MOCK ? mock({ device_id: 'mock-device' }) : apiClient.post<{ device_id: string }>('/api/users/'),
   getMe: () =>
     USE_MOCK
-      ? mock({ token_balance: mockTokenBalance, nickname: mockNickname, username: mockUserId, email: mockEmail })
-      : apiClient.get<{ id: number; token_balance: number; nickname: string; username: string; email: string }>('/api/users/me/'),
+      ? mock({ token_balance: mockTokenBalance, nickname: mockNickname, username: mockUserId, email: mockEmail, profile_image: mockProfileImage })
+      : apiClient.get<{ id: number; token_balance: number; nickname: string; username: string; email: string; profile_image: string | null }>('/api/users/me/'),
   chargeToken: (packageId: string) => {
     if (USE_MOCK) {
       const pkg = TOKEN_PACKAGES.find(p => p.id === packageId);
@@ -223,6 +224,13 @@ export const userApi = {
       return mock({ nickname: mockNickname });
     }
     return apiClient.patch<{ nickname: string }>('/api/users/me/', { nickname });
+  },
+  updateProfileImage: (imageUri: string) => {
+    if (USE_MOCK) {
+      setMockProfileImage(imageUri);
+      return mock({ profile_image: mockProfileImage });
+    }
+    return apiClient.patch<{ profile_image: string }>('/api/users/me/', { profile_image: imageUri });
   },
   updateUserId: (userId: string) => {
     if (USE_MOCK) {
@@ -395,22 +403,62 @@ export const photoApi = {
     }
     return apiClient.get<PhotoSpotDetail>(`/api/photos/${id}/`);
   },
-  upload: (data: { place_id: number; image_url: string; description?: string; tag_ids?: number[]; travel_date?: string }) => {
+  upload: (data: { place_id: number; image_url: string; description?: string; content?: string; tags?: string[]; tag_ids?: number[]; travel_date?: string }) => {
     if (USE_MOCK) {
       const newPhoto: Photo = {
         id: nextMockId(),
         image_url: data.image_url,
         description: data.description ?? '',
+        content: data.content ?? '',
         likes: 0,
-        tags: [],
+        tags: (data.tags ?? []).map(name => ({ id: nextMockId(), category: 'custom', name })),
         is_bookmarked: false,
         travel_date: data.travel_date ?? new Date().toISOString(),
         created_at: new Date().toISOString(),
+        isMine: true,
+        author: mockNickname,
+        authorAvatar: mockProfileImage ?? undefined,
       };
       mockPhotoStore.unshift(newPhoto);
+      const place = mockPlaceStore.find(p => p.id === data.place_id);
+      if (place) {
+        if (!MOCK_PHOTOS_BY_PLACE[data.place_id]) MOCK_PHOTOS_BY_PLACE[data.place_id] = [];
+        MOCK_PHOTOS_BY_PLACE[data.place_id].unshift(newPhoto);
+        mockPhotoPlaceId[newPhoto.id] = data.place_id;
+        mockPhotoPlaceName[newPhoto.id] = place.name;
+      }
       return mock(newPhoto);
     }
     return apiClient.post<Photo>('/api/photos/', data);
+  },
+  getMine: () =>
+    USE_MOCK ? mock(mockPhotoStore.filter(p => p.isMine)) : apiClient.get<Photo[]>('/api/photos/mine/'),
+  update: (id: number, data: { description?: string; content?: string; tags?: string[]; travel_date?: string }) => {
+    if (USE_MOCK) {
+      const photo = mockPhotoStore.find(p => p.id === id);
+      if (photo) {
+        if (data.description !== undefined) photo.description = data.description;
+        if (data.content !== undefined) photo.content = data.content;
+        if (data.tags !== undefined) photo.tags = data.tags.map(name => ({ id: nextMockId(), category: 'custom', name }));
+        if (data.travel_date !== undefined) photo.travel_date = data.travel_date;
+      }
+      return mock(photo ?? null);
+    }
+    return apiClient.patch<Photo>(`/api/photos/${id}/`, data);
+  },
+  remove: (id: number) => {
+    if (USE_MOCK) {
+      const idx = mockPhotoStore.findIndex(p => p.id === id);
+      if (idx !== -1) mockPhotoStore.splice(idx, 1);
+      const placeId = mockPhotoPlaceId[id];
+      const placePhotos = placeId ? MOCK_PHOTOS_BY_PLACE[placeId] : undefined;
+      if (placePhotos) {
+        const pIdx = placePhotos.findIndex(p => p.id === id);
+        if (pIdx !== -1) placePhotos.splice(pIdx, 1);
+      }
+      return mock({});
+    }
+    return apiClient.delete(`/api/photos/${id}/`);
   },
   like: (id: number) => {
     if (USE_MOCK) {

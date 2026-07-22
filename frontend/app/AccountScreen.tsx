@@ -24,7 +24,7 @@ const AccountScreen = () => {
   const [nicknameEditVisible, setNicknameEditVisible] = useState(false);
   const [userId, setUserId] = useState('');
   const [email, setEmail] = useState('');
-  const [nicknameSuccessVisible, setNicknameSuccessVisible] = useState(false);
+  const [resultMessage, setResultMessage] = useState<string | null>(null);
   const [logoutConfirmVisible, setLogoutConfirmVisible] = useState(false);
 
   useFocusEffect(
@@ -33,6 +33,7 @@ const AccountScreen = () => {
         setNickname(res.data.nickname);
         setUserId(res.data.username);
         setEmail(res.data.email);
+        setProfileImage(res.data.profile_image);
       }).catch(() => {
         router.replace('/LoginScreen');
       });
@@ -45,7 +46,10 @@ const AccountScreen = () => {
       quality: 0.8,
     });
     if (!result.canceled) {
-      setProfileImage(result.assets[0].uri);
+      const uri = result.assets[0].uri;
+      await userApi.updateProfileImage(uri);
+      setProfileImage(uri);
+      setResultMessage('이미지가 변경되었습니다.');
     }
   };
 
@@ -123,19 +127,19 @@ const AccountScreen = () => {
           await userApi.updateNickname(newNickname);
           setNickname(newNickname);
           setNicknameEditVisible(false);
-          setNicknameSuccessVisible(true);
+          setResultMessage('닉네임이 변경되었습니다.');
         }}
         onClose={() => setNicknameEditVisible(false)}
       />
 
-      <Modal visible={nicknameSuccessVisible} transparent animationType="fade">
+      <Modal visible={resultMessage !== null} transparent animationType="fade">
         <TouchableOpacity
           style={styles.overlay}
           activeOpacity={1}
-          onPress={() => setNicknameSuccessVisible(false)}
+          onPress={() => setResultMessage(null)}
         >
           <View style={styles.resultPopup}>
-            <Text style={styles.resultTitle}>닉네임이 변경되었습니다.</Text>
+            <Text style={styles.resultTitle}>{resultMessage}</Text>
           </View>
         </TouchableOpacity>
       </Modal>

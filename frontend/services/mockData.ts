@@ -560,6 +560,12 @@ export function setMockNickname(next: string) {
   mockNickname = next;
 }
 
+// 프로필 이미지 mutable store — 화면을 나갔다 들어와도 변경값 유지 (앱 재시작 시엔 초기화)
+export let mockProfileImage: string | null = null;
+export function setMockProfileImage(next: string | null) {
+  mockProfileImage = next;
+}
+
 // 아이디 mutable store — 화면을 나갔다 들어와도 변경값 유지 (앱 재시작 시엔 초기화)
 export let mockUserId = 'id1234';
 export function setMockUserId(next: string) {
@@ -582,6 +588,7 @@ export function setMockPassword(next: string) {
 export function resetMockAccount() {
   mockTokenBalance = 120;
   mockNickname = '내이름은김철수';
+  mockProfileImage = null;
   mockUserId = 'id1234';
   mockEmail = '';
   mockPassword = '123456';

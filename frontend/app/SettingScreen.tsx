@@ -9,12 +9,13 @@ import { mailApi, userApi } from '@/services/api';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { AlertCircle, ChevronRight, HelpCircle } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const SettingScreen = () => {
   const router = useRouter();
   const [nickname, setNickname] = useState('');
+  const [profileImage, setProfileImage] = useState<string | null>(null);
   const [tokenBalance, setTokenBalance] = useState(0);
   const [isLargeIconMode, setIsLargeIconMode] = useState(false);
   const [hasMail, setHasMail] = useState(false);
@@ -24,6 +25,7 @@ const SettingScreen = () => {
     useCallback(() => {
       userApi.getMe().then(res => {
         setNickname(res.data.nickname);
+        setProfileImage(res.data.profile_image);
         setTokenBalance(res.data.token_balance);
         setHasEmail(res.data.email.trim().length > 0);
       }).catch(() => {
@@ -39,7 +41,11 @@ const SettingScreen = () => {
 
       {/* 유저 정보 섹션 */}
       <View style={styles.userSection}>
-        <View style={styles.profileImage} />
+        {profileImage ? (
+          <Image source={{ uri: profileImage }} style={styles.profileImage} />
+        ) : (
+          <View style={styles.profileImage} />
+        )}
 
         <View style={styles.userInfoColumn}>
           <Text style={styles.nickname}>{nickname}</Text>
@@ -90,7 +96,7 @@ const SettingScreen = () => {
       </TouchableOpacity>
 
       {/* 포토스팟 관리 섹션 */}
-      <TouchableOpacity style={styles.menuRow} activeOpacity={0.7}>
+      <TouchableOpacity style={styles.menuRow} activeOpacity={0.7} onPress={() => router.push('/PhotoSpotManageScreen')}>
         <Text style={styles.menuRowText}>작성한 포토스팟 관리</Text>
         <ChevronRight size={IconSize.medium} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
       </TouchableOpacity>

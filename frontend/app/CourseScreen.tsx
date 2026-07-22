@@ -671,7 +671,11 @@ const CourseScreen = () => {
       </PagerView>
 
       {selectedIndex === 4 && (
-        <TouchableOpacity style={styles.fabButton} activeOpacity={0.8}>
+        <TouchableOpacity
+          style={styles.fabButton}
+          activeOpacity={0.8}
+          onPress={() => router.push('/PhotoSpotWriteScreen')}
+        >
           <Edit2 size={IconSize.xlarge} color={Colors.light.white} strokeWidth={IconStroke.regular} />
         </TouchableOpacity>
       )}
