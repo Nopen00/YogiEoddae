@@ -13,10 +13,10 @@ export function sortByOption<T extends { rating: number | null; like_count: numb
     case '이름순':
       sorted.sort((a, b) => getName(a).localeCompare(getName(b), 'ko'));
       break;
-    case '별점순':
+    case '별점 높은 순':
       sorted.sort((a, b) => (b.rating ?? -Infinity) - (a.rating ?? -Infinity));
       break;
-    case '하트 순':
+    case '하트 많은 순':
       sorted.sort((a, b) => (b.like_count ?? -Infinity) - (a.like_count ?? -Infinity));
       break;
     case '장소 많은 순':

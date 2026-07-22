@@ -10,8 +10,8 @@ import { Modal, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, Vi
 export const SORT_OPTIONS = [
   '관련도 높은 순',
   '이름순',
-  '별점순',
-  '하트 순',
+  '별점 높은 순',
+  '하트 많은 순',
   '장소 많은 순',
   '장소 적은 순',
 ] as const;

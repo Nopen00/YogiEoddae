@@ -33,6 +33,7 @@ import { pseudoRating } from '../services/mockData';
 import type { Media, Place } from '../services/types';
 
 const CATEGORIES = ["전체", "코스", "명소", "포토스팟"];
+const PLACE_COUNT_SORT_OPTIONS: SortOption[] = ['장소 많은 순', '장소 적은 순'];
 
 interface PhotoSpotCardData {
   id: number;
@@ -371,6 +372,7 @@ const SearchResultScreen = () => {
       <SortAlert
         visible={isSortVisible}
         options={SORT_OPTIONS}
+        disabledOptions={selectedIndex === 3 ? PLACE_COUNT_SORT_OPTIONS : undefined}
         selected={sortOption}
         onClose={() => setIsSortVisible(false)}
         onSelect={setSortOption}
