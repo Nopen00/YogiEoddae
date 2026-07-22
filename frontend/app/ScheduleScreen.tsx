@@ -442,7 +442,7 @@ export default function ScheduleScreen() {
                   } catch {}
                 }}
               >
-                <Text style={styles.btnConfirmText}>확인</Text>
+                <Text style={styles.btnConfirmText}>삭제</Text>
               </TouchableOpacity>
             </View>
           </View>

@@ -757,7 +757,7 @@ export default function ScheduleDetailScreen() {
       <Modal visible={placeDeleteTarget !== null} transparent animationType="fade">
         <View style={styles.overlay}>
           <View style={styles.unsavedPopup}>
-            <Text style={styles.unsavedTitle}>장소을 삭제하시겠습니까?</Text>
+            <Text style={styles.unsavedTitle}>장소를 삭제하시겠습니까?</Text>
             <Text style={styles.unsavedDesc}>삭제된 장소는 되돌릴 수 없습니다.</Text>
             <View style={styles.unsavedButtons}>
               <TouchableOpacity
@@ -775,7 +775,7 @@ export default function ScheduleDetailScreen() {
                   setPlaceDeleteTarget(null);
                 }}
               >
-                <Text style={styles.btnDiscardText}>확인</Text>
+                <Text style={styles.btnDiscardText}>삭제</Text>
               </TouchableOpacity>
             </View>
           </View>

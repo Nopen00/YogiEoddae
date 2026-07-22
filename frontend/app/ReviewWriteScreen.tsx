@@ -304,7 +304,7 @@ const ReviewWriteScreen = () => {
           onPress={() => { setIsSubmitSuccessVisible(false); router.back(); }}
         >
           <View style={styles.submitResultPopupBox}>
-            <Text style={styles.submitResultText}>리뷰가 작성되었습니다.</Text>
+            <Text style={styles.submitResultText}>{reviewId ? '리뷰가 수정되었습니다.' : '리뷰가 작성되었습니다.'}</Text>
           </View>
         </TouchableOpacity>
       </Modal>
@@ -413,6 +413,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.h.xlarge,
   },
   submitResultPopupBox: {
+    width: SCREEN_WIDTH - 64,
     backgroundColor: Colors.light.white,
     borderRadius: Spacing.r.small,
     borderWidth: Spacing.lw.small,
@@ -420,9 +421,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: Spacing.v.medium,
     paddingHorizontal: Spacing.h.medium,
+    ...Shadows.card,
   },
   submitResultText: { ...Typography.subtitle2, color: Colors.light.black },
   submitFailPopupBox: {
+    width: SCREEN_WIDTH - 64,
     backgroundColor: Colors.light.white,
     borderRadius: Spacing.r.small,
     borderWidth: Spacing.lw.small,
@@ -430,6 +433,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: Spacing.v.medium,
     paddingHorizontal: Spacing.h.medium,
+    ...Shadows.card,
   },
   submitFailTitle: { ...Typography.subtitle2, color: Colors.light.black },
   submitFailDesc: { ...Typography.body2, color: Colors.light.primary, marginTop: Spacing.v.medium },

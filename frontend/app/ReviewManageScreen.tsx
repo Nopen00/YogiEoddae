@@ -1,4 +1,4 @@
-import { getReviewLikeCount, ReviewCard } from '@/components/ui/ReviewCard';
+import { ReviewCard } from '@/components/ui/ReviewCard';
 import { MediaMetaText } from '@/components/ui/MediaMetaText';
 import PagerView, { PagerViewHandle } from '@/components/ui/PagerViewWrapper';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
@@ -212,7 +212,7 @@ const ReviewManageScreen = () => {
                   } catch {}
                 }}
               >
-                <Text style={styles.btnConfirmText}>확인</Text>
+                <Text style={styles.btnConfirmText}>삭제</Text>
               </TouchableOpacity>
             </View>
           </View>
