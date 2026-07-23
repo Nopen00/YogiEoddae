@@ -14,7 +14,7 @@ import { photoApi } from '@/services/api';
 import type { Place } from '@/services/types';
 import { Calendar, ChevronRight, Edit2, Map, Plus, X } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
-import { Dimensions, Image, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Dimensions, Image, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Shadow } from 'react-native-shadow-2';
 
@@ -63,6 +63,7 @@ const PhotoSpotWriteScreen = () => {
   const [isSubmitFailVisible, setIsSubmitFailVisible] = useState(false);
   const [isEditConfirmVisible, setIsEditConfirmVisible] = useState(false);
   const [isImageBlockedVisible, setIsImageBlockedVisible] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const initialSnapshotRef = useRef({ title: '', tags: [] as string[], description: '', visitDateKey: '', placeId: null as number | null });
 
   useEffect(() => {
@@ -147,10 +148,16 @@ const PhotoSpotWriteScreen = () => {
 
   const handleCreate = async () => {
     if (!isSubmitEnabled || !mainImage || !selectedPlace) return;
+    setIsSubmitting(true);
     try {
+      const [mainRes, subResList] = await Promise.all([
+        photoApi.uploadImage(mainImage),
+        Promise.all(extraImages.map((uri) => photoApi.uploadImage(uri))),
+      ]);
       await photoApi.upload({
         place_id: selectedPlace.id,
-        image_url: mainImage,
+        image_url: mainRes.data.image_url,
+        sub_image_urls: subResList.map((res) => res.data.image_url),
         description: title,
         content: description,
         tags,
@@ -159,11 +166,13 @@ const PhotoSpotWriteScreen = () => {
       setIsSubmitSuccessVisible(true);
     } catch {
       setIsSubmitFailVisible(true);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleSubmitPress = () => {
-    if (!isSubmitEnabled) return;
+    if (!isSubmitEnabled || isSubmitting) return;
     if (isEditMode) setIsEditConfirmVisible(true);
     else handleCreate();
   };
@@ -292,11 +301,16 @@ const PhotoSpotWriteScreen = () => {
         </View>
 
         <TouchableOpacity
-          style={[styles.submitButton, !isSubmitEnabled && styles.submitButtonDisabled]}
-          activeOpacity={isSubmitEnabled ? 0.8 : 1}
+          style={[styles.submitButton, (!isSubmitEnabled || isSubmitting) && styles.submitButtonDisabled]}
+          activeOpacity={isSubmitEnabled && !isSubmitting ? 0.8 : 1}
           onPress={handleSubmitPress}
+          disabled={isSubmitting}
         >
-          <Text style={[styles.submitButtonText, !isSubmitEnabled && styles.submitButtonTextDisabled]}>{isEditMode ? '수정 완료' : '작성 완료'}</Text>
+          {isSubmitting ? (
+            <ActivityIndicator color={Colors.light.grayDark} />
+          ) : (
+            <Text style={[styles.submitButtonText, !isSubmitEnabled && styles.submitButtonTextDisabled]}>{isEditMode ? '수정 완료' : '작성 완료'}</Text>
+          )}
         </TouchableOpacity>
       </ScrollView>
 

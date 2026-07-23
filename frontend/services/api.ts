@@ -387,6 +387,14 @@ export const placeApi = {
 };
 
 export const photoApi = {
+  uploadImage: (uri: string) => {
+    if (USE_MOCK) return mock({ image_url: uri });
+    const form = new FormData();
+    form.append('image', { uri, name: 'photo.jpg', type: 'image/jpeg' } as any);
+    return apiClient.post<{ image_url: string }>('/api/photos/upload-image/', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
   getList: (params?: { keyword?: string; author?: string }) => {
     if (USE_MOCK) {
       const list = params?.author ? mockPhotoStore.filter(p => p.author === params.author) : [...mockPhotoStore];
@@ -408,7 +416,7 @@ export const photoApi = {
     }
     return apiClient.get<PhotoSpotDetail>(`/api/photos/${id}/`);
   },
-  upload: (data: { place_id: number; image_url: string; description?: string; content?: string; tags?: string[]; tag_ids?: number[]; travel_date?: string }) => {
+  upload: (data: { place_id: number; image_url: string; sub_image_urls?: string[]; description?: string; content?: string; tags?: string[]; tag_ids?: number[]; travel_date?: string }) => {
     if (USE_MOCK) {
       const newPhoto: Photo = {
         id: nextMockId(),
