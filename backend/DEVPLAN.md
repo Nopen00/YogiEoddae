@@ -41,7 +41,7 @@
 | places | `Place` | name, address, lat/lng, content_id, image_url, category, is_verified, tags | ✅ 완료 |
 | places | `Media` | title, media_type(drama/movie/youtube/etc), year, thumbnail_url, description, tags | ✅ 완료 |
 | places | `MediaPlace` | media FK, place FK, scene_description, confidence_score(0.0~1.0), is_confirmed, status(inferred/admin_approved/rejected/quiz_confirmed) | ✅ 완료 |
-| places | `Photo` | place FK, image_url, description, likes, tags | ✅ 완료 (퀴즈 연동은 미구현, Phase 3) |
+| places | `Photo` | place FK, image_url, description(제목), content(상세설명), travel_date, likes, tags, uploaded_by FK, status(approved/pending/rejected), moderation_categories/reason/checked_at(AI 검열 결과) | ✅ 완료 (퀴즈 연동은 미구현, Phase 3) |
 | users | `User` | device_id_hash(익명, 이제 nullable) + username/nickname/email/password_hash(실계정), token_balance, created_at, last_active_at | ✅ 완료 (Phase 6, 2026-07-21) |
 | users | `PasswordHistory` | user FK, password_hash, created_at | ✅ 완료 (비밀번호 재사용 검사용) |
 | users | `EmailVerificationCode` | user FK, email, code, purpose(link_email/reset_password), is_used, expires_at | ✅ 완료 |
@@ -62,6 +62,17 @@ GET  /api/media/               전체 미디어 목록 (type/tag 필터)
 GET  /api/media/{id}/          미디어 상세 + 촬영지 목록
 GET  /api/media/{id}/places/   특정 미디어의 촬영지만 조회
 GET  /api/tags/                태그 목록
+
+# places — 포토스팟 (Phase 10-2 신설, Phase 11에서 필드/엔드포인트 보강)
+GET    /api/photos/                    전체 목록 (승인됨 + 내 글, keyword/author 필터)
+GET    /api/photos/mine/               내가 올린 포토스팟 전체 (상태 무관, JWT)
+GET    /api/photos/{id}/               상세 (장소 + 같은장소사진 + 관련사진)
+POST   /api/photos/upload-image/       이미지 파일 업로드(multipart, JWT) → image_url 반환 (Phase 11)
+POST   /api/photos/                    업로드 (JWT, AI 1차 검열 자동 실행 → approved/pending)
+PATCH  /api/photos/{id}/               수정 (작성자 본인, 제목/상세설명/여행일/태그만)
+DELETE /api/photos/{id}/               삭제 (작성자 본인)
+POST/DELETE /api/photos/{id}/like/     좋아요 토글 (JWT)
+# 북마크는 아래 bookmarks 섹션의 /api/photos/{id}/bookmark/ 참고
 
 # users — 익명(구버전, device_id 필요)
 POST /api/users/                          익명 유저 생성 (device_id → 해시 저장, 프론트 앱 부팅시 아직 호출 중)
@@ -105,6 +116,12 @@ GET      /places/extract/history/         검토 현황 목록 (+ 🗑 삭제 �
 POST     /places/extract/{id}/delete/     추출 내역(미디어) 삭제
 GET/POST /places/extract/review/{id}/     장소 검토(승인/반려), 위치 수정, 주소 일괄갱신
 POST     /places/mediaplace/{id}/revoke/  승인 취소
+
+# places (포토스팟 검수 포털, Phase 11 신설)
+GET  /places/photos/review/               AI가 보류(pending) 판정한 포토스팟 목록 + AI 사유/카테고리
+POST /places/photos/review/recheck/       보류 전체 AI 재검수 (AI 호출 실패로 쌓인 건 재시도용)
+POST /places/photos/{id}/approve/         개별 최종 승인
+POST /places/photos/{id}/delete/          개별 최종 삭제(반려)
 
 GET  /places/fetch/            KTO API → DB 저장 (keyword 파라미터)
 GET  /places/list/             DB 장소 목록 JSON (name 검색)
@@ -359,6 +376,59 @@ Review 신설(Phase 7)에서 작성자를 구분하려면 실 계정이 필요�
 1. **코스 추가 건의함** — 사용자가 코스(장소) 추가를 건의할 수 있는 기능. 세부 설계 전 (건의 대상 필드, 관리자 검토 플로우 등 미정). **미착수.**
 2. ✅ **포토스팟 사용자 업로드** (완료 2026-07-21) — `Photo`에 `uploaded_by`/`is_approved`/`last_rewarded_likes` 추가. `POST /api/photos/`로 업로드하면 승인 대기(`is_approved=False`) 상태로 생성, 목록/상세 API는 승인된 것만 노출. Django Admin에 `Photo` 등록 + "선택한 포토스팟 승인" 일괄 액션으로 관리자 승인. `PhotoViewSet` 신설(목록/상세/업로드/좋아요, `GET /api/photos/{id}/`가 장소+같은장소사진+관련사진까지 포함하는 `PhotoSpotDetail` 모양). 좋아요는 `PhotoLike`(user+photo unique)로 중복 방지, `POST/DELETE /api/photos/{id}/like/`. **프론트는 업로드 화면 자체가 아직 없어서(디자인 미정) API만 준비된 상태** — `PhotoSpotDetailScreen`의 기존 "저장" 버튼은 북마크와 함께 좋아요도 같이 호출하도록만 연결해둠.
 3. ✅ **우편함/정산함 보상 시스템** (완료 2026-07-21, 원래 로드맵엔 없던 신규 항목) — `mailbox` 앱 신설. `MailboxItem`(1회성 고정보상, 예: 리뷰 작성 10토큰 — 리뷰 생성 API에서 자동 지급)과 `SettlementItem`(누적/마일스톤 보상, 예: 유저 업로드 포토스팟이 좋아요 50개 달성 시 100토큰, 이후 10개마다 10토큰 — `Photo.last_rewarded_likes`로 중복 지급 방지)을 별도 모델로 분리(하나로 합치면 마일스톤 중복지급 버그 위험이 있어서 분리 결정). 각각 목록/개별수령/일괄수령 API. 프론트는 이미 있던 `MailboxScreen`이 API 계약과 정확히 일치해서 코드 수정 없이 바로 연동됨. **정산함 화면은 아직 없음**(`settlementApi`만 준비, `MailboxScreen` 구조 재사용하면 될 듯).
+
+---
+
+### ✅ Phase 11 — 포토스팟 AI 검열 + 실제 이미지 업로드 (완료 2026-07-23)
+
+**왜 필요한가:** 유저가 포토스팟에 사진을 올릴 때 선정성/폭력성/도박/혐오표현/마약 등 부적절한 사진이 그대로 게시되면 안 됨. 또한 프론트가 `ImagePicker` 결과(로컬 기기 URI)를 그대로 `image_url`로 보내고 있어서, 실제로는 서버가 접근 가능한 이미지가 하나도 없는 상태였음(AI 검열도, 다른 유저 노출도 전부 불가능).
+
+**구현 완료:**
+
+1. **AI 1차 검열** (`places/moderation.py`) — Gemini 2.5 Flash 비전으로 대표사진+부사진 전체를 검사해 선정성/폭력성/도박/혐오표현/마약 여부 판단(JSON 구조화 출력). 업로드 직후 자동 실행 → 안전하면 즉시 `approved`+게시 보상 지급, 의심되면 `pending`(관리자 검토 대기)으로 저장. **AI 호출 실패(API 에러 등) 시 무조건 `pending`으로 fail-safe** — 검열 없이 자동 승인되는 사고 방지.
+2. **관리자 포토스팟 검수 포털** — `/places/photos/review/`에서 보류 목록 + AI 사유/카테고리 확인, 항목별 최종승인/삭제. "AI 전체 재검수" 버튼으로 API 오류 등으로 쌓인 보류 건 일괄 재시도 가능.
+3. Django admin의 반려 액션을 상태 변경이 아니라 **완전 삭제**로 변경 (관리자 최종 결정은 승인 또는 삭제 둘 중 하나).
+4. `Photo` 모델 필드 보강: `travel_date`(CharField, 프론트가 보내는 `'YYYY.MM.DD'` 문자열 그대로 저장), `content`(TextField, 상세설명) 추가 — 프론트는 이미 이 필드들을 보내고 상세화면에서 읽고 있었는데 백엔드에 없어서 `formatDateDots(undefined)` 크래시 발생하던 문제 해결.
+5. `PhotoSerializer`에 `author`(닉네임), `isMine` 필드 추가. `GET /api/photos/?author=` 필터와 `GET /api/photos/mine/` 엔드포인트 신규 추가 — `UserPhotoSpotsScreen`/`PhotoSpotManageScreen`이 mock에서만 동작하던 문제 해결.
+6. **이미지 업로드 엔드포인트** (`POST /api/photos/upload-image/`) — multipart 파일을 받아 로컬 디스크(`MEDIA_ROOT`)에 저장하고 절대 URL 반환. `settings.py`에 `MEDIA_URL`/`MEDIA_ROOT` 추가, 개발 서버(`DEBUG=True`)에서 `/media/` 경로로 정적 서빙하도록 `YogiEoddae/urls.py`에 `static()` 추가. `backend/media/`는 `.gitignore` 처리.
+
+**남은 것:**
+- **프론트 연동 필요**: `PhotoSpotWriteScreen`이 여전히 `ImagePicker` 결과(`result.assets[0].uri`, 로컬 기기 경로)를 그대로 `image_url`로 보내고 있음. 사진 선택 직후(또는 업로드 제출 시) 각 이미지를 `POST /api/photos/upload-image/`로 먼저 보내고, 응답으로 받은 `image_url`을 `photoApi.upload`/`update`에 넘기도록 수정 필요. (프론트 담당 영역이라 이번엔 보류)
+- **업로더 아바타** — `User` 모델에 프로필 이미지 필드 자체가 없음. 위 이미지 업로드 엔드포인트가 실제로 쓰이기 시작하면(=이미지 저장 방식이 검증되면) `User`에도 같은 방식으로 avatar 필드 추가 예정.
+- 아래 "이미지 스토리지 배포 전환 가이드" 참고 — 지금은 로컬 디스크 저장, 실 서버 배포 시 전환 필요.
+
+**사용법 (프론트 참고용):**
+```
+1. POST /api/photos/upload-image/  (multipart, field name: "image", JWT 필요)
+   → { "image_url": "http://<서버>/media/photos/<uuid>.jpg" }
+   대표사진 1장 + 부사진 최대 10장, 총 최대 11번 호출
+2. 받은 image_url들을 POST /api/photos/ 의 image_url / sub_image_urls에 그대로 사용
+```
+
+---
+
+#### 이미지 스토리지 배포 전환 가이드 (S3 / R2 등으로)
+
+**지금 상태:** 로컬 디스크(`backend/media/`)에 저장, Django 개발 서버가 `/media/`로 직접 서빙 (`DEBUG=True`일 때만 동작). "내 PC = 서버"인 지금 개발 단계에는 문제 없지만, 실제 클라우드 호스팅(Heroku/Railway 등)에 배포하면 디스크가 휘발성이라 재배포 시 업로드된 이미지가 사라질 수 있음.
+
+**전환이 쉬운 이유:** `views.py`의 `upload_image`는 Django의 `default_storage` 추상화(`django.core.files.storage`)만 사용하고 있어서, **스토리지 백엔드를 바꿔도 이 코드는 한 줄도 안 고쳐도 됨** — `settings.py`에서 어떤 스토리지를 쓸지 설정만 바꾸면 `default_storage.save()`/`.url()`이 알아서 새 백엔드를 씀.
+
+**전환 절차 (배포 시점에 진행):**
+1. `pip install django-storages boto3` (S3 계열이면 이걸로 충분 — Cloudflare R2도 S3 호환 API라 동일하게 사용 가능)
+2. 클라우드에서 버킷 생성 (S3 버킷 또는 R2 버킷) + 접근 키 발급
+3. `.env`에 추가: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_STORAGE_BUCKET_NAME`, `AWS_S3_REGION_NAME` (R2면 `AWS_S3_ENDPOINT_URL`도 추가)
+4. `settings.py`에 추가:
+   ```python
+   INSTALLED_APPS += ['storages']
+   STORAGES = {
+       'default': {'BACKEND': 'storages.backends.s3.S3Storage'},
+       'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'},
+   }
+   ```
+5. `YogiEoddae/urls.py`의 `if settings.DEBUG: urlpatterns += static(...)` 부분은 그대로 둬도 무해함(로컬 개발 시 계속 필요) — 배포 환경에선 `DEBUG=False`라 자동으로 안 쓰임.
+6. 기존에 로컬 `media/`에 쌓인 파일이 있으면 배포 전에 버킷으로 한 번 복사(`aws s3 sync backend/media/ s3://<버킷명>/`).
+
+이렇게 하면 `upload_image` 액션도, `moderate_photo`의 이미지 다운로드 로직도 코드 변경 없이 그대로 동작함(둘 다 최종적으로 "HTTP로 접근 가능한 URL"만 있으면 되는 구조).
 
 ---
 

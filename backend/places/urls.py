@@ -4,6 +4,8 @@ from .views import (
     index_view, admin_media_list_view, admin_extract_view, admin_review_view,
     admin_place_update_view, admin_place_search_view,
     admin_geocode_media_view, admin_revoke_approval_view, admin_delete_media_view,
+    admin_photo_review_view, admin_photo_approve_view, admin_photo_delete_view,
+    admin_photo_recheck_view,
 )
 
 urlpatterns = [
@@ -21,4 +23,10 @@ urlpatterns = [
     path('place/search/',                   admin_place_search_view,  name='admin_place_search'),
     path('extract/review/<int:media_id>/geocode/', admin_geocode_media_view,   name='admin_geocode_media'),
     path('mediaplace/<int:mp_id>/revoke/',         admin_revoke_approval_view, name='admin_revoke_approval'),
+
+    # 포토스팟 검열 포털
+    path('photos/review/',                  admin_photo_review_view,   name='admin_photo_review'),
+    path('photos/review/recheck/',          admin_photo_recheck_view,  name='admin_photo_recheck'),
+    path('photos/<int:photo_id>/approve/',  admin_photo_approve_view,  name='admin_photo_approve'),
+    path('photos/<int:photo_id>/delete/',   admin_photo_delete_view,   name='admin_photo_delete'),
 ]

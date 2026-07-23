@@ -52,12 +52,15 @@ class PhotoSerializer(serializers.ModelSerializer):
     sub_images = PhotoImageSerializer(many=True, read_only=True)
     is_bookmarked = serializers.SerializerMethodField()
     uploaded_by = serializers.SerializerMethodField()
+    author = serializers.SerializerMethodField()
+    isMine = serializers.SerializerMethodField()
 
     class Meta:
         model = Photo
         fields = [
-            'id', 'image_url', 'sub_images', 'description', 'likes', 'tags',
-            'is_bookmarked', 'uploaded_by', 'status', 'created_at',
+            'id', 'image_url', 'sub_images', 'description', 'content', 'travel_date',
+            'likes', 'tags', 'is_bookmarked', 'uploaded_by', 'author', 'isMine',
+            'status', 'created_at',
         ]
 
     def get_is_bookmarked(self, obj):
@@ -71,6 +74,15 @@ class PhotoSerializer(serializers.ModelSerializer):
         if not obj.uploaded_by_id:
             return None
         return {'id': obj.uploaded_by_id, 'nickname': obj.uploaded_by.nickname}
+
+    def get_author(self, obj):
+        if not obj.uploaded_by_id:
+            return None
+        return obj.uploaded_by.nickname or '익명 여행자'
+
+    def get_isMine(self, obj):
+        user = _get_user_from_context(self.context)
+        return bool(user) and obj.uploaded_by_id == user.id
 
 
 class PhotoSpotDetailSerializer(serializers.Serializer):

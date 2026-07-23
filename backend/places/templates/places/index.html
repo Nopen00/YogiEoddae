@@ -96,6 +96,17 @@
         </p>
       </a>
 
+      <a href="/places/photos/review/" class="card yellow">
+        <div class="card-icon"><img src="{% static 'places/icons/alert-circle.svg' %}" alt=""></div>
+        <h2 class="card-title">포토스팟 검수</h2>
+        <p class="card-desc">
+          AI 1차 검열에서 보류된 포토스팟 승인/삭제
+          {% if photo_pending_count > 0 %}
+          <span class="badge">{{ photo_pending_count }}건 대기</span>
+          {% endif %}
+        </p>
+      </a>
+
     </div>
   </main>
 

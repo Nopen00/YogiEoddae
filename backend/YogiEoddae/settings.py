@@ -31,7 +31,7 @@ SECRET_KEY = 'django-insecure-snr@nu(e$fi4_2+45md-(x%(_05&qn(%lx8ezx3vyu=6gqn!%3
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '192.168.0.18', '.ngrok-free.app', '.ngrok-free.dev', '.ngrok.io']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '192.168.0.7', '.ngrok-free.app', '.ngrok-free.dev', '.ngrok.io']
 
 
 # Application definition
@@ -144,6 +144,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
+
+# 유저 업로드 이미지(포토스팟 등). 배포 시 S3/R2 등으로 전환 예정 — DEVPLAN.md "이미지 스토리지 배포 전환 가이드" 참고.
+MEDIA_URL = 'media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field

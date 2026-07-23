@@ -84,7 +84,10 @@ class Photo(models.Model):
 
     place = models.ForeignKey(Place, on_delete=models.CASCADE, related_name='photos')
     image_url = models.URLField(max_length=500)  # 대표사진
-    description = models.TextField(blank=True)
+    description = models.TextField(blank=True)  # 제목
+    # 프론트에서 'YYYY.MM.DD' 형태의 자유 문자열로 보내므로 DateField 대신 CharField로 그대로 저장.
+    travel_date = models.CharField(max_length=20, blank=True, default='')
+    content = models.TextField(blank=True, default='')  # 상세 설명
     likes = models.IntegerField(default=0)
     tags = models.ManyToManyField(Tag, blank=True, related_name='photos')
     # 유저 업로드 지원 (null=관리자가 기존 방식으로 등록한 포토스팟)
@@ -95,6 +98,10 @@ class Photo(models.Model):
     publish_reward_granted = models.BooleanField(default=False)
     # 좋아요 마일스톤 보상(정산함) 중복 지급 방지용 — 마지막으로 보상을 지급한 시점의 likes 값
     last_rewarded_likes = models.PositiveIntegerField(default=0)
+    # AI 1차 검열 결과. 부적절 의심으로 보류(pending)된 경우 어떤 카테고리가 감지됐는지, AI 사유는 무엇인지 기록.
+    moderation_categories = models.JSONField(default=list, blank=True)
+    moderation_reason = models.TextField(blank=True, default='')
+    moderation_checked_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

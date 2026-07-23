@@ -1,0 +1,207 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>포토스팟 검수 | 요기어때?</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #f9fafb; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #1f2937; }
+
+    header { background: #fff; border-bottom: 1px solid #e5e7eb; padding: 14px 24px; display: flex; align-items: center; gap: 12px; }
+    header a.back { color: #9ca3af; font-size: 13px; text-decoration: none; white-space: nowrap; }
+    header a.back:hover { color: #4b5563; }
+    .header-info { flex: 1; min-width: 0; }
+    .header-info h1 { font-size: 18px; font-weight: 700; }
+    .header-info p  { font-size: 12px; color: #9ca3af; margin-top: 2px; }
+    .btn-recheck { flex-shrink: 0; background: #eff6ff; color: #2563eb; border: none; border-radius: 8px; padding: 8px 16px; font-size: 13px; font-weight: 500; cursor: pointer; }
+    .btn-recheck:hover { background: #dbeafe; }
+    .btn-recheck:disabled { opacity: 0.5; cursor: default; }
+
+    main { max-width: 860px; margin: 0 auto; padding: 32px 24px; }
+    .section-header { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+    .section-title { font-size: 15px; font-weight: 700; }
+    .badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; }
+    .badge-yellow { background: #fef9c3; color: #a16207; }
+    .badge-cat { background: #fee2e2; color: #b91c1c; margin-right: 4px; }
+    .recheck-msg { font-size: 13px; color: #16a34a; margin-bottom: 14px; }
+
+    .card-list { display: flex; flex-direction: column; gap: 14px; }
+    .photo-card { background: #fff; border-radius: 12px; border: 1px solid #fed7aa; padding: 18px 20px; }
+    .card-top { display: flex; gap: 16px; }
+    .thumbs { display: flex; gap: 6px; flex-wrap: wrap; flex-shrink: 0; width: 220px; }
+    .thumbs img { width: 68px; height: 68px; object-fit: cover; border-radius: 8px; border: 1px solid #e5e7eb; }
+    .card-body { flex: 1; min-width: 0; }
+    .card-place { font-weight: 600; font-size: 15px; }
+    .card-meta { font-size: 12px; color: #9ca3af; margin-top: 2px; }
+    .card-desc { font-size: 13px; color: #4b5563; margin-top: 6px; }
+    .card-reason { font-size: 13px; color: #b91c1c; margin-top: 8px; background: #fff7ed; border-radius: 8px; padding: 8px 12px; }
+    .card-cats { margin-top: 6px; }
+
+    .card-actions { display: flex; gap: 10px; margin-top: 14px; }
+    .btn-approve { flex: 1; background: #16a34a; color: #fff; border: none; border-radius: 10px; padding: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .btn-approve:hover { background: #15803d; }
+    .btn-delete { flex: 1; background: #fff1f2; color: #be123c; border: 1px solid #fecdd3; border-radius: 10px; padding: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .btn-delete:hover { background: #ffe4e6; }
+    .card-result { font-size: 13px; margin-top: 8px; text-align: center; }
+    .card-result.ok  { color: #16a34a; }
+    .card-result.err { color: #dc2626; }
+
+    .empty { background: #fff; border-radius: 12px; border: 1px solid #e5e7eb; padding: 32px; text-align: center; color: #9ca3af; font-size: 14px; }
+
+    .confirm-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 200; align-items: center; justify-content: center; }
+    .confirm-overlay.open { display: flex; }
+    .confirm-box { background: #fff; border-radius: 14px; padding: 28px 28px 24px; width: 340px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); text-align: center; }
+    .confirm-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+    .confirm-desc { font-size: 13px; color: #6b7280; margin-bottom: 20px; line-height: 1.5; }
+    .confirm-btns { display: flex; gap: 10px; }
+    .btn-confirm-cancel { flex: 1; background: #f3f4f6; color: #374151; border: none; border-radius: 10px; padding: 11px; font-size: 14px; cursor: pointer; }
+    .btn-confirm-cancel:hover { background: #e5e7eb; }
+    .btn-confirm-ok { flex: 1; background: #be123c; color: #fff; border: none; border-radius: 10px; padding: 11px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .btn-confirm-ok:hover { background: #9f1239; }
+  </style>
+</head>
+<body>
+
+<header>
+  <a href="/places/" class="back">← 관리 포털</a>
+  <div class="header-info">
+    <h1>포토스팟 검수</h1>
+    <p>AI가 보류 판정한 포토스팟 — 최종 승인 또는 삭제를 결정하세요.</p>
+  </div>
+  <button type="button" class="btn-recheck" id="recheckBtn" onclick="recheckAll()">AI 전체 재검수</button>
+</header>
+
+<main>
+  <div class="section-header">
+    <h2 class="section-title">검토 대기</h2>
+    <span class="badge badge-yellow">{{ pending|length }}건</span>
+  </div>
+  <p class="recheck-msg" id="recheckMsg"></p>
+
+  {% if pending %}
+  <div class="card-list">
+    {% for photo in pending %}
+    <div class="photo-card" id="photo-card-{{ photo.pk }}">
+      <div class="card-top">
+        <div class="thumbs">
+          <img src="{{ photo.image_url }}" alt="대표사진">
+          {% for sub in photo.sub_images.all %}
+          <img src="{{ sub.image_url }}" alt="부사진">
+          {% endfor %}
+        </div>
+        <div class="card-body">
+          <div class="card-place">{{ photo.place.name }}</div>
+          <div class="card-meta">
+            업로더: {{ photo.uploaded_by.nickname|default:'알 수 없음' }}
+            · 업로드: {{ photo.created_at|date:'Y-m-d H:i' }}
+            {% if photo.moderation_checked_at %} · 검사: {{ photo.moderation_checked_at|date:'Y-m-d H:i' }}{% endif %}
+          </div>
+          {% if photo.description %}<p class="card-desc">{{ photo.description }}</p>{% endif %}
+          <div class="card-cats">
+            {% for label in photo.category_labels %}<span class="badge badge-cat">{{ label }}</span>{% endfor %}
+          </div>
+          {% if photo.moderation_reason %}<p class="card-reason">AI 사유: {{ photo.moderation_reason }}</p>{% endif %}
+        </div>
+      </div>
+      <div class="card-actions">
+        <button type="button" class="btn-approve" onclick="approvePhoto({{ photo.pk }})">✓ 최종 승인</button>
+        <button type="button" class="btn-delete" onclick="openDeleteConfirm({{ photo.pk }}, '{{ photo.place.name|escapejs }}')">✕ 삭제</button>
+      </div>
+      <p class="card-result" id="result-{{ photo.pk }}"></p>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty">검토 대기 중인 포토스팟이 없습니다.</div>
+  {% endif %}
+</main>
+
+<div class="confirm-overlay" id="deleteModal">
+  <div class="confirm-box" onclick="event.stopPropagation()">
+    <div class="confirm-title">포토스팟을 삭제하시겠습니까?</div>
+    <div class="confirm-desc" id="deleteDesc">이 작업은 되돌릴 수 없습니다.</div>
+    <div class="confirm-btns">
+      <button class="btn-confirm-cancel" onclick="closeDeleteConfirm()">취소</button>
+      <button class="btn-confirm-ok" onclick="doDelete()">삭제</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const CSRF = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
+
+  async function approvePhoto(photoId) {
+    const resultEl = document.getElementById(`result-${photoId}`);
+    resultEl.textContent = '처리 중...'; resultEl.className = 'card-result';
+    try {
+      const res = await fetch(`/places/photos/${photoId}/approve/`, { method: 'POST', headers: { 'X-CSRFToken': CSRF } });
+      const data = await res.json();
+      if (data.ok) {
+        resultEl.textContent = '승인 완료 ✓';
+        resultEl.className = 'card-result ok';
+        setTimeout(() => document.getElementById(`photo-card-${photoId}`).remove(), 600);
+      } else {
+        resultEl.textContent = '처리 실패'; resultEl.className = 'card-result err';
+      }
+    } catch {
+      resultEl.textContent = '네트워크 오류'; resultEl.className = 'card-result err';
+    }
+  }
+
+  let _deletePhotoId = null;
+
+  function openDeleteConfirm(photoId, placeName) {
+    _deletePhotoId = photoId;
+    document.getElementById('deleteDesc').textContent = `"${placeName}" 포토스팟을 완전히 삭제합니다.`;
+    document.getElementById('deleteModal').classList.add('open');
+  }
+  function closeDeleteConfirm() {
+    document.getElementById('deleteModal').classList.remove('open');
+    _deletePhotoId = null;
+  }
+  document.getElementById('deleteModal').addEventListener('click', closeDeleteConfirm);
+
+  async function doDelete() {
+    if (!_deletePhotoId) return;
+    const photoId = _deletePhotoId;
+    const btn = document.querySelector('.btn-confirm-ok');
+    btn.disabled = true; btn.textContent = '삭제 중...';
+    try {
+      const res = await fetch(`/places/photos/${photoId}/delete/`, { method: 'POST', headers: { 'X-CSRFToken': CSRF } });
+      const data = await res.json();
+      if (data.ok) {
+        document.getElementById(`photo-card-${photoId}`).remove();
+      }
+      closeDeleteConfirm();
+    } catch {
+      // no-op — 모달만 닫고 목록은 유지
+      closeDeleteConfirm();
+    }
+    btn.disabled = false; btn.textContent = '삭제';
+  }
+
+  async function recheckAll() {
+    const btn = document.getElementById('recheckBtn');
+    const msgEl = document.getElementById('recheckMsg');
+    btn.disabled = true; btn.textContent = '재검수 중...';
+    msgEl.textContent = '';
+    try {
+      const res = await fetch('/places/photos/review/recheck/', { method: 'POST', headers: { 'X-CSRFToken': CSRF } });
+      const data = await res.json();
+      if (data.ok) {
+        msgEl.textContent = `재검수 완료 — 승인 ${data.approved}건, 여전히 보류 ${data.still_pending}건`;
+        setTimeout(() => location.reload(), 1200);
+      } else {
+        msgEl.textContent = '재검수 실패';
+      }
+    } catch {
+      msgEl.textContent = '네트워크 오류';
+    }
+    btn.disabled = false; btn.textContent = 'AI 전체 재검수';
+  }
+</script>
+
+</body>
+</html>

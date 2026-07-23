@@ -1,12 +1,19 @@
+import os
+import uuid
+
 import requests
 from django.conf import settings
+from django.core.files.storage import default_storage
 from django.db.models import Count, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+
+from django.utils import timezone
 
 from .models import Place, Media, MediaPlace, Tag, Photo, PhotoImage, PhotoLike
 from .serializers import (
@@ -14,6 +21,7 @@ from .serializers import (
     MediaSerializer, MediaDetailSerializer, MediaPlaceSerializer,
     TagSerializer, PhotoSerializer, PhotoSpotDetailSerializer,
 )
+from .moderation import moderate_photo, CATEGORY_LABELS
 from bookmarks.models import MediaBookmark, PlaceBookmark
 from mailbox.services import check_and_grant_like_milestone, grant_photo_publish_reward
 
@@ -130,10 +138,12 @@ def index_view(request):
     pending  = MediaPlace.objects.filter(status=MediaPlace.STATUS_INFERRED).count()
     approved = MediaPlace.objects.filter(status=MediaPlace.STATUS_ADMIN_APPROVED).count()
     quiz     = MediaPlace.objects.filter(status=MediaPlace.STATUS_QUIZ_CONFIRMED).count()
+    photo_pending = Photo.objects.filter(status=Photo.STATUS_PENDING).count()
     return render(request, 'places/index.html', {
         'pending_count':  pending,
         'approved_count': approved,
         'quiz_count':     quiz,
+        'photo_pending_count': photo_pending,
         'media_count':    Media.objects.count(),
     })
 
@@ -374,6 +384,58 @@ def admin_review_view(request, media_id):
     })
 
 
+# ── 포토스팟 검열(1차 AI + 2차 관리자) 포털 ───────────────────────────────────
+
+def admin_photo_review_view(request):
+    """AI가 보류(pending) 판정한 포토스팟 목록 — 관리자가 최종승인/삭제를 결정."""
+    pending = (Photo.objects
+               .filter(status=Photo.STATUS_PENDING)
+               .select_related('place', 'uploaded_by')
+               .prefetch_related('sub_images')
+               .order_by('-created_at'))
+    for photo in pending:
+        photo.category_labels = [CATEGORY_LABELS.get(c, c) for c in photo.moderation_categories]
+    return render(request, 'places/admin_photo_review.html', {'pending': pending})
+
+
+def admin_photo_approve_view(request, photo_id):
+    """보류 중인 포토스팟을 관리자가 최종 승인."""
+    if request.method != 'POST':
+        return JsonResponse({'ok': False}, status=405)
+    photo = get_object_or_404(Photo, pk=photo_id)
+    photo.status = Photo.STATUS_APPROVED
+    photo.save(update_fields=['status'])
+    grant_photo_publish_reward(photo)
+    return JsonResponse({'ok': True})
+
+
+def admin_photo_delete_view(request, photo_id):
+    """보류 중인 포토스팟을 관리자가 최종 삭제(게시글 삭제)."""
+    if request.method != 'POST':
+        return JsonResponse({'ok': False}, status=405)
+    photo = get_object_or_404(Photo, pk=photo_id)
+    photo.delete()
+    return JsonResponse({'ok': True})
+
+
+def admin_photo_recheck_view(request):
+    """보류 중인 포토스팟 전체에 대해 AI 검열을 재실행 (AI 호출 실패로 쌓인 건 재시도용)."""
+    if request.method != 'POST':
+        return JsonResponse({'ok': False}, status=405)
+    from .moderation import moderate_photo
+
+    pending = Photo.objects.filter(status=Photo.STATUS_PENDING).prefetch_related('sub_images')
+    approved_count = 0
+    still_pending_count = 0
+    for photo in pending:
+        result = moderate_photo(photo)
+        if result['safe']:
+            approved_count += 1
+        else:
+            still_pending_count += 1
+    return JsonResponse({'ok': True, 'approved': approved_count, 'still_pending': still_pending_count})
+
+
 # ── DRF ViewSets ────────────────────────────────────────────────────────────
 
 class PlaceViewSet(viewsets.ReadOnlyModelViewSet):
@@ -505,10 +567,12 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
 
 class PhotoViewSet(viewsets.ModelViewSet):
     """
-    GET   /api/photos/               전체 포토스팟 목록 (승인된 것 + 내가 올린 것, keyword로 설명/장소명 검색)
+    GET   /api/photos/               전체 포토스팟 목록 (승인된 것 + 내가 올린 것, keyword로 설명/장소명 검색, author로 작성자 닉네임 필터)
+    GET   /api/photos/mine/          내가 올린 포토스팟 전체 (상태 무관, JWT 필요)
+    POST  /api/photos/upload-image/  이미지 파일 업로드 (multipart, JWT 필요) → image_url 반환
     GET   /api/photos/{id}/          포토스팟 상세 (장소 + 같은 장소 사진 + 관련 사진)
     POST  /api/photos/               포토스팟 업로드 (JWT 필요, 심사중 상태로 생성, 부사진 최대 10장)
-    PATCH /api/photos/{id}/          포토스팟 수정 (작성자 본인만, 사진은 수정 불가 — 설명/태그만)
+    PATCH /api/photos/{id}/          포토스팟 수정 (작성자 본인만, 사진은 수정 불가 — 제목/상세설명/여행일/태그만)
     DELETE /api/photos/{id}/         포토스팟 삭제 (작성자 본인만)
     POST/DELETE /api/photos/{id}/like/   좋아요 토글 (JWT 필요)
     """
@@ -535,7 +599,35 @@ class PhotoViewSet(viewsets.ModelViewSet):
         keyword = self.request.query_params.get('keyword')
         if keyword:
             qs = qs.filter(Q(description__icontains=keyword) | Q(place__name__icontains=keyword))
+        author = self.request.query_params.get('author')
+        if author:
+            qs = qs.filter(uploaded_by__nickname=author)
         return qs.distinct()
+
+    @action(detail=False, methods=['get'], url_path='mine', permission_classes=[IsAuthenticated])
+    def mine(self, request):
+        """GET /api/photos/mine/   내가 올린 포토스팟 전체 (상태 무관)"""
+        qs = self.get_queryset().filter(uploaded_by=request.user).order_by('-created_at')
+        return Response(PhotoSerializer(qs, many=True, context={'request': request}).data)
+
+    @action(detail=False, methods=['post'], url_path='upload-image',
+            permission_classes=[IsAuthenticated], parser_classes=[MultiPartParser])
+    def upload_image(self, request):
+        """
+        POST /api/photos/upload-image/   이미지 파일 업로드 (multipart, 필드명 'image')
+        저장된 파일의 절대 URL을 반환한다. 대표사진/부사진 모두 이 엔드포인트로 먼저 업로드한 뒤
+        받은 image_url을 POST /api/photos/ 에 넘기는 방식으로 사용.
+        로컬 디스크(MEDIA_ROOT)에 저장 — 배포 시 스토리지 전환은 DEVPLAN.md 참고.
+        """
+        file = request.FILES.get('image')
+        if not file:
+            return Response({'image': ['이미지 파일이 필요합니다.']}, status=status.HTTP_400_BAD_REQUEST)
+
+        ext = os.path.splitext(file.name)[1].lower() or '.jpg'
+        filename = f'photos/{uuid.uuid4().hex}{ext}'
+        saved_path = default_storage.save(filename, file)
+        image_url = request.build_absolute_uri(default_storage.url(saved_path))
+        return Response({'image_url': image_url}, status=status.HTTP_201_CREATED)
 
     def create(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
@@ -557,6 +649,8 @@ class PhotoViewSet(viewsets.ModelViewSet):
             place=place,
             image_url=image_url,
             description=request.data.get('description', ''),
+            content=request.data.get('content', ''),
+            travel_date=request.data.get('travel_date', ''),
             uploaded_by=request.user,
             status=Photo.STATUS_PENDING,
         )
@@ -568,6 +662,11 @@ class PhotoViewSet(viewsets.ModelViewSet):
                 PhotoImage(photo=photo, image_url=url, order=i)
                 for i, url in enumerate(sub_image_urls)
             ])
+
+        # AI 1차 검열: 안전하면 즉시 승인, 의심되면 보류(관리자 검토 대기)
+        moderate_photo(photo)
+        photo.refresh_from_db()
+
         return Response(PhotoSerializer(photo, context={'request': request}).data, status=status.HTTP_201_CREATED)
 
     def partial_update(self, request, *args, **kwargs):
@@ -581,6 +680,12 @@ class PhotoViewSet(viewsets.ModelViewSet):
         if 'description' in request.data:
             photo.description = request.data.get('description', '')
             update_fields.append('description')
+        if 'content' in request.data:
+            photo.content = request.data.get('content', '')
+            update_fields.append('content')
+        if 'travel_date' in request.data:
+            photo.travel_date = request.data.get('travel_date', '')
+            update_fields.append('travel_date')
         if update_fields:
             photo.save(update_fields=update_fields)
         if 'tag_ids' in request.data:
