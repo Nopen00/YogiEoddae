@@ -4,10 +4,10 @@ React Native (Expo) 기반 모바일 앱 프론트엔드입니다.
 
 ## TODO
 
-- [ ] **Photo에 `travel_date` 필드 추가 (백엔드 대기)** — 포토스팟 상세화면·작성화면에 여행일 표시/입력을 추가하면서 프론트 타입/mock에는 선반영해뒀음(`services/types.ts`, `mockData.ts`, `photoApi.upload`). 백엔드 `Photo` 모델에 실제 필드가 생기면 mock 우회 코드 제거.
-- [ ] **Photo에 `content`(긴 설명) 필드 추가 (백엔드 대기)** — 포토스팟 작성화면에서 "제목"(`description`)과 "설명"(`content`)을 분리해 입력받도록 만들었는데, 백엔드 `Photo` 모델은 아직 `description` 하나뿐. 필드가 생기면 `photoApi.upload`/`update`의 mock 우회 코드 제거.
-- [ ] **포토스팟 업로더 프로필(아바타) 실 연동 (백엔드 대기)** — 실제 `/api/photos/` 응답은 `uploaded_by: {id, nickname}`만 내려주고 아바타가 없음. 지금 프론트는 mock 전역 상태(`mockNickname`, `mockProfileImage`)로 `author`/`authorAvatar`를 흉내내는 중. 백엔드에 프로필 이미지 노출이 추가되면 연결.
-- [ ] **`photoApi.getList`의 `author` 필터 / `photoApi.getMine` (백엔드 대기)** — `UserPhotoSpotsScreen`(업로더 프로필 → 작성 목록)과 `PhotoSpotManageScreen`(내 포토스팟 관리)이 쓰는 이 두 조회는 mock에서만 동작. 실제 `/api/photos/`는 `keyword` 파라미터만 지원하고 작성자 필터·mine 전용 엔드포인트가 없음.
+- [x] **Photo에 `travel_date`/`content` 필드 (백엔드 완료 2026-07-23)** — 백엔드 `Photo` 모델에 두 필드 모두 추가되고 `PhotoSerializer`/업로드·수정 API에도 반영됨. **프론트 할 일**: `services/api.ts`의 mock 우회 코드(`travel_date`/`content` 관련) 제거하고 실 API 응답 그대로 사용하도록 정리.
+- [ ] **포토스팟 업로더 프로필(아바타) 실 연동 (백엔드 대기)** — `author`(닉네임)는 연동 완료(아래 항목 참고)했지만 아바타는 아직. `User` 모델에 프로필 이미지 필드 자체가 없어서, 아래 이미지 업로드 파이프라인이 실전 검증되면 같은 방식으로 avatar 필드 추가 예정. 그때까지 프론트는 mock 전역 상태(`mockProfileImage`)로 `authorAvatar`를 흉내내는 것 유지.
+- [x] **`photoApi.getList`의 `author` 필터 / `photoApi.getMine` (백엔드 완료 2026-07-23)** — `GET /api/photos/?author=닉네임` 필터와 `GET /api/photos/mine/` 엔드포인트 신규 추가됨. `PhotoSerializer`에 `author`(닉네임), `isMine` 필드도 추가돼서 `photo.author`/`photo.isMine`이 실제로 값이 옴. **프론트 할 일**: 없음, 그대로 쓰면 됨.
+- [ ] **포토스팟 이미지 실제 업로드 파이프라인 연결 (백엔드 완료, 프론트 작업 필요, 2026-07-23)** — 지금 `PhotoSpotWriteScreen`의 `handlePickMainImage`/`handlePickExtraImages`가 `ImagePicker` 결과의 로컬 기기 URI(`result.assets[0].uri`)를 그대로 `image_url`로 서버에 보내고 있어서, 서버(AI 검열 포함)가 그 이미지에 접근할 수 없음. 백엔드에 `POST /api/photos/upload-image/`(multipart, JWT, 필드명 `image`) 엔드포인트가 새로 생겼으니, `handleCreate` 제출 시점에 `mainImage`/`extraImages` uri들을 이 엔드포인트로 먼저 업로드해서 받은 `image_url`들로 교체한 뒤 `photoApi.upload`를 호출하도록 수정. 업로드 여러 장이라 제출 버튼에 로딩 표시 고려.
 - [ ] **코스 상세화면 4탭 리디자인** — 저장/일정추가 버튼 이미지 오버레이화 + 탭 스와이프. 백엔드 논의 전까지 착수 보류.
 - [ ] **포토스팟 인기순 정렬(백엔드 로드맵 Phase 8)** — 백엔드 미착수. 완료되면 `CourseScreen`/`SearchResultScreen` 정렬 옵션에 연결.
 
