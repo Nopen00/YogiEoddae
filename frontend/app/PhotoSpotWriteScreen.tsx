@@ -498,7 +498,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.white,
   },
   tagChipText: { ...Typography.body2, color: Colors.light.primary },
-  infoBoxWrapper: { marginTop: Spacing.v.medium, marginHorizontal: Spacing.h.medium },
+  infoBoxWrapper: { marginTop: Spacing.v.large, marginHorizontal: Spacing.h.medium },
   infoBox: {
     borderRadius: Spacing.r.small,
     paddingHorizontal: Spacing.h.medium,
