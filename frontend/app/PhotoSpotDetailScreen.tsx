@@ -611,9 +611,9 @@ const styles = StyleSheet.create({
     padding: Spacing.h.medium,
   },
   uploaderAvatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: Size.circleMd,
+    height: Size.circleMd,
+    borderRadius: Size.circleMd / 2,
     backgroundColor: Colors.light.grayLight,
   },
   uploaderInfo: { flex: 1, marginLeft: Spacing.h.medium },

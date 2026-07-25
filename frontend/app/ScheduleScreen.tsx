@@ -1,12 +1,10 @@
 //app\(tabs)\ScheduleScreen.tsx
 import { Divider } from '@/components/ui/Divider';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
-import { TagRow } from '@/components/ui/TagRow';
 import { NewScheduleAlert } from '@/components/modals/NewScheduleAlert';
 import { ScheduleMoreMenuAlert } from '@/components/modals/ScheduleMoreMenuAlert';
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
-import { CITY_SHORT, MEDIA_TYPE_LABEL } from '@/constants/labels';
 import { Size } from '@/constants/Size';
 import { Shadows } from '@/constants/Shadows';
 import { Spacing } from '@/constants/Spacing';
@@ -165,22 +163,6 @@ const PlaceImageCluster = ({ dailyPlaces }: { dailyPlaces: DailyPlace[] }) => {
   );
 };
 
-// ─── 일정 태그 생성 ───────────────────────────────────────────
-const getScheduleTags = (schedule: Schedule): string[] => {
-  const tags: string[] = [];
-  if (schedule.media) {
-    const typeLabel = MEDIA_TYPE_LABEL[schedule.media.media_type];
-    if (typeLabel) tags.push(typeLabel);
-  }
-  const cities = new Set<string>();
-  for (const dp of schedule.daily_places) {
-    const city = CITY_SHORT[dp.place.address.split(' ')[0]];
-    if (city) cities.add(city);
-  }
-  cities.forEach(c => tags.push(c));
-  return tags;
-};
-
 // ─── 일정 카드 ────────────────────────────────────────────────
 const ScheduleCard = ({
   schedule,
@@ -199,7 +181,6 @@ const ScheduleCard = ({
   onDeletePress?: () => void;
   style?: StyleProp<ViewStyle>;
 }) => {
-  const tags = getScheduleTags(schedule);
   return (
     <TouchableOpacity style={[styles.card, style]} activeOpacity={0.85} onPress={onPress}>
       <PlaceImageCluster dailyPlaces={schedule.daily_places} />
@@ -210,13 +191,6 @@ const ScheduleCard = ({
           <Text style={styles.infoSep}>-</Text>
           <Text style={styles.infoText}>{formatDate(schedule.end_date)}</Text>
         </View>
-        {tags.length > 0 && (
-          <TagRow>
-            {tags.map((tag, i) => (
-              <Text key={i} style={styles.tagText}>#{tag}</Text>
-            ))}
-          </TagRow>
-        )}
       </View>
       <View style={styles.moreIconWrapper}>
         <TouchableOpacity onPress={onMorePress} activeOpacity={0.7} hitSlop={8}>
@@ -502,7 +476,6 @@ const styles = StyleSheet.create({
   infoRow: { flexDirection: 'row', alignItems: 'center', marginTop: Spacing.v.small, gap: Spacing.h.xsmall },
   infoText: { ...Typography.subtitle1, color: Colors.light.grayDark },
   infoSep: { ...Typography.subtitle1, color: Colors.light.grayDark },
-  tagText: { ...Typography.body2, color: Colors.light.primary },
   moreIconWrapper: { alignSelf: 'center', marginLeft: Spacing.h.medium, zIndex: 1 },
   deleteOverlay: { flex: 1, backgroundColor: Colors.light.overlay, justifyContent: 'center', alignItems: 'center' },
   deletePopup: {

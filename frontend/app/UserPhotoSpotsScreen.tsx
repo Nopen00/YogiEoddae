@@ -134,9 +134,9 @@ const styles = StyleSheet.create({
     marginTop: Spacing.v.medium,
   },
   profileAvatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: Size.circleMd,
+    height: Size.circleMd,
+    borderRadius: Size.circleMd / 2,
     backgroundColor: Colors.light.grayLight,
   },
   profileInfo: { marginLeft: Spacing.h.medium },
