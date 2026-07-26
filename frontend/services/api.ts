@@ -261,6 +261,19 @@ export const userApi = {
   },
 };
 
+// 코스 추가 건의함 — 백엔드 미착수(DEVPLAN Phase 10-1) 상태라 mock 모드에서만 토큰 차감이 동작함
+export const COURSE_SUGGESTION_TOKEN_COST = 100; // 임시
+
+export const courseSuggestionApi = {
+  create: (payload: { title: string; link: string; media_type: string; description: string }) => {
+    if (USE_MOCK) {
+      setMockTokenBalance(mockTokenBalance - COURSE_SUGGESTION_TOKEN_COST);
+      return mock({ token_balance: mockTokenBalance });
+    }
+    return apiClient.post<{ token_balance: number }>('/api/course-suggestions/', payload);
+  },
+};
+
 export const mailApi = {
   getList: () =>
     USE_MOCK ? mock([...mockMailStore]) : apiClient.get<MailItem[]>('/api/mailbox/'),

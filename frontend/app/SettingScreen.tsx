@@ -101,6 +101,12 @@ const SettingScreen = () => {
         <ChevronRight size={IconSize.medium} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
       </TouchableOpacity>
 
+      {/* 코스 건의하기 섹션 */}
+      <TouchableOpacity style={styles.menuRow} activeOpacity={0.7} onPress={() => router.push('/CourseSuggestionWriteScreen')}>
+        <Text style={styles.menuRowText}>코스 건의하기</Text>
+        <ChevronRight size={IconSize.medium} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
+      </TouchableOpacity>
+
       {/* 아이콘 모드 섹션 */}
       <View style={styles.iconModeSection}>
         <View style={styles.iconModeTextColumn}>

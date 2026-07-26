@@ -595,6 +595,19 @@ const CourseScreen = () => {
           contentContainerStyle={styles.courseListContent}
           style={styles.courseList}
         />
+
+        {/* 코스 건의 유도 */}
+        <View style={styles.suggestSection}>
+          <Text style={styles.suggestTitle}>원하시는 코스가 없으신가요?</Text>
+          <Text style={styles.suggestSubtitle}>100 토큰으로 코스를 건의해요!</Text>
+          <TouchableOpacity
+            style={styles.suggestButton}
+            activeOpacity={0.8}
+            onPress={() => router.push('/CourseSuggestionWriteScreen')}
+          >
+            <Text style={styles.suggestButtonText}>건의하러 가기</Text>
+          </TouchableOpacity>
+        </View>
         </ScrollView>
 
         {/* ── 유튜브 PICK 탭 ── */}
@@ -935,6 +948,22 @@ const styles = StyleSheet.create({
     color: Colors.light.grayDark,
     textAlign: 'left',
   },
+  suggestSection: {
+    marginTop: Spacing.v.large,
+    paddingHorizontal: Spacing.h.medium,
+  },
+  suggestTitle: { ...Typography.title1, color: Colors.light.black },
+  suggestSubtitle: { ...Typography.body2, color: Colors.light.grayDark, marginTop: Spacing.v.small },
+  suggestButton: {
+    marginTop: Spacing.v.medium,
+    minHeight: Size.buttonMd,
+    paddingVertical: Spacing.v.medium,
+    borderRadius: Spacing.r.small,
+    backgroundColor: Colors.light.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  suggestButtonText: { ...Typography.button2, color: Colors.light.white },
   photoTagBox: {
     marginTop: Spacing.v.large,
     marginHorizontal: Spacing.h.medium,
