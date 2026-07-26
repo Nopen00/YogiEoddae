@@ -10,7 +10,7 @@ import { useLargeIconMode } from '@/hooks/useLargeIconMode';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { AlertCircle, ChevronRight, HelpCircle } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
-import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const SettingScreen = () => {
@@ -19,6 +19,7 @@ const SettingScreen = () => {
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [tokenBalance, setTokenBalance] = useState(0);
   const { isLargeIconMode, setIsLargeIconMode } = useLargeIconMode();
+  const [isIconModeToastVisible, setIsIconModeToastVisible] = useState(false);
   const [hasMail, setHasMail] = useState(false);
   const [hasEmail, setHasEmail] = useState(true);
 
@@ -119,12 +120,29 @@ const SettingScreen = () => {
         </View>
         <TouchableOpacity
           style={[styles.toggle, { backgroundColor: isLargeIconMode ? Colors.light.primary : Colors.light.grayLight }]}
-          onPress={() => setIsLargeIconMode(!isLargeIconMode)}
+          onPress={() => {
+            setIsLargeIconMode(!isLargeIconMode);
+            setIsIconModeToastVisible(true);
+          }}
           activeOpacity={0.8}
         >
           <View style={[styles.toggleCircle, { left: isLargeIconMode ? 26 : 2 }]} />
         </TouchableOpacity>
       </View>
+
+      <Modal visible={isIconModeToastVisible} transparent animationType="none">
+        <TouchableOpacity
+          style={styles.iconModeToastOverlay}
+          activeOpacity={1}
+          onPress={() => setIsIconModeToastVisible(false)}
+        >
+          <View style={styles.iconModeToastBox}>
+            <Text style={styles.iconModeToastText}>
+              {isLargeIconMode ? '큰 아이콘 모드가 적용되었습니다.' : '탭 모드가 적용되었습니다.'}
+            </Text>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -245,6 +263,22 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.white,
     top: 2,
   },
+  iconModeToastOverlay: {
+    flex: 1,
+    backgroundColor: Colors.light.overlay,
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.h.xlarge,
+  },
+  iconModeToastBox: {
+    backgroundColor: Colors.light.white,
+    borderRadius: Spacing.r.small,
+    borderWidth: Spacing.lw.small,
+    borderColor: Colors.light.grayLight,
+    alignItems: 'center',
+    paddingVertical: Spacing.v.medium,
+    paddingHorizontal: Spacing.h.medium,
+  },
+  iconModeToastText: { ...Typography.subtitle2, color: Colors.light.black, textAlign: 'center' },
 });
 
 export default SettingScreen;
