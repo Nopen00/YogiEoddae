@@ -19,11 +19,12 @@ import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import PagerView from '@/components/ui/PagerViewWrapper';
+import { useLargeIconMode } from '@/hooks/useLargeIconMode';
 import { useScrollHeaderTitle } from '@/hooks/useScrollHeaderTitle';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Calendar, Check, ChevronDown, Edit3, Heart, Star } from 'lucide-react-native';
-import React, { useCallback, useEffect, useState } from 'react';
-import { Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View, useWindowDimensions } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Animated, Image, Modal, NativeScrollEvent, NativeSyntheticEvent, ScrollView, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { photoApi, reviewApi, scheduleApi } from '../services/api';
 import { pseudoRating } from '../services/mockData';
@@ -34,6 +35,8 @@ type ReviewSortOption = typeof REVIEW_SORT_OPTIONS[number];
 
 const formatDateDots = (dateStr: string) => dateStr.slice(0, 10).replace(/-/g, '.');
 
+const DETAIL_TABS = ['기본 정보', '리뷰', '포토스팟'] as const;
+
 const PhotoSpotDetailScreen = () => {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -43,7 +46,15 @@ const PhotoSpotDetailScreen = () => {
   const imageHeight = (imageWidth * 3) / 4;
   const smallImageWidth = imageWidth / 2;
   const smallImageHeight = (smallImageWidth * 3) / 4;
+  const detailTabWidth = width / DETAIL_TABS.length;
 
+  const { isLargeIconMode } = useLargeIconMode();
+  const [selectedDetailTab, setSelectedDetailTab] = useState(0);
+  const detailTabTranslateX = useRef(new Animated.Value(0)).current;
+  const [scrollY, setScrollY] = useState(0);
+  const tabBarY = useRef(0);
+  const [headerHeight, setHeaderHeight] = useState(Spacing.v.small + Size.header);
+  const isDetailTabPinned = !isLargeIconMode && tabBarY.current > 0 && scrollY >= tabBarY.current;
   const [isMenuVisible, setIsMenuVisible] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [isScheduleVisible, setIsScheduleVisible] = useState(false);
@@ -137,27 +148,62 @@ const PhotoSpotDetailScreen = () => {
     } catch {}
   };
 
+  const showDetailTab = (index: number) => isLargeIconMode || selectedDetailTab === index;
+
+  const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    onScroll(e);
+    setScrollY(e.nativeEvent.contentOffset.y);
+  };
+
+  const handleDetailTabPress = (index: number) => {
+    setSelectedDetailTab(index);
+    Animated.spring(detailTabTranslateX, {
+      toValue: index * detailTabWidth,
+      useNativeDriver: true,
+      friction: 8,
+      tension: 50,
+    }).start();
+  };
+
+  const detailTabBarInner = (
+    <>
+      <View style={styles.detailTabBackgroundLine} />
+      {DETAIL_TABS.map((tab, index) => (
+        <TouchableOpacity key={tab} style={styles.detailTabItem} onPress={() => handleDetailTabPress(index)}>
+          <Text style={[styles.detailTabText, { color: selectedDetailTab === index ? Colors.light.black : Colors.light.grayLight }]}>
+            {tab}
+          </Text>
+        </TouchableOpacity>
+      ))}
+      <Animated.View
+        style={[styles.detailTabIndicator, { width: detailTabWidth, transform: [{ translateX: detailTabTranslateX }] }]}
+      />
+    </>
+  );
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-        <ScreenHeader
-          onBack={() => router.dismiss()}
-          style={{ zIndex: 10 }}
-          scrollTitle={headerTitleVisible ? (photo?.description ?? '') : undefined}
-          right={
-            <View style={styles.moreButtonWrapper}>
-              <MoreButton onPress={() => setIsMenuVisible(!isMenuVisible)} />
-              {isMenuVisible && (
-                <MoreMenuAlert
-                  isSaved={isSaved}
-                  onSavePress={() => { toggleSaved(); setIsMenuVisible(false); }}
-                  onSchedulePress={() => { setIsMenuVisible(false); setIsScheduleVisible(true); }}
-                  onReportPress={photo?.isMine ? undefined : () => { setIsMenuVisible(false); setIsPhotoReportVisible(true); }}
-                  onEditPress={photo?.isMine ? () => { setIsMenuVisible(false); router.push({ pathname: '/PhotoSpotWriteScreen', params: { id } }); } : undefined}
-                />
-              )}
-            </View>
-          }
-        />
+        <View onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.y + e.nativeEvent.layout.height)}>
+          <ScreenHeader
+            onBack={() => router.dismiss()}
+            style={{ zIndex: 10 }}
+            scrollTitle={headerTitleVisible ? (photo?.description ?? '') : undefined}
+            right={
+              <View style={styles.moreButtonWrapper}>
+                <MoreButton onPress={() => setIsMenuVisible(!isMenuVisible)} />
+                {isMenuVisible && (
+                  <MoreMenuAlert
+                    isSaved={isSaved}
+                    onSavePress={() => { toggleSaved(); setIsMenuVisible(false); }}
+                    onSchedulePress={() => { setIsMenuVisible(false); setIsScheduleVisible(true); }}
+                    onReportPress={photo?.isMine ? undefined : () => { setIsMenuVisible(false); setIsPhotoReportVisible(true); }}
+                    onEditPress={photo?.isMine ? () => { setIsMenuVisible(false); router.push({ pathname: '/PhotoSpotWriteScreen', params: { id } }); } : undefined}
+                  />
+                )}
+              </View>
+            }
+          />
+        </View>
 
         {isMenuVisible && (
           <TouchableWithoutFeedback onPress={closeMenu}>
@@ -168,14 +214,30 @@ const PhotoSpotDetailScreen = () => {
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
-          onScroll={onScroll}
+          onScroll={handleScroll}
           scrollEventThrottle={16}
         >
           <View style={[styles.imageContainer, { width: imageWidth, height: imageHeight }]}>
             <Image source={{ uri: photo?.image_url }} style={styles.mainImage} resizeMode="cover" />
+            {!isLargeIconMode && (
+              <>
+                <TouchableOpacity style={styles.imageSaveButton} onPress={toggleSaved} activeOpacity={0.8}>
+                  <Heart
+                    size={IconSize.xlarge}
+                    color={isSaved ? Colors.light.heart : Colors.light.white}
+                    fill={isSaved ? Colors.light.heart : 'transparent'}
+                    strokeWidth={IconStroke.thin}
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.imageScheduleButton} onPress={() => setIsScheduleVisible(true)} activeOpacity={0.8}>
+                  <Calendar size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
+                  <Text style={styles.imageScheduleButtonText}>일정 추가</Text>
+                </TouchableOpacity>
+              </>
+            )}
           </View>
 
-          <View style={styles.infoContainer} onLayout={onContainerLayout}>
+          <View style={[styles.infoContainer, !isLargeIconMode && { paddingBottom: Spacing.v.medium }]} onLayout={onContainerLayout}>
             <Text style={styles.titleText} onLayout={onTitleLayout}>{photo?.description ?? '로딩 중...'}</Text>
 
             <MetaRow>
@@ -192,108 +254,131 @@ const PhotoSpotDetailScreen = () => {
               ))}
             </TagRow>
 
-            <View style={styles.actionButtonGroup}>
-              <TouchableOpacity style={styles.actionButton} onPress={toggleSaved} activeOpacity={0.7}>
-                {isSaved ? <SaveHeart32 /> : <UnSaveHeart32 />}
-                <Text style={styles.actionButtonText}>{isSaved ? '저장취소' : '저장하기'}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.actionButton} onPress={() => setIsScheduleVisible(true)} activeOpacity={0.7}>
-                <Calendar size={IconSize.xlarge} color={Colors.light.grayDark} strokeWidth={IconStroke.thin} />
-                <Text style={styles.actionButtonText}>일정추가</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.actionButton}
-                onPress={() => router.push({ pathname: '/ReviewWriteScreen', params: { type: 'photospot', id } })}
-                activeOpacity={0.7}
-              >
-                <Star size={IconSize.xlarge} color={Colors.light.grayDark} strokeWidth={IconStroke.thin} />
-                <Text style={styles.actionButtonText}>리뷰쓰기</Text>
-              </TouchableOpacity>
-            </View>
-
-            <Divider marginTop={Spacing.v.large} />
-
-            <Text style={styles.photoInfoTitle}>포토스팟 정보</Text>
-            {photo && (
-              <TouchableOpacity
-                style={styles.uploaderCard}
-                activeOpacity={0.7}
-                onPress={() => router.push({ pathname: '/UserPhotoSpotsScreen', params: { author: photo.author ?? '익명 여행자', authorAvatar: photo.authorAvatar ?? '' } })}
-              >
-                {photo.authorAvatar ? (
-                  <Image source={{ uri: photo.authorAvatar }} style={styles.uploaderAvatar} />
-                ) : (
-                  <View style={styles.uploaderAvatar} />
-                )}
-                <View style={styles.uploaderInfo}>
-                  <Text style={styles.uploaderName}>{photo.author ?? '익명 여행자'}</Text>
-                  <View style={styles.uploaderDateRow}>
-                    <Text style={styles.uploaderDateText}>{formatDateDots(photo.travel_date)} 여행</Text>
-                    <TextSeparator color={Colors.light.grayDark} />
-                    <Text style={styles.uploaderDateText}>{formatDateDots(photo.created_at)} 작성</Text>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            )}
-
-            {photo?.image_url && (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={styles.photoInfoImagesScroll}
-                contentContainerStyle={styles.photoInfoImagesContent}
-              >
+            {isLargeIconMode && (
+              <View style={styles.actionButtonGroup}>
+                <TouchableOpacity style={styles.actionButton} onPress={toggleSaved} activeOpacity={0.7}>
+                  {isSaved ? <SaveHeart32 /> : <UnSaveHeart32 />}
+                  <Text style={styles.actionButtonText}>{isSaved ? '저장취소' : '저장하기'}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.actionButton} onPress={() => setIsScheduleVisible(true)} activeOpacity={0.7}>
+                  <Calendar size={IconSize.xlarge} color={Colors.light.grayDark} strokeWidth={IconStroke.thin} />
+                  <Text style={styles.actionButtonText}>일정추가</Text>
+                </TouchableOpacity>
                 <TouchableOpacity
-                  onPress={() => setImagePopup({ images: [photo.image_url], index: 0 })}
-                  activeOpacity={0.9}
+                  style={styles.actionButton}
+                  onPress={() => router.push({ pathname: '/ReviewWriteScreen', params: { type: 'photospot', id } })}
+                  activeOpacity={0.7}
                 >
-                  <View style={[styles.photoInfoImageBox, { width: smallImageWidth, height: smallImageHeight }]}>
-                    <Image source={{ uri: photo.image_url }} style={styles.photoInfoImage} resizeMode="cover" />
+                  <Star size={IconSize.xlarge} color={Colors.light.grayDark} strokeWidth={IconStroke.thin} />
+                  <Text style={styles.actionButtonText}>리뷰쓰기</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+
+          {!isLargeIconMode && (
+            /* 3탭 카테고리바 — 스크롤 시 헤더 밑에 고정 */
+            <View
+              style={styles.detailTabRow}
+              onLayout={(e) => { tabBarY.current = e.nativeEvent.layout.y; }}
+            >
+              {detailTabBarInner}
+            </View>
+          )}
+
+          <View style={styles.infoContainerTight}>
+            {showDetailTab(0) && (
+              <>
+                {isLargeIconMode && <Divider marginTop={Spacing.v.large} />}
+
+                <Text style={styles.photoInfoTitle}>기본 정보</Text>
+                {photo && (
+                  <TouchableOpacity
+                    style={styles.uploaderCard}
+                    activeOpacity={0.7}
+                    onPress={() => router.push({ pathname: '/UserPhotoSpotsScreen', params: { author: photo.author ?? '익명 여행자', authorAvatar: photo.authorAvatar ?? '' } })}
+                  >
+                    {photo.authorAvatar ? (
+                      <Image source={{ uri: photo.authorAvatar }} style={styles.uploaderAvatar} />
+                    ) : (
+                      <View style={styles.uploaderAvatar} />
+                    )}
+                    <View style={styles.uploaderInfo}>
+                      <Text style={styles.uploaderName}>{photo.author ?? '익명 여행자'}</Text>
+                      <View style={styles.uploaderDateRow}>
+                        <Text style={styles.uploaderDateText}>{formatDateDots(photo.travel_date)} 여행</Text>
+                        <TextSeparator color={Colors.light.grayDark} />
+                        <Text style={styles.uploaderDateText}>{formatDateDots(photo.created_at)} 작성</Text>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                )}
+
+                {photo?.image_url && (
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={styles.photoInfoImagesScroll}
+                    contentContainerStyle={styles.photoInfoImagesContent}
+                  >
+                    <TouchableOpacity
+                      onPress={() => setImagePopup({ images: [photo.image_url], index: 0 })}
+                      activeOpacity={0.9}
+                    >
+                      <View style={[styles.photoInfoImageBox, { width: smallImageWidth, height: smallImageHeight }]}>
+                        <Image source={{ uri: photo.image_url }} style={styles.photoInfoImage} resizeMode="cover" />
+                      </View>
+                    </TouchableOpacity>
+                  </ScrollView>
+                )}
+
+                <Text style={styles.photoInfoDesc}>{photo?.content ?? ''}</Text>
+
+                <Divider marginTop={Spacing.v.large} />
+
+                <Text style={styles.sectionTitle}>장소</Text>
+                <TouchableOpacity
+                  style={styles.placeCard}
+                  activeOpacity={0.8}
+                  disabled={!place}
+                  onPress={() => place && router.push({ pathname: '/PlaceDetailScreen', params: { id: place.id, name: place.name } })}
+                >
+                  <View style={styles.placeImageWrapper}>
+                    <Image source={{ uri: place?.image_url }} style={styles.placeImage} resizeMode="cover" />
+                  </View>
+                  <View style={styles.placeCardContent}>
+                    <Text style={styles.placeCardTitle} numberOfLines={1}>{place?.name ?? '로딩 중...'}</Text>
+                    <View style={styles.placeInfoRow}>
+                      <Text style={styles.placeInfoText}>{place ? (CATEGORY_LABEL[place.category] ?? place.category) : ''}</Text>
+                      <TextSeparator />
+                      <Text style={styles.placeInfoText} numberOfLines={1}>{place ? shortAddress(place.address) : ''}</Text>
+                    </View>
+                    {placeTags.length > 0 && (
+                      <TagRow>
+                        {placeTags.map((tag) => (
+                          <Text key={tag} style={styles.tagText}>#{tag}</Text>
+                        ))}
+                      </TagRow>
+                    )}
                   </View>
                 </TouchableOpacity>
-              </ScrollView>
+              </>
             )}
 
-            <Text style={styles.photoInfoDesc}>{photo?.content ?? ''}</Text>
+            {showDetailTab(2) && (
+              <>
+                {isLargeIconMode && <Divider marginTop={Spacing.v.large} />}
 
-            <Divider marginTop={Spacing.v.large} />
-
-            <Text style={styles.sectionTitle}>장소</Text>
-            <TouchableOpacity
-              style={styles.placeCard}
-              activeOpacity={0.8}
-              disabled={!place}
-              onPress={() => place && router.push({ pathname: '/PlaceDetailScreen', params: { id: place.id, name: place.name } })}
-            >
-              <View style={styles.placeImageWrapper}>
-                <Image source={{ uri: place?.image_url }} style={styles.placeImage} resizeMode="cover" />
-              </View>
-              <View style={styles.placeCardContent}>
-                <Text style={styles.placeCardTitle} numberOfLines={1}>{place?.name ?? '로딩 중...'}</Text>
-                <View style={styles.placeInfoRow}>
-                  <Text style={styles.placeInfoText}>{place ? (CATEGORY_LABEL[place.category] ?? place.category) : ''}</Text>
-                  <TextSeparator />
-                  <Text style={styles.placeInfoText} numberOfLines={1}>{place ? shortAddress(place.address) : ''}</Text>
+                <View style={styles.placePhotoSectionHeader}>
+                  <Text style={styles.placePhotoSectionTitle}>장소 포토스팟</Text>
+                  <Text style={styles.placePhotoSectionDesc}>이 장소의 또 다른 포토스팟이에요.</Text>
                 </View>
-                {placeTags.length > 0 && (
-                  <TagRow>
-                    {placeTags.map((tag) => (
-                      <Text key={tag} style={styles.tagText}>#{tag}</Text>
-                    ))}
-                  </TagRow>
-                )}
-              </View>
-            </TouchableOpacity>
-
-            <Divider marginTop={Spacing.v.large} />
-
-            <View style={styles.placePhotoSectionHeader}>
-              <Text style={styles.placePhotoSectionTitle}>장소 포토스팟</Text>
-              <Text style={styles.placePhotoSectionDesc}>이 장소의 또 다른 포토스팟이에요.</Text>
-            </View>
+              </>
+            )}
           </View>
 
           {/* 장소 포토스팟 */}
+          {showDetailTab(2) && (
           <View style={{ marginTop: Spacing.v.medium, marginHorizontal: Spacing.h.medium }}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.nearbyScrollContent}>
               {placePhotos.map((p) => (
@@ -328,7 +413,9 @@ const PhotoSpotDetailScreen = () => {
               ))}
             </ScrollView>
           </View>
+          )}
 
+          {showDetailTab(2) && (
           <View style={styles.tagPhotoSectionWrapper}>
             <Text style={styles.placePhotoSectionTitle}>관련 태그 포토스팟</Text>
             <Text style={styles.placePhotoSectionDesc}>태그를 선택하여 자유롭게 볼 수 있어요</Text>
@@ -346,9 +433,10 @@ const PhotoSpotDetailScreen = () => {
               })}
             </View>
           </View>
+          )}
 
           {/* 관련 태그 포토스팟 */}
-          {filteredTagPhotos.length === 0 ? (
+          {showDetailTab(2) && (filteredTagPhotos.length === 0 ? (
             <View style={styles.emptyState}>
               <Text style={styles.emptyTitle}>해당 태그의 포토스팟이 없습니다.</Text>
               <Text style={styles.emptyDesc}>다른 태그를 확인해보세요.</Text>
@@ -388,12 +476,14 @@ const PhotoSpotDetailScreen = () => {
                 ))}
               </ScrollView>
             </View>
-          )}
+          ))}
 
           <View style={styles.reviewSectionWrapper}>
-            <Divider marginTop={Spacing.v.large} />
+            {showDetailTab(1) && (
+              <>
+                {isLargeIconMode && <Divider marginTop={Spacing.v.large} />}
 
-            <View style={styles.reviewHeaderRow}>
+                <View style={styles.reviewHeaderRow}>
               <View style={styles.reviewTitleRow}>
                 <Text style={styles.reviewTitle}>리뷰</Text>
                 <Text style={styles.reviewCount}>{reviews.length}</Text>
@@ -435,8 +525,18 @@ const PhotoSpotDetailScreen = () => {
                 onReportPress={() => setReviewReportTarget(review)}
               />
             ))}
+              </>
+            )}
           </View>
         </ScrollView>
+
+        {isDetailTabPinned && (
+          <View style={[styles.detailTabPinnedOverlay, { top: headerHeight }]}>
+            <View style={styles.detailTabRow}>
+              {detailTabBarInner}
+            </View>
+          </View>
+        )}
 
         <PhotoSpotScheduleAlert
           visible={isScheduleVisible}
@@ -574,7 +674,47 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.grayLight,
   },
   mainImage: { width: '100%', height: '100%' },
+  imageSaveButton: { position: 'absolute', top: Spacing.v.small, right: Spacing.h.small },
+  imageScheduleButton: {
+    position: 'absolute',
+    bottom: Spacing.v.small,
+    right: Spacing.h.small,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.h.medium,
+    paddingVertical: Spacing.v.small,
+    borderRadius: 999,
+    borderWidth: Spacing.lw.small,
+    borderColor: Colors.light.grayLight,
+    backgroundColor: Colors.light.white,
+  },
+  imageScheduleButtonText: {
+    ...Typography.button4,
+    color: Colors.light.grayDark,
+    marginLeft: Spacing.h.xsmall,
+  },
   infoContainer: { paddingHorizontal: Spacing.h.medium, marginTop: Spacing.v.medium },
+  infoContainerTight: { paddingHorizontal: Spacing.h.medium },
+  detailTabRow: {
+    flexDirection: 'row',
+    position: 'relative',
+    backgroundColor: Colors.light.background,
+  },
+  detailTabBackgroundLine: { position: 'absolute', bottom: 0, left: 0, right: 0, height: Spacing.lw.small, backgroundColor: Colors.light.grayLight },
+  detailTabItem: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: Spacing.v.small,
+  },
+  detailTabText: { ...Typography.subtitle1 },
+  detailTabIndicator: { position: 'absolute', bottom: 0, left: 0, height: Spacing.lw.small, backgroundColor: Colors.light.black, zIndex: 1 },
+  detailTabPinnedOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    zIndex: 15,
+  },
   titleText: { ...Typography.HeadLine5, color: Colors.light.black },
   metaText: { ...Typography.body2, color: Colors.light.grayDark },
   tagText: { ...Typography.body2, color: Colors.light.primary },

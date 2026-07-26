@@ -19,12 +19,16 @@ import { IconSize, IconStroke } from '@/constants/IconSize';
 import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
+import { useLargeIconMode } from '@/hooks/useLargeIconMode';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Calendar, Check, ChevronDown, Edit3, Heart, Star } from 'lucide-react-native';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  Animated,
   Image,
   Modal,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   ScrollView,
   StyleSheet,
   Text,
@@ -47,6 +51,8 @@ const formatLikeCount = (count: number): string => {
   return (Math.floor(count / 100) * 100).toLocaleString() + '+';
 };
 
+const DETAIL_TABS = ['기본 정보', '리뷰', '포토스팟'] as const;
+
 const PlaceDetailScreen = () => {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -56,8 +62,16 @@ const PlaceDetailScreen = () => {
   const imageHeight = (imageWidth * 3) / 4;
   const smallImageWidth = imageWidth / 2;
   const smallImageHeight = (smallImageWidth * 3) / 4;
+  const detailTabWidth = width / DETAIL_TABS.length;
 
   const { visible: headerTitleVisible, onContainerLayout, onTitleLayout, onScroll } = useScrollHeaderTitle();
+  const { isLargeIconMode } = useLargeIconMode();
+  const [selectedDetailTab, setSelectedDetailTab] = useState(0);
+  const detailTabTranslateX = useRef(new Animated.Value(0)).current;
+  const [scrollY, setScrollY] = useState(0);
+  const tabBarY = useRef(0);
+  const [headerHeight, setHeaderHeight] = useState(Spacing.v.small + Size.header);
+  const isDetailTabPinned = !isLargeIconMode && tabBarY.current > 0 && scrollY >= tabBarY.current;
   const [isMenuVisible, setIsMenuVisible] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [isScheduleVisible, setIsScheduleVisible] = useState(false);
@@ -137,6 +151,23 @@ const PlaceDetailScreen = () => {
 
   const closeMenu = () => { if (isMenuVisible) setIsMenuVisible(false); };
 
+  const showDetailTab = (index: number) => isLargeIconMode || selectedDetailTab === index;
+
+  const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    onScroll(e);
+    setScrollY(e.nativeEvent.contentOffset.y);
+  };
+
+  const handleDetailTabPress = (index: number) => {
+    setSelectedDetailTab(index);
+    Animated.spring(detailTabTranslateX, {
+      toValue: index * detailTabWidth,
+      useNativeDriver: true,
+      friction: 8,
+      tension: 50,
+    }).start();
+  };
+
   const handleSaveToggle = async () => {
     if (!id) return;
     try {
@@ -147,28 +178,46 @@ const PlaceDetailScreen = () => {
     } catch {}
   };
 
+  const detailTabBarInner = (
+    <>
+      <View style={styles.detailTabBackgroundLine} />
+      {DETAIL_TABS.map((tab, index) => (
+        <TouchableOpacity key={tab} style={styles.detailTabItem} onPress={() => handleDetailTabPress(index)}>
+          <Text style={[styles.detailTabText, { color: selectedDetailTab === index ? Colors.light.black : Colors.light.grayLight }]}>
+            {tab}
+          </Text>
+        </TouchableOpacity>
+      ))}
+      <Animated.View
+        style={[styles.detailTabIndicator, { width: detailTabWidth, transform: [{ translateX: detailTabTranslateX }] }]}
+      />
+    </>
+  );
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
         {/* 헤더 */}
-        <ScreenHeader
-          onBack={() => router.dismiss()}
-          style={{ zIndex: 10 }}
-          scrollTitle={headerTitleVisible ? (place?.name ?? '') : undefined}
-          right={
-            <View style={styles.moreButtonWrapper}>
-              <MoreButton onPress={() => setIsMenuVisible(!isMenuVisible)} />
-              {isMenuVisible && (
-                <MoreMenuAlert
-                  isSaved={isSaved}
-                  onSavePress={handleSaveToggle}
-                  onSchedulePress={() => { setIsMenuVisible(false); setIsScheduleVisible(true); }}
-                  isToggled={isToggled}
-                  onTogglePress={() => { setIsToggled(!isToggled); setIsMenuVisible(false); }}
-                />
-              )}
-            </View>
-          }
-        />
+        <View onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.y + e.nativeEvent.layout.height)}>
+          <ScreenHeader
+            onBack={() => router.dismiss()}
+            style={{ zIndex: 10 }}
+            scrollTitle={headerTitleVisible ? (place?.name ?? '') : undefined}
+            right={
+              <View style={styles.moreButtonWrapper}>
+                <MoreButton onPress={() => setIsMenuVisible(!isMenuVisible)} />
+                {isMenuVisible && (
+                  <MoreMenuAlert
+                    isSaved={isSaved}
+                    onSavePress={handleSaveToggle}
+                    onSchedulePress={() => { setIsMenuVisible(false); setIsScheduleVisible(true); }}
+                    isToggled={isToggled}
+                    onTogglePress={() => { setIsToggled(!isToggled); setIsMenuVisible(false); }}
+                  />
+                )}
+              </View>
+            }
+          />
+        </View>
 
         {isMenuVisible && (
           <TouchableWithoutFeedback onPress={closeMenu}>
@@ -180,15 +229,31 @@ const PlaceDetailScreen = () => {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: Spacing.v.screenBottom }}
           scrollEnabled={!isMapTouching}
-          onScroll={onScroll}
+          onScroll={handleScroll}
           scrollEventThrottle={16}
         >
           {/* 대표 이미지 */}
           <View style={[styles.imageContainer, { width: imageWidth, height: imageHeight }]}>
             <Image source={{ uri: place?.image_url ?? undefined }} style={styles.mainImage} resizeMode="cover" />
+            {!isLargeIconMode && (
+              <>
+                <TouchableOpacity style={styles.imageSaveButton} onPress={handleSaveToggle} activeOpacity={0.8}>
+                  <Heart
+                    size={IconSize.xlarge}
+                    color={isSaved ? Colors.light.heart : Colors.light.white}
+                    fill={isSaved ? Colors.light.heart : 'transparent'}
+                    strokeWidth={IconStroke.thin}
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.imageScheduleButton} onPress={() => setIsScheduleVisible(true)} activeOpacity={0.8}>
+                  <Calendar size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
+                  <Text style={styles.imageScheduleButtonText}>일정 추가</Text>
+                </TouchableOpacity>
+              </>
+            )}
           </View>
 
-          <View style={styles.infoContainer} onLayout={onContainerLayout}>
+          <View style={[styles.infoContainer, !isLargeIconMode && { paddingBottom: Spacing.v.medium }]} onLayout={onContainerLayout}>
             {/* 장소명 */}
             <Text style={styles.titleText} onLayout={onTitleLayout}>{place?.name ?? '로딩 중...'}</Text>
 
@@ -224,95 +289,113 @@ const PlaceDetailScreen = () => {
               ))}
             </TagRow>
 
-            {/* 액션 버튼 그룹 */}
-            <View style={styles.actionButtonGroup}>
-              <TouchableOpacity style={styles.actionButton} onPress={handleSaveToggle} activeOpacity={0.7}>
-                {isSaved ? <SaveHeart32 /> : <UnSaveHeart32 />}
-                <Text style={styles.actionButtonText}>{isSaved ? '저장취소' : '저장하기'}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.actionButton} onPress={() => setIsScheduleVisible(true)} activeOpacity={0.7}>
-                <Calendar size={IconSize.xlarge} color={Colors.light.grayDark} strokeWidth={IconStroke.thin} />
-                <Text style={styles.actionButtonText}>일정추가</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.actionButton}
-                onPress={() => router.push({ pathname: '/ReviewWriteScreen', params: { type: 'place', id } })}
-                activeOpacity={0.7}
-              >
-                <Star size={IconSize.xlarge} color={Colors.light.grayDark} strokeWidth={IconStroke.thin} />
-                <Text style={styles.actionButtonText}>리뷰쓰기</Text>
-              </TouchableOpacity>
-            </View>
-
-            <Divider marginTop={Spacing.v.large} />
-
-            {/* 기본 정보 */}
-            <Text style={styles.basicInfoTitle}>기본 정보</Text>
-            {place && (
-              <View style={styles.mapContainer}>
-                <KakaoMap
-                  latitude={Number(place.latitude)}
-                  longitude={Number(place.longitude)}
-                  height={imageHeight}
-                  markerTitle={place.name}
-                  onTouchStart={() => setIsMapTouching(true)}
-                  onTouchEnd={() => setIsMapTouching(false)}
-                />
+            {isLargeIconMode && (
+              /* 액션 버튼 그룹 */
+              <View style={styles.actionButtonGroup}>
+                <TouchableOpacity style={styles.actionButton} onPress={handleSaveToggle} activeOpacity={0.7}>
+                  {isSaved ? <SaveHeart32 /> : <UnSaveHeart32 />}
+                  <Text style={styles.actionButtonText}>{isSaved ? '저장취소' : '저장하기'}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.actionButton} onPress={() => setIsScheduleVisible(true)} activeOpacity={0.7}>
+                  <Calendar size={IconSize.xlarge} color={Colors.light.grayDark} strokeWidth={IconStroke.thin} />
+                  <Text style={styles.actionButtonText}>일정추가</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.actionButton}
+                  onPress={() => router.push({ pathname: '/ReviewWriteScreen', params: { type: 'place', id } })}
+                  activeOpacity={0.7}
+                >
+                  <Star size={IconSize.xlarge} color={Colors.light.grayDark} strokeWidth={IconStroke.thin} />
+                  <Text style={styles.actionButtonText}>리뷰쓰기</Text>
+                </TouchableOpacity>
               </View>
             )}
-            <View style={{ marginTop: Spacing.v.medium }}>
-              <Shadow distance={4} startColor="rgba(0, 0, 0, 0.15)" offset={[0, 0]} stretch>
-                <View style={styles.infoGroup}>
-                  <View style={styles.infoGroupRow}>
-                    <Text style={styles.infoLabel}>주소</Text>
-                    <Text style={styles.infoValue}>{place?.address ?? '-'}</Text>
-                  </View>
-                  <View style={[styles.infoGroupRow, { marginTop: Spacing.v.medium }]}>
-                    <Text style={styles.infoLabel}>영업시간</Text>
-                    <Text style={styles.infoValue}>-</Text>
-                  </View>
-                  <View style={[styles.infoGroupRow, { marginTop: Spacing.v.medium }]}>
-                    <Text style={styles.infoLabel}>전화</Text>
-                    <Text style={styles.infoValue}>-</Text>
-                  </View>
-                </View>
-              </Shadow>
-            </View>
+          </View>
 
-            {/* 근처 추천 장소 */}
-            <Divider marginTop={Spacing.v.large} />
-            <Text style={styles.nearbyTitle}>근처 추천 장소</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: Spacing.v.medium }}
-              contentContainerStyle={styles.nearbyScrollContent}>
-              {nearbyPlaces.map((nearby, i) => (
-                <TouchableOpacity
-                  key={nearby.id}
-                  style={{ width: smallImageWidth }}
-                  activeOpacity={0.9}
-                  onPress={() => router.push({ pathname: '/PlaceDetailScreen', params: { id: nearby.id, name: nearby.name } })}
-                >
-                  <View style={[styles.nearbyImageBox, { height: smallImageHeight }]}>
-                    <Image source={{ uri: nearby.image_url ?? undefined }} style={styles.nearbyImage} resizeMode="cover" />
-                    <TouchableOpacity style={styles.nearbyHeart} onPress={(e) => { e.stopPropagation(); toggleNearby(nearby.id); }} activeOpacity={0.8}>
-                      <Heart
-                        size={IconSize.large}
-                        color={savedNearby[nearby.id] ? Colors.light.heart : Colors.light.white}
-                        fill={savedNearby[nearby.id] ? Colors.light.heart : 'transparent'}
-                        strokeWidth={IconStroke.thin}
-                      />
-                    </TouchableOpacity>
+          {!isLargeIconMode && (
+            /* 3탭 카테고리바 — 스크롤 시 헤더 밑에 고정 */
+            <View
+              style={styles.detailTabRow}
+              onLayout={(e) => { tabBarY.current = e.nativeEvent.layout.y; }}
+            >
+              {detailTabBarInner}
+            </View>
+          )}
+
+          <View style={styles.infoContainerTight}>
+            {showDetailTab(0) && (
+              <>
+                {isLargeIconMode && <Divider marginTop={Spacing.v.large} />}
+
+                {/* 기본 정보 */}
+                <Text style={styles.basicInfoTitle}>기본 정보</Text>
+                {place && (
+                  <View style={styles.mapContainer}>
+                    <KakaoMap
+                      latitude={Number(place.latitude)}
+                      longitude={Number(place.longitude)}
+                      height={imageHeight}
+                      markerTitle={place.name}
+                      onTouchStart={() => setIsMapTouching(true)}
+                      onTouchEnd={() => setIsMapTouching(false)}
+                    />
                   </View>
-                  <Text style={styles.nearbyPlaceName} numberOfLines={1}>{nearby.name}</Text>
-                  <Text style={styles.nearbyCategory}>{CATEGORY_LABEL[nearby.category] ?? nearby.category}</Text>
-                  <Text style={styles.nearbyAddress} numberOfLines={1}>{shortAddress(nearby.address)}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
+                )}
+                <View style={{ marginTop: Spacing.v.medium }}>
+                  <Shadow distance={4} startColor="rgba(0, 0, 0, 0.15)" offset={[0, 0]} stretch>
+                    <View style={styles.infoGroup}>
+                      <View style={styles.infoGroupRow}>
+                        <Text style={styles.infoLabel}>주소</Text>
+                        <Text style={styles.infoValue}>{place?.address ?? '-'}</Text>
+                      </View>
+                      <View style={[styles.infoGroupRow, { marginTop: Spacing.v.medium }]}>
+                        <Text style={styles.infoLabel}>영업시간</Text>
+                        <Text style={styles.infoValue}>-</Text>
+                      </View>
+                      <View style={[styles.infoGroupRow, { marginTop: Spacing.v.medium }]}>
+                        <Text style={styles.infoLabel}>전화</Text>
+                        <Text style={styles.infoValue}>-</Text>
+                      </View>
+                    </View>
+                  </Shadow>
+                </View>
+
+                {/* 근처 추천 장소 */}
+                <Divider marginTop={Spacing.v.large} />
+                <Text style={styles.nearbyTitle}>근처 추천 장소</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: Spacing.v.medium }}
+                  contentContainerStyle={styles.nearbyScrollContent}>
+                  {nearbyPlaces.map((nearby, i) => (
+                    <TouchableOpacity
+                      key={nearby.id}
+                      style={{ width: smallImageWidth }}
+                      activeOpacity={0.9}
+                      onPress={() => router.push({ pathname: '/PlaceDetailScreen', params: { id: nearby.id, name: nearby.name } })}
+                    >
+                      <View style={[styles.nearbyImageBox, { height: smallImageHeight }]}>
+                        <Image source={{ uri: nearby.image_url ?? undefined }} style={styles.nearbyImage} resizeMode="cover" />
+                        <TouchableOpacity style={styles.nearbyHeart} onPress={(e) => { e.stopPropagation(); toggleNearby(nearby.id); }} activeOpacity={0.8}>
+                          <Heart
+                            size={IconSize.large}
+                            color={savedNearby[nearby.id] ? Colors.light.heart : Colors.light.white}
+                            fill={savedNearby[nearby.id] ? Colors.light.heart : 'transparent'}
+                            strokeWidth={IconStroke.thin}
+                          />
+                        </TouchableOpacity>
+                      </View>
+                      <Text style={styles.nearbyPlaceName} numberOfLines={1}>{nearby.name}</Text>
+                      <Text style={styles.nearbyCategory}>{CATEGORY_LABEL[nearby.category] ?? nearby.category}</Text>
+                      <Text style={styles.nearbyAddress} numberOfLines={1}>{shortAddress(nearby.address)}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </>
+            )}
 
             {/* 포토스팟 */}
-            {photos.length > 0 && (
+            {showDetailTab(2) && photos.length > 0 && (
               <>
-                <Divider marginTop={Spacing.v.large} />
+                {isLargeIconMode && <Divider marginTop={Spacing.v.large} />}
                 <View style={styles.photoSectionHeader}>
                   <Text style={[styles.nearbyTitle, { marginTop: 0 }]}>포토스팟</Text>
                   <Text style={styles.photoSectionDesc}>이 장소의 포토스팟이에요.</Text>
@@ -357,53 +440,65 @@ const PlaceDetailScreen = () => {
               </>
             )}
 
-            {/* 리뷰 섹션 */}
-            <Divider marginTop={Spacing.v.large} />
+            {showDetailTab(1) && (
+              <>
+                {/* 리뷰 섹션 */}
+                {isLargeIconMode && <Divider marginTop={Spacing.v.large} />}
 
-            <View style={styles.reviewHeaderRow}>
-              <View style={styles.reviewTitleRow}>
-                <Text style={styles.reviewTitle}>리뷰</Text>
-                <Text style={styles.reviewCount}>{reviews.length}</Text>
-              </View>
-              <TouchableOpacity style={styles.photoFilterRow} onPress={() => setPhotoOnly(!photoOnly)} activeOpacity={0.7}>
-                <View style={[styles.checkbox, photoOnly && styles.checkboxActive]}>
-                  {photoOnly && <Check size={14} color={Colors.light.white} strokeWidth={IconStroke.regular} />}
+                <View style={styles.reviewHeaderRow}>
+                  <View style={styles.reviewTitleRow}>
+                    <Text style={styles.reviewTitle}>리뷰</Text>
+                    <Text style={styles.reviewCount}>{reviews.length}</Text>
+                  </View>
+                  <TouchableOpacity style={styles.photoFilterRow} onPress={() => setPhotoOnly(!photoOnly)} activeOpacity={0.7}>
+                    <View style={[styles.checkbox, photoOnly && styles.checkboxActive]}>
+                      {photoOnly && <Check size={14} color={Colors.light.white} strokeWidth={IconStroke.regular} />}
+                    </View>
+                    <Text style={styles.photoFilterText}>사진 포함</Text>
+                  </TouchableOpacity>
                 </View>
-                <Text style={styles.photoFilterText}>사진 포함</Text>
-              </TouchableOpacity>
-            </View>
 
-            <View style={styles.reviewSortRow}>
-              <TouchableOpacity style={styles.reviewSortTrigger} onPress={() => setIsReviewSortVisible(true)} activeOpacity={0.7}>
-                <Text style={styles.reviewSortText}>{reviewSort}</Text>
-                <ChevronDown size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.writeReviewButton}
-                onPress={() => router.push({ pathname: '/ReviewWriteScreen', params: { type: 'place', id } })}
-                activeOpacity={0.7}
-              >
-                <Edit3 size={16} color={Colors.light.white} strokeWidth={IconStroke.regular} />
-                <Text style={styles.writeReviewText}>리뷰 작성</Text>
-              </TouchableOpacity>
-            </View>
+                <View style={styles.reviewSortRow}>
+                  <TouchableOpacity style={styles.reviewSortTrigger} onPress={() => setIsReviewSortVisible(true)} activeOpacity={0.7}>
+                    <Text style={styles.reviewSortText}>{reviewSort}</Text>
+                    <ChevronDown size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.writeReviewButton}
+                    onPress={() => router.push({ pathname: '/ReviewWriteScreen', params: { type: 'place', id } })}
+                    activeOpacity={0.7}
+                  >
+                    <Edit3 size={16} color={Colors.light.white} strokeWidth={IconStroke.regular} />
+                    <Text style={styles.writeReviewText}>리뷰 작성</Text>
+                  </TouchableOpacity>
+                </View>
 
-            {filteredReviews.map((review) => (
-              <ReviewCard
-                key={review.id}
-                review={review}
-                isExpanded={expandedReviews[review.id] ?? false}
-                onToggleExpand={() => setExpandedReviews((prev) => ({ ...prev, [review.id]: !prev[review.id] }))}
-                isLiked={likedReviews[review.id] ?? false}
-                onToggleLike={() => setLikedReviews((prev) => ({ ...prev, [review.id]: !prev[review.id] }))}
-                onImagePress={(index) => setImagePopup({ reviewId: review.id, index })}
-                onEditPress={() => router.push({ pathname: '/ReviewWriteScreen', params: { type: 'place', id, reviewId: review.id } })}
-                onDeletePress={() => setReviewDeleteTarget(review)}
-                onReportPress={() => setReviewReportTarget(review)}
-              />
-            ))}
+                {filteredReviews.map((review) => (
+                  <ReviewCard
+                    key={review.id}
+                    review={review}
+                    isExpanded={expandedReviews[review.id] ?? false}
+                    onToggleExpand={() => setExpandedReviews((prev) => ({ ...prev, [review.id]: !prev[review.id] }))}
+                    isLiked={likedReviews[review.id] ?? false}
+                    onToggleLike={() => setLikedReviews((prev) => ({ ...prev, [review.id]: !prev[review.id] }))}
+                    onImagePress={(index) => setImagePopup({ reviewId: review.id, index })}
+                    onEditPress={() => router.push({ pathname: '/ReviewWriteScreen', params: { type: 'place', id, reviewId: review.id } })}
+                    onDeletePress={() => setReviewDeleteTarget(review)}
+                    onReportPress={() => setReviewReportTarget(review)}
+                  />
+                ))}
+              </>
+            )}
           </View>
         </ScrollView>
+
+        {isDetailTabPinned && (
+          <View style={[styles.detailTabPinnedOverlay, { top: headerHeight }]}>
+            <View style={styles.detailTabRow}>
+              {detailTabBarInner}
+            </View>
+          </View>
+        )}
 
         <ScheduleAlert
           visible={isScheduleVisible}
@@ -516,7 +611,27 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.grayLight,
   },
   mainImage: { width: '100%', height: '100%' },
+  imageSaveButton: { position: 'absolute', top: Spacing.v.small, right: Spacing.h.small },
+  imageScheduleButton: {
+    position: 'absolute',
+    bottom: Spacing.v.small,
+    right: Spacing.h.small,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.h.medium,
+    paddingVertical: Spacing.v.small,
+    borderRadius: 999,
+    borderWidth: Spacing.lw.small,
+    borderColor: Colors.light.grayLight,
+    backgroundColor: Colors.light.white,
+  },
+  imageScheduleButtonText: {
+    ...Typography.button4,
+    color: Colors.light.grayDark,
+    marginLeft: Spacing.h.xsmall,
+  },
   infoContainer: { paddingHorizontal: Spacing.h.medium, marginTop: Spacing.v.medium },
+  infoContainerTight: { paddingHorizontal: Spacing.h.medium },
   titleText: { ...Typography.HeadLine5, color: Colors.light.black },
   metaText: { ...Typography.body2, color: Colors.light.grayDark },
   iconTextRow: { flexDirection: 'row', alignItems: 'center' },
@@ -532,6 +647,26 @@ const styles = StyleSheet.create({
     ...Typography.button4,
     color: Colors.light.grayDark,
     marginTop: Spacing.v.small,
+  },
+  detailTabRow: {
+    flexDirection: 'row',
+    position: 'relative',
+    backgroundColor: Colors.light.background,
+  },
+  detailTabBackgroundLine: { position: 'absolute', bottom: 0, left: 0, right: 0, height: Spacing.lw.small, backgroundColor: Colors.light.grayLight },
+  detailTabItem: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: Spacing.v.small,
+  },
+  detailTabText: { ...Typography.subtitle1 },
+  detailTabIndicator: { position: 'absolute', bottom: 0, left: 0, height: Spacing.lw.small, backgroundColor: Colors.light.black, zIndex: 1 },
+  detailTabPinnedOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    zIndex: 15,
   },
   basicInfoTitle: {
     ...Typography.title1,

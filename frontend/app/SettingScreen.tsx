@@ -6,6 +6,7 @@ import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { mailApi, userApi } from '@/services/api';
+import { useLargeIconMode } from '@/hooks/useLargeIconMode';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { AlertCircle, ChevronRight, HelpCircle } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
@@ -17,7 +18,7 @@ const SettingScreen = () => {
   const [nickname, setNickname] = useState('');
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [tokenBalance, setTokenBalance] = useState(0);
-  const [isLargeIconMode, setIsLargeIconMode] = useState(false);
+  const { isLargeIconMode, setIsLargeIconMode } = useLargeIconMode();
   const [hasMail, setHasMail] = useState(false);
   const [hasEmail, setHasEmail] = useState(true);
 

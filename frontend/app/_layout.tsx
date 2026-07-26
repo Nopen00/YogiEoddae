@@ -6,6 +6,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { View } from 'react-native';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { LargeIconModeProvider } from '@/hooks/useLargeIconMode';
 import BottomTabBar from '@/components/navigation/BottomTabBar';
 
 export const unstable_settings = {
@@ -84,7 +85,9 @@ function RootLayoutNav() {
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <RootLayoutNav />
+      <LargeIconModeProvider>
+        <RootLayoutNav />
+      </LargeIconModeProvider>
     </GestureHandlerRootView>
   );
 }
