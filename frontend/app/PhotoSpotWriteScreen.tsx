@@ -251,7 +251,7 @@ const PhotoSpotWriteScreen = () => {
               <TouchableOpacity style={styles.infoRow} onPress={() => setIsPlacePopupVisible(true)} activeOpacity={0.7}>
                 <Map size={IconSize.large} color={Colors.light.grayLight} strokeWidth={IconStroke.regular} />
                 <Text style={styles.dateText}>
-                  {selectedPlace ? selectedPlace.name : '방문한 장소를 선택해주세요.'}
+                  {selectedPlace ? selectedPlace.name : '방문한 장소를 선택해주세요. (필수)'}
                 </Text>
                 <ChevronRight size={16} color={Colors.light.grayLight} strokeWidth={IconStroke.regular} />
               </TouchableOpacity>
@@ -259,7 +259,7 @@ const PhotoSpotWriteScreen = () => {
               <TouchableOpacity style={styles.infoRowSpaced} onPress={() => setIsDateVisible(true)} activeOpacity={0.7}>
                 <Calendar size={IconSize.large} color={Colors.light.grayLight} strokeWidth={IconStroke.regular} />
                 <Text style={styles.dateText}>
-                  {visitDate ? formatVisitDate(visitDate) : '방문한 날짜를 선택해주세요.'}
+                  {visitDate ? formatVisitDate(visitDate) : '방문한 날짜를 선택해주세요. (필수)'}
                 </Text>
                 <ChevronRight size={16} color={Colors.light.grayLight} strokeWidth={IconStroke.regular} />
               </TouchableOpacity>
