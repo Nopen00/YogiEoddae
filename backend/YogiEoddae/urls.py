@@ -24,6 +24,7 @@ urlpatterns = [
     path('',        index_view,                name='index'),
     path('admin/',  admin.site.urls),
     path('places/', include('places.urls')),
+    path('course-suggestions/', include('course_suggestions.admin_urls')),
     path('api/',    include('places.api_urls')),
     path('api/',    include('users.urls')),
     path('api/',    include('schedules.urls')),

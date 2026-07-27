@@ -1,3 +1,6 @@
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, render
+from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -39,3 +42,35 @@ class CourseSuggestionCreateView(APIView):
             description=description,
         )
         return Response({'token_balance': user.token_balance}, status=status.HTTP_201_CREATED)
+
+
+@ensure_csrf_cookie
+def admin_list_view(request):
+    """전체 코스 건의 목록 (한 페이지) — 검토완료 표시/삭제.
+    fetch()로 POST하는 버튼들이 document.cookie에서 csrftoken을 읽으므로,
+    이 페이지 로드 시 쿠키가 반드시 심어지도록 명시적으로 강제한다."""
+    suggestions = CourseSuggestion.objects.select_related('user').order_by('-created_at')
+    pending_count = suggestions.filter(status=CourseSuggestion.STATUS_PENDING).count()
+    return render(request, 'course_suggestions/admin_list.html', {
+        'suggestions': suggestions,
+        'pending_count': pending_count,
+    })
+
+
+def admin_review_view(request, pk):
+    """건의 1건을 검토완료로 표시."""
+    if request.method != 'POST':
+        return JsonResponse({'ok': False}, status=405)
+    suggestion = get_object_or_404(CourseSuggestion, pk=pk)
+    suggestion.status = CourseSuggestion.STATUS_REVIEWED
+    suggestion.save(update_fields=['status'])
+    return JsonResponse({'ok': True})
+
+
+def admin_delete_view(request, pk):
+    """건의 1건 삭제."""
+    if request.method != 'POST':
+        return JsonResponse({'ok': False}, status=405)
+    suggestion = get_object_or_404(CourseSuggestion, pk=pk)
+    suggestion.delete()
+    return JsonResponse({'ok': True})

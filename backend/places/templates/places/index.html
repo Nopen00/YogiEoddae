@@ -107,6 +107,17 @@
         </p>
       </a>
 
+      <a href="/course-suggestions/review/" class="card yellow">
+        <div class="card-icon"><img src="{% static 'places/icons/calendar.svg' %}" alt=""></div>
+        <h2 class="card-title">코스 건의함</h2>
+        <p class="card-desc">
+          이용자가 건의한 코스 목록 확인
+          {% if course_suggestion_pending_count > 0 %}
+          <span class="badge">{{ course_suggestion_pending_count }}건 대기</span>
+          {% endif %}
+        </p>
+      </a>
+
     </div>
   </main>
 

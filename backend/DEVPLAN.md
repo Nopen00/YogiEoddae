@@ -128,6 +128,11 @@ POST /places/photos/review/recheck/       보류 전체 AI 재검수 (AI 호출 
 POST /places/photos/{id}/approve/         개별 최종 승인
 POST /places/photos/{id}/delete/          개별 최종 삭제(반려)
 
+# course_suggestions (건의함 검토 포털, Phase 10-1 신설, 2026-07-27)
+GET  /course-suggestions/review/          전체 코스 건의 목록 (한 페이지)
+POST /course-suggestions/{id}/review/     개별 검토완료로 표시
+POST /course-suggestions/{id}/delete/     개별 삭제
+
 GET  /places/fetch/            KTO API → DB 저장 (keyword 파라미터)
 GET  /places/list/             DB 장소 목록 JSON (name 검색)
 GET  /places/map-test/         지도 테스트 페이지 (Naver, 현재 미작동 — 알려진 이슈 참고)
@@ -324,11 +329,12 @@ Review 신설(Phase 7)에서 작성자를 구분하려면 실 계정이 필요�
 5. ✅ 프론트 `api.ts`에 토큰 저장소+`Authorization` 인터셉터+401 자동갱신 구축, 계정관리 화면 8개 실연동 완료
 
 **남은 것:**
-- **SMTP 실제 연동** (위 경고 참고 — 현재 콘솔 출력으로 대체 중)
+- ~~SMTP 실제 연동~~ — ✅ 완료 (2026-07-27, 위 항목 참고)
 - 정식 로그인/회원가입 화면 디자인 반영 — 지금은 `frontend/app/DevAuthScreen.tsx` (디자인 없는 테스트 전용 화면, `SettingScreen` 하단에 임시로 연결됨)로 대체 중, Figma 디자인 나오면 이걸로 교체하고 DevAuthScreen은 삭제
 - 아이디 변경 7일 재변경 제한 — 프론트 디자인 작업과 함께 나중에 추가 예정 (지금은 프론트/백엔드 둘 다 미구현, 매번 변경 가능)
-- **개인정보 처리방침/이용약관 화면**(아직 Figma 디자인 없음, 회원가입 플로우에 필요)
+- **개인정보 처리방침/이용약관 화면**(초안은 `docs/privacy-policy.md`/`docs/terms-of-service.md`로 작성해뒀으나 검토 전이라 미커밋 상태, 회원가입 플로우에 필요)
 - `find-id`(아이디 찾기) API는 완료됐지만 아직 연결된 프론트 화면 없음
+- **이메일 발송 버튼 중복 클릭 방지** (2026-07-27 실기 테스트 중 발견) — `EmailSetupScreen.tsx`/`EmailChangeScreen.tsx`의 "인증 메일 발송" 버튼이 요청 중에도 비활성화되지 않아서, 응답이 늦으면 유저가 재클릭 → 중복 요청(두 번째는 60초 쿨다운 429) 발생. 기능 자체는 정상 동작(첫 요청은 성공)하지만 로딩 상태 표시 없음. 또한 400 에러 사유(빈 이메일/중복 이메일)를 구분 안 하고 항상 "이미 사용중인 이메일"로 표시하는 것도 같이 손볼 것.
 
 ---
 
@@ -382,7 +388,11 @@ Review 신설(Phase 7)에서 작성자를 구분하려면 실 계정이 필요�
 
 ### Phase 10 — 신규 요구사항 (2026-07-21 논의)
 
-1. ✅ **코스 추가 건의함** (완료 2026-07-27) — 프론트가 7/26에 `CourseSuggestionWriteScreen` + `courseSuggestionApi`를 먼저 구현해두고 백엔드 엔드포인트만 미착수 상태였음. `course_suggestions` 앱 신설(`reviews`/`mailbox`와 동일하게 독립 앱), `CourseSuggestion` 모델(user FK, title, link, media_type(drama/movie/youtube), description, status(pending/reviewed)) 추가. `POST /api/course-suggestions/` (JWT 필요) — 토큰 100개(`COURSE_SUGGESTION_TOKEN_COST`, 프론트와 동일값 유지 필요) 차감 후 생성, 잔액 부족 시 400. Django Admin에 목록/필터 + "검토완료로 표시" 일괄 액션 등록(커스텀 검토 포털은 아직 없음, 필요해지면 포토스팟 검수 포털처럼 추가 가능). 실서버로 회원가입→로그인→토큰충전→건의생성 전체 플로우 curl로 검증 완료.
+1. ✅ **코스 추가 건의함** (완료 2026-07-27) — 프론트가 7/26에 `CourseSuggestionWriteScreen` + `courseSuggestionApi`를 먼저 구현해두고 백엔드 엔드포인트만 미착수 상태였음. `course_suggestions` 앱 신설(`reviews`/`mailbox`와 동일하게 독립 앱), `CourseSuggestion` 모델(user FK, title, link, media_type(drama/movie/youtube), description, status(pending/reviewed)) 추가. `POST /api/course-suggestions/` (JWT 필요) — 토큰 100개(`COURSE_SUGGESTION_TOKEN_COST`, 프론트와 동일값 유지 필요) 차감 후 생성, 잔액 부족 시 400. 실서버로 회원가입→로그인→토큰충전→건의생성 전체 플로우 curl로 검증 완료.
+   - **커스텀 검토 포털 추가** (2026-07-27) — Django 기본 admin(슈퍼유저 필요)이 아니라 포토스팟 검수 포털과 동일한 스타일로 `/course-suggestions/review/` 페이지 신설. 전체 건의를 한 페이지에서 확인, 건별 "검토완료로 표시"/"삭제" 가능. 관리 포털 대시보드(`/`)에도 카드 추가(대기 건수 배지 포함). 로그인 없이 접근 가능(다른 관리자 포털 페이지들과 동일한 보안 수준 — 로컬/소규모 배포 전제).
+   - **버그로 발견한 것**: fetch로 POST하는 관리자 페이지들(`document.cookie`에서 csrftoken 직접 읽는 패턴)은 템플릿에 `{% csrf_token %}` 태그가 없으면 Django가 쿠키 자체를 안 심어줘서 CSRF 403이 남 — 포토스팟 검수 포털도 동일한 잠재 버그 보유(지금까지 우연히 다른 경로로 쿠키가 있었을 가능성). 이번 신규 페이지는 뷰에 `@ensure_csrf_cookie` 데코레이터를 붙여 해결. **포토스팟 검수 포털도 언젠가 같은 방식으로 고쳐야 함** (지금 당장 문제가 없다면 후순위).
+   - **버그 수정**: `admin_photo_review.html`의 "← 관리 포털" 링크가 존재하지 않는 `/places/`를 가리켜서 404 나던 것을 `/`로 수정 (2026-07-27, 코스 건의함 포털 테스트 중 발견한 기존 버그).
+   - **후속 아이디어 — 건의함 → 장소 추출 원클릭 연동** (2026-07-27, 미착수): 코스 건의함 검토 포털에서 건의 항목을 바로 `/places/extract/`(YouTube 장소 추출 도구)로 넘겨서 폼을 미리 채워주는 기능. 지금은 관리자가 건의 내용(링크·제목·미디어유형)을 보고 추출 화면에 수동으로 옮겨 입력해야 하는데, 건의의 `link`→`url`, `title`→`media_title`, `media_type`→`media_type`, `description`→참고용 `scene` 정도로 매핑해서 자동 프리필하면 검토→추출 처리 속도가 빨라질 것. `admin_extract_view`가 이미 `?media_id=`로 기존 Media를 프리필하는 유사 패턴을 갖고 있어서(GET 쿼리파라미터로 폼 필드 채우기) 참고해서 확장하면 될 듯.
 2. ✅ **포토스팟 사용자 업로드** (완료 2026-07-21) — `Photo`에 `uploaded_by`/`is_approved`/`last_rewarded_likes` 추가. `POST /api/photos/`로 업로드하면 승인 대기(`is_approved=False`) 상태로 생성, 목록/상세 API는 승인된 것만 노출. Django Admin에 `Photo` 등록 + "선택한 포토스팟 승인" 일괄 액션으로 관리자 승인. `PhotoViewSet` 신설(목록/상세/업로드/좋아요, `GET /api/photos/{id}/`가 장소+같은장소사진+관련사진까지 포함하는 `PhotoSpotDetail` 모양). 좋아요는 `PhotoLike`(user+photo unique)로 중복 방지, `POST/DELETE /api/photos/{id}/like/`. **프론트는 업로드 화면 자체가 아직 없어서(디자인 미정) API만 준비된 상태** — `PhotoSpotDetailScreen`의 기존 "저장" 버튼은 북마크와 함께 좋아요도 같이 호출하도록만 연결해둠.
 3. ✅ **우편함/정산함 보상 시스템** (완료 2026-07-21, 원래 로드맵엔 없던 신규 항목) — `mailbox` 앱 신설. `MailboxItem`(1회성 고정보상, 예: 리뷰 작성 10토큰 — 리뷰 생성 API에서 자동 지급)과 `SettlementItem`(누적/마일스톤 보상, 예: 유저 업로드 포토스팟이 좋아요 50개 달성 시 100토큰, 이후 10개마다 10토큰 — `Photo.last_rewarded_likes`로 중복 지급 방지)을 별도 모델로 분리(하나로 합치면 마일스톤 중복지급 버그 위험이 있어서 분리 결정). 각각 목록/개별수령/일괄수령 API. 프론트는 이미 있던 `MailboxScreen`이 API 계약과 정확히 일치해서 코드 수정 없이 바로 연동됨. **정산함 화면은 아직 없음**(`settlementApi`만 준비, `MailboxScreen` 구조 재사용하면 될 듯).
 
@@ -505,8 +515,9 @@ Place ──── DailyPlace ── Schedule ── User
 Phase 3(Quiz), Phase 8(인기 코스 정렬), Phase 10-1(코스 건의함), SMTP 연동까지 전부 완료(2026-07-27) — 로드맵 원안의 Phase 1~9 핵심 단계가 모두 끝났습니다. 남은 건 아래처럼 전부 "확정 필요/후순위" 항목뿐입니다.
 
 1. **아이디 변경 7일 재변경 제한** (Phase 6 잔여) — 프론트 디자인 작업과 함께 나중에 추가 예정, 지금은 매번 변경 가능.
-2. **Phase 10-1 코스 건의함 후속 확정** — `COURSE_SUGGESTION_TOKEN_COST`(현재 100, 임시값) 확정, 관리자 검토 포털 필요 여부 논의.
+2. **Phase 10-1 코스 건의함 — 남은 건 토큰 값 확정뿐** — 관리자 검토 포털은 완료(`/course-suggestions/review/`). `COURSE_SUGGESTION_TOKEN_COST`(현재 100, 임시값) 확정만 남음.
 3. **Phase 3 퀴즈 상수 튜닝 + 잔여 허점** — `QUIZ_MIN_RESPONSES`(3)/`QUIZ_CONFIRM_THRESHOLD`(0.8)/`QUIZ_CORRECT_ANSWER_REWARD`(5)/`QUIZ_PROBABLE_VISIT_WEIGHT`(1.3) 실사용 트래픽 보고 조정. `DailyPlace`에 생성/수정일 타임스탬프가 없어서 "방문 개연성" 판정을 완전히 어뷰징 방지하진 못하는 잔여 허점도 필요시 검토(위 Phase 3 항목 참고).
+4. **포토스팟 검수 포털(`/places/photos/review/`) CSRF 쿠키 버그 점검** — 코스 건의함 포털 만들다 발견. `{% csrf_token %}` 없이 `document.cookie`로만 읽는 패턴이라 쿠키가 안 심어질 수 있음. 지금까지 문제 없었다면 우연히 다른 경로로 쿠키가 있었을 가능성 — 같은 방식(`@ensure_csrf_cookie`)으로 고쳐야 함.
 4. Naver Maps 전환 여부 (Phase 5, 낮은 우선순위), 추천/유행 로직 + 테마 노출 시스템 (보류, 별도 설계 필요), User 아바타 필드(이미지 업로드 프론트 연동 검증 후), 개인정보 처리방침/이용약관 화면(Figma 디자인 대기).
 
 ---

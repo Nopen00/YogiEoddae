@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>코스 건의함 | 요기어때?</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #f9fafb; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #1f2937; }
+
+    header { background: #fff; border-bottom: 1px solid #e5e7eb; padding: 14px 24px; display: flex; align-items: center; gap: 12px; }
+    header a.back { color: #9ca3af; font-size: 13px; text-decoration: none; white-space: nowrap; }
+    header a.back:hover { color: #4b5563; }
+    .header-info { flex: 1; min-width: 0; }
+    .header-info h1 { font-size: 18px; font-weight: 700; }
+    .header-info p  { font-size: 12px; color: #9ca3af; margin-top: 2px; }
+
+    main { max-width: 860px; margin: 0 auto; padding: 32px 24px; }
+    .section-header { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+    .section-title { font-size: 15px; font-weight: 700; }
+    .badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; }
+    .badge-yellow { background: #fef9c3; color: #a16207; }
+    .badge-green  { background: #dcfce7; color: #15803d; }
+    .badge-type   { background: #eef2ff; color: #4338ca; margin-left: 6px; }
+
+    .card-list { display: flex; flex-direction: column; gap: 14px; }
+    .sugg-card { background: #fff; border-radius: 12px; border: 1px solid #e5e7eb; padding: 18px 20px; }
+    .sugg-card.pending { border-color: #fed7aa; }
+    .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+    .card-title { font-weight: 600; font-size: 15px; }
+    .card-meta { font-size: 12px; color: #9ca3af; margin-top: 4px; }
+    .card-link { font-size: 13px; margin-top: 8px; }
+    .card-link a { color: #2563eb; text-decoration: none; word-break: break-all; }
+    .card-link a:hover { text-decoration: underline; }
+    .card-desc { font-size: 13px; color: #4b5563; margin-top: 8px; white-space: pre-wrap; }
+
+    .card-actions { display: flex; gap: 10px; margin-top: 14px; }
+    .btn-review { flex: 1; background: #16a34a; color: #fff; border: none; border-radius: 10px; padding: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .btn-review:hover { background: #15803d; }
+    .btn-review:disabled { opacity: 0.5; cursor: default; }
+    .btn-delete { flex: 1; background: #fff1f2; color: #be123c; border: 1px solid #fecdd3; border-radius: 10px; padding: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .btn-delete:hover { background: #ffe4e6; }
+    .card-result { font-size: 13px; margin-top: 8px; text-align: center; }
+    .card-result.ok  { color: #16a34a; }
+    .card-result.err { color: #dc2626; }
+
+    .empty { background: #fff; border-radius: 12px; border: 1px solid #e5e7eb; padding: 32px; text-align: center; color: #9ca3af; font-size: 14px; }
+
+    .confirm-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 200; align-items: center; justify-content: center; }
+    .confirm-overlay.open { display: flex; }
+    .confirm-box { background: #fff; border-radius: 14px; padding: 28px 28px 24px; width: 340px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); text-align: center; }
+    .confirm-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+    .confirm-desc { font-size: 13px; color: #6b7280; margin-bottom: 20px; line-height: 1.5; }
+    .confirm-btns { display: flex; gap: 10px; }
+    .btn-confirm-cancel { flex: 1; background: #f3f4f6; color: #374151; border: none; border-radius: 10px; padding: 11px; font-size: 14px; cursor: pointer; }
+    .btn-confirm-cancel:hover { background: #e5e7eb; }
+    .btn-confirm-ok { flex: 1; background: #be123c; color: #fff; border: none; border-radius: 10px; padding: 11px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .btn-confirm-ok:hover { background: #9f1239; }
+  </style>
+</head>
+<body>
+
+<header>
+  <a href="/" class="back">← 관리 포털</a>
+  <div class="header-info">
+    <h1>코스 건의함</h1>
+    <p>이용자가 건의한 코스(미디어) 목록입니다.</p>
+  </div>
+</header>
+
+<main>
+  <div class="section-header">
+    <h2 class="section-title">전체 건의</h2>
+    <span class="badge badge-yellow">{{ pending_count }}건 대기</span>
+  </div>
+
+  {% if suggestions %}
+  <div class="card-list">
+    {% for s in suggestions %}
+    <div class="sugg-card {% if s.status == 'pending' %}pending{% endif %}" id="sugg-card-{{ s.pk }}">
+      <div class="card-top">
+        <div>
+          <span class="card-title">{{ s.title }}</span>
+          <span class="badge badge-type">{{ s.get_media_type_display }}</span>
+        </div>
+        {% if s.status == 'reviewed' %}
+        <span class="badge badge-green">검토완료</span>
+        {% else %}
+        <span class="badge badge-yellow">대기</span>
+        {% endif %}
+      </div>
+      <div class="card-meta">
+        건의자: {{ s.user.nickname|default:s.user.username }}
+        · 건의일: {{ s.created_at|date:'Y-m-d H:i' }}
+      </div>
+      <div class="card-link"><a href="{{ s.link }}" target="_blank" rel="noopener">{{ s.link }}</a></div>
+      <p class="card-desc">{{ s.description }}</p>
+
+      <div class="card-actions">
+        <button type="button" class="btn-review" {% if s.status == 'reviewed' %}disabled{% endif %} onclick="markReviewed({{ s.pk }})">
+          {% if s.status == 'reviewed' %}검토완료됨{% else %}✓ 검토완료로 표시{% endif %}
+        </button>
+        <button type="button" class="btn-delete" onclick="openDeleteConfirm({{ s.pk }}, '{{ s.title|escapejs }}')">✕ 삭제</button>
+      </div>
+      <p class="card-result" id="result-{{ s.pk }}"></p>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty">등록된 코스 건의가 없습니다.</div>
+  {% endif %}
+</main>
+
+<div class="confirm-overlay" id="deleteModal">
+  <div class="confirm-box" onclick="event.stopPropagation()">
+    <div class="confirm-title">건의를 삭제하시겠습니까?</div>
+    <div class="confirm-desc" id="deleteDesc">이 작업은 되돌릴 수 없습니다.</div>
+    <div class="confirm-btns">
+      <button class="btn-confirm-cancel" onclick="closeDeleteConfirm()">취소</button>
+      <button class="btn-confirm-ok" onclick="doDelete()">삭제</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const CSRF = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
+
+  async function markReviewed(id) {
+    const resultEl = document.getElementById(`result-${id}`);
+    resultEl.textContent = '처리 중...'; resultEl.className = 'card-result';
+    try {
+      const res = await fetch(`/course-suggestions/${id}/review/`, { method: 'POST', headers: { 'X-CSRFToken': CSRF } });
+      const data = await res.json();
+      if (data.ok) {
+        location.reload();
+      } else {
+        resultEl.textContent = '처리 실패'; resultEl.className = 'card-result err';
+      }
+    } catch {
+      resultEl.textContent = '네트워크 오류'; resultEl.className = 'card-result err';
+    }
+  }
+
+  let _deleteId = null;
+
+  function openDeleteConfirm(id, title) {
+    _deleteId = id;
+    document.getElementById('deleteDesc').textContent = `"${title}" 건의를 완전히 삭제합니다.`;
+    document.getElementById('deleteModal').classList.add('open');
+  }
+  function closeDeleteConfirm() {
+    document.getElementById('deleteModal').classList.remove('open');
+    _deleteId = null;
+  }
+  document.getElementById('deleteModal').addEventListener('click', closeDeleteConfirm);
+
+  async function doDelete() {
+    if (!_deleteId) return;
+    const id = _deleteId;
+    const btn = document.querySelector('.btn-confirm-ok');
+    btn.disabled = true; btn.textContent = '삭제 중...';
+    try {
+      const res = await fetch(`/course-suggestions/${id}/delete/`, { method: 'POST', headers: { 'X-CSRFToken': CSRF } });
+      const data = await res.json();
+      if (data.ok) {
+        document.getElementById(`sugg-card-${id}`).remove();
+      }
+      closeDeleteConfirm();
+    } catch {
+      closeDeleteConfirm();
+    }
+    btn.disabled = false; btn.textContent = '삭제';
+  }
+</script>
+
+</body>
+</html>

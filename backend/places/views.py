@@ -137,15 +137,19 @@ def get_place_list(request):
 # ── 관리자 포털 뷰 ───────────────────────────────────────────────────────────
 
 def index_view(request):
+    from course_suggestions.models import CourseSuggestion
+
     pending  = MediaPlace.objects.filter(status=MediaPlace.STATUS_INFERRED).count()
     approved = MediaPlace.objects.filter(status=MediaPlace.STATUS_ADMIN_APPROVED).count()
     quiz     = MediaPlace.objects.filter(status=MediaPlace.STATUS_QUIZ_CONFIRMED).count()
     photo_pending = Photo.objects.filter(status=Photo.STATUS_PENDING).count()
+    course_suggestion_pending = CourseSuggestion.objects.filter(status=CourseSuggestion.STATUS_PENDING).count()
     return render(request, 'places/index.html', {
         'pending_count':  pending,
         'approved_count': approved,
         'quiz_count':     quiz,
         'photo_pending_count': photo_pending,
+        'course_suggestion_pending_count': course_suggestion_pending,
         'media_count':    Media.objects.count(),
     })
 
