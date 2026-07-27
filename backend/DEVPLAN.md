@@ -50,7 +50,7 @@
 | schedules | `ScheduleBookmark` | user FK, schedule FK | ✅ 완료 |
 | bookmarks | `MediaBookmark` / `PlaceBookmark` / `PhotoBookmark` | user FK + media/place/photo FK | ✅ 완료 |
 | course_suggestions | `CourseSuggestion` | user FK, title, link, media_type(drama/movie/youtube), description, status(pending/reviewed) | ✅ 완료 (Phase 10-1, 2026-07-27) |
-| - | `Quiz` | (미정 — 정답 집계 필드 등) | ❌ 미구현 (Phase 3) |
+| quiz | `QuizSubmission` / `QuizAnswer` | user+media(재제출 방지) / media_place FK, answer_text, is_correct | ✅ 완료 (Phase 3, 2026-07-27) |
 
 ### API 엔드포인트
 
@@ -59,9 +59,10 @@
 GET  /api/places/              전체 장소 목록 (keyword/category/unverified/tag 필터)
 GET  /api/places/{id}/         장소 상세
 GET  /api/places/map/          지도용 좌표 + 연결 미디어 (media_id 필터)
-GET  /api/media/               전체 미디어 목록 (type/tag 필터)
+GET  /api/media/               전체 미디어 목록 (type/tag/ordering=popular 필터)
 GET  /api/media/{id}/          미디어 상세 + 촬영지 목록
 GET  /api/media/{id}/places/   특정 미디어의 촬영지만 조회
+POST /api/media/{id}/quiz/submit/  퀴즈 제출 { answers: { media_place_id: 답안 } } (Phase 3, JWT 필요)
 GET  /api/tags/                태그 목록
 
 # places — 포토스팟 (Phase 10-2 신설, Phase 11에서 필드/엔드포인트 보강)
@@ -219,32 +220,23 @@ python manage.py fetch_youtube_place \
 
 ---
 
-### Phase 3 — Quiz + 신뢰도 계산 (현재 유일하게 남은 핵심 단계)
+### ✅ Phase 3 — Quiz + 신뢰도 계산 (완료 2026-07-27)
 
-**현황 (2026-06-22):**  
-Phase 4·북마크가 먼저 완료되어 순서가 바뀌었지만, 핵심 로직 단계 중에서는 Phase 3만 손대지 않은 상태입니다.  
-`Photo` 모델은 이미 존재하고(`GET /api/media/{id}/places/`에서 장소별 사진 조회 가능), `MediaPlace.status`에 `quiz_confirmed` 값도 정의돼 있지만 **이 상태로 전환시키는 로직이 어디에도 없습니다.**  
-`confidence_score`는 추출(AI 추론) 시점에 한 번 세팅된 뒤로 다시는 갱신되지 않습니다 — 퀴즈 정답에 따라 올라가는 구조가 전혀 없습니다.
+**현황 (완료 전, 2026-06-22 기준):**  
+`Photo` 모델은 이미 존재하고, `MediaPlace.status`에 `quiz_confirmed` 값도 정의돼 있지만 이 상태로 전환시키는 로직이 어디에도 없었음. `confidence_score`는 추출 시점에 한 번 세팅된 뒤 갱신되지 않았음.
 
-**왜 중요한가:**  
-퀴즈는 앱의 핵심 UX이자 위치 확정의 유일한 수단입니다.  
-`MediaPlace.confidence_score` 필드는 이미 있지만, 올라가는 로직이 전혀 없는 상태입니다.
+**설계가 원안과 달라진 이유 (2026-07-27):** 프론트에 `QuizListScreen`/`QuizDetailScreen`이 이미 구현돼 있었는데, 원안("`GET /api/quiz/`로 미확정 장소 중 랜덤 객관식 퀴즈 반환")과 달리 실제로는 **미디어 하나당 그 미디어의 승인된 장소 전부를 한 번에 보여주고 각 장소를 자유서술로 맞히는 방식**이었음 — 그래서 API도 새로 만들지 않고 프론트가 이미 호출하던 계약(`GET /api/media/{id}/places/`로 문제 목록, `POST /api/media/{id}/quiz/submit/`로 일괄 제출)에 백엔드를 맞춤.
 
-**구현할 것:**
+**구현 완료:**
 
-1. ~~`Photo` 모델 추가~~ — ✅ 이미 완료됨 (`place` FK, `image_url`, `description`, `likes`, `tags`)
+1. `quiz` 앱 신설. 별도 `Quiz` 모델(media_place FK + photo FK + 집계 필드) 대신 `QuizSubmission`(user+media, 재제출 방지용 unique)과 `QuizAnswer`(submission FK, media_place FK, answer_text, is_correct) 두 모델만 사용 — 집계는 매번 `QuizAnswer`를 카운트해서 계산(캐시 컬럼 없음, "힌트 사진"은 이미 화면에 쓰던 `place.image_url` 재사용이라 별도 Photo 연결 불필요).
+2. **정답 판정**: `quiz/services.py`의 `is_answer_correct()` — 공백 제거 후 대소문자 무시하고 양방향 포함관계(`"해운대"` ⊂ `"해운대해수욕장"`)면 정답. 관리자 개입 없이 즉시 자동 채점(2026-07-27 결정, 관리자 수동 검수 방식은 기각).
+3. **신뢰도 갱신**: `recalculate_media_place()` — 퀴즈 제출마다(2026-07-27 결정: 배치/cron 아닌 즉시 계산) 해당 `media_place`의 `QuizAnswer` 전체를 재집계해 `confidence_score = 정답수/전체수`로 갱신, **응답 3개 이상 + 정답률 80% 이상**(`QUIZ_MIN_RESPONSES`/`QUIZ_CONFIRM_THRESHOLD`, 둘 다 튜닝 가능한 상수)이면 `is_confirmed=True` + `status=quiz_confirmed`로 전환. 이미 확정된 장소를 다시 미확정으로 되돌리지는 않음.
+4. **API**: `MediaViewSet`에 `POST /api/media/{id}/quiz/submit/` 액션 추가(JWT 필요) — `{ answers: { media_place_id: 답안 } }` 받아서 채점 후 `{ correct_count, total_count }` 반환. 이미 제출한 유저는 400. `MediaSerializer`/`MediaDetailSerializer`에 `is_submitted` 필드 추가(`QuizListScreen` 카드 잠금 표시용).
+5. **보상**: 참여 시 3토큰(프론트 하드코딩 문구와 동일), 정답 개수당 5토큰 보너스 — 둘 다 우편함(`MailboxItem`)으로 지급.
+6. 실서버로 전체 플로우 검증: 정답/오답 혼합 제출 → correct_count 정확, 재제출 차단, `is_submitted` 반영, 우편함 지급액 확인. 신뢰도 임계값(66%→75%→80%)도 직접 재현해서 정확히 80%에서만 `quiz_confirmed` 전환되는 것 확인.
 
-2. `Quiz` 모델 추가
-   - `media_place` FK (어떤 미디어-장소 쌍에 대한 퀴즈인지)
-   - `photo` FK (힌트 사진)
-   - 정답 집계 필드 (`correct_count`, `total_count`)
-
-3. 퀴즈 API
-   - `GET /api/quiz/` — 미확정 장소(`is_confirmed=False`) 중 랜덤 퀴즈 반환
-   - `POST /api/quiz/{id}/answer/` — 정답 제출 → `confidence_score` 업데이트
-
-4. 신뢰도 계산 로직
-   - 정답률이 일정 기준(예: 80%) 이상이고 응답 수가 N개 이상이면 `is_confirmed=True`로 자동 전환, `status`를 `quiz_confirmed`로 전환
+**남은 것:** `QUIZ_MIN_RESPONSES`(3)/`QUIZ_CONFIRM_THRESHOLD`(0.8)/`QUIZ_CORRECT_ANSWER_REWARD`(5) 값은 실제 서비스 트래픽 보고 조정 필요 — 지금은 사용자 수가 적은 프로젝트 특성을 감안한 잠정값.
 
 ---
 
@@ -468,10 +460,10 @@ Place ──── DailyPlace ── Schedule ── User
 |---|---|---|
 | Place | ✅ 있음 | Tag 연결 완료 |
 | Media | ✅ 있음 (Media로 구현) | Tag 연결 완료 |
-| MediaPlace | ✅ 있음 | Quiz 연결 — Phase 3 |
+| MediaPlace | ✅ 있음 | Quiz 연결 완료 — Phase 3 |
 | Tag | ✅ 있음 | Phase 1 완료 |
-| Photo | ✅ 있음 | Quiz 연결만 남음 — Phase 3 |
-| Quiz | ❌ 없음 | Phase 3 (유일하게 남은 핵심 모델) |
+| Photo | ✅ 있음 | (퀴즈는 Photo 대신 place.image_url 재사용으로 연결 — Phase 3 완료) |
+| Quiz | ✅ `QuizSubmission`/`QuizAnswer`로 구현 (`quiz` 앱) | Phase 3 완료 (2026-07-27) |
 | Schedule | ✅ 있음 (`schedules` 앱) | Phase 4 완료 |
 | DailyPlace | ✅ 있음 (`schedules` 앱) | Phase 4 완료 |
 | User/Auth | ✅ 있음 (`users` 앱, 실계정 username/nickname/email/password_hash + JWT) | Phase 4·6 완료 |
@@ -495,7 +487,7 @@ Place ──── DailyPlace ── Schedule ── User
 |---|---|---|
 | Naver Maps API 작동 안 함 | 미해결 | Kakao로 임시 대체. **신규 정보:** Ncloud "Application Services > Maps" 콘솔(2025-03-20 출시)에서 재등록 필요 가능성 — Phase 5 항목 참고 |
 | YouTube API 미연동 | ✅ 구현 완료 | Phase 2 완료, 최근 주소 교차검증으로 정확도 개선 |
-| confidence_score 업데이트 로직 없음 | 필드만 있음 | Phase 3, 현재 유일하게 남은 핵심 작업 |
+| confidence_score 업데이트 로직 없음 | ✅ 해결됨 | Phase 3(퀴즈 정답 집계로 자동 갱신) 완료, 2026-07-27 |
 | 사용자 인증 없음 | ✅ 해결됨 | `users` 앱에 익명 device_id 기반 인증 구현 완료 (Phase 4), Phase 6에서 JWT 실계정으로 전환 |
 | 이메일 SMTP 미연동 | ✅ 해결됨 | Gmail SMTP 연동 완료, 실기 수신까지 확인(2026-07-27) — Phase 6 항목 참고 |
 
@@ -503,11 +495,12 @@ Place ──── DailyPlace ── Schedule ── User
 
 ## 다음 작업 우선순위 (2026-07-27 기준)
 
-Phase 10-1(코스 건의함), SMTP 연동(실기 수신 확인까지)까지 완료(2026-07-27). 아래 순서대로 진행 예정.
+Phase 3(Quiz), Phase 8(인기 코스 정렬), Phase 10-1(코스 건의함), SMTP 연동까지 전부 완료(2026-07-27) — 로드맵 원안의 Phase 1~9 핵심 단계가 모두 끝났습니다. 남은 건 아래처럼 전부 "확정 필요/후순위" 항목뿐입니다.
 
-1. **🟡 Phase 3 — Quiz + 신뢰도 계산** — 유일하게 남은 핵심 로직 단계. `Quiz` 모델 + 퀴즈 API + `confidence_score` 갱신 로직.
-2. **🟢 Phase 8 — 인기 코스 정렬** — `MediaViewSet`에 좋아요+북마크 합산 정렬 파라미터만 추가하면 됨, 비교적 가벼움.
-3. 완료됨 — ✅ Phase 10-1 코스 건의함, ✅ SMTP 실연동 (둘 다 2026-07-27, 위 항목 참고). 코스 건의함은 `COURSE_SUGGESTION_TOKEN_COST`(현재 100) 값 확정 및 관리자 검토 포털 필요 여부가 아직 미정 — 필요 시 추가 논의.
+1. **아이디 변경 7일 재변경 제한** (Phase 6 잔여) — 프론트 디자인 작업과 함께 나중에 추가 예정, 지금은 매번 변경 가능.
+2. **Phase 10-1 코스 건의함 후속 확정** — `COURSE_SUGGESTION_TOKEN_COST`(현재 100, 임시값) 확정, 관리자 검토 포털 필요 여부 논의.
+3. **Phase 3 퀴즈 상수 튜닝** — `QUIZ_MIN_RESPONSES`(3)/`QUIZ_CONFIRM_THRESHOLD`(0.8)/`QUIZ_CORRECT_ANSWER_REWARD`(5) 실사용 트래픽 보고 조정.
+4. Naver Maps 전환 여부 (Phase 5, 낮은 우선순위), 추천/유행 로직 + 테마 노출 시스템 (보류, 별도 설계 필요), User 아바타 필드(이미지 업로드 프론트 연동 검증 후), 개인정보 처리방침/이용약관 화면(Figma 디자인 대기).
 4. 그 외 미착수: 아이디 변경 7일 제한(Phase 6 잔여), Phase 10-1 코스 추가 건의함(설계 전), User 아바타 필드(이미지 업로드 프론트 연동 검증 후), Naver Maps 전환 여부(Phase 5, 낮은 우선순위), 추천/유행 로직(보류, 별도 설계 필요).
 
 ---

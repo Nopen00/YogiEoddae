@@ -118,10 +118,11 @@ class MediaSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
     is_bookmarked = serializers.SerializerMethodField()
     place_count = serializers.SerializerMethodField()
+    is_submitted = serializers.SerializerMethodField()
 
     class Meta:
         model = Media
-        fields = ['id', 'title', 'media_type', 'year', 'thumbnail_url', 'description', 'tags', 'is_bookmarked', 'place_count', 'created_at']
+        fields = ['id', 'title', 'media_type', 'year', 'thumbnail_url', 'description', 'tags', 'is_bookmarked', 'place_count', 'is_submitted', 'created_at']
 
     def get_is_bookmarked(self, obj):
         user = _get_user_from_context(self.context)
@@ -132,6 +133,13 @@ class MediaSerializer(serializers.ModelSerializer):
 
     def get_place_count(self, obj):
         return obj.media_places.filter(status='admin_approved').count()
+
+    def get_is_submitted(self, obj):
+        user = _get_user_from_context(self.context)
+        if not user:
+            return False
+        from quiz.models import QuizSubmission
+        return QuizSubmission.objects.filter(user=user, media=obj).exists()
 
 
 class MediaPlaceSerializer(serializers.ModelSerializer):
@@ -170,10 +178,11 @@ class MediaDetailSerializer(serializers.ModelSerializer):
     """미디어 상세 조회 시 촬영지 목록까지 포함."""
     places = serializers.SerializerMethodField()
     is_bookmarked = serializers.SerializerMethodField()
+    is_submitted = serializers.SerializerMethodField()
 
     class Meta:
         model = Media
-        fields = ['id', 'title', 'media_type', 'year', 'thumbnail_url', 'description', 'tags', 'is_bookmarked', 'places', 'created_at']
+        fields = ['id', 'title', 'media_type', 'year', 'thumbnail_url', 'description', 'tags', 'is_bookmarked', 'is_submitted', 'places', 'created_at']
 
     def get_places(self, obj):
         media_places = obj.media_places.select_related('place').all()
@@ -185,3 +194,10 @@ class MediaDetailSerializer(serializers.ModelSerializer):
             return False
         from bookmarks.models import MediaBookmark
         return MediaBookmark.objects.filter(user=user, media=obj).exists()
+
+    def get_is_submitted(self, obj):
+        user = _get_user_from_context(self.context)
+        if not user:
+            return False
+        from quiz.models import QuizSubmission
+        return QuizSubmission.objects.filter(user=user, media=obj).exists()

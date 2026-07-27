@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'reviews',
     'mailbox',
     'course_suggestions',
+    'quiz',
 ]
 
 MIDDLEWARE = [

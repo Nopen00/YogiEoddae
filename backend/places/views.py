@@ -24,6 +24,8 @@ from .serializers import (
 from .moderation import moderate_photo, CATEGORY_LABELS
 from bookmarks.models import MediaBookmark, PlaceBookmark
 from mailbox.services import check_and_grant_like_milestone, grant_photo_publish_reward
+from quiz.models import QuizSubmission, QuizAnswer
+from quiz.services import is_answer_correct, recalculate_media_place, grant_quiz_rewards
 
 
 def place_map_test(request):
@@ -511,6 +513,7 @@ class MediaViewSet(viewsets.ReadOnlyModelViewSet):
     GET /api/media/?type=drama           타입 필터 (drama/movie/youtube/etc)
     GET /api/media/?ordering=popular     인기순 정렬 (북마크 수 + 리뷰 개수 합산 내림차순)
     GET /api/media/{id}/places/          해당 미디어의 촬영지만 조회
+    POST /api/media/{id}/quiz/submit/    퀴즈 제출 { answers: { media_place_id: 답안 } } (Phase 3, JWT 필요)
     """
     queryset = Media.objects.all().order_by('-created_at')
 
@@ -556,6 +559,51 @@ class MediaViewSet(viewsets.ReadOnlyModelViewSet):
                         .prefetch_related('place__tags')
                         .order_by('day', 'id'))
         return Response(MediaPlaceSerializer(media_places, many=True, context={'request': request}).data)
+
+    @action(detail=True, methods=['post'], url_path='quiz/submit', permission_classes=[IsAuthenticated])
+    def submit_quiz(self, request, pk=None):
+        """POST /api/media/{id}/quiz/submit/  { answers: { [media_place_id]: 자유서술 답안 } } (JWT 필요)"""
+        media = self.get_object()
+        if QuizSubmission.objects.filter(user=request.user, media=media).exists():
+            return Response({'error': '이미 제출한 퀴즈입니다.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        answers = request.data.get('answers')
+        if not isinstance(answers, dict) or not answers:
+            return Response({'error': '답안을 입력해주세요.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        media_places = {
+            mp.id: mp for mp in
+            MediaPlace.objects.filter(media=media, status=MediaPlace.STATUS_ADMIN_APPROVED).select_related('place')
+        }
+
+        valid_answers = []
+        for place_id_str, answer_text in answers.items():
+            try:
+                media_place = media_places[int(place_id_str)]
+            except (TypeError, ValueError, KeyError):
+                continue
+            if (answer_text or '').strip():
+                valid_answers.append((media_place, answer_text.strip()))
+
+        if not valid_answers:
+            return Response({'error': '유효한 답안이 없습니다.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        submission = QuizSubmission.objects.create(user=request.user, media=media)
+        correct_count = 0
+        for media_place, answer_text in valid_answers:
+            correct = is_answer_correct(answer_text, media_place.place.name)
+            QuizAnswer.objects.create(submission=submission, media_place=media_place, answer_text=answer_text, is_correct=correct)
+            correct_count += int(correct)
+
+        for media_place, _ in valid_answers:
+            recalculate_media_place(media_place)
+
+        grant_quiz_rewards(request.user, correct_count)
+
+        return Response(
+            {'correct_count': correct_count, 'total_count': len(valid_answers)},
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
