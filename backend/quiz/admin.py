@@ -5,7 +5,7 @@ from .models import QuizSubmission, QuizAnswer
 class QuizAnswerInline(admin.TabularInline):
     model = QuizAnswer
     extra = 0
-    readonly_fields = ('media_place', 'answer_text', 'is_correct', 'created_at')
+    readonly_fields = ('media_place', 'answer_text', 'is_correct', 'weight', 'is_probable_visit', 'created_at')
     can_delete = False
 
 

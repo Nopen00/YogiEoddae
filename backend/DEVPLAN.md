@@ -227,16 +227,23 @@ python manage.py fetch_youtube_place \
 
 **설계가 원안과 달라진 이유 (2026-07-27):** 프론트에 `QuizListScreen`/`QuizDetailScreen`이 이미 구현돼 있었는데, 원안("`GET /api/quiz/`로 미확정 장소 중 랜덤 객관식 퀴즈 반환")과 달리 실제로는 **미디어 하나당 그 미디어의 승인된 장소 전부를 한 번에 보여주고 각 장소를 자유서술로 맞히는 방식**이었음 — 그래서 API도 새로 만들지 않고 프론트가 이미 호출하던 계약(`GET /api/media/{id}/places/`로 문제 목록, `POST /api/media/{id}/quiz/submit/`로 일괄 제출)에 백엔드를 맞춤.
 
-**구현 완료:**
+**구현 완료 (1차, 이름 맞히기 퀴즈):**
 
 1. `quiz` 앱 신설. 별도 `Quiz` 모델(media_place FK + photo FK + 집계 필드) 대신 `QuizSubmission`(user+media, 재제출 방지용 unique)과 `QuizAnswer`(submission FK, media_place FK, answer_text, is_correct) 두 모델만 사용 — 집계는 매번 `QuizAnswer`를 카운트해서 계산(캐시 컬럼 없음, "힌트 사진"은 이미 화면에 쓰던 `place.image_url` 재사용이라 별도 Photo 연결 불필요).
 2. **정답 판정**: `quiz/services.py`의 `is_answer_correct()` — 공백 제거 후 대소문자 무시하고 양방향 포함관계(`"해운대"` ⊂ `"해운대해수욕장"`)면 정답. 관리자 개입 없이 즉시 자동 채점(2026-07-27 결정, 관리자 수동 검수 방식은 기각).
-3. **신뢰도 갱신**: `recalculate_media_place()` — 퀴즈 제출마다(2026-07-27 결정: 배치/cron 아닌 즉시 계산) 해당 `media_place`의 `QuizAnswer` 전체를 재집계해 `confidence_score = 정답수/전체수`로 갱신, **응답 3개 이상 + 정답률 80% 이상**(`QUIZ_MIN_RESPONSES`/`QUIZ_CONFIRM_THRESHOLD`, 둘 다 튜닝 가능한 상수)이면 `is_confirmed=True` + `status=quiz_confirmed`로 전환. 이미 확정된 장소를 다시 미확정으로 되돌리지는 않음.
-4. **API**: `MediaViewSet`에 `POST /api/media/{id}/quiz/submit/` 액션 추가(JWT 필요) — `{ answers: { media_place_id: 답안 } }` 받아서 채점 후 `{ correct_count, total_count }` 반환. 이미 제출한 유저는 400. `MediaSerializer`/`MediaDetailSerializer`에 `is_submitted` 필드 추가(`QuizListScreen` 카드 잠금 표시용).
-5. **보상**: 참여 시 3토큰(프론트 하드코딩 문구와 동일), 정답 개수당 5토큰 보너스 — 둘 다 우편함(`MailboxItem`)으로 지급.
-6. 실서버로 전체 플로우 검증: 정답/오답 혼합 제출 → correct_count 정확, 재제출 차단, `is_submitted` 반영, 우편함 지급액 확인. 신뢰도 임계값(66%→75%→80%)도 직접 재현해서 정확히 80%에서만 `quiz_confirmed` 전환되는 것 확인.
+3. **API**: `MediaViewSet`에 `POST /api/media/{id}/quiz/submit/` 액션 추가(JWT 필요) — `{ answers: { media_place_id: 답안 } }` 받아서 채점 후 `{ correct_count, total_count }` 반환. 이미 제출한 유저는 400. `MediaSerializer`/`MediaDetailSerializer`에 `is_submitted` 필드 추가(`QuizListScreen` 카드 잠금 표시용).
+4. **보상**: 참여 시 3토큰(프론트 하드코딩 문구와 동일), 정답 개수당 5토큰 보너스 — 둘 다 우편함(`MailboxItem`)으로 지급.
 
-**남은 것:** `QUIZ_MIN_RESPONSES`(3)/`QUIZ_CONFIRM_THRESHOLD`(0.8)/`QUIZ_CORRECT_ANSWER_REWARD`(5) 값은 실제 서비스 트래픽 보고 조정 필요 — 지금은 사용자 수가 적은 프로젝트 특성을 감안한 잠정값.
+**2026-07-27 추가 논의 — "방문 개연성" 가중치 (구현 완료):** 1차 구현 직후 원래 의도를 다시 확인해보니, 진짜 목표는 "장소 이름을 아는지 테스트"가 아니라 **"실제로 그 장소에 가봤을 사람의 응답으로 크라우드소싱 신뢰도를 얻는 것"**이었음 (일반 퀴즈 응답자는 사진만 보고 이름을 맞히는 거라 실제 방문 여부와 무관 — 검색해서 맞혀도 정답 처리됨). 이 간극을 메우기 위해 아래 로직 추가:
+
+- **방문 개연성 판정** (`is_probable_visit()`): 유저가 그 장소를 자신의 일정(`DailyPlace`, 코스 연동 여부 무관 — 아무 일정에서든 인정)에 넣었고, **`일정 생성일 < 배정된 날짜(day_number 기준 그 하루) < 오늘`**이면 방문 개연성이 있다고 판단. "일정 생성일이 배정일보다 앞서야 한다"는 조건 덕분에, 퀴즈 문제를 보고 그 자리에서 과거 날짜로 급조한 일정은 걸러짐. (남은 허점: `DailyPlace`에 자체 생성/수정일이 없어서, 오래전에 만든 일정에 "오늘" 장소를 추가/수정하는 경우까지는 못 막음 — 지금 규모에선 감수하기로 함, 필요해지면 `DailyPlace`에 타임스탬프 추가 고려)
+- **채점**: 방문 개연성이 있는 유저의 답변은 `place.name`과 매칭하지 않고 **무조건 정답 처리**(`grade_answer()`) — 지식 테스트가 아니라 데이터 수집이 목적이라 뭐라고 적든 상관없음.
+- **가중치**: 일반 답변 1.0, 방문 개연성 답변 1.3. `recalculate_media_place()`가 `confidence_score = (가중 정답 합) / (가중 전체 합)`으로 계산 — 신뢰도 있는 응답 1개가 일반 응답 다수의 반대 의견을 뒤집지 못하도록 배율을 낮게 잡음. 단, **"응답 수 N개 이상" 게이트는 가중치와 무관하게 원본 응답 개수**로만 판정(가중치 합산으로 게이트를 채우는 걸 막기 위함).
+- **보상**: 유저에게 두 유형을 구분해서 보여주지 않기로 했으므로(어떤 문제가 "방문 개연성" 문제인지 숨김), 정답 보상도 동일하게 5토큰 — 특별 취급 없음.
+- `QuizAnswer`에 `weight`(FloatField)/`is_probable_visit`(BooleanField) 필드 추가, 관리자 화면에서는 확인 가능.
+- 실서버로 검증: 실제 과거 방문(생성일<배정일<오늘) → 엉뚱한 답변도 강제 정답 처리 확인. 방금 급조한 백데이팅 일정 → 무시되고 일반 채점으로 폴백 확인. 가중 평균 계산도 "신뢰 응답 1개 + 반대 응답 2개"는 확정 안 되고 "신뢰 응답 1개 + 동의 응답 2개"는 정확히 confidence 1.0으로 확정되는 것까지 확인.
+
+**남은 것:** `QUIZ_MIN_RESPONSES`(3)/`QUIZ_CONFIRM_THRESHOLD`(0.8)/`QUIZ_CORRECT_ANSWER_REWARD`(5)/`QUIZ_PROBABLE_VISIT_WEIGHT`(1.3) 값은 실제 서비스 트래픽 보고 조정 필요 — 지금은 사용자 수가 적은 프로젝트 특성을 감안한 잠정값. `DailyPlace` 타임스탬프 부재로 인한 잔여 어뷰징 허점(위 참고)도 후순위 검토 대상.
 
 ---
 
@@ -499,9 +506,8 @@ Phase 3(Quiz), Phase 8(인기 코스 정렬), Phase 10-1(코스 건의함), SMTP
 
 1. **아이디 변경 7일 재변경 제한** (Phase 6 잔여) — 프론트 디자인 작업과 함께 나중에 추가 예정, 지금은 매번 변경 가능.
 2. **Phase 10-1 코스 건의함 후속 확정** — `COURSE_SUGGESTION_TOKEN_COST`(현재 100, 임시값) 확정, 관리자 검토 포털 필요 여부 논의.
-3. **Phase 3 퀴즈 상수 튜닝** — `QUIZ_MIN_RESPONSES`(3)/`QUIZ_CONFIRM_THRESHOLD`(0.8)/`QUIZ_CORRECT_ANSWER_REWARD`(5) 실사용 트래픽 보고 조정.
+3. **Phase 3 퀴즈 상수 튜닝 + 잔여 허점** — `QUIZ_MIN_RESPONSES`(3)/`QUIZ_CONFIRM_THRESHOLD`(0.8)/`QUIZ_CORRECT_ANSWER_REWARD`(5)/`QUIZ_PROBABLE_VISIT_WEIGHT`(1.3) 실사용 트래픽 보고 조정. `DailyPlace`에 생성/수정일 타임스탬프가 없어서 "방문 개연성" 판정을 완전히 어뷰징 방지하진 못하는 잔여 허점도 필요시 검토(위 Phase 3 항목 참고).
 4. Naver Maps 전환 여부 (Phase 5, 낮은 우선순위), 추천/유행 로직 + 테마 노출 시스템 (보류, 별도 설계 필요), User 아바타 필드(이미지 업로드 프론트 연동 검증 후), 개인정보 처리방침/이용약관 화면(Figma 디자인 대기).
-4. 그 외 미착수: 아이디 변경 7일 제한(Phase 6 잔여), Phase 10-1 코스 추가 건의함(설계 전), User 아바타 필드(이미지 업로드 프론트 연동 검증 후), Naver Maps 전환 여부(Phase 5, 낮은 우선순위), 추천/유행 로직(보류, 별도 설계 필요).
 
 ---
 

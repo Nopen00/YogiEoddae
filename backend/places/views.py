@@ -25,7 +25,7 @@ from .moderation import moderate_photo, CATEGORY_LABELS
 from bookmarks.models import MediaBookmark, PlaceBookmark
 from mailbox.services import check_and_grant_like_milestone, grant_photo_publish_reward
 from quiz.models import QuizSubmission, QuizAnswer
-from quiz.services import is_answer_correct, recalculate_media_place, grant_quiz_rewards
+from quiz.services import grade_answer, recalculate_media_place, grant_quiz_rewards
 
 
 def place_map_test(request):
@@ -591,8 +591,11 @@ class MediaViewSet(viewsets.ReadOnlyModelViewSet):
         submission = QuizSubmission.objects.create(user=request.user, media=media)
         correct_count = 0
         for media_place, answer_text in valid_answers:
-            correct = is_answer_correct(answer_text, media_place.place.name)
-            QuizAnswer.objects.create(submission=submission, media_place=media_place, answer_text=answer_text, is_correct=correct)
+            correct, weight, probable_visit = grade_answer(request.user, media_place, answer_text)
+            QuizAnswer.objects.create(
+                submission=submission, media_place=media_place, answer_text=answer_text,
+                is_correct=correct, weight=weight, is_probable_visit=probable_visit,
+            )
             correct_count += int(correct)
 
         for media_place, _ in valid_answers:
