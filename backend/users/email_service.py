@@ -1,5 +1,13 @@
 import random
 
+from django.conf import settings
+from django.core.mail import send_mail
+
+SUBJECTS = {
+    'link_email': '[요기어때?] 이메일 인증코드',
+    'reset_password': '[요기어때?] 비밀번호 재설정 인증코드',
+}
+
 
 def generate_verification_code():
     return f'{random.randint(0, 999999):06d}'
@@ -7,9 +15,11 @@ def generate_verification_code():
 
 def send_verification_email(email, code, purpose):
     """
-    실제 SMTP 연동 전까지의 인터페이스. 지금은 콘솔 출력만 하고,
-    나중에 이 함수 내부만 실제 메일 발송 로직으로 교체하면 된다.
-    (logging 모듈은 프로젝트에 LOGGING 설정이 없어 기본 레벨(WARNING)에 걸려
-    조용히 버려지므로, 반드시 눈에 보이는 print를 쓴다.)
+    Gmail SMTP로 인증코드 메일을 발송한다 (settings.EMAIL_BACKEND 참고).
+    .env에 EMAIL_HOST_USER/EMAIL_HOST_PASSWORD가 없으면 콘솔 출력으로 자동 대체된다.
+    발송 실패 시 예외를 그대로 올려서 호출한 뷰가 500으로 응답하게 한다 —
+    인증코드가 실제로 전달됐는지 알 수 없는 상태에서 성공 응답을 보내면 안 되기 때문.
     """
-    print(f'[MOCK EMAIL] to={email} purpose={purpose} code={code}')
+    subject = SUBJECTS.get(purpose, '[요기어때?] 인증코드')
+    message = f'인증코드: {code}\n5분 이내에 입력해주세요.'
+    send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [email])

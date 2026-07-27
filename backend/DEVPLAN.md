@@ -49,6 +49,7 @@
 | schedules | `DailyPlace` | schedule FK, place FK, day_number, order, memo | ✅ 완료 |
 | schedules | `ScheduleBookmark` | user FK, schedule FK | ✅ 완료 |
 | bookmarks | `MediaBookmark` / `PlaceBookmark` / `PhotoBookmark` | user FK + media/place/photo FK | ✅ 완료 |
+| course_suggestions | `CourseSuggestion` | user FK, title, link, media_type(drama/movie/youtube), description, status(pending/reviewed) | ✅ 완료 (Phase 10-1, 2026-07-27) |
 | - | `Quiz` | (미정 — 정답 집계 필드 등) | ❌ 미구현 (Phase 3) |
 
 ### API 엔드포인트
@@ -109,6 +110,9 @@ GET  /api/bookmarks/                      내 북마크 전체 목록 (일정/�
 POST/DELETE /api/media/{id}/bookmark/     미디어 북마크 추가/삭제
 POST/DELETE /api/places/{id}/bookmark/    장소 북마크 추가/삭제
 POST/DELETE /api/photos/{id}/bookmark/    사진 북마크 추가/삭제
+
+# course_suggestions (Phase 10-1, JWT)
+POST /api/course-suggestions/             코스 건의 등록 { title, link, media_type, description } → 토큰 100개 차감 후 { token_balance } 반환, 잔액 부족 시 400
 
 # places (관리자 포털, Django 템플릿)
 GET/POST /places/extract/                 새 추출 (YouTube URL → AI 추론 → DB 저장)
@@ -292,7 +296,7 @@ Phase 3(퀴즈)보다 먼저 구현 완료된 단계입니다. `users` 앱에 �
 
 **현황 (2026-07-21 완료):** 백엔드(회원가입/로그인/JWT/아이디찾기/비밀번호찾기/회원탈퇴/닉네임·아이디변경/이메일연동)와 프론트 계정관리 화면 8개(AccountScreen/EmailChangeScreen/EmailVerifyScreen/IdChangeScreen/PasswordEditScreen/PasswordChangeScreen/PasswordResetScreen/WithdrawalScreen) 실연동까지 실기 테스트로 확인 완료. `schedules`/`bookmarks`/`places`(북마크 액션)/`users`(me·토큰충전·초기화)는 전부 X-Device-ID에서 JWT 인증으로 전환됨.
 
-**⚠️ 잊지 말 것 — SMTP 미연동:** 이메일 발송은 실제 SMTP가 아니라 `users/email_service.py`의 `send_verification_email()`이 백엔드 터미널에 `print()`로 `[MOCK EMAIL] to=... code=......`를 찍는 것으로 대체돼 있음. 비밀번호 찾기/이메일 연동 인증코드를 실제로 유저 메일함에 보내려면 이 함수 내부만 실제 SMTP(또는 이메일 발송 서비스) 연동으로 교체하면 됨. **스토어 심사 제출 전(8월 20일 목표) 반드시 처리해야 하는 항목.**
+**✅ SMTP 실연동 완료 (2026-07-27, 실기 수신까지 확인):** `users/email_service.py`의 `send_verification_email()`이 Django `send_mail`(Gmail SMTP)로 실제 발송하도록 교체됨. `settings.py`에 `EMAIL_HOST_USER`/`EMAIL_HOST_PASSWORD`(`.env`)가 비어있으면 콘솔 출력(`EMAIL_BACKEND=console`)으로 자동 대체되어 로컬 개발은 계속 크래시 없이 동작. `.env`에 실제 Gmail 계정+앱 비밀번호를 채운 뒤 인증코드 메일을 보내 Gmail 받은편지함 수신까지 직접 확인 완료. 발송 실패 시 예외를 그대로 올려서 호출한 뷰가 500으로 응답함(성공 여부 불확실한 상태에서 200을 보내지 않기 위함).
 
 **왜 필요한가:**
 Review 신설(Phase 7)에서 작성자를 구분하려면 실 계정이 필요합니다. 지금은 기기를 바꾸거나 앱을 재설치하면 계정(토큰잔액·북마크·일정)이 통째로 사라지는 구조라, 로그인/복구 수단이 먼저 있어야 합니다.
@@ -373,7 +377,7 @@ Review 신설(Phase 7)에서 작성자를 구분하려면 실 계정이 필요�
 
 ### Phase 10 — 신규 요구사항 (2026-07-21 논의)
 
-1. **코스 추가 건의함** — 사용자가 코스(장소) 추가를 건의할 수 있는 기능. 세부 설계 전 (건의 대상 필드, 관리자 검토 플로우 등 미정). **미착수.**
+1. ✅ **코스 추가 건의함** (완료 2026-07-27) — 프론트가 7/26에 `CourseSuggestionWriteScreen` + `courseSuggestionApi`를 먼저 구현해두고 백엔드 엔드포인트만 미착수 상태였음. `course_suggestions` 앱 신설(`reviews`/`mailbox`와 동일하게 독립 앱), `CourseSuggestion` 모델(user FK, title, link, media_type(drama/movie/youtube), description, status(pending/reviewed)) 추가. `POST /api/course-suggestions/` (JWT 필요) — 토큰 100개(`COURSE_SUGGESTION_TOKEN_COST`, 프론트와 동일값 유지 필요) 차감 후 생성, 잔액 부족 시 400. Django Admin에 목록/필터 + "검토완료로 표시" 일괄 액션 등록(커스텀 검토 포털은 아직 없음, 필요해지면 포토스팟 검수 포털처럼 추가 가능). 실서버로 회원가입→로그인→토큰충전→건의생성 전체 플로우 curl로 검증 완료.
 2. ✅ **포토스팟 사용자 업로드** (완료 2026-07-21) — `Photo`에 `uploaded_by`/`is_approved`/`last_rewarded_likes` 추가. `POST /api/photos/`로 업로드하면 승인 대기(`is_approved=False`) 상태로 생성, 목록/상세 API는 승인된 것만 노출. Django Admin에 `Photo` 등록 + "선택한 포토스팟 승인" 일괄 액션으로 관리자 승인. `PhotoViewSet` 신설(목록/상세/업로드/좋아요, `GET /api/photos/{id}/`가 장소+같은장소사진+관련사진까지 포함하는 `PhotoSpotDetail` 모양). 좋아요는 `PhotoLike`(user+photo unique)로 중복 방지, `POST/DELETE /api/photos/{id}/like/`. **프론트는 업로드 화면 자체가 아직 없어서(디자인 미정) API만 준비된 상태** — `PhotoSpotDetailScreen`의 기존 "저장" 버튼은 북마크와 함께 좋아요도 같이 호출하도록만 연결해둠.
 3. ✅ **우편함/정산함 보상 시스템** (완료 2026-07-21, 원래 로드맵엔 없던 신규 항목) — `mailbox` 앱 신설. `MailboxItem`(1회성 고정보상, 예: 리뷰 작성 10토큰 — 리뷰 생성 API에서 자동 지급)과 `SettlementItem`(누적/마일스톤 보상, 예: 유저 업로드 포토스팟이 좋아요 50개 달성 시 100토큰, 이후 10개마다 10토큰 — `Photo.last_rewarded_likes`로 중복 지급 방지)을 별도 모델로 분리(하나로 합치면 마일스톤 중복지급 버그 위험이 있어서 분리 결정). 각각 목록/개별수령/일괄수령 API. 프론트는 이미 있던 `MailboxScreen`이 API 계약과 정확히 일치해서 코드 수정 없이 바로 연동됨. **정산함 화면은 아직 없음**(`settlementApi`만 준비, `MailboxScreen` 구조 재사용하면 될 듯).
 
@@ -487,17 +491,17 @@ Place ──── DailyPlace ── Schedule ── User
 | YouTube API 미연동 | ✅ 구현 완료 | Phase 2 완료, 최근 주소 교차검증으로 정확도 개선 |
 | confidence_score 업데이트 로직 없음 | 필드만 있음 | Phase 3, 현재 유일하게 남은 핵심 작업 |
 | 사용자 인증 없음 | ✅ 해결됨 | `users` 앱에 익명 device_id 기반 인증 구현 완료 (Phase 4), Phase 6에서 JWT 실계정으로 전환 |
-| **이메일 SMTP 미연동** | ❌ 미해결 | 비밀번호 찾기/이메일 연동 인증코드가 실제 메일이 아니라 백엔드 터미널 `print()` 로그로만 나감 (`users/email_service.py`). 스토어 심사 제출 전 필수 처리 — Phase 6 항목 참고 |
+| 이메일 SMTP 미연동 | ✅ 해결됨 | Gmail SMTP 연동 완료, 실기 수신까지 확인(2026-07-27) — Phase 6 항목 참고 |
 
 ---
 
-## 다음 작업 우선순위 (2026-07-23 기준)
+## 다음 작업 우선순위 (2026-07-27 기준)
 
-Phase 11(포토스팟 AI 검열 + 이미지 업로드)까지 완료. 아래 순서대로 진행 예정 — "Phase 순서에서 체크 안 된 가장 앞 단계"만 보면 Phase 3(Quiz)가 먼저 잡히지만, **SMTP가 마감(스토어 심사 제출 8/20 목표) 때문에 더 급함.**
+Phase 10-1(코스 건의함), SMTP 연동(실기 수신 확인까지)까지 완료(2026-07-27). 아래 순서대로 진행 예정.
 
-1. **🔴 이메일 SMTP 실제 연동** — `users/email_service.py`의 `send_verification_email()` mock print()를 실제 발송으로 교체. Phase 6 항목, 알려진 이슈 표 참고.
-2. **🟡 Phase 3 — Quiz + 신뢰도 계산** — 유일하게 남은 핵심 로직 단계. `Quiz` 모델 + 퀴즈 API + `confidence_score` 갱신 로직.
-3. **🟢 Phase 8 — 인기 코스 정렬** — `MediaViewSet`에 좋아요+북마크 합산 정렬 파라미터만 추가하면 됨, 비교적 가벼움.
+1. **🟡 Phase 3 — Quiz + 신뢰도 계산** — 유일하게 남은 핵심 로직 단계. `Quiz` 모델 + 퀴즈 API + `confidence_score` 갱신 로직.
+2. **🟢 Phase 8 — 인기 코스 정렬** — `MediaViewSet`에 좋아요+북마크 합산 정렬 파라미터만 추가하면 됨, 비교적 가벼움.
+3. 완료됨 — ✅ Phase 10-1 코스 건의함, ✅ SMTP 실연동 (둘 다 2026-07-27, 위 항목 참고). 코스 건의함은 `COURSE_SUGGESTION_TOKEN_COST`(현재 100) 값 확정 및 관리자 검토 포털 필요 여부가 아직 미정 — 필요 시 추가 논의.
 4. 그 외 미착수: 아이디 변경 7일 제한(Phase 6 잔여), Phase 10-1 코스 추가 건의함(설계 전), User 아바타 필드(이미지 업로드 프론트 연동 검증 후), Naver Maps 전환 여부(Phase 5, 낮은 우선순위), 추천/유행 로직(보류, 별도 설계 필요).
 
 ---

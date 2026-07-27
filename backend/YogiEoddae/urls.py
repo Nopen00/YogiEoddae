@@ -30,6 +30,7 @@ urlpatterns = [
     path('api/',    include('bookmarks.urls')),
     path('api/',    include('reviews.urls')),
     path('api/',    include('mailbox.urls')),
+    path('api/',    include('course_suggestions.urls')),
 ]
 
 if settings.DEBUG:

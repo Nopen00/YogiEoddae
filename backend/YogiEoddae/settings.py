@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'bookmarks',
     'reviews',
     'mailbox',
+    'course_suggestions',
 ]
 
 MIDDLEWARE = [
@@ -179,6 +180,20 @@ ANTHROPIC_API_KEY = env('ANTHROPIC_API_KEY', default='')
 GEMINI_API_KEY = env('GEMINI_API_KEY', default='')
 YOUTUBE_API_KEY = env('YOUTUBE_API_KEY', default='')
 DEVICE_ID_HASH_KEY = env('DEVICE_ID_HASH_KEY')
+
+# 이메일 발송 (Gmail SMTP) — .env에 EMAIL_HOST_USER/EMAIL_HOST_PASSWORD(앱 비밀번호)가 없으면
+# 콘솔 출력으로 자동 대체되어 로컬 개발 중에도 크래시 없이 동작한다.
+EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER or 'noreply@yogieoddae.local'
+
+if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = 'smtp.gmail.com'
+    EMAIL_PORT = 587
+    EMAIL_USE_TLS = True
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # Kakao Maps SDK 403 방지: Referer 헤더를 크로스 오리진 요청에도 포함
 SECURE_REFERRER_POLICY = 'no-referrer-when-downgrade'
