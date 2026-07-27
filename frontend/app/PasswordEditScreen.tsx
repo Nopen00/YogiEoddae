@@ -276,6 +276,7 @@ const PasswordEditScreen = () => {
           onPress={async () => {
             setSuccessPopupVisible(false);
             await authApi.logout();
+            router.dismissAll();
             router.replace('/');
           }}
         >

@@ -1,4 +1,5 @@
 import { LabeledInputBox } from '@/components/ui/LabeledInputBox';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { Colors } from '@/constants/Colors';
 import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
@@ -43,6 +44,7 @@ const SignUpScreen = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      <ScreenHeader onBack={() => router.back()} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Spacing.v.screenBottom }}>
           <View style={styles.body}>
@@ -85,9 +87,7 @@ const SignUpScreen = () => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.light.background },
   body: {
-    // ScreenHeader가 없는 화면이지만, 다른 화면(LoginScreen 등)의 헤더+16 위치와
-    // 동일한 세로 위치에 맞추기 위해 헤더의 marginTop(8)+height(56)만큼 미리 띄움
-    marginTop: Spacing.v.small + Size.header + Spacing.v.medium,
+    marginTop: Spacing.v.medium,
     paddingHorizontal: Spacing.h.medium,
   },
   title: { ...Typography.title1, color: Colors.light.black },

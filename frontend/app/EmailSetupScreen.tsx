@@ -103,6 +103,7 @@ const EmailSetupScreen = () => {
           activeOpacity={1}
           onPress={() => {
             setSetupLaterPopupVisible(false);
+            router.dismissAll();
             router.replace({ pathname: '/MainScreen', params: { welcome: '1', nickname: nickname ?? '' } });
           }}
         >

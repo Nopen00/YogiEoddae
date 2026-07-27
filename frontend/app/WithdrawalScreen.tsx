@@ -62,6 +62,7 @@ const WithdrawalScreen = () => {
     try {
       await userApi.withdraw(password);
       await authApi.logout();
+      router.dismissAll();
       router.replace('/');
     } catch (e: any) {
       setPasswordError(true);

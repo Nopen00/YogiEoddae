@@ -13,7 +13,7 @@ export const unstable_settings = {
   anchor: '(tabs)',
 };
 
-const HIDDEN_TAB_ROUTES = ['/SearchScreen', '/tutorial', '/LoginScreen', '/SignInScreen', '/SignUpScreen', '/SignUpStep2Screen', '/EmailSetupScreen', '/FindIdScreen', '/FindIdResultScreen', '/FindPasswordScreen'];
+const HIDDEN_TAB_ROUTES = ['/SearchScreen', '/tutorial', '/LoginScreen', '/SignInScreen', '/SignUpAgreementScreen', '/SignUpScreen', '/SignUpStep2Screen', '/EmailSetupScreen', '/FindIdScreen', '/FindIdResultScreen', '/FindPasswordScreen'];
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
@@ -24,10 +24,13 @@ function RootLayoutNav() {
   const isSharedPasswordScreenFromPublic =
     (pathname.startsWith('/PasswordChangeScreen') || pathname.startsWith('/PasswordResetScreen')) &&
     fromPublic === '1';
+  // PolicyScreen도 회원가입(비로그인)과 MY페이지(로그인) 양쪽에서 재사용됨
+  const isPolicyScreenFromPublic = pathname.startsWith('/PolicyScreen') && fromPublic === '1';
 
   const showTabBar =
     pathname !== '/' &&
     !isSharedPasswordScreenFromPublic &&
+    !isPolicyScreenFromPublic &&
     !HIDDEN_TAB_ROUTES.some((route) => pathname.startsWith(route));
 
   return (
@@ -56,6 +59,7 @@ function RootLayoutNav() {
             <Stack.Screen name="UserPhotoSpotsScreen" options={{ headerShown: false }} />
             <Stack.Screen name="LoginScreen" options={{ headerShown: false }} />
             <Stack.Screen name="SignInScreen" options={{ headerShown: false }} />
+            <Stack.Screen name="SignUpAgreementScreen" options={{ headerShown: false }} />
             <Stack.Screen name="SignUpScreen" options={{ headerShown: false }} />
             <Stack.Screen name="SignUpStep2Screen" options={{ headerShown: false }} />
             <Stack.Screen name="EmailSetupScreen" options={{ headerShown: false }} />
@@ -73,6 +77,7 @@ function RootLayoutNav() {
             <Stack.Screen name="WithdrawalScreen" options={{ headerShown: false }} />
             <Stack.Screen name="ScheduleDetailScreen" options={{ headerShown: false }} />
             <Stack.Screen name="CourseScreen" options={{ headerShown: false }} />
+            <Stack.Screen name="PolicyScreen" options={{ headerShown: false }} />
           </Stack>
         </View>
         {showTabBar && <BottomTabBar />}

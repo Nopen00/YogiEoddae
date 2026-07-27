@@ -34,6 +34,7 @@ const SignInScreen = () => {
     if (!isActive) return;
     try {
       const res = await authApi.login({ username, password });
+      router.dismissAll();
       router.replace({
         pathname: '/MainScreen',
         params: { welcome: '1', nickname: res.data.nickname, welcomeSource: 'login' },
@@ -87,6 +88,8 @@ const SignInScreen = () => {
             </TouchableOpacity>
 
             <View style={styles.bottomRow}>
+              <Text style={styles.bottomLinkText} onPress={() => router.push('/SignUpAgreementScreen')}>회원가입</Text>
+              <View style={styles.bottomDivider} />
               <Text style={styles.bottomLinkText} onPress={() => router.push('/FindIdScreen')}>아이디 찾기</Text>
               <View style={styles.bottomDivider} />
               <Text style={styles.bottomLinkText} onPress={() => router.push('/FindPasswordScreen')}>비밀번호 재설정</Text>

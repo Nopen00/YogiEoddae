@@ -130,6 +130,17 @@ const SettingScreen = () => {
         </TouchableOpacity>
       </View>
 
+      {/* 약관 및 정책 */}
+      <View style={styles.policyRow}>
+        <TouchableOpacity activeOpacity={0.7} onPress={() => router.push({ pathname: '/PolicyScreen', params: { type: 'terms' } })}>
+          <Text style={styles.policyLinkText}>이용약관</Text>
+        </TouchableOpacity>
+        <View style={styles.policyDivider} />
+        <TouchableOpacity activeOpacity={0.7} onPress={() => router.push({ pathname: '/PolicyScreen', params: { type: 'privacy' } })}>
+          <Text style={styles.policyLinkText}>개인정보 처리방침</Text>
+        </TouchableOpacity>
+      </View>
+
       <Modal visible={isIconModeToastVisible} transparent animationType="none">
         <TouchableOpacity
           style={styles.iconModeToastOverlay}
@@ -279,6 +290,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.h.medium,
   },
   iconModeToastText: { ...Typography.subtitle2, color: Colors.light.black, textAlign: 'center' },
+  policyRow: {
+    marginTop: Spacing.v.large,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  policyLinkText: { ...Typography.button1, color: Colors.light.grayDark },
+  policyDivider: {
+    width: 1,
+    height: 12,
+    backgroundColor: Colors.light.grayLight,
+    marginHorizontal: Spacing.h.small,
+  },
 });
 
 export default SettingScreen;

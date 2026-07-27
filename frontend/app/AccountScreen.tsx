@@ -162,6 +162,7 @@ const AccountScreen = () => {
                 onPress={async () => {
                   setLogoutConfirmVisible(false);
                   await authApi.logout();
+                  router.dismissAll();
                   router.replace('/');
                 }}
               >

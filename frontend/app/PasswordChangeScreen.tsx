@@ -104,16 +104,14 @@ const PasswordChangeScreen = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {!isFromPublic && (
-        <ScreenHeader onBack={() => router.back()} title="비밀번호 재설정" />
-      )}
+      <ScreenHeader onBack={() => router.back()} title={!isFromPublic ? '비밀번호 재설정' : undefined} />
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Spacing.v.screenBottom }}>
-      <View style={[styles.body, isFromPublic && styles.bodyNoHeader]}>
+      <View style={styles.body}>
         <Text style={styles.title}>인증 코드를 메일로 전송했습니다.</Text>
         <Text style={styles.subtitle}>5분 내에, 이메일로 전송받은 코드를 입력해 주세요.</Text>
         <Text style={styles.subtitle}>전송된 이메일 주소 : {email || '이메일이 없습니다.'}</Text>
@@ -183,11 +181,6 @@ const styles = StyleSheet.create({
   body: {
     marginTop: Spacing.v.medium,
     paddingHorizontal: Spacing.h.medium,
-  },
-  bodyNoHeader: {
-    // ScreenHeader가 없는 화면이지만, 다른 화면(SignUpStep2Screen 등)의 헤더+16 위치와
-    // 동일한 세로 위치에 맞추기 위해 헤더의 marginTop(8)+height(56)만큼 미리 띄움
-    marginTop: Spacing.v.small + Size.header + Spacing.v.medium,
   },
   title: { ...Typography.title1, color: Colors.light.black },
   subtitle: { ...Typography.body2, color: Colors.light.grayDark, marginTop: Spacing.v.small },

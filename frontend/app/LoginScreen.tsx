@@ -21,7 +21,7 @@ const LoginScreen = () => {
       </View>
 
       <View style={[styles.bottomSection, { paddingBottom: insets.bottom + Spacing.v.xxxlarge }]}>
-        <TouchableOpacity style={styles.startButton} activeOpacity={0.8} onPress={() => router.push('/SignUpScreen')}>
+        <TouchableOpacity style={styles.startButton} activeOpacity={0.8} onPress={() => router.push('/SignUpAgreementScreen')}>
           <Text style={styles.startButtonText}>시작하기</Text>
         </TouchableOpacity>
 

@@ -166,16 +166,14 @@ const PasswordResetScreen = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {!isFromPublic && (
-        <ScreenHeader onBack={() => router.back()} title="비밀번호 변경" />
-      )}
+      <ScreenHeader onBack={() => router.back()} title={!isFromPublic ? '비밀번호 변경' : undefined} />
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Spacing.v.screenBottom }}>
-      <View style={[styles.body, isFromPublic && styles.bodyNoHeader]}>
+      <View style={styles.body}>
         <Text style={styles.title}>{isFromPublic ? '비밀번호를 재설정합니다.' : '비밀번호를 변경해주세요.'}</Text>
         <Text style={styles.subtitle}>
           {isFromPublic ? '사용할 새로운 비밀번호를 입력해 주세요.' : '비밀번호를 변경할 시, 7일 간 재변경이 불가능합니다.'}
@@ -268,6 +266,7 @@ const PasswordResetScreen = () => {
               return;
             }
             await authApi.logout();
+            router.dismissAll();
             router.replace('/');
           }}
         >
@@ -290,11 +289,6 @@ const styles = StyleSheet.create({
   body: {
     marginTop: Spacing.v.medium,
     paddingHorizontal: Spacing.h.medium,
-  },
-  bodyNoHeader: {
-    // ScreenHeader가 없는 화면이지만, 다른 화면(SignUpStep2Screen 등)의 헤더+16 위치와
-    // 동일한 세로 위치에 맞추기 위해 헤더의 marginTop(8)+height(56)만큼 미리 띄움
-    marginTop: Spacing.v.small + Size.header + Spacing.v.medium,
   },
   title: { ...Typography.title1, color: Colors.light.black },
   subtitle: { ...Typography.body2, color: Colors.light.grayDark, marginTop: Spacing.v.small },
