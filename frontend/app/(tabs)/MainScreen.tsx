@@ -55,11 +55,9 @@ const MainScreen = () => {
 
   useEffect(() => {
     mediaApi.getList({ type: 'drama' }).then(res => setCarouselData(res.data.results)).catch((e) => console.error('carousel error:', e));
-    mediaApi.getList().then(res => {
-      const all = res.data.results;
-      setPopularCourses(all.slice(0, 4));
-      setRecommendedCourses(all.slice(4, 8));
-    }).catch((e) => console.error('courses error:', e));
+    mediaApi.getList({ ordering: 'popular' }).then(res => setPopularCourses(res.data.results.slice(0, 4))).catch((e) => console.error('popular courses error:', e));
+    // "추천"은 개인화 추천 로직 설계 전(DEVPLAN 보류 항목)이라 임시로 전체 목록에서 자름
+    mediaApi.getList().then(res => setRecommendedCourses(res.data.results.slice(4, 8))).catch((e) => console.error('recommended courses error:', e));
   }, []);
 
   // 데이터 로드 후 실제 첫 번째 아이템(index 1)으로 순간이동

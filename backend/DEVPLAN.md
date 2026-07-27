@@ -359,11 +359,17 @@ Review 신설(Phase 7)에서 작성자를 구분하려면 실 계정이 필요�
 
 ---
 
-### Phase 8 — 인기 코스 정렬
+### ✅ Phase 8 — 인기 코스 정렬 (완료 2026-07-27)
 
-**현황:** `MainScreen`이 `mediaApi.getList()` 결과를 그대로 `slice(0,4)`/`slice(4,8)`로 잘라서 "인기"/"추천"으로 표시 중 (실제 정렬 아님).
+**현황 (완료 전):** `MainScreen`이 `mediaApi.getList()` 결과를 그대로 `slice(0,4)`/`slice(4,8)`로 잘라서 "인기"/"추천"으로 표시 중 (실제 정렬 아님).
 
-**결정된 사항:** "인기" 기준은 좋아요 + 북마크 수 (조회수 필드는 신설하지 않고 보류 — 나중에 필요해지면 추가). `MediaViewSet`에 ordering 파라미터 추가, 프론트 하드코딩 slice 제거.
+**결정된 사항 (2026-07-27 확정):** Media에는 실제 "좋아요" 기능이 없다는 게 확인돼(Photo/리뷰에만 likes 필드가 있고, 리뷰 likes는 증가시키는 API 자체가 없어 항상 0) "좋아요+북마크 수" 원안 대신 **북마크 수 + 리뷰 개수 합산**으로 확정 — 실제로 존재하는 신호만 사용.
+
+**구현 완료:**
+- `MediaViewSet.get_queryset`(`places/views.py`)에 `?ordering=popular` 지원 추가 — `Count('bookmarks', distinct=True)` + `Count('reviews', distinct=True)` 합산 내림차순(동점 시 최신순). 실서버에서 북마크 추가 시 순위가 실제로 바뀌는 것까지 확인.
+- 프론트 `mediaApi.getList`에 `ordering` 파라미터 추가(mock 모드는 `like_count` 목업값으로 대체 정렬).
+- `MainScreen.tsx`의 "인기 코스"와 `CourseScreen.tsx`의 "실시간 인기 코스" 두 곳을 하드코딩 slice 대신 `ordering: 'popular'` 결과로 교체.
+- **"추천"/"맞춤형 여행 코스" 섹션은 그대로 둠** — 개인화 추천 로직은 별도 설계 대상(아래 "보류 — 추천/유행 로직" 항목)이라 Phase 8 범위 밖.
 
 ---
 

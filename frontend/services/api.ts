@@ -300,11 +300,14 @@ export const mailApi = {
 };
 
 export const mediaApi = {
-  getList: (params?: { type?: string; tag?: string; keyword?: string }) => {
+  getList: (params?: { type?: string; tag?: string; keyword?: string; ordering?: 'popular' }) => {
     if (USE_MOCK) {
-      const filtered = params?.type
+      let filtered = params?.type
         ? MOCK_MEDIA_LIST.filter(m => m.media_type === params.type)
         : MOCK_MEDIA_LIST;
+      if (params?.ordering === 'popular') {
+        filtered = [...filtered].sort((a, b) => (b.like_count ?? 0) - (a.like_count ?? 0));
+      }
       return mock(paginatedOf(filtered));
     }
     return apiClient.get<PaginatedResponse<Media>>('/api/media/', { params });

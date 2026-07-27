@@ -509,6 +509,7 @@ class MediaViewSet(viewsets.ReadOnlyModelViewSet):
     GET /api/media/                      전체 미디어 목록
     GET /api/media/{id}/                 미디어 상세 + 촬영지 목록
     GET /api/media/?type=drama           타입 필터 (drama/movie/youtube/etc)
+    GET /api/media/?ordering=popular     인기순 정렬 (북마크 수 + 리뷰 개수 합산 내림차순)
     GET /api/media/{id}/places/          해당 미디어의 촬영지만 조회
     """
     queryset = Media.objects.all().order_by('-created_at')
@@ -529,7 +530,15 @@ class MediaViewSet(viewsets.ReadOnlyModelViewSet):
         tag = self.request.query_params.get('tag')
         if tag:
             qs = qs.filter(tags__name__icontains=tag)
-        return qs.distinct()
+        qs = qs.distinct()
+
+        # ?ordering=popular — 북마크 수 + 리뷰 개수 합산 기준 인기순 (Phase 8)
+        if self.request.query_params.get('ordering') == 'popular':
+            qs = qs.annotate(
+                bookmark_count=Count('bookmarks', distinct=True),
+                review_count=Count('reviews', distinct=True),
+            ).order_by('-bookmark_count', '-review_count', '-created_at')
+        return qs
 
     @action(detail=False, methods=['get'], url_path='bookmarked', permission_classes=[IsAuthenticated])
     def bookmarked(self, request):

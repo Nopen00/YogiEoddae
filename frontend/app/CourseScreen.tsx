@@ -101,6 +101,7 @@ const CourseScreen = () => {
   };
 
   const [allMedia, setAllMedia] = useState<Media[]>([]);
+  const [popularMedia, setPopularMedia] = useState<Media[]>([]);
   const [youtubeMedia, setYoutubeMedia] = useState<Media[]>([]);
   const [dramaMedia, setDramaMedia] = useState<Media[]>([]);
   const [movieMedia, setMovieMedia] = useState<Media[]>([]);
@@ -113,6 +114,7 @@ const CourseScreen = () => {
 
   useEffect(() => {
     mediaApi.getList().then(res => setAllMedia(res.data.results)).catch(() => {});
+    mediaApi.getList({ ordering: 'popular' }).then(res => setPopularMedia(res.data.results)).catch(() => {});
     mediaApi.getList({ type: 'youtube' }).then(res => setYoutubeMedia(res.data.results)).catch(() => {});
     mediaApi.getList({ type: 'drama' }).then(res => setDramaMedia(res.data.results)).catch(() => {});
     mediaApi.getList({ type: 'movie' }).then(res => setMovieMedia(res.data.results)).catch(() => {});
@@ -573,7 +575,7 @@ const CourseScreen = () => {
           <Text style={styles.sectionTitleText}>실시간 인기 코스</Text>
         </View>
         <FlatList
-          data={allMedia.slice(0, 4)}
+          data={popularMedia.slice(0, 4)}
           renderItem={renderCourseItem}
           keyExtractor={(item) => `popular-${item.id}`}
           horizontal
