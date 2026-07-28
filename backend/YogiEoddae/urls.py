@@ -18,11 +18,14 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
+from django.views.generic import TemplateView
 from places.views import index_view
 
 urlpatterns = [
     path('',        index_view,                name='index'),
     path('admin/',  admin.site.urls),
+    path('privacy/', TemplateView.as_view(template_name='legal/privacy.html'), name='privacy'),
+    path('terms/',   TemplateView.as_view(template_name='legal/terms.html'),   name='terms'),
     path('places/', include('places.urls')),
     path('course-suggestions/', include('course_suggestions.admin_urls')),
     path('api/',    include('places.api_urls')),
