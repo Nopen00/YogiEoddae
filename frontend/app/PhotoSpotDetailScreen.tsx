@@ -186,7 +186,7 @@ const PhotoSpotDetailScreen = () => {
         <View onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.y + e.nativeEvent.layout.height)}>
           <ScreenHeader
             onBack={() => router.dismiss()}
-            style={{ zIndex: 10 }}
+            style={{ zIndex: 20 }}
             scrollTitle={headerTitleVisible ? (photo?.description ?? '') : undefined}
             right={
               <View style={styles.moreButtonWrapper}>

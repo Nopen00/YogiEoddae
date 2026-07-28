@@ -21,7 +21,7 @@ import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { useLargeIconMode } from '@/hooks/useLargeIconMode';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { Calendar, Check, ChevronDown, Edit3, Heart, Star } from 'lucide-react-native';
+import { Calendar, Check, ChevronDown, Edit3, Heart, Play, Star } from 'lucide-react-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { mediaApi, placeApi, photoApi, reviewApi, scheduleApi } from '../services/api';
 import { pseudoRating } from '../services/mockData';
@@ -209,7 +209,7 @@ const CourseDetailScreen = () => {
       <View onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.y + e.nativeEvent.layout.height)}>
         <ScreenHeader
           onBack={() => router.dismiss()}
-          style={{ zIndex: 10 }}
+          style={{ zIndex: 20 }}
           scrollTitle={headerTitleVisible ? (media?.title ?? '') : undefined}
           right={
             <View style={styles.moreButtonWrapper}>
@@ -326,9 +326,22 @@ const CourseDetailScreen = () => {
 
                 {/* 미디어 정보 */}
                 <Text style={styles.mediaTitleText}>{media?.title}</Text>
-                <View style={[styles.mediaImageContainer, { height: imageHeight }]}>
-                  <Image source={{ uri: media?.thumbnail_url ?? undefined }} style={styles.mediaImage} resizeMode="cover" />
-                </View>
+                {media?.media_type === 'youtube' ? (
+                  <TouchableOpacity
+                    style={[styles.mediaImageContainer, { height: imageHeight }]}
+                    activeOpacity={0.85}
+                    onPress={() => media.source_url && Linking.openURL(media.source_url)}
+                  >
+                    <Image source={{ uri: media?.thumbnail_url ?? undefined }} style={styles.mediaImage} resizeMode="cover" />
+                    <View style={styles.mediaPlayIconWrapper} pointerEvents="none">
+                      <Play size={IconSize.xxlarge} color={Colors.light.white} fill={Colors.light.white} strokeWidth={0} />
+                    </View>
+                  </TouchableOpacity>
+                ) : (
+                  <View style={[styles.mediaImageContainer, { height: imageHeight }]}>
+                    <Image source={{ uri: media?.thumbnail_url ?? undefined }} style={styles.mediaImage} resizeMode="cover" />
+                  </View>
+                )}
                 <Text style={styles.mediaDescText}>{media?.description}</Text>
 
                 <Divider marginTop={Spacing.v.large} />
@@ -715,6 +728,12 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.grayLight,
   },
   mediaImage: { width: '100%', height: '100%' },
+  mediaPlayIconWrapper: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    opacity: 0.5,
+  },
   mediaDescText: {
     ...Typography.body2,
     color: Colors.light.black,

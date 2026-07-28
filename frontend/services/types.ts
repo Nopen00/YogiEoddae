@@ -10,6 +10,7 @@ export interface Media {
   media_type: 'drama' | 'movie' | 'youtube' | 'etc';
   year: number | null;
   thumbnail_url: string;
+  source_url?: string;
   description: string;
   tags: Tag[];
   is_bookmarked: boolean;

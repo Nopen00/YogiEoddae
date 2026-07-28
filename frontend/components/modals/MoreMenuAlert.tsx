@@ -16,11 +16,12 @@ interface MoreMenuAlertProps {
   onSchedulePress?: () => void;
   isToggled?: boolean;
   onTogglePress?: () => void;
+  isToggleLocked?: boolean;
   onReportPress?: () => void;
   onEditPress?: () => void;
 }
 
-export const MoreMenuAlert = ({ isSaved, onSavePress, onSchedulePress, isToggled, onTogglePress, onReportPress, onEditPress }: MoreMenuAlertProps) => {
+export const MoreMenuAlert = ({ isSaved, onSavePress, onSchedulePress, isToggled, onTogglePress, isToggleLocked, onReportPress, onEditPress }: MoreMenuAlertProps) => {
   return (
     <View style={styles.container}>
       <TouchableOpacity style={styles.menuItem} onPress={onSavePress} activeOpacity={0.7}>
@@ -45,7 +46,7 @@ export const MoreMenuAlert = ({ isSaved, onSavePress, onSchedulePress, isToggled
       {onTogglePress && (
         <>
           <View style={styles.separator} />
-          <TouchableOpacity style={styles.menuItem} onPress={onTogglePress} activeOpacity={0.7}>
+          <TouchableOpacity style={[styles.menuItem, isToggleLocked && styles.menuItemLocked]} onPress={onTogglePress} activeOpacity={0.7}>
             <View style={[styles.togglePill, { backgroundColor: isToggled ? Colors.light.primary : Colors.light.grayLight }]}>
               <View style={[styles.toggleCircle, { left: isToggled ? 26 : 2 }]} />
             </View>
@@ -100,6 +101,9 @@ const styles = StyleSheet.create({
   menuText: {
     ...Typography.button4,
     color: Colors.light.black,
+  },
+  menuItemLocked: {
+    opacity: 0.4,
   },
   separator: {
     height: Spacing.lw.small,

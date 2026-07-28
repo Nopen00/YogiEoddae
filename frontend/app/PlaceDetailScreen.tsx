@@ -21,11 +21,12 @@ import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { useLargeIconMode } from '@/hooks/useLargeIconMode';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { Calendar, Check, ChevronDown, Edit3, Heart, Star } from 'lucide-react-native';
+import { Calendar, Check, ChevronDown, ChevronRight, Edit3, Heart, Star } from 'lucide-react-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Image,
+  Linking,
   Modal,
   NativeScrollEvent,
   NativeSyntheticEvent,
@@ -79,6 +80,8 @@ const PlaceDetailScreen = () => {
   const [savedPhotoSpots, setSavedPhotoSpots] = useState<Record<number, boolean>>({});
   const [isToggled, setIsToggled] = useState(false);
   const [isMapTouching, setIsMapTouching] = useState(false);
+  const toggleClickTimestamps = useRef<number[]>([]);
+  const [isToggleLocked, setIsToggleLocked] = useState(false);
   const [place, setPlace] = useState<Place | null>(null);
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [nearbyPlaces, setNearbyPlaces] = useState<Place[]>([]);
@@ -178,6 +181,24 @@ const PlaceDetailScreen = () => {
     } catch {}
   };
 
+  const handleSourceTogglePress = () => {
+    if (isToggleLocked) return;
+    const now = Date.now();
+    const recentClicks = toggleClickTimestamps.current.filter(t => now - t < 1000);
+    recentClicks.push(now);
+    toggleClickTimestamps.current = recentClicks;
+
+    if (recentClicks.length >= 5) {
+      toggleClickTimestamps.current = [];
+      setIsToggleLocked(true);
+      setTimeout(() => setIsToggleLocked(false), 5000);
+      return;
+    }
+
+    setIsToggled(!isToggled);
+    setIsMenuVisible(false);
+  };
+
   const detailTabBarInner = (
     <>
       <View style={styles.detailTabBackgroundLine} />
@@ -200,7 +221,7 @@ const PlaceDetailScreen = () => {
         <View onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.y + e.nativeEvent.layout.height)}>
           <ScreenHeader
             onBack={() => router.dismiss()}
-            style={{ zIndex: 10 }}
+            style={{ zIndex: 20 }}
             scrollTitle={headerTitleVisible ? (place?.name ?? '') : undefined}
             right={
               <View style={styles.moreButtonWrapper}>
@@ -211,7 +232,8 @@ const PlaceDetailScreen = () => {
                     onSavePress={handleSaveToggle}
                     onSchedulePress={() => { setIsMenuVisible(false); setIsScheduleVisible(true); }}
                     isToggled={isToggled}
-                    onTogglePress={() => { setIsToggled(!isToggled); setIsMenuVisible(false); }}
+                    onTogglePress={handleSourceTogglePress}
+                    isToggleLocked={isToggleLocked}
                   />
                 )}
               </View>
@@ -356,6 +378,22 @@ const PlaceDetailScreen = () => {
                         <Text style={styles.infoLabel}>전화</Text>
                         <Text style={styles.infoValue}>-</Text>
                       </View>
+                      <View style={[styles.infoGroupRow, { marginTop: Spacing.v.medium }]}>
+                        <Text style={styles.infoLabel}>출처</Text>
+                        <Text style={styles.infoValue}>
+                          {isToggled ? (place?.kakao_place_url ? '카카오' : '카카오 정보 없음') : '한국관광공사'}
+                        </Text>
+                      </View>
+                      {isToggled && place?.kakao_place_url && (
+                        <TouchableOpacity
+                          style={styles.kakaoShortcutRow}
+                          activeOpacity={0.7}
+                          onPress={() => Linking.openURL(place.kakao_place_url!)}
+                        >
+                          <ChevronRight size={IconSize.xsmall} color={Colors.light.primary} strokeWidth={IconStroke.regular} />
+                          <Text style={styles.kakaoShortcutText}>카카오 맵 바로가기</Text>
+                        </TouchableOpacity>
+                      )}
                     </View>
                   </Shadow>
                 </View>
@@ -700,6 +738,13 @@ const styles = StyleSheet.create({
     marginLeft: Spacing.h.medium,
     flex: 1,
   },
+  kakaoShortcutRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-end',
+    marginTop: Spacing.v.medium,
+  },
+  kakaoShortcutText: { ...Typography.button4, color: Colors.light.primary, marginLeft: Spacing.h.small },
   nearbyTitle: {
     ...Typography.title1,
     color: Colors.light.black,
