@@ -36,7 +36,7 @@
 ```powershell
 cd backend
 .\venv\Scripts\Activate.ps1      # PowerShell. cmd는 venv\Scripts\activate.bat, Git Bash는 source venv/Scripts/activate
-python manage.py runserver 127.0.0.1:8000
+python manage.py runserver 0.0.0.0:8000 # 127.0.0.1:8000
 ```
 
 ### 2. 프론트엔드 (터미널 2, 새 창)

@@ -518,7 +518,9 @@ Phase 3(Quiz), Phase 8(인기 코스 정렬), Phase 10-1(코스 건의함), SMTP
 2. **Phase 10-1 코스 건의함 — 남은 건 토큰 값 확정뿐** — 관리자 검토 포털은 완료(`/course-suggestions/review/`). `COURSE_SUGGESTION_TOKEN_COST`(현재 100, 임시값) 확정만 남음.
 3. **Phase 3 퀴즈 상수 튜닝 + 잔여 허점** — `QUIZ_MIN_RESPONSES`(3)/`QUIZ_CONFIRM_THRESHOLD`(0.8)/`QUIZ_CORRECT_ANSWER_REWARD`(5)/`QUIZ_PROBABLE_VISIT_WEIGHT`(1.3) 실사용 트래픽 보고 조정. `DailyPlace`에 생성/수정일 타임스탬프가 없어서 "방문 개연성" 판정을 완전히 어뷰징 방지하진 못하는 잔여 허점도 필요시 검토(위 Phase 3 항목 참고).
 4. **포토스팟 검수 포털(`/places/photos/review/`) CSRF 쿠키 버그 점검** — 코스 건의함 포털 만들다 발견. `{% csrf_token %}` 없이 `document.cookie`로만 읽는 패턴이라 쿠키가 안 심어질 수 있음. 지금까지 문제 없었다면 우연히 다른 경로로 쿠키가 있었을 가능성 — 같은 방식(`@ensure_csrf_cookie`)으로 고쳐야 함.
-4. Naver Maps 전환 여부 (Phase 5, 낮은 우선순위), 추천/유행 로직 + 테마 노출 시스템 (보류, 별도 설계 필요), User 아바타 필드(이미지 업로드 프론트 연동 검증 후), 개인정보 처리방침/이용약관 화면(Figma 디자인 대기).
+4. Naver Maps 전환 여부 (Phase 5, 낮은 우선순위), 추천/유행 로직 + 테마 노출 시스템 (보류, 별도 설계 필요), User 아바타 필드(이미지 업로드 프론트 연동 검증 후).
+
+**✅ 완료 (2026-07-28):** 개인정보 처리방침/이용약관 — 백엔드 정적 페이지(`/privacy/`, `/terms/`)로 신설, 설정/회원가입동의/회원탈퇴 화면 링크를 전부 여기로 연결. 문구는 아직 법률 검토 전 초안 상태.
 
 ---
 
