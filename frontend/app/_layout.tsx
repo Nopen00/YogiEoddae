@@ -24,13 +24,9 @@ function RootLayoutNav() {
   const isSharedPasswordScreenFromPublic =
     (pathname.startsWith('/PasswordChangeScreen') || pathname.startsWith('/PasswordResetScreen')) &&
     fromPublic === '1';
-  // PolicyScreen도 회원가입(비로그인)과 MY페이지(로그인) 양쪽에서 재사용됨
-  const isPolicyScreenFromPublic = pathname.startsWith('/PolicyScreen') && fromPublic === '1';
-
   const showTabBar =
     pathname !== '/' &&
     !isSharedPasswordScreenFromPublic &&
-    !isPolicyScreenFromPublic &&
     !HIDDEN_TAB_ROUTES.some((route) => pathname.startsWith(route));
 
   return (
@@ -77,7 +73,6 @@ function RootLayoutNav() {
             <Stack.Screen name="WithdrawalScreen" options={{ headerShown: false }} />
             <Stack.Screen name="ScheduleDetailScreen" options={{ headerShown: false }} />
             <Stack.Screen name="CourseScreen" options={{ headerShown: false }} />
-            <Stack.Screen name="PolicyScreen" options={{ headerShown: false }} />
           </Stack>
         </View>
         {showTabBar && <BottomTabBar />}

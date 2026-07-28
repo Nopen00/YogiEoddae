@@ -5,12 +5,13 @@ import { IconSize, IconStroke } from '@/constants/IconSize';
 import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
+import { PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from '@/constants/PolicyContent';
 import { mailApi, userApi } from '@/services/api';
 import { useLargeIconMode } from '@/hooks/useLargeIconMode';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { AlertCircle, ChevronRight, HelpCircle } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
-import { Image, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, Linking, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const SettingScreen = () => {
@@ -132,11 +133,11 @@ const SettingScreen = () => {
 
       {/* 약관 및 정책 */}
       <View style={styles.policyRow}>
-        <TouchableOpacity activeOpacity={0.7} onPress={() => router.push({ pathname: '/PolicyScreen', params: { type: 'terms' } })}>
+        <TouchableOpacity activeOpacity={0.7} onPress={() => Linking.openURL(TERMS_OF_SERVICE_URL)}>
           <Text style={styles.policyLinkText}>이용약관</Text>
         </TouchableOpacity>
         <View style={styles.policyDivider} />
-        <TouchableOpacity activeOpacity={0.7} onPress={() => router.push({ pathname: '/PolicyScreen', params: { type: 'privacy' } })}>
+        <TouchableOpacity activeOpacity={0.7} onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}>
           <Text style={styles.policyLinkText}>개인정보 처리방침</Text>
         </TouchableOpacity>
       </View>

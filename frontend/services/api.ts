@@ -26,7 +26,7 @@ export const USE_MOCK = process.env.EXPO_PUBLIC_USE_MOCK === 'true';
 let mockIdCounter = Date.now();
 const nextMockId = () => ++mockIdCounter;
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+export const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 console.log('API BASE_URL:', BASE_URL, USE_MOCK ? '(MOCK MODE)' : '');
 
 export const apiClient = axios.create({

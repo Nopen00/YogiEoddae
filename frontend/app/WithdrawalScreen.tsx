@@ -1,6 +1,7 @@
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
+import { PRIVACY_POLICY_URL } from '@/constants/PolicyContent';
 import { Shadows } from '@/constants/Shadows';
 import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
@@ -9,7 +10,7 @@ import { authApi, userApi } from '@/services/api';
 import { useRouter } from 'expo-router';
 import { AlertCircle, Check, ChevronRight, Eye, EyeOff } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
-import { Dimensions, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Dimensions, KeyboardAvoidingView, Linking, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -110,7 +111,7 @@ const WithdrawalScreen = () => {
           <Text style={styles.noticeBodySpaced}>- 다만 법령에 의하여 보관해야 하는 경우 또는 회원가입 남용, 부정 거래 방지 및 대응 목적으로 일부 정보는 7일간 보관 후 삭제됩니다.</Text>
           <Text style={styles.noticeBodySpaced}>- 자세한 내용은 개인정보 처리방침에서 확인하실 수 있습니다.</Text>
 
-          <TouchableOpacity style={styles.policyRow} activeOpacity={0.7}>
+          <TouchableOpacity style={styles.policyRow} activeOpacity={0.7} onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}>
             <ChevronRight size={IconSize.xsmall} color={Colors.light.primary} />
             <Text style={styles.policyText}>개인정보 처리방침</Text>
           </TouchableOpacity>

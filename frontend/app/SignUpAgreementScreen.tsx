@@ -1,13 +1,14 @@
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
+import { PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from '@/constants/PolicyContent';
 import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { useRouter } from 'expo-router';
 import { Check, ChevronRight } from 'lucide-react-native';
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const SignUpAgreementScreen = () => {
@@ -52,7 +53,7 @@ const SignUpAgreementScreen = () => {
             <TouchableOpacity
               style={styles.agreeLabelLink}
               activeOpacity={0.7}
-              onPress={() => router.push({ pathname: '/PolicyScreen', params: { type: 'terms', fromPublic: '1' } })}
+              onPress={() => Linking.openURL(TERMS_OF_SERVICE_URL)}
             >
               <Text style={styles.agreeText}>
                 <Text style={styles.requiredTag}>[필수] </Text>
@@ -71,7 +72,7 @@ const SignUpAgreementScreen = () => {
             <TouchableOpacity
               style={styles.agreeLabelLink}
               activeOpacity={0.7}
-              onPress={() => router.push({ pathname: '/PolicyScreen', params: { type: 'privacy', fromPublic: '1' } })}
+              onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}
             >
               <Text style={styles.agreeText}>
                 <Text style={styles.requiredTag}>[필수] </Text>
