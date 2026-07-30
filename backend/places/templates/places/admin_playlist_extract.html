@@ -1,0 +1,471 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>재생목록 일괄 추출 | 요기어때?</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+  <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center gap-4">
+    <a href="/places/extract/" class="text-gray-400 hover:text-gray-600 text-sm">← 단일 영상 추출</a>
+    <h1 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+      <img src="{% static 'places/icons/search.svg' %}" class="w-5 h-5" alt="">
+      재생목록 일괄 추출
+    </h1>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-6 py-10">
+    <div class="flex gap-6 items-start">
+
+      <div class="flex-1 min-w-0 space-y-6">
+
+        <!-- 1. 재생목록 URL 입력 -->
+        <div class="bg-white rounded-2xl border border-gray-200 p-8">
+          <label class="block text-sm font-medium text-gray-700 mb-1">재생목록 URL <span class="text-red-500">*</span></label>
+          <div class="flex gap-3">
+            <input type="url" id="playlistUrlInput" placeholder="https://www.youtube.com/playlist?list=..."
+              class="flex-1 border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+            <button type="button" id="fetchBtn" onclick="fetchPlaylist()" disabled
+              class="bg-gray-200 text-gray-400 cursor-not-allowed font-semibold px-5 rounded-lg text-sm transition-colors">목록 불러오기</button>
+          </div>
+          <p id="fetchHint" class="text-xs text-gray-400 mt-1">아래 미디어 제목을 먼저 입력하면 불러올 수 있습니다. 최대 200개까지 조회됩니다.</p>
+          <p id="fetchError" class="hidden text-sm text-red-600 mt-2"></p>
+        </div>
+
+        <!-- 2. 배치 공통 설정 -->
+        <div class="bg-white rounded-2xl border border-gray-200 p-8">
+          <div class="space-y-5">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">미디어 제목 <span class="text-red-500">*</span></label>
+              <input type="text" id="mediaTitleInput" placeholder="예: 1박2일 시즌4"
+                value="{{ form.media_title|default:'' }}"
+                class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+              <p class="text-xs text-gray-400 mt-1">선택된 영상들은 모두 같은 미디어(제목)에 연결됩니다.</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">미디어 유형</label>
+                <select id="mediaTypeSelect" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+                  <option value="youtube" {% if form.media_type == 'youtube' or not form.media_type %}selected{% endif %}>유튜브</option>
+                  <option value="drama"   {% if form.media_type == 'drama' %}selected{% endif %}>드라마</option>
+                  <option value="movie"   {% if form.media_type == 'movie' %}selected{% endif %}>영화</option>
+                  <option value="etc"     {% if form.media_type == 'etc' %}selected{% endif %}>기타</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">AI 선택</label>
+                <select id="aiChoiceSelect" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+                  <option value="gemini" {% if form.ai_choice != 'claude' %}selected{% endif %}>Gemini 2.5 Flash</option>
+                  <option value="claude" {% if form.ai_choice == 'claude' %}selected{% endif %}>Claude (API 키 필요)</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">장면 설명 <span class="text-gray-400">(선택, 전체 영상 공통)</span></label>
+              <textarea id="sceneInput" rows="2" placeholder="예: 멤버들이 여행하며 방문한 장소들"
+                class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. 영상 목록 -->
+        <div id="videoListSection" class="hidden bg-white rounded-2xl border border-gray-200 p-8">
+          <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <h2 class="font-bold text-gray-800">영상 목록</h2>
+            <span id="videoCountLabel" class="text-xs text-gray-400"></span>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-3 mb-4 text-sm">
+            <button type="button" onclick="toggleSelectAll(true)" class="text-blue-600 hover:underline">전체 선택</button>
+            <button type="button" onclick="toggleSelectAll(false)" class="text-gray-400 hover:underline">전체 해제</button>
+            <button type="button" onclick="selectCaptionedOnly()" class="text-blue-600 hover:underline">자막 있는 것만 선택</button>
+            <span class="text-gray-300">|</span>
+            <img src="{% static 'places/icons/calendar.svg' %}" class="w-4 h-4" alt="">
+            <span class="text-gray-500">업로드일</span>
+            <input type="date" id="filterStart" onchange="renderVideoTable()" class="border border-gray-300 rounded-lg px-2 py-1 text-sm">
+            <span class="text-gray-400">~</span>
+            <input type="date" id="filterEnd" onchange="renderVideoTable()" class="border border-gray-300 rounded-lg px-2 py-1 text-sm">
+          </div>
+
+          <p id="startErrorTop" class="hidden text-sm text-red-600 mb-3"></p>
+          <div class="grid grid-cols-2 gap-3 mb-6">
+            <button type="button" onclick="onStartClick('individual')"
+              class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors">
+              선택한 영상 개별 추출 시작
+            </button>
+            <button type="button" onclick="onStartClick('merged')"
+              class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold py-2.5 rounded-xl text-sm transition-colors">
+              선택한 영상 통합 추출 시작
+            </button>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="border-b border-gray-200 text-xs text-gray-400">
+                  <th class="py-2 px-2 font-medium"></th>
+                  <th class="py-2 px-2 font-medium">#</th>
+                  <th class="py-2 px-2 font-medium">제목</th>
+                  <th class="py-2 px-2 font-medium">업로드일</th>
+                  <th class="py-2 px-2 font-medium">길이</th>
+                </tr>
+              </thead>
+              <tbody id="videoTableBody"></tbody>
+            </table>
+          </div>
+
+          <p id="startError" class="hidden text-sm text-red-600 mt-4"></p>
+          <div class="grid grid-cols-2 gap-3 mt-6">
+            <button type="button" id="startBtn" onclick="onStartClick('individual')"
+              class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition-colors">
+              선택한 영상 개별 추출 시작
+            </button>
+            <button type="button" id="startMergedBtn" onclick="onStartClick('merged')"
+              class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold py-3 rounded-xl transition-colors">
+              선택한 영상 통합 추출 시작
+            </button>
+          </div>
+          <p class="text-xs text-gray-400 mt-2">개별 추출: 영상마다 그 영상 제목으로 별도 미디어 생성 (기본) · 통합 추출: 선택한 영상 전부를 위 "미디어 제목" 하나로 묶음 (여러 회차가 한 작품인 경우)</p>
+        </div>
+
+      </div>
+
+      <!-- 저장된 재생목록 기록 — 오른쪽에 세로로 길게 고정 -->
+      <aside id="fetchHistorySection" class="hidden md:block w-72 flex-shrink-0 sticky top-6 bg-white rounded-2xl border border-blue-200 p-5 max-h-[calc(100vh-3rem)] overflow-y-auto">
+        <h2 class="font-bold text-gray-800 mb-1">저장된 재생목록</h2>
+        <p class="text-xs text-gray-400 mb-4">최근 20개까지 보관, 오래된 것부터 자동 삭제</p>
+        <div id="fetchHistoryList" class="space-y-2 text-sm">
+          <p class="text-gray-400 text-xs">아직 불러온 재생목록이 없습니다.</p>
+        </div>
+      </aside>
+
+    </div>
+  </main>
+
+  <!-- AI 확인 팝업 -->
+  <div id="aiConfirmModal" class="hidden fixed inset-0 bg-black/45 z-50 flex items-center justify-center">
+    <div class="bg-white rounded-2xl p-7 w-96 shadow-xl">
+      <div class="flex items-center gap-2 mb-2">
+        <img src="{% static 'places/icons/alert-circle.svg' %}" class="w-5 h-5" alt="">
+        <h3 class="font-bold text-gray-800">Gemini가 아닌 AI를 선택했습니다</h3>
+      </div>
+      <p class="text-sm text-gray-500 mb-4">이대로 일괄 추출을 시작할까요? 처리 도중 토큰/크레딧이 소진되면 아래 대체 AI로 자동 전환합니다.</p>
+      <label class="block text-sm font-medium text-gray-700 mb-1">토큰 소진 시 대체할 AI</label>
+      <select id="fallbackAiSelect" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm mb-5 focus:outline-none focus:ring-2 focus:ring-blue-400">
+        <option value="gemini" selected>Gemini 2.5 Flash</option>
+        <option value="claude">Claude</option>
+      </select>
+      <div class="flex gap-3">
+        <button type="button" onclick="closeAiConfirmModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg py-2.5 text-sm font-medium">취소</button>
+        <button type="button" onclick="confirmAiAndStart()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-2.5 text-sm font-semibold">확인하고 시작</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const CSRF = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
+    let fetchedVideos = [];
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str || '';
+      return div.innerHTML;
+    }
+
+    // ── 1. 재생목록 조회 (백그라운드 작업 + 폴링) ──────────────────────────
+    // 영상이 많으면 자막 유무 확인 때문에 오래 걸릴 수 있어서, 이 페이지를 벗어나도
+    // (다른 관리자 화면에서 다른 영상 장소 검토 등을 하는 동안) localStorage로 추적해서
+    // 화면 구석 알림 위젯(fetch_watcher.js)이 진행 상황을 계속 보여준다.
+    const FETCH_JOB_KEY = 'playlistFetchJobId';
+    let dotsTimer = null;
+    let fetchPollTimer = null;
+    let fetchInProgress = false;
+
+    function startDotsAnimation(el, baseText) {
+      let n = 0;
+      stopDotsAnimation();
+      el.textContent = baseText;
+      dotsTimer = setInterval(() => {
+        n = (n + 1) % 4;
+        el.textContent = baseText + '.'.repeat(n);
+      }, 400);
+    }
+    function stopDotsAnimation() {
+      if (dotsTimer) { clearInterval(dotsTimer); dotsTimer = null; }
+    }
+
+    // 미디어 제목을 먼저 입력해야 "목록 불러오기"를 누를 수 있다 — 저장된 재생목록 기록을
+    // 이 제목으로 구분하기 때문에, 조회 시점부터 제목이 있어야 함.
+    function setFetchBtnStyle(enabled) {
+      const btn = document.getElementById('fetchBtn');
+      btn.classList.toggle('bg-blue-600', enabled);
+      btn.classList.toggle('hover:bg-blue-700', enabled);
+      btn.classList.toggle('text-white', enabled);
+      btn.classList.toggle('bg-gray-200', !enabled);
+      btn.classList.toggle('text-gray-400', !enabled);
+      btn.classList.toggle('cursor-not-allowed', !enabled);
+    }
+    function updateFetchBtnState() {
+      if (fetchInProgress) return; // 조회 진행 중에는 별도 로직이 버튼 상태를 관리
+      const urlOk = document.getElementById('playlistUrlInput').value.trim().length > 0;
+      const titleOk = document.getElementById('mediaTitleInput').value.trim().length > 0;
+      const btn = document.getElementById('fetchBtn');
+      btn.disabled = !(urlOk && titleOk);
+      setFetchBtnStyle(urlOk && titleOk);
+      document.getElementById('fetchHint').textContent = titleOk
+        ? '최대 200개까지 조회됩니다.'
+        : '아래 미디어 제목을 먼저 입력하면 불러올 수 있습니다. 최대 200개까지 조회됩니다.';
+    }
+    document.getElementById('playlistUrlInput').addEventListener('input', updateFetchBtnState);
+    document.getElementById('mediaTitleInput').addEventListener('input', updateFetchBtnState);
+
+    async function fetchPlaylist() {
+      const url = document.getElementById('playlistUrlInput').value.trim();
+      const mediaTitle = document.getElementById('mediaTitleInput').value.trim();
+      const errEl = document.getElementById('fetchError');
+      errEl.classList.add('hidden');
+      if (!url) {
+        errEl.textContent = '재생목록 URL을 입력하세요.';
+        errEl.classList.remove('hidden');
+        return;
+      }
+      if (!mediaTitle) {
+        errEl.textContent = '미디어 제목을 입력하세요.';
+        errEl.classList.remove('hidden');
+        return;
+      }
+      try {
+        const res = await fetch('/places/extract/playlist/fetch/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+          body: JSON.stringify({ playlist_url: url, media_title: mediaTitle }),
+        });
+        const data = await res.json();
+        if (!data.ok) {
+          errEl.textContent = data.error || '조회 실패';
+          errEl.classList.remove('hidden');
+          return;
+        }
+        localStorage.setItem(FETCH_JOB_KEY, String(data.fetch_job_id));
+        watchFetchJob(data.fetch_job_id);
+      } catch {
+        errEl.textContent = '네트워크 오류';
+        errEl.classList.remove('hidden');
+      }
+    }
+
+    function watchFetchJob(jobId) {
+      const btn = document.getElementById('fetchBtn');
+      fetchInProgress = true;
+      btn.disabled = true;
+      setFetchBtnStyle(false);
+      startDotsAnimation(btn, '불러오는 중');
+
+      async function poll() {
+        try {
+          const res = await fetch(`/places/extract/playlist/fetch/${jobId}/status/`);
+          const data = await res.json();
+          if (!data.ok || data.status === 'running') return; // 다음 폴링에서 다시 확인
+
+          clearInterval(fetchPollTimer);
+          fetchPollTimer = null;
+          stopDotsAnimation();
+          fetchInProgress = false;
+          btn.textContent = '목록 불러오기';
+          localStorage.removeItem(FETCH_JOB_KEY);
+          loadHistoryList();
+
+          document.getElementById('playlistUrlInput').value = data.playlist_url;
+          document.getElementById('mediaTitleInput').value = data.media_title;
+          updateFetchBtnState();
+
+          const errEl = document.getElementById('fetchError');
+          if (data.status === 'error') {
+            errEl.textContent = data.error || '조회 실패';
+            errEl.classList.remove('hidden');
+            return;
+          }
+          fetchedVideos = data.videos;
+          document.getElementById('videoListSection').classList.remove('hidden');
+          renderVideoTable();
+        } catch {
+          // 네트워크 순간 오류는 다음 폴링에서 재시도
+        }
+      }
+      poll();
+      if (fetchPollTimer) clearInterval(fetchPollTimer);
+      fetchPollTimer = setInterval(poll, 1500);
+    }
+
+    // ── 저장된 재생목록 기록 (최근 20개, media_title로 구분) ────────────────
+    async function loadHistoryList() {
+      const listEl = document.getElementById('fetchHistoryList');
+      try {
+        const res = await fetch('/places/extract/playlist/fetch/history/');
+        const data = await res.json();
+        if (!data.ok || data.jobs.length === 0) {
+          listEl.innerHTML = '<p class="text-gray-400 text-xs">아직 불러온 재생목록이 없습니다.</p>';
+          return;
+        }
+        listEl.innerHTML = data.jobs.map(j => `
+          <div class="flex items-center justify-between gap-3 py-2 px-3 border border-gray-100 rounded-lg hover:bg-gray-50 cursor-pointer" onclick="loadHistoryJob(${j.id})">
+            <div class="min-w-0">
+              <div class="text-gray-800 truncate">${escapeHtml(j.media_title)}</div>
+              <div class="text-xs text-gray-400 truncate">${j.video_count}개 · ${j.created_at}</div>
+            </div>
+            <span class="flex-shrink-0 text-xs ${j.status === 'error' ? 'text-red-500' : 'text-blue-500'}">${j.status === 'error' ? '실패' : '불러오기'}</span>
+          </div>`).join('');
+      } catch {
+        listEl.innerHTML = '<p class="text-gray-400 text-xs">기록을 불러오지 못했습니다.</p>';
+      }
+    }
+
+    function loadHistoryJob(jobId) {
+      localStorage.setItem(FETCH_JOB_KEY, String(jobId));
+      watchFetchJob(jobId);
+    }
+
+    // 페이지 로드 시: 저장된 기록 목록을 불러오고, 벗어났다 돌아왔을 때(또는 위젯을 클릭해서
+    // 돌아왔을 때) 진행 중이던/막 끝난 조회 작업이 있으면 이어서 보여준다.
+    loadHistoryList();
+    (function resumeFetchJobIfAny() {
+      const jobId = localStorage.getItem(FETCH_JOB_KEY);
+      if (jobId) watchFetchJob(jobId);
+      else updateFetchBtnState();
+    })();
+
+    function renderVideoTable() {
+      const start = document.getElementById('filterStart').value;
+      const end = document.getElementById('filterEnd').value;
+      const tbody = document.getElementById('videoTableBody');
+      const filtered = fetchedVideos.filter(v => {
+        if (start && v.upload_date && v.upload_date < start) return false;
+        if (end && v.upload_date && v.upload_date > end) return false;
+        return true;
+      });
+      document.getElementById('videoCountLabel').textContent =
+        `${filtered.length}개 표시 중 (전체 ${fetchedVideos.length}개)`;
+
+      tbody.innerHTML = filtered.map(v => {
+        const badges = [];
+        if (v.is_duplicate) {
+          badges.push('<span class="inline-block text-xs bg-gray-100 text-gray-500 rounded-full px-2 py-0.5 ml-1">이미 처리됨</span>');
+        }
+        if (!v.has_caption) {
+          badges.push(`<span class="inline-flex items-center gap-1 text-xs bg-amber-50 text-amber-700 rounded-full px-2 py-0.5 ml-1"><img src="{% static 'places/icons/alert-circle.svg' %}" class="w-3 h-3" alt="">자막 없음</span>`);
+        }
+        return `
+          <tr class="border-b border-gray-100">
+            <td class="py-2 px-2"><input type="checkbox" class="video-check" data-id="${v.video_id}" ${v.is_duplicate ? '' : 'checked'}></td>
+            <td class="py-2 px-2 text-sm text-gray-400">${v.position + 1}</td>
+            <td class="py-2 px-2 text-sm text-gray-800">${escapeHtml(v.title)}${badges.join('')}</td>
+            <td class="py-2 px-2 text-sm text-gray-500 whitespace-nowrap">${v.upload_date || '-'}</td>
+            <td class="py-2 px-2 text-sm text-gray-500 whitespace-nowrap">${v.duration_minutes ? v.duration_minutes + '분' : '-'}</td>
+          </tr>`;
+      }).join('');
+    }
+
+    function toggleSelectAll(checked) {
+      document.querySelectorAll('.video-check').forEach(el => { el.checked = checked; });
+    }
+
+    // 자막 있는 영상만 선택(이미 처리된 영상은 자막 유무와 무관하게 선택 제외)
+    function selectCaptionedOnly() {
+      const byId = new Map(fetchedVideos.map(v => [v.video_id, v]));
+      document.querySelectorAll('.video-check').forEach(el => {
+        const v = byId.get(el.dataset.id);
+        el.checked = !!v && v.has_caption && !v.is_duplicate;
+      });
+    }
+
+    function getSelectedVideoIds() {
+      return Array.from(document.querySelectorAll('.video-check:checked')).map(el => el.dataset.id);
+    }
+
+    // ── 2. 일괄 추출 시작 (개별 추출 / 통합 추출) ──────────────────────────
+    // 버튼을 영상 목록 위/아래 두 군데에 둬서 스크롤 안 해도 바로 시작할 수 있게 함 —
+    // 에러 메시지도 두 위치 모두에 똑같이 보여준다.
+    let pendingStartMode = 'individual';
+
+    function setStartError(msg) {
+      const errEls = [document.getElementById('startErrorTop'), document.getElementById('startError')];
+      errEls.forEach(el => {
+        if (!el) return;
+        if (msg) { el.textContent = msg; el.classList.remove('hidden'); }
+        else { el.classList.add('hidden'); }
+      });
+    }
+
+    function onStartClick(mode) {
+      pendingStartMode = mode;
+      setStartError(null);
+
+      const mediaTitle = document.getElementById('mediaTitleInput').value.trim();
+      if (!mediaTitle) {
+        setStartError('미디어 제목을 입력하세요.');
+        return;
+      }
+      if (getSelectedVideoIds().length === 0) {
+        setStartError('선택된 영상이 없습니다.');
+        return;
+      }
+
+      const aiChoice = document.getElementById('aiChoiceSelect').value;
+      if (aiChoice !== 'gemini') {
+        document.getElementById('aiConfirmModal').classList.remove('hidden');
+      } else {
+        reallyStart('gemini', pendingStartMode);
+      }
+    }
+
+    function closeAiConfirmModal() {
+      document.getElementById('aiConfirmModal').classList.add('hidden');
+    }
+    function confirmAiAndStart() {
+      const fallback = document.getElementById('fallbackAiSelect').value;
+      closeAiConfirmModal();
+      reallyStart(fallback, pendingStartMode);
+    }
+
+    async function reallyStart(fallbackAi, mode) {
+      const selectedIds = new Set(getSelectedVideoIds());
+      const selectedVideos = fetchedVideos.filter(v => selectedIds.has(v.video_id));
+      const payload = {
+        playlist_url: document.getElementById('playlistUrlInput').value.trim(),
+        media_title: document.getElementById('mediaTitleInput').value.trim(),
+        media_type: document.getElementById('mediaTypeSelect').value,
+        ai_choice: document.getElementById('aiChoiceSelect').value,
+        fallback_ai_choice: fallbackAi,
+        scene: document.getElementById('sceneInput').value.trim(),
+        merge_videos: mode === 'merged',
+        videos: selectedVideos,
+      };
+      try {
+        const res = await fetch('/places/extract/playlist/start/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (!data.ok) {
+          setStartError(data.error || '시작 실패');
+          return;
+        }
+        // 진행 상황 표시/폴링/취소/재시도는 공유 위젯(extraction_watcher.js)이 전담 —
+        // 이 페이지를 벗어나도 다른 관리자 화면에서 계속 진행 상황을 볼 수 있게 하기 위함.
+        window.YgeExtractionWatcher.start(data.job_id);
+      } catch {
+        setStartError('네트워크 오류');
+      }
+    }
+  </script>
+
+  <script src="{% static 'places/js/extraction_watcher.js' %}"></script>
+
+</body>
+</html>

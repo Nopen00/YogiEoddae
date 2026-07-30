@@ -16,6 +16,19 @@
 
   <main class="max-w-2xl mx-auto px-6 py-10">
 
+    <div class="flex gap-3 mb-6">
+      <button type="button" id="playlistModeBtn"
+        class="flex-1 text-center rounded-xl py-2.5 text-sm font-semibold border transition-colors">
+        재생목록으로 추출
+      </button>
+      <button type="button" id="channelModeBtn"
+        class="flex-1 text-center rounded-xl py-2.5 text-sm font-semibold border transition-colors"
+        title="국내/해외 영상 구분 방법이 아직 정해지지 않아 보류 중입니다.">
+        유튜버 채널 전체 (준비 중)
+      </button>
+    </div>
+    <p id="channelModeMsg" class="hidden text-xs text-amber-600 -mt-4 mb-6"></p>
+
     {% if error %}
     <div class="bg-red-50 border border-red-300 text-red-700 rounded-xl px-5 py-4 mb-6">
       <strong>오류:</strong> {{ error }}
@@ -121,7 +134,52 @@
       document.getElementById('submitBtn').textContent = '처리 중...';
       document.getElementById('loadingMsg').classList.remove('hidden');
     });
+
+    // 재생목록 / 채널 버튼: 미디어 유형이 유튜브일 때만 활성화(색상 표시), 아니면 회색 비활성
+    const mediaTypeSelect = document.querySelector('select[name="media_type"]');
+    const playlistBtn = document.getElementById('playlistModeBtn');
+    const channelBtn = document.getElementById('channelModeBtn');
+    const channelMsg = document.getElementById('channelModeMsg');
+
+    function setButtonActive(btn, active) {
+      btn.classList.toggle('bg-blue-600', active);
+      btn.classList.toggle('text-white', active);
+      btn.classList.toggle('border-blue-600', active);
+      btn.classList.toggle('hover:bg-blue-700', active);
+      btn.classList.toggle('bg-gray-100', !active);
+      btn.classList.toggle('text-gray-400', !active);
+      btn.classList.toggle('border-gray-200', !active);
+      btn.classList.toggle('cursor-not-allowed', !active);
+    }
+
+    function updateModeButtons() {
+      const isYoutube = mediaTypeSelect.value === 'youtube';
+      setButtonActive(playlistBtn, isYoutube);
+      setButtonActive(channelBtn, isYoutube);
+      playlistBtn.disabled = !isYoutube;
+    }
+    mediaTypeSelect.addEventListener('change', updateModeButtons);
+    updateModeButtons();
+
+    playlistBtn.addEventListener('click', function () {
+      if (playlistBtn.disabled) return;
+      const params = new URLSearchParams({
+        media_title: document.querySelector('input[name="media_title"]').value,
+        media_type:  mediaTypeSelect.value,
+        ai_choice:   document.querySelector('select[name="ai_choice"]').value,
+      });
+      window.location.href = '/places/extract/playlist/?' + params.toString();
+    });
+
+    // 채널 전체 추출은 보류 상태 — 클릭해도 이동하지 않고 안내 문구만 표시
+    channelBtn.addEventListener('click', function () {
+      if (channelBtn.disabled) return;
+      channelMsg.textContent = '유튜버 채널 전체 추출은 아직 준비 중입니다 (국내/해외 영상 구분 방법 확정 후 지원 예정).';
+      channelMsg.classList.remove('hidden');
+    });
   </script>
 
+<script src="{% static 'places/js/fetch_watcher.js' %}"></script>
+<script src="{% static 'places/js/extraction_watcher.js' %}"></script>
 </body>
 </html>

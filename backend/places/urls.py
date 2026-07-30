@@ -6,6 +6,9 @@ from .views import (
     admin_geocode_media_view, admin_revoke_approval_view, admin_delete_media_view,
     admin_photo_review_view, admin_photo_approve_view, admin_photo_delete_view,
     admin_photo_recheck_view,
+    admin_playlist_extract_view, admin_playlist_fetch_api, admin_playlist_fetch_status_view,
+    admin_playlist_fetch_history_view, admin_playlist_job_start_view,
+    admin_playlist_job_status_view, admin_playlist_job_cancel_view, admin_playlist_job_retry_view,
 )
 
 urlpatterns = [
@@ -23,6 +26,16 @@ urlpatterns = [
     path('place/search/',                   admin_place_search_view,  name='admin_place_search'),
     path('extract/review/<int:media_id>/geocode/', admin_geocode_media_view,   name='admin_geocode_media'),
     path('mediaplace/<int:mp_id>/revoke/',         admin_revoke_approval_view, name='admin_revoke_approval'),
+
+    # 재생목록 일괄 추출
+    path('extract/playlist/',                        admin_playlist_extract_view,    name='admin_playlist_extract'),
+    path('extract/playlist/fetch/',                   admin_playlist_fetch_api,        name='admin_playlist_fetch'),
+    path('extract/playlist/fetch/<int:fetch_job_id>/status/', admin_playlist_fetch_status_view, name='admin_playlist_fetch_status'),
+    path('extract/playlist/fetch/history/',            admin_playlist_fetch_history_view, name='admin_playlist_fetch_history'),
+    path('extract/playlist/start/',                   admin_playlist_job_start_view,  name='admin_playlist_job_start'),
+    path('extract/playlist/job/<int:job_id>/status/', admin_playlist_job_status_view, name='admin_playlist_job_status'),
+    path('extract/playlist/job/<int:job_id>/cancel/', admin_playlist_job_cancel_view, name='admin_playlist_job_cancel'),
+    path('extract/playlist/job/<int:job_id>/retry/',  admin_playlist_job_retry_view,  name='admin_playlist_job_retry'),
 
     # 포토스팟 검열 포털
     path('photos/review/',                  admin_photo_review_view,   name='admin_photo_review'),

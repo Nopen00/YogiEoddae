@@ -1,4 +1,6 @@
+import json
 import os
+import threading
 import uuid
 
 import requests
@@ -14,6 +16,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from django.utils import timezone
+from django.views.decorators.csrf import ensure_csrf_cookie
 
 from .models import Place, Media, MediaPlace, Tag, Photo, PhotoImage, PhotoLike
 from .serializers import (
@@ -388,6 +391,199 @@ def admin_review_view(request, media_id):
         'approved':            approved,
         'rejected':            rejected,
     })
+
+
+# ── 재생목록 일괄 추출 포털 ────────────────────────────────────────────────────
+
+@ensure_csrf_cookie
+def admin_playlist_extract_view(request):
+    """재생목록 URL 입력 → 영상 목록 조회/선택 → 일괄 추출을 진행하는 페이지.
+    fetch()로만 POST하는 페이지라 {% csrf_token %} 태그가 없으면 쿠키 자체가 안 심어짐(기존 검수 포털들과 동일한 이슈) — 데코레이터로 강제."""
+    prefill = {
+        'media_title': request.GET.get('media_title', ''),
+        'media_type':  request.GET.get('media_type', 'youtube'),
+        'ai_choice':   request.GET.get('ai_choice', 'gemini'),
+    }
+    return render(request, 'places/admin_playlist_extract.html', {'form': prefill})
+
+
+def admin_playlist_fetch_api(request):
+    """POST { playlist_url, media_title } → 재생목록 조회를 백그라운드 스레드로 시작하고 fetch_job_id를 반환.
+    영상이 많으면 자막 유무 확인 때문에 수십 초~수 분 걸릴 수 있어서 요청-응답 안에서 끝내지 않는다
+    (관리자가 이 페이지를 벗어나도 fetch_job_id로 어디서든 진행 상황을 조회할 수 있게 하기 위함).
+    media_title은 나중에 "저장된 재생목록" 기록에서 구분하는 용도라 필수로 받는다."""
+    if request.method != 'POST':
+        return JsonResponse({'ok': False, 'error': '허용되지 않는 메서드'}, status=405)
+    from .models import PlaylistFetchJob
+    from .services import run_playlist_fetch_job
+    try:
+        body = json.loads(request.body or '{}')
+    except json.JSONDecodeError:
+        body = {}
+    playlist_url = (body.get('playlist_url') or '').strip()
+    media_title = (body.get('media_title') or '').strip()
+    if not playlist_url:
+        return JsonResponse({'ok': False, 'error': '재생목록 URL을 입력하세요.'})
+    if not media_title:
+        return JsonResponse({'ok': False, 'error': '미디어 제목을 입력하세요.'})
+
+    job = PlaylistFetchJob.objects.create(playlist_url=playlist_url, media_title=media_title)
+
+    # 저장 기록은 최근 HISTORY_LIMIT개만 유지 — 넘치면 오래된 것부터 삭제
+    stale_ids = list(
+        PlaylistFetchJob.objects.order_by('-created_at')
+        .values_list('id', flat=True)[PlaylistFetchJob.HISTORY_LIMIT:]
+    )
+    if stale_ids:
+        PlaylistFetchJob.objects.filter(id__in=stale_ids).delete()
+
+    threading.Thread(target=run_playlist_fetch_job, args=(job.pk,), daemon=True).start()
+    return JsonResponse({'ok': True, 'fetch_job_id': job.pk})
+
+
+def admin_playlist_fetch_status_view(request, fetch_job_id):
+    """GET → 재생목록 조회 작업의 진행 상황(JSON). 다른 화면에 떠 있는 알림 위젯도 이걸 폴링한다.
+    저장된 기록을 다시 열람하는 경우, 조회했던 시점 이후 그 사이 실제로 장소 추출이 끝난 영상이
+    있을 수 있으므로 "이미 처리됨" 표시를 매번 최신 상태로 다시 계산해서 내려준다."""
+    from .models import PlaylistFetchJob
+    from .services import refresh_duplicate_flags
+    job = get_object_or_404(PlaylistFetchJob, pk=fetch_job_id)
+    videos = job.videos
+    if job.status == PlaylistFetchJob.STATUS_DONE and videos:
+        videos = refresh_duplicate_flags(videos)
+        PlaylistFetchJob.objects.filter(pk=fetch_job_id).update(videos=videos)
+    return JsonResponse({
+        'ok': True,
+        'status': job.status,
+        'playlist_url': job.playlist_url,
+        'media_title': job.media_title,
+        'videos': videos,
+        'error': job.error,
+    }, json_dumps_params={'ensure_ascii': False})
+
+
+def admin_playlist_fetch_history_view(request):
+    """GET → 저장된 재생목록 조회 기록(최근 PlaylistFetchJob.HISTORY_LIMIT개). 다시 불러오지 않고 클릭만으로 복원하는 용도."""
+    from .models import PlaylistFetchJob
+    jobs = PlaylistFetchJob.objects.order_by('-created_at')[:PlaylistFetchJob.HISTORY_LIMIT]
+    return JsonResponse({
+        'ok': True,
+        'jobs': [
+            {
+                'id': j.id,
+                'media_title': j.media_title,
+                'playlist_url': j.playlist_url,
+                'status': j.status,
+                'video_count': len(j.videos),
+                'created_at': j.created_at.strftime('%Y-%m-%d %H:%M'),
+            }
+            for j in jobs
+        ],
+    }, json_dumps_params={'ensure_ascii': False})
+
+
+def admin_playlist_job_start_view(request):
+    """POST { playlist_url, media_title, media_type, ai_choice, fallback_ai_choice, scene, merge_videos, videos: [...] }
+    선택된 영상들로 PlaylistExtractionJob을 만들고 백그라운드 스레드로 순차 처리를 시작한다.
+    merge_videos=False(기본, "개별 추출")면 영상마다 그 영상 자체의 제목으로 별도 Media를 만들고,
+    merge_videos=True("통합 추출")면 선택된 영상 전부를 media_title 하나로 묶는다."""
+    if request.method != 'POST':
+        return JsonResponse({'ok': False, 'error': '허용되지 않는 메서드'}, status=405)
+    from .models import PlaylistExtractionJob
+    from .services import run_batch_job
+    try:
+        body = json.loads(request.body or '{}')
+    except json.JSONDecodeError:
+        return JsonResponse({'ok': False, 'error': '잘못된 요청'}, status=400)
+
+    playlist_url = (body.get('playlist_url') or '').strip()
+    media_title  = (body.get('media_title') or '').strip()
+    media_type   = body.get('media_type') or 'youtube'
+    ai_choice    = body.get('ai_choice') or 'gemini'
+    fallback_ai  = body.get('fallback_ai_choice') or 'gemini'
+    scene        = (body.get('scene') or '').strip()
+    merge_videos = bool(body.get('merge_videos'))
+    videos       = body.get('videos') or []
+
+    if not media_title:
+        return JsonResponse({'ok': False, 'error': '미디어 제목을 입력하세요.'})
+    if not isinstance(videos, list) or not videos:
+        return JsonResponse({'ok': False, 'error': '선택된 영상이 없습니다.'})
+
+    for v in videos:
+        v['status'] = 'queued'
+        v['media_place_count'] = 0
+        v['error'] = ''
+        v['ai_used'] = ''
+
+    job = PlaylistExtractionJob.objects.create(
+        playlist_url=playlist_url,
+        media_title=media_title,
+        media_type=media_type,
+        ai_choice=ai_choice,
+        fallback_ai_choice=fallback_ai,
+        scene=scene,
+        merge_videos=merge_videos,
+        status=PlaylistExtractionJob.STATUS_RUNNING,
+        videos=videos,
+    )
+    threading.Thread(target=run_batch_job, args=(job.pk,), daemon=True).start()
+    return JsonResponse({'ok': True, 'job_id': job.pk})
+
+
+def admin_playlist_job_status_view(request, job_id):
+    """GET → 진행 상황 폴링용 JSON 스냅샷."""
+    from .models import PlaylistExtractionJob
+    job = get_object_or_404(PlaylistExtractionJob, pk=job_id)
+    return JsonResponse({
+        'ok': True,
+        'status': job.status,
+        'cancel_requested': job.cancel_requested,
+        'current_index': job.current_index,
+        'total': len(job.videos),
+        'videos': job.videos,
+    }, json_dumps_params={'ensure_ascii': False})
+
+
+def admin_playlist_job_cancel_view(request, job_id):
+    """POST → 진행 중인 작업에 취소 요청. 처리 중이던 영상은 끝까지 완료(결과 저장)하고 다음 영상부터 중단."""
+    if request.method != 'POST':
+        return JsonResponse({'ok': False}, status=405)
+    from .models import PlaylistExtractionJob
+    updated = PlaylistExtractionJob.objects.filter(
+        pk=job_id, status=PlaylistExtractionJob.STATUS_RUNNING).update(cancel_requested=True)
+    return JsonResponse({'ok': bool(updated)})
+
+
+def admin_playlist_job_retry_view(request, job_id):
+    """POST { video_ids: [...] } → 실패한 영상들만 다시 큐에 넣고 재실행."""
+    if request.method != 'POST':
+        return JsonResponse({'ok': False}, status=405)
+    from .models import PlaylistExtractionJob
+    from .services import run_batch_job
+    job = get_object_or_404(PlaylistExtractionJob, pk=job_id)
+    try:
+        body = json.loads(request.body or '{}')
+    except json.JSONDecodeError:
+        body = {}
+    retry_ids = set(body.get('video_ids') or [])
+    if not retry_ids:
+        return JsonResponse({'ok': False, 'error': '재시도할 영상을 선택하세요.'})
+
+    videos = job.videos
+    changed = False
+    for v in videos:
+        if v.get('video_id') in retry_ids and v.get('status') == 'failed':
+            v['status'] = 'queued'
+            v['error'] = ''
+            changed = True
+    if not changed:
+        return JsonResponse({'ok': False, 'error': '재시도 가능한(실패 상태) 영상이 없습니다.'})
+
+    PlaylistExtractionJob.objects.filter(pk=job_id).update(
+        videos=videos, status=PlaylistExtractionJob.STATUS_RUNNING, cancel_requested=False)
+    threading.Thread(target=run_batch_job, args=(job.pk,), daemon=True).start()
+    return JsonResponse({'ok': True})
 
 
 # ── 포토스팟 검열(1차 AI + 2차 관리자) 포털 ───────────────────────────────────

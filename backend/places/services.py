@@ -295,12 +295,14 @@ def run_extraction(url, media_title, media_type, max_locations, ai_choice, scene
                     'is_confirmed': False,
                     'status': MediaPlace.STATUS_INFERRED,
                     'ai_reason': reason,
+                    'source_video_id': video_id,
                 },
             )
             if not mp_created:
                 mp.status = MediaPlace.STATUS_INFERRED
                 mp.confidence_score = confidence
                 mp.ai_reason = reason
+                mp.source_video_id = video_id
                 mp.save()
 
             saved.append(mp)
@@ -311,3 +313,250 @@ def run_extraction(url, media_title, media_type, max_locations, ai_choice, scene
     except Exception as e:
         logger.exception('장소 추출 중 오류')
         return {'media': None, 'places': [], 'log': writer.lines, 'error': str(e)}
+
+
+# ── 재생목록 일괄 추출 ─────────────────────────────────────────────────────────
+
+PLAYLIST_MAX_VIDEOS = 200  # 재생목록 조회 시 캡(과도한 쿼터 소진 방지)
+
+
+def _extract_playlist_id(url: str):
+    m = re.search(r'[?&]list=([a-zA-Z0-9_-]+)', url or '')
+    return m.group(1) if m else None
+
+
+def _parse_iso8601_duration_minutes(duration: str) -> int:
+    """'PT25M3S' 같은 ISO 8601 duration 문자열을 분 단위(반올림)로 변환."""
+    m = re.match(r'PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?', duration or '')
+    if not m:
+        return 0
+    h, mi, s = (int(g) if g else 0 for g in m.groups())
+    return round(h * 60 + mi + s / 60)
+
+
+def _max_locations_for_minutes(minutes: int) -> int:
+    """기존 단일 추출 폼의 '30분마다 10개' 규칙과 동일."""
+    if not minutes or minutes <= 0:
+        return 10
+    return (minutes // 30 + 1) * 10
+
+
+def _compute_duplicate_ids(video_ids: list) -> set:
+    """주어진 video_id들 중 이미 장소 추출이 완료된(=MediaPlace가 있거나 그 영상 URL로 만들어진
+    Media가 있는) 것들의 집합을 한 번에(대량 쿼리로) 계산한다."""
+    if not video_ids:
+        return set()
+    dup_ids = set(
+        MediaPlace.objects.filter(source_video_id__in=video_ids).values_list('source_video_id', flat=True)
+    )
+    media_video_ids = {
+        _extract_video_id(url)
+        for url in Media.objects.exclude(source_url='').values_list('source_url', flat=True)
+    }
+    dup_ids |= {vid for vid in media_video_ids if vid in video_ids}
+    return dup_ids
+
+
+def refresh_duplicate_flags(videos: list) -> list:
+    """저장된 재생목록 조회 기록을 나중에 다시 열람할 때 '이미 처리됨' 표시를 최신 상태로 갱신한다.
+    videos에 저장된 is_duplicate는 최초 조회 시점의 스냅샷이라, 그 이후에 해당 영상들 중 일부가
+    실제로 장소 추출됐어도 반영되지 않는 문제가 있었음 — 다시 보여줄 때마다 이 함수로 재계산한다."""
+    video_ids = [v['video_id'] for v in videos]
+    dup_ids = _compute_duplicate_ids(video_ids)
+    for v in videos:
+        v['is_duplicate'] = v['video_id'] in dup_ids
+    return videos
+
+
+def fetch_playlist_videos(playlist_url: str) -> dict:
+    """
+    재생목록 URL → 영상 목록 반환.
+    각 항목: video_id, title, position, upload_date, duration_minutes,
+             max_locations(자동계산), has_caption, is_duplicate
+    """
+    playlist_id = _extract_playlist_id(playlist_url)
+    if not playlist_id:
+        return {'videos': [], 'error': '유효한 재생목록 URL이 아닙니다 (list= 파라미터를 찾을 수 없음).'}
+    if not settings.YOUTUBE_API_KEY:
+        return {'videos': [], 'error': 'YOUTUBE_API_KEY가 설정되지 않았습니다.'}
+
+    youtube = build('youtube', 'v3', developerKey=settings.YOUTUBE_API_KEY)
+
+    items = []
+    page_token = None
+    try:
+        while True:
+            resp = youtube.playlistItems().list(
+                part='snippet,contentDetails',
+                playlistId=playlist_id,
+                maxResults=50,
+                pageToken=page_token,
+            ).execute()
+            items.extend(resp.get('items', []))
+            page_token = resp.get('nextPageToken')
+            if not page_token or len(items) >= PLAYLIST_MAX_VIDEOS:
+                break
+    except Exception as e:
+        return {'videos': [], 'error': f'재생목록 조회 실패: {e}'}
+
+    items = items[:PLAYLIST_MAX_VIDEOS]
+    video_ids = [
+        it['contentDetails']['videoId'] for it in items
+        if it.get('contentDetails', {}).get('videoId')
+    ]
+
+    # 영상 길이(duration)를 일괄 조회 — videos.list는 한 번에 최대 50개까지만 가능
+    durations = {}
+    for i in range(0, len(video_ids), 50):
+        chunk = video_ids[i:i + 50]
+        try:
+            resp = youtube.videos().list(part='contentDetails', id=','.join(chunk)).execute()
+            for v in resp.get('items', []):
+                durations[v['id']] = _parse_iso8601_duration_minutes(v['contentDetails'].get('duration', ''))
+        except Exception:
+            pass
+
+    dup_ids = _compute_duplicate_ids(video_ids)
+
+    videos = []
+    for it in items:
+        cd = it.get('contentDetails', {})
+        sn = it.get('snippet', {})
+        video_id = cd.get('videoId')
+        if not video_id:
+            continue
+        upload_date = (cd.get('videoPublishedAt') or sn.get('publishedAt') or '')[:10]
+        duration_minutes = durations.get(video_id, 0)
+        has_caption = bool(_fetch_transcript(video_id)[0])
+        videos.append({
+            'video_id':         video_id,
+            'title':            sn.get('title', '(제목 없음)'),
+            'position':         sn.get('position', 0),
+            'upload_date':      upload_date,
+            'duration_minutes': duration_minutes,
+            'max_locations':    _max_locations_for_minutes(duration_minutes),
+            'has_caption':      has_caption,
+            'is_duplicate':     video_id in dup_ids,
+        })
+
+    return {'videos': videos, 'error': None}
+
+
+def run_playlist_fetch_job(fetch_job_id: int):
+    """재생목록 조회를 백그라운드에서 실행하고 결과를 PlaylistFetchJob에 기록한다.
+    threading.Thread(target=run_playlist_fetch_job)로 호출된다."""
+    from places.models import PlaylistFetchJob
+
+    job = PlaylistFetchJob.objects.filter(pk=fetch_job_id).first()
+    if not job:
+        return
+    try:
+        result = fetch_playlist_videos(job.playlist_url)
+        if result['error']:
+            PlaylistFetchJob.objects.filter(pk=fetch_job_id).update(
+                status=PlaylistFetchJob.STATUS_ERROR, error=result['error'])
+        else:
+            PlaylistFetchJob.objects.filter(pk=fetch_job_id).update(
+                status=PlaylistFetchJob.STATUS_DONE, videos=result['videos'])
+    except Exception as e:
+        logger.exception('재생목록 조회 중 오류')
+        PlaylistFetchJob.objects.filter(pk=fetch_job_id).update(
+            status=PlaylistFetchJob.STATUS_ERROR, error=str(e))
+
+
+_QUOTA_ERROR_HINTS = [
+    '429', 'quota', 'resource_exhausted', 'rate limit', 'ratelimit',
+    'insufficient_quota', 'credit balance', 'too many requests',
+]
+
+
+def _looks_like_quota_error(message: str) -> bool:
+    """AI 호출 실패 사유가 토큰/쿼터 소진으로 보이는지 대략적으로 판정 (SDK 버전별 예외 클래스가 달라
+    문자열 휴리스틱으로 판단 — run_extraction()이 예외를 문자열로만 반환하기 때문)."""
+    m = (message or '').lower()
+    return any(hint in m for hint in _QUOTA_ERROR_HINTS)
+
+
+def _run_one_video(job, video: dict, ai_choice: str) -> dict:
+    """
+    영상 1개를 run_extraction()으로 처리한다.
+    기본(개별 추출, merge_videos=False)은 그 영상 자체의 YouTube 제목으로 별도 Media를 만든다 —
+    재생목록 속 영상들이 서로 다른 주제(예: 여행 유튜버의 각기 다른 여행지)인 경우가 보통이라서.
+    "통합 추출"(merge_videos=True)을 선택했을 때만 job.media_title 하나로 전부 묶는다
+    (여러 회차가 한 작품인 경우를 위한 예외적 모드).
+    """
+    video_url = f"https://www.youtube.com/watch?v={video['video_id']}"
+    max_locations = video.get('max_locations') or 10
+    media_title = job.media_title if job.merge_videos else (video.get('title') or job.media_title)
+    return run_extraction(video_url, media_title, job.media_type, max_locations, ai_choice, job.scene)
+
+
+def run_batch_job(job_id: int):
+    """
+    재생목록 일괄 추출 백그라운드 실행 함수 — threading.Thread(target=run_batch_job)로 호출된다.
+
+    취소 요청("cancel_requested")이 들어오면 처리 중이던 영상은 끝까지 완료(결과 저장)하고
+    다음 영상은 시작하지 않는다. 처리 중인 영상의 AI 응답을 기다리는 시간은 취소 여부와
+    무관하게 그대로 흐르므로, "즉시 중단하고 그 영상 결과를 버리는" 옵션은 두지 않는다
+    (완료를 기다리는 시간이 같다면 결과를 버릴 이유가 없음 — 필요하면 완료 후 관리자 화면에서
+    해당 미디어를 수동 삭제하면 됨).
+    """
+    from places.models import PlaylistExtractionJob as Job
+
+    job = Job.objects.filter(pk=job_id).first()
+    if not job:
+        return
+
+    current_ai = job.ai_choice
+    videos = job.videos
+    cancelled = False
+
+    for idx, video in enumerate(videos):
+        if video.get('status') != 'queued':
+            continue
+
+        try:
+            fresh_cancel = Job.objects.filter(pk=job_id).values_list('cancel_requested', flat=True).first()
+            if fresh_cancel:
+                cancelled = True
+                break
+
+            video['status'] = 'processing'
+            Job.objects.filter(pk=job_id).update(videos=videos, current_index=idx)
+
+            result = _run_one_video(job, video, current_ai)
+
+            if (result.get('error') and _looks_like_quota_error(result['error'])
+                    and current_ai != job.fallback_ai_choice):
+                # 토큰/쿼터 소진으로 보임 → 대체 AI로 전환해서 이 영상부터 재시도, 이후 영상도 계속 대체 AI 사용
+                current_ai = job.fallback_ai_choice
+                result = _run_one_video(job, video, current_ai)
+
+            if result.get('error'):
+                video['status'] = 'failed'
+                video['error'] = result['error']
+            else:
+                video['status'] = 'success'
+                video['media_place_count'] = len(result['places'])
+                video['ai_used'] = current_ai
+
+            Job.objects.filter(pk=job_id).update(videos=videos, current_index=idx)
+
+            fresh_cancel = Job.objects.filter(pk=job_id).values_list('cancel_requested', flat=True).first()
+            if fresh_cancel:
+                cancelled = True
+                break
+
+        except Exception as e:
+            logger.exception('재생목록 일괄 추출 중 영상 처리 오류')
+            video['status'] = 'failed'
+            video['error'] = str(e)
+            Job.objects.filter(pk=job_id).update(videos=videos, current_index=idx)
+
+    if cancelled:
+        for v in videos:
+            if v.get('status') == 'queued':
+                v['status'] = 'cancelled'
+        Job.objects.filter(pk=job_id).update(videos=videos, status=Job.STATUS_CANCELLED, cancel_requested=False)
+    else:
+        Job.objects.filter(pk=job_id).update(status=Job.STATUS_DONE, cancel_requested=False)
