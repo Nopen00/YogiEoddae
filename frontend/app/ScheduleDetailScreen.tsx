@@ -862,7 +862,7 @@ const styles = StyleSheet.create({
   },
   panelContentAction: {
     ...Typography.button4,
-    color: Colors.light.primary,
+    color: Colors.light.dark,
   },
   importedCourseDivider: {
     marginHorizontal: Spacing.h.medium,
@@ -913,7 +913,7 @@ const styles = StyleSheet.create({
   },
   importedCourseTagText: {
     ...Typography.body2,
-    color: Colors.light.primary,
+    color: Colors.light.dark,
   },
   dayRow: {
     flexDirection: 'row',
@@ -1067,7 +1067,7 @@ const styles = StyleSheet.create({
   },
   unsavedDesc: {
     ...Typography.body2,
-    color: Colors.light.primary,
+    color: Colors.light.dark,
     marginTop: Spacing.v.medium,
     textAlign: 'center',
   },

@@ -203,7 +203,7 @@ const styles = StyleSheet.create({
   },
   inputBoxError: { borderColor: Colors.light.error },
   inputSection: { flex: 1 },
-  inputLabel: { ...Typography.body1, color: Colors.light.grayLight, marginBottom: Spacing.v.small },
+  inputLabel: { ...Typography.body1, color: Colors.light.grayDark, marginBottom: Spacing.v.small },
   inputLabelError: { color: Colors.light.error },
   input: { padding: 0, ...Typography.body3 },
   boxRightIcons: { flexDirection: 'row', alignItems: 'center' },

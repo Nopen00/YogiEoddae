@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
   },
   tagText: {
     ...Typography.body2,
-    color: Colors.light.primary,
+    color: Colors.light.dark,
   },
   questionText: {
     ...Typography.subtitle1,

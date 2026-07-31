@@ -176,9 +176,9 @@ const styles = StyleSheet.create({
   },
   resultTitle: { ...Typography.subtitle2, color: Colors.light.black, textAlign: 'center' },
   breakdownList: { marginTop: Spacing.v.medium, flexDirection: 'column' },
-  breakdownText: { ...Typography.body2, color: Colors.light.primary, textAlign: 'center' },
+  breakdownText: { ...Typography.body2, color: Colors.light.dark, textAlign: 'center' },
   breakdownTextSpaced: { marginTop: Spacing.v.small },
-  resultSub: { ...Typography.body2, color: Colors.light.primary, marginTop: Spacing.v.medium, textAlign: 'center' },
+  resultSub: { ...Typography.body2, color: Colors.light.dark, marginTop: Spacing.v.medium, textAlign: 'center' },
 });
 
 export default MailboxScreen;

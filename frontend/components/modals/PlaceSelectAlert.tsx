@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
   placeCardTitle: { ...Typography.title1, color: Colors.light.black },
   placeInfoRow: { flexDirection: 'row', alignItems: 'center', marginTop: Spacing.v.small },
   placeInfoText: { ...Typography.subtitle1, color: Colors.light.grayDark, flexShrink: 1 },
-  tagText: { ...Typography.body2, color: Colors.light.primary },
+  tagText: { ...Typography.body2, color: Colors.light.dark },
   pagerRow: {
     flexDirection: 'row',
     alignItems: 'center',

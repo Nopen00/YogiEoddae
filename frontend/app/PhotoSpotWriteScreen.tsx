@@ -485,7 +485,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.v.small,
     marginHorizontal: Spacing.h.medium,
   },
-  tagAddButtonText: { ...Typography.body2, color: Colors.light.primary },
+  tagAddButtonText: { ...Typography.body2, color: Colors.light.dark },
   tagChip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -497,7 +497,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: Colors.light.white,
   },
-  tagChipText: { ...Typography.body2, color: Colors.light.primary },
+  tagChipText: { ...Typography.body2, color: Colors.light.dark },
   infoBoxWrapper: { marginTop: Spacing.v.large, marginHorizontal: Spacing.h.medium },
   infoBox: {
     borderRadius: Spacing.r.small,
@@ -558,7 +558,7 @@ const styles = StyleSheet.create({
     ...Shadows.card,
   },
   unsavedTitle: { ...Typography.subtitle2, color: Colors.light.black, textAlign: 'center' },
-  unsavedDesc: { ...Typography.body2, color: Colors.light.primary, marginTop: Spacing.v.medium, textAlign: 'center' },
+  unsavedDesc: { ...Typography.body2, color: Colors.light.dark, marginTop: Spacing.v.medium, textAlign: 'center' },
   unsavedButtons: { flexDirection: 'row', justifyContent: 'center', gap: Spacing.h.medium, marginTop: Spacing.v.medium },
   btnDiscard: { width: 80, height: Size.buttonSm, borderRadius: Spacing.r.small, backgroundColor: Colors.light.primary, justifyContent: 'center', alignItems: 'center' },
   btnDiscardText: { ...Typography.button2, color: Colors.light.white },
@@ -580,7 +580,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.h.medium,
   },
   submitResultTitle: { ...Typography.subtitle2, color: Colors.light.black, textAlign: 'center' },
-  submitResultDesc: { ...Typography.body2, color: Colors.light.primary, marginTop: Spacing.v.medium, textAlign: 'center' },
+  submitResultDesc: { ...Typography.body2, color: Colors.light.dark, marginTop: Spacing.v.medium, textAlign: 'center' },
 });
 
 export default PhotoSpotWriteScreen;

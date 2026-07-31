@@ -458,7 +458,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.h.medium,
   },
   resultTitle: { ...Typography.subtitle2, color: Colors.light.black, textAlign: 'center' },
-  resultSub1: { ...Typography.body2, color: Colors.light.primary, marginTop: Spacing.v.medium, textAlign: 'center' },
+  resultSub1: { ...Typography.body2, color: Colors.light.dark, marginTop: Spacing.v.medium, textAlign: 'center' },
 });
 
 export default MainScreen;

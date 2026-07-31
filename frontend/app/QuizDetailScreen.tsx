@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
   infoContainer: { paddingHorizontal: Spacing.h.medium, marginTop: Spacing.v.medium },
   titleText: { ...Typography.HeadLine5, color: Colors.light.black },
   metaText: { ...Typography.body2, color: Colors.light.grayDark },
-  tagText: { ...Typography.body2, color: Colors.light.primary },
+  tagText: { ...Typography.body2, color: Colors.light.dark },
   questionBlock: { marginTop: Spacing.v.large },
   questionBlockSpaced: { marginTop: Spacing.v.large },
   questionTitle: { ...Typography.title1, color: Colors.light.black, marginHorizontal: Spacing.h.medium },
@@ -190,6 +190,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.h.medium,
   },
   resultTitle: { ...Typography.subtitle2, color: Colors.light.black, textAlign: 'center' },
-  resultSub1: { ...Typography.body2, color: Colors.light.primary, marginTop: Spacing.v.medium, textAlign: 'center' },
-  resultSub2: { ...Typography.body2, color: Colors.light.primary, marginTop: Spacing.v.small, textAlign: 'center' },
+  resultSub1: { ...Typography.body2, color: Colors.light.dark, marginTop: Spacing.v.medium, textAlign: 'center' },
+  resultSub2: { ...Typography.body2, color: Colors.light.dark, marginTop: Spacing.v.small, textAlign: 'center' },
 });

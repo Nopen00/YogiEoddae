@@ -448,7 +448,7 @@ const styles = StyleSheet.create({
   metaChip: { flexDirection: 'row', alignItems: 'center' },
   iconValue: { ...Typography.subtitle1, color: Colors.light.grayDark, marginLeft: Spacing.h.xsmall },
   tagRow: { flexDirection: 'row', alignItems: 'center' },
-  tagText: { ...Typography.body2, color: Colors.light.primary, marginRight: Spacing.h.xsmall },
+  tagText: { ...Typography.body2, color: Colors.light.dark, marginRight: Spacing.h.xsmall },
   emptyState: {
     paddingTop: Spacing.v.medium,
     alignItems: 'center',
@@ -463,7 +463,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.v.medium,
   },
   moreButton: { marginTop: 0, alignSelf: 'flex-end', marginRight: Spacing.h.medium, paddingVertical: Spacing.v.small },
-  moreButtonText: { ...Typography.button4, color: Colors.light.primary }
+  moreButtonText: { ...Typography.button4, color: Colors.light.dark }
 });
 
 export default SearchResultScreen;

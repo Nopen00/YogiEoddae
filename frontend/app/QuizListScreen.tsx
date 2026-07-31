@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
   sectionHeader: { paddingHorizontal: Spacing.h.medium, marginBottom: Spacing.v.medium },
   sectionTitle: { ...Typography.title1, color: Colors.light.black, marginBottom: Spacing.v.small },
   moreButton: { marginTop: 0, alignSelf: 'flex-end', marginRight: Spacing.h.medium, paddingVertical: Spacing.v.small },
-  moreButtonText: { ...Typography.button4, color: Colors.light.primary },
+  moreButtonText: { ...Typography.button4, color: Colors.light.dark },
   card: {
     minHeight: 106,
     flexDirection: 'row',
@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
   cardTitle: { ...Typography.title1, color: Colors.light.black, marginBottom: Spacing.h.xsmall },
   infoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.h.xsmall },
   tagRow: { marginTop: 0, gap: 0 },
-  tagText: { ...Typography.body2, color: Colors.light.primary, marginRight: Spacing.h.xsmall },
+  tagText: { ...Typography.body2, color: Colors.light.dark, marginRight: Spacing.h.xsmall },
   checkIconWrapper: {
     position: 'absolute',
     right: Spacing.h.medium,

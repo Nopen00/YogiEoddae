@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: Colors.light.white,
   },
-  tagChipText: { ...Typography.body2, color: Colors.light.primary },
+  tagChipText: { ...Typography.body2, color: Colors.light.dark },
   inputBox: {
     marginTop: Spacing.v.medium,
     borderRadius: Spacing.r.small,

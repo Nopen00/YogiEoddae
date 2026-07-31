@@ -679,7 +679,7 @@ const styles = StyleSheet.create({
   titleText: { ...Typography.HeadLine5, color: Colors.light.black },
   metaText: { ...Typography.body2, color: Colors.light.grayDark },
   iconTextRow: { flexDirection: 'row', alignItems: 'center' },
-  tagText: { ...Typography.body2, color: Colors.light.primary },
+  tagText: { ...Typography.body2, color: Colors.light.dark },
   actionButtonGroup: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -900,7 +900,7 @@ const styles = StyleSheet.create({
   },
   photoSpotTag: {
     ...Typography.body2,
-    color: Colors.light.primary,
+    color: Colors.light.dark,
   },
   reviewHeaderRow: {
     flexDirection: 'row',
@@ -910,7 +910,7 @@ const styles = StyleSheet.create({
   },
   reviewTitleRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.h.small },
   reviewTitle: { ...Typography.title1, color: Colors.light.black },
-  reviewCount: { ...Typography.title1, color: Colors.light.primary },
+  reviewCount: { ...Typography.title1, color: Colors.light.dark },
   photoFilterRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.h.small },
   photoFilterText: { ...Typography.body2, color: Colors.light.black },
   checkbox: {
@@ -970,7 +970,7 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.v.medium,
   },
   deleteTitle: { ...Typography.subtitle2, color: Colors.light.black, textAlign: 'center' },
-  deleteDesc: { ...Typography.body2, color: Colors.light.primary, marginTop: Spacing.v.medium, textAlign: 'center' },
+  deleteDesc: { ...Typography.body2, color: Colors.light.dark, marginTop: Spacing.v.medium, textAlign: 'center' },
   deleteButtons: { flexDirection: 'row', justifyContent: 'center', gap: Spacing.h.medium, marginTop: Spacing.v.medium },
   btnConfirm: { width: 80, height: Size.buttonSm, borderRadius: Spacing.r.small, backgroundColor: Colors.light.primary, justifyContent: 'center', alignItems: 'center' },
   btnConfirmText: { ...Typography.button2, color: Colors.light.white },

@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
   dateText: { ...Typography.body1, color: Colors.light.grayDark },
   ratingRow: { flexDirection: 'row', gap: 4, marginTop: Spacing.v.small },
   contentText: { ...Typography.body2, color: Colors.light.black, marginTop: Spacing.v.small },
-  moreText: { ...Typography.button4, color: Colors.light.primary, marginTop: Spacing.v.small },
+  moreText: { ...Typography.button4, color: Colors.light.dark, marginTop: Spacing.v.small },
   imagesScroll: { marginTop: Spacing.v.small },
   imagesContent: { gap: Spacing.h.medium },
   imageThumb: {

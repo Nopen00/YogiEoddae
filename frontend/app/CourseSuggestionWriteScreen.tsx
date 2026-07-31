@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.light.dark,
     backgroundColor: Colors.light.primary,
   },
-  mediaTypeChipText: { ...Typography.body2, color: Colors.light.primary },
+  mediaTypeChipText: { ...Typography.body2, color: Colors.light.dark },
   mediaTypeChipTextSelected: { color: Colors.light.white },
   descInput: {
     marginTop: Spacing.v.medium,
@@ -338,7 +338,7 @@ const styles = StyleSheet.create({
   tokenBalanceText: {
     marginTop: Spacing.v.large,
     ...Typography.subtitle2,
-    color: Colors.light.primary,
+    color: Colors.light.dark,
     textAlign: 'center',
   },
   submitButton: {
@@ -368,7 +368,7 @@ const styles = StyleSheet.create({
     ...Shadows.card,
   },
   unsavedTitle: { ...Typography.subtitle2, color: Colors.light.black, textAlign: 'center' },
-  unsavedDesc: { ...Typography.body2, color: Colors.light.primary, marginTop: Spacing.v.medium, textAlign: 'center' },
+  unsavedDesc: { ...Typography.body2, color: Colors.light.dark, marginTop: Spacing.v.medium, textAlign: 'center' },
   unsavedButtons: { flexDirection: 'row', justifyContent: 'center', gap: Spacing.h.medium, marginTop: Spacing.v.medium },
   btnDiscard: { width: 80, height: Size.buttonSm, borderRadius: Spacing.r.small, backgroundColor: Colors.light.primary, justifyContent: 'center', alignItems: 'center' },
   btnDiscardText: { ...Typography.button2, color: Colors.light.white },
@@ -390,7 +390,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.h.medium,
   },
   submitResultTitle: { ...Typography.subtitle2, color: Colors.light.black, textAlign: 'center' },
-  submitResultDesc: { ...Typography.body2, color: Colors.light.primary, marginTop: Spacing.v.medium, textAlign: 'center' },
+  submitResultDesc: { ...Typography.body2, color: Colors.light.dark, marginTop: Spacing.v.medium, textAlign: 'center' },
   confirmOverlay: { flex: 1, backgroundColor: Colors.light.overlay, justifyContent: 'center', alignItems: 'center' },
   confirmPopup: {
     width: width - 64,
@@ -404,8 +404,8 @@ const styles = StyleSheet.create({
     ...Shadows.card,
   },
   confirmTitle: { ...Typography.subtitle2, color: Colors.light.black, textAlign: 'center' },
-  confirmDesc: { ...Typography.body2, color: Colors.light.primary, marginTop: Spacing.v.medium, textAlign: 'center' },
-  confirmDescSpaced: { ...Typography.body2, color: Colors.light.primary, marginTop: Spacing.v.small, textAlign: 'center' },
+  confirmDesc: { ...Typography.body2, color: Colors.light.dark, marginTop: Spacing.v.medium, textAlign: 'center' },
+  confirmDescSpaced: { ...Typography.body2, color: Colors.light.dark, marginTop: Spacing.v.small, textAlign: 'center' },
   confirmButtons: { flexDirection: 'row', justifyContent: 'center', gap: Spacing.h.medium, marginTop: Spacing.v.medium },
   btnConfirm: { width: 80, height: Size.buttonSm, borderRadius: Spacing.r.small, backgroundColor: Colors.light.primary, justifyContent: 'center', alignItems: 'center' },
   btnConfirmText: { ...Typography.button2, color: Colors.light.white },

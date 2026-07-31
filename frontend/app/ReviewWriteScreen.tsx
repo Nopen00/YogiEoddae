@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: Spacing.h.medium, marginTop: Spacing.v.medium, paddingBottom: Spacing.v.screenBottom },
   titleText: { ...Typography.title1, color: Colors.light.black },
   detailText: { ...Typography.body2, color: Colors.light.grayDark, marginTop: Spacing.v.small },
-  tagText: { ...Typography.body2, color: Colors.light.primary },
+  tagText: { ...Typography.body2, color: Colors.light.dark },
   ratingTitle: {
     ...Typography.title1,
     color: Colors.light.black,
@@ -400,7 +400,7 @@ const styles = StyleSheet.create({
     ...Shadows.card,
   },
   unsavedTitle: { ...Typography.subtitle2, color: Colors.light.black, textAlign: 'center' },
-  unsavedDesc: { ...Typography.body2, color: Colors.light.primary, marginTop: Spacing.v.medium, textAlign: 'center' },
+  unsavedDesc: { ...Typography.body2, color: Colors.light.dark, marginTop: Spacing.v.medium, textAlign: 'center' },
   unsavedButtons: { flexDirection: 'row', justifyContent: 'center', gap: Spacing.h.medium, marginTop: Spacing.v.medium },
   btnDiscard: { width: 80, height: Size.buttonSm, borderRadius: Spacing.r.small, backgroundColor: Colors.light.primary, justifyContent: 'center', alignItems: 'center' },
   btnDiscardText: { ...Typography.button2, color: Colors.light.white },
@@ -436,5 +436,5 @@ const styles = StyleSheet.create({
     ...Shadows.card,
   },
   submitFailTitle: { ...Typography.subtitle2, color: Colors.light.black },
-  submitFailDesc: { ...Typography.body2, color: Colors.light.primary, marginTop: Spacing.v.medium },
+  submitFailDesc: { ...Typography.body2, color: Colors.light.dark, marginTop: Spacing.v.medium },
 });

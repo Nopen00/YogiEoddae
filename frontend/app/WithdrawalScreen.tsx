@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
     marginLeft: Spacing.h.medium,
     alignSelf: 'flex-start',
   },
-  policyText: { ...Typography.button4, color: Colors.light.primary },
+  policyText: { ...Typography.button4, color: Colors.light.dark },
   confirmTitle: { ...Typography.title1, color: Colors.light.black, marginTop: Spacing.v.large },
   passwordBox: {
     marginTop: Spacing.v.medium,
@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
   },
   passwordBoxError: { borderColor: Colors.light.error },
   inputSection: { flex: 1 },
-  inputLabel: { ...Typography.body1, color: Colors.light.grayLight, marginBottom: Spacing.v.small },
+  inputLabel: { ...Typography.body1, color: Colors.light.grayDark, marginBottom: Spacing.v.small },
   inputLabelError: { color: Colors.light.error },
   passwordInput: { padding: 0, ...Typography.body3 },
   boxRightIcons: { flexDirection: 'row', alignItems: 'center' },

@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
     paddingLeft: Spacing.h.medium,
     paddingVertical: Spacing.v.small,
   },
-  inputLabel: { ...Typography.body1, color: Colors.light.grayLight, marginBottom: Spacing.v.small },
+  inputLabel: { ...Typography.body1, color: Colors.light.grayDark, marginBottom: Spacing.v.small },
   inputLabelError: { color: Colors.light.error },
   input: {
     ...Typography.body3,

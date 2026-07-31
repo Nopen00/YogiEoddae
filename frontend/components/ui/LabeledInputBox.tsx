@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
   boxError: { borderColor: Colors.light.error },
   boxNoTopMargin: { marginTop: 0 },
   inputSection: { flex: 1 },
-  inputLabel: { ...Typography.body1, color: Colors.light.grayLight, marginBottom: Spacing.v.small },
+  inputLabel: { ...Typography.body1, color: Colors.light.grayDark, marginBottom: Spacing.v.small },
   inputLabelError: { color: Colors.light.error },
   input: { padding: 0, ...Typography.body3 },
   boxRightIcons: { flexDirection: 'row', alignItems: 'center' },

@@ -453,7 +453,7 @@ export const NewScheduleAlert = ({ visible, onClose, onConfirm }: NewScheduleAle
 
 // 월 선택 피커 전용 스타일시트
 const pickerStyles = StyleSheet.create({
-  centerText: { ...Typography.HeadLine5, color: Colors.light.primary }, // 중앙 강조 텍스트
+  centerText: { ...Typography.HeadLine5, color: Colors.light.dark }, // 중앙 강조 텍스트
   sideText: { ...Typography.title1, color: Colors.light.grayDark }, // 양측 연한 텍스트
 });
 

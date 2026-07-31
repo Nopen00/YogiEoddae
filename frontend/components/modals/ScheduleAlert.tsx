@@ -371,7 +371,7 @@ const styles = StyleSheet.create({
   infoRow: { flexDirection: 'row', alignItems: 'center', marginTop: Spacing.v.small, gap: Spacing.h.xsmall },
   infoText: { ...Typography.subtitle1, color: Colors.light.grayDark },
   infoSep: { ...Typography.subtitle1, color: Colors.light.grayDark },
-  tagText: { ...Typography.body2, color: Colors.light.primary },
+  tagText: { ...Typography.body2, color: Colors.light.dark },
   dayListSection: { marginTop: Spacing.v.medium },
   dayScrollContent: { gap: Spacing.v.small },
   dayButton: {
@@ -431,5 +431,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.h.medium,
   },
   failTitle: { ...Typography.subtitle2, color: Colors.light.black },
-  failDesc: { ...Typography.body2, color: Colors.light.primary, marginTop: 16 },
+  failDesc: { ...Typography.body2, color: Colors.light.dark, marginTop: 16 },
 });

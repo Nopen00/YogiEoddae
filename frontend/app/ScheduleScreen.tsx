@@ -490,7 +490,7 @@ const styles = StyleSheet.create({
     ...Shadows.card,
   },
   deleteTitle: { ...Typography.subtitle2, color: Colors.light.black, textAlign: 'center' },
-  deleteDesc: { ...Typography.body2, color: Colors.light.primary, marginTop: Spacing.v.medium, textAlign: 'center' },
+  deleteDesc: { ...Typography.body2, color: Colors.light.dark, marginTop: Spacing.v.medium, textAlign: 'center' },
   deleteButtons: { flexDirection: 'row', justifyContent: 'center', gap: Spacing.h.medium, marginTop: Spacing.v.medium },
   btnConfirm: { width: 80, height: Size.buttonSm, borderRadius: Spacing.r.small, backgroundColor: Colors.light.primary, justifyContent: 'center', alignItems: 'center' },
   btnConfirmText: { ...Typography.button2, color: Colors.light.white },

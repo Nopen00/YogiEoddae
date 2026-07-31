@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.v.medium,
   },
   confirmTitle: { ...Typography.subtitle2, color: Colors.light.black, textAlign: 'center' },
-  confirmDesc: { ...Typography.body2, color: Colors.light.primary, marginTop: Spacing.v.medium, textAlign: 'center' },
+  confirmDesc: { ...Typography.body2, color: Colors.light.dark, marginTop: Spacing.v.medium, textAlign: 'center' },
   successPopupBox: {
     width: width - 64,
     backgroundColor: Colors.light.white,

@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
   },
   optionTextSelected: {
     ...Typography.title2,
-    color: Colors.light.primary,
+    color: Colors.light.dark,
     flex: 1,
     flexShrink: 1,
     marginRight: Spacing.h.small,

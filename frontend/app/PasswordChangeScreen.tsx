@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
   },
   codeBoxError: { borderColor: Colors.light.error },
   inputSection: { flex: 1 },
-  inputLabel: { ...Typography.body1, color: Colors.light.grayLight, marginBottom: Spacing.v.small },
+  inputLabel: { ...Typography.body1, color: Colors.light.grayDark, marginBottom: Spacing.v.small },
   inputLabelError: { color: Colors.light.error },
   codeInput: { padding: 0, ...Typography.body3 },
   errorRow: {
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   errorText: { ...Typography.body2, color: Colors.light.error, marginLeft: Spacing.h.small },
-  timer: { ...Typography.subtitle2, color: Colors.light.primary, marginTop: Spacing.v.large, width: '100%', textAlign: 'center' },
+  timer: { ...Typography.subtitle2, color: Colors.light.dark, marginTop: Spacing.v.large, width: '100%', textAlign: 'center' },
   confirmButton: {
     marginTop: Spacing.v.medium,
     minHeight: Size.buttonMd,
