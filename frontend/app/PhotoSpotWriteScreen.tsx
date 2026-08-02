@@ -14,7 +14,7 @@ import { photoApi } from '@/services/api';
 import type { Place } from '@/services/types';
 import { Calendar, ChevronRight, Edit2, Map, Plus, X } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Dimensions, Image, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Dimensions, Image, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Shadow } from 'react-native-shadow-2';
 
@@ -91,7 +91,7 @@ const PhotoSpotWriteScreen = () => {
     mainImage !== null &&
     title.trim().length > 0 &&
     tags.length > 0 &&
-    description.trim().length > 0 &&
+    description.trim().length >= 10 &&
     selectedPlace !== null;
 
   const hasUnsavedChanges = () => {
@@ -110,17 +110,37 @@ const PhotoSpotWriteScreen = () => {
     else router.back();
   };
 
+  const ensureMediaLibraryPermission = async () => {
+    const { status, canAskAgain } = await ImagePicker.getMediaLibraryPermissionsAsync();
+    if (status === 'granted') return true;
+    if (!canAskAgain) {
+      Alert.alert('사진 접근 권한이 필요합니다', '설정에서 사진 접근 권한을 허용해주세요.');
+      return false;
+    }
+    const { status: requested } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (requested !== 'granted') {
+      Alert.alert('사진 접근 권한이 필요합니다', '사진을 선택하려면 접근 권한을 허용해주세요.');
+      return false;
+    }
+    return true;
+  };
+
   const handlePickMainImage = async () => {
     if (isEditMode) {
       setIsImageBlockedVisible(true);
       return;
     }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      quality: 0.8,
-    });
-    if (!result.canceled) {
-      setMainImage(result.assets[0].uri);
+    try {
+      if (!(await ensureMediaLibraryPermission())) return;
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        quality: 0.8,
+      });
+      if (!result.canceled) {
+        setMainImage(result.assets[0].uri);
+      }
+    } catch {
+      Alert.alert('이미지를 불러오지 못했습니다', '잠시 후 다시 시도해주세요.');
     }
   };
 
@@ -131,14 +151,19 @@ const PhotoSpotWriteScreen = () => {
     }
     const remaining = MAX_EXTRA_IMAGES - extraImages.length;
     if (remaining <= 0) return;
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsMultipleSelection: true,
-      selectionLimit: remaining,
-      quality: 0.8,
-    });
-    if (!result.canceled) {
-      setExtraImages((prev) => [...prev, ...result.assets.map((a) => a.uri)].slice(0, MAX_EXTRA_IMAGES));
+    try {
+      if (!(await ensureMediaLibraryPermission())) return;
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsMultipleSelection: true,
+        selectionLimit: remaining,
+        quality: 0.8,
+      });
+      if (!result.canceled) {
+        setExtraImages((prev) => [...prev, ...result.assets.map((a) => a.uri)].slice(0, MAX_EXTRA_IMAGES));
+      }
+    } catch {
+      Alert.alert('이미지를 불러오지 못했습니다', '잠시 후 다시 시도해주세요.');
     }
   };
 

@@ -62,11 +62,16 @@ const PasswordInputBox = ({ label, placeholder, value, onChangeText, onBlur, vis
         />
       </View>
       <View style={styles.boxRightIcons}>
-        <TouchableOpacity activeOpacity={0.7} onPress={onToggleVisible}>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={onToggleVisible}
+          accessibilityRole="button"
+          accessibilityLabel={visible ? '비밀번호 숨기기' : '비밀번호 표시'}
+        >
           {visible ? (
-            <EyeOff size={IconSize.large} color={Colors.light.grayLight} />
+            <EyeOff size={IconSize.large} color={Colors.light.grayDark} />
           ) : (
-            <Eye size={IconSize.large} color={Colors.light.grayLight} />
+            <Eye size={IconSize.large} color={Colors.light.grayDark} />
           )}
         </TouchableOpacity>
         {errorMessage && (
@@ -96,12 +101,16 @@ const PasswordResetScreen = () => {
   const [userId, setUserId] = useState('');
   const [confirmPopupVisible, setConfirmPopupVisible] = useState(false);
   const [successPopupVisible, setSuccessPopupVisible] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [networkError, setNetworkError] = useState(false);
 
   useEffect(() => {
     if (paramUsername) {
       setUserId(paramUsername);
     } else {
-      userApi.getMe().then((res) => setUserId(res.data.username));
+      userApi.getMe()
+        .then((res) => setUserId(res.data.username))
+        .catch(() => router.replace('/LoginScreen'));
     }
   }, [paramUsername]);
 
@@ -109,7 +118,8 @@ const PasswordResetScreen = () => {
     newPassword.trim().length > 0 &&
     newPasswordConfirm.trim().length > 0 &&
     hasMinLength(newPassword) &&
-    hasMixedChars(newPassword);
+    hasMixedChars(newPassword) &&
+    !isSubmitting;
 
   const handleChangeNewPassword = (text: string) => {
     setNewPassword(text);
@@ -132,6 +142,7 @@ const PasswordResetScreen = () => {
   };
 
   const submitPasswordReset = async () => {
+    setIsSubmitting(true);
     try {
       await authApi.confirmPasswordReset(userId, newPassword);
       setConfirmPopupVisible(false);
@@ -141,7 +152,11 @@ const PasswordResetScreen = () => {
       const serverError = e?.response?.data?.new_password?.[0];
       if (serverError) {
         setNewPasswordError('recentlyUsed');
+      } else {
+        setNetworkError(true);
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -217,6 +232,13 @@ const PasswordResetScreen = () => {
           onToggleVisible={() => setNewConfirmVisible(!newConfirmVisible)}
           errorMessage={newPasswordConfirmError ? '입력한 비밀번호가 다릅니다.' : undefined}
         />
+
+        {networkError && (
+          <View style={styles.errorRow}>
+            <AlertCircle size={IconSize.xsmall} color={Colors.light.error} />
+            <Text style={styles.errorText}>일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.</Text>
+          </View>
+        )}
 
         <TouchableOpacity
           style={[styles.confirmButton, !isActive && styles.confirmButtonDisabled]}

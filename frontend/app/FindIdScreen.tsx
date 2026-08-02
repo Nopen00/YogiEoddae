@@ -56,6 +56,7 @@ const FindIdScreen = () => {
               value={email}
               onChangeText={handleChangeEmail}
               hasError={findError}
+              keyboardType="email-address"
             />
 
             <LabeledInputBox

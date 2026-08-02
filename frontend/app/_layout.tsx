@@ -13,20 +13,39 @@ export const unstable_settings = {
   anchor: '(tabs)',
 };
 
-const HIDDEN_TAB_ROUTES = ['/SearchScreen', '/tutorial', '/LoginScreen', '/SignInScreen', '/SignUpAgreementScreen', '/SignUpScreen', '/SignUpStep2Screen', '/EmailSetupScreen', '/FindIdScreen', '/FindIdResultScreen', '/FindPasswordScreen'];
+const HIDDEN_TAB_ROUTES = ['/SearchScreen', '/LoginScreen', '/SignInScreen', '/SignUpAgreementScreen', '/SignUpScreen', '/SignUpStep2Screen', '/EmailSetupScreen', '/FindIdScreen', '/FindIdResultScreen', '/FindPasswordScreen'];
+
+// 아래 Stack.Screen에 등록된 실제 라우트 이름 목록. 여기 없는 경로(오타 URL, 삭제된 딥링크 등)는
+// +not-found 화면으로 떨어지는데, 그런 미확정 경로에서까지 탭바가 화면 위에 겹쳐 뜨는 것을 막기 위해
+// "알려진 경로일 때만" 탭바를 보여주는 화이트리스트 방식으로 판단한다.
+const KNOWN_ROUTES = [
+  'SearchScreen', 'SearchResultScreen', 'CourseDetailScreen', 'PlaceDetailScreen', 'PhotoSpotDetailScreen',
+  'ReviewWriteScreen', 'PhotoSpotWriteScreen', 'ScheduleScreen', 'SavedListScreen', 'QuizListScreen', 'QuizDetailScreen',
+  'SettingScreen', 'MailboxScreen', 'TokenChargeScreen', 'ReviewManageScreen', 'PhotoSpotManageScreen',
+  'CourseSuggestionWriteScreen', 'UserPhotoSpotsScreen', 'LoginScreen', 'SignInScreen', 'SignUpAgreementScreen',
+  'SignUpScreen', 'SignUpStep2Screen', 'EmailSetupScreen', 'FindIdScreen', 'FindIdResultScreen', 'FindPasswordScreen',
+  'AccountScreen', 'PasswordConfirmScreen', 'PasswordChangeScreen', 'IdChangeScreen', 'PasswordEditScreen',
+  'PasswordResetScreen', 'EmailChangeScreen', 'EmailVerifyScreen', 'WithdrawalScreen', 'ScheduleDetailScreen', 'CourseScreen',
+];
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const pathname = usePathname();
-  const { fromPublic } = useGlobalSearchParams<{ fromPublic?: string }>();
+  const { fromPublic, fromSignup } = useGlobalSearchParams<{ fromPublic?: string; fromSignup?: string }>();
+  const isKnownRoute = pathname === '/' || KNOWN_ROUTES.some((name) => pathname.startsWith(`/${name}`));
   // PasswordChangeScreen/PasswordResetScreen은 MY페이지(로그인 상태)와 비밀번호 찾기(비로그인)
   // 양쪽에서 재사용되는데, 비로그인 진입(fromPublic) 시에는 다른 인증 화면들처럼 탭바를 숨겨야 함
   const isSharedPasswordScreenFromPublic =
     (pathname.startsWith('/PasswordChangeScreen') || pathname.startsWith('/PasswordResetScreen')) &&
     fromPublic === '1';
+  // EmailVerifyScreen도 마찬가지로 MY페이지(이메일 변경)와 회원가입(fromSignup, 계정/토큰이 아직 없는 상태)
+  // 양쪽에서 재사용되는데, 회원가입 흐름 중에는 탭 이동으로 가입을 이탈할 수 없도록 탭바를 숨겨야 함
+  const isSignupEmailVerify = pathname.startsWith('/EmailVerifyScreen') && fromSignup === '1';
   const showTabBar =
     pathname !== '/' &&
+    isKnownRoute &&
     !isSharedPasswordScreenFromPublic &&
+    !isSignupEmailVerify &&
     !HIDDEN_TAB_ROUTES.some((route) => pathname.startsWith(route));
 
   return (

@@ -164,6 +164,9 @@ export default function ScheduleDetailScreen() {
   const [localPlaces, setLocalPlaces] = useState<DailyPlace[]>([]);
   const [isUnsavedWarningVisible, setIsUnsavedWarningVisible] = useState(false);
   const [saveResultVisible, setSaveResultVisible] = useState(false);
+  const [saveFailVisible, setSaveFailVisible] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const isSavingRef = useRef(false);
   const [placeDeleteTarget, setPlaceDeleteTarget] = useState<number | null>(null);
   const [isAddPlaceVisible, setIsAddPlaceVisible] = useState(false);
   const [isEditNameVisible, setIsEditNameVisible] = useState(false);
@@ -276,6 +279,9 @@ export default function ScheduleDetailScreen() {
       setIsEditing(true);
       return;
     }
+    if (isSavingRef.current) return;
+    isSavingRef.current = true;
+    setIsSaving(true);
     try {
       for (const dpId of pendingRemovals) {
         await scheduleApi.removePlace(Number(id), dpId);
@@ -288,10 +294,17 @@ export default function ScheduleDetailScreen() {
       const res = await scheduleApi.getDetail(Number(id));
       setSchedule(res.data);
       setSaveResultVisible(true);
-    } catch {}
-    setPendingRemovals(new Set());
-    setLocalPlaces([]);
-    setIsEditing(false);
+      // 저장이 실제로 성공했을 때만 로컬 편집 상태를 정리한다.
+      // 실패 시 그대로 두면 사용자가 재시도하거나 뒤로가기로 취소할 수 있다.
+      setPendingRemovals(new Set());
+      setLocalPlaces([]);
+      setIsEditing(false);
+    } catch {
+      setSaveFailVisible(true);
+    } finally {
+      isSavingRef.current = false;
+      setIsSaving(false);
+    }
   };
 
   const handleRenameConfirm = async (newTitle: string) => {
@@ -564,8 +577,8 @@ export default function ScheduleDetailScreen() {
 
           <View style={styles.panelContentHeader}>
             <Text style={styles.panelContentTitle}>일정</Text>
-            <TouchableOpacity activeOpacity={0.7} onPress={handleEditSave}>
-              <Text style={styles.panelContentAction}>{isEditing ? '저장' : '편집'}</Text>
+            <TouchableOpacity activeOpacity={0.7} onPress={handleEditSave} disabled={isSaving}>
+              <Text style={styles.panelContentAction}>{isEditing ? (isSaving ? '저장 중...' : '저장') : '편집'}</Text>
             </TouchableOpacity>
           </View>
           <Divider style={{ marginHorizontal: Spacing.h.medium }} />
@@ -789,6 +802,17 @@ export default function ScheduleDetailScreen() {
         >
           <View style={styles.saveResultPopupBox}>
             <Text style={styles.saveResultText}>변경사항을 성공적으로 저장했습니다!</Text>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+      <Modal visible={saveFailVisible} transparent animationType="none">
+        <TouchableOpacity
+          style={styles.saveResultOverlay}
+          activeOpacity={1}
+          onPress={() => setSaveFailVisible(false)}
+        >
+          <View style={styles.saveResultPopupBox}>
+            <Text style={styles.saveResultText}>저장에 실패했습니다. 잠시 후 다시 시도해주세요.</Text>
           </View>
         </TouchableOpacity>
       </Modal>

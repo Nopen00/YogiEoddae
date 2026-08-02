@@ -17,8 +17,9 @@ const SignInScreen = () => {
   const [password, setPassword] = useState('');
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [loginError, setLoginError] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
-  const isActive = username.trim().length > 0 && password.trim().length > 0;
+  const isActive = username.trim().length > 0 && password.trim().length > 0 && !isLoggingIn;
 
   const handleChangeUsername = (text: string) => {
     setUsername(text);
@@ -32,6 +33,7 @@ const SignInScreen = () => {
 
   const handleLogin = async () => {
     if (!isActive) return;
+    setIsLoggingIn(true);
     try {
       const res = await authApi.login({ username, password });
       router.dismissAll();
@@ -41,6 +43,7 @@ const SignInScreen = () => {
       });
     } catch (e: any) {
       setLoginError(true);
+      setIsLoggingIn(false);
     }
   };
 

@@ -24,6 +24,9 @@ const MailboxScreen = () => {
   const [mailItems, setMailItems] = useState<MergedMailItem[]>([]);
   const isEmpty = mailItems.length === 0;
   const [tokenPopup, setTokenPopup] = useState<TokenPopupState | null>(null);
+  const [claimingKeys, setClaimingKeys] = useState<Set<string>>(new Set());
+  const [isClaimingAll, setIsClaimingAll] = useState(false);
+  const [claimError, setClaimError] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -40,25 +43,65 @@ const MailboxScreen = () => {
   );
 
   const claimItem = async (item: MergedMailItem) => {
+    const key = `${item.source}-${item.id}`;
+    if (claimingKeys.has(key)) return;
+    setClaimError(false);
+    setClaimingKeys((prev) => new Set(prev).add(key));
     try {
       const res = item.source === 'mail' ? await mailApi.claim(item.id) : await settlementApi.claim(item.id);
       setMailItems((prev) => prev.filter((i) => !(i.id === item.id && i.source === item.source)));
       setTokenPopup({ amount: item.tokenAmount, balance: res.data.token_balance });
-    } catch {}
+    } catch {
+      setClaimError(true);
+    } finally {
+      setClaimingKeys((prev) => {
+        const next = new Set(prev);
+        next.delete(key);
+        return next;
+      });
+    }
   };
 
   const claimAll = async () => {
-    const breakdown = mailItems.map((item) => ({ action: item.action, tokenAmount: item.tokenAmount }));
-    const total = mailItems.reduce((sum, item) => sum + item.tokenAmount, 0);
-    const hasMail = mailItems.some((i) => i.source === 'mail');
-    const hasSettlement = mailItems.some((i) => i.source === 'settlement');
-    try {
-      let balance = 0;
-      if (hasMail) balance = (await mailApi.claimAll()).data.token_balance;
-      if (hasSettlement) balance = (await settlementApi.claimAll()).data.token_balance;
-      setMailItems([]);
+    if (isClaimingAll || isEmpty) return;
+    setClaimError(false);
+    setIsClaimingAll(true);
+    const claimedItems = mailItems.filter((i) => i.source === 'mail' || i.source === 'settlement');
+    const hasMail = claimedItems.some((i) => i.source === 'mail');
+    const hasSettlement = claimedItems.some((i) => i.source === 'settlement');
+
+    let balance = 0;
+    let claimedMail = false;
+    let claimedSettlement = false;
+    let hadError = false;
+
+    if (hasMail) {
+      try {
+        balance = (await mailApi.claimAll()).data.token_balance;
+        claimedMail = true;
+      } catch {
+        hadError = true;
+      }
+    }
+    if (hasSettlement) {
+      try {
+        balance = (await settlementApi.claimAll()).data.token_balance;
+        claimedSettlement = true;
+      } catch {
+        hadError = true;
+      }
+    }
+
+    if (claimedMail || claimedSettlement) {
+      const breakdown = claimedItems
+        .filter((item) => (item.source === 'mail' && claimedMail) || (item.source === 'settlement' && claimedSettlement))
+        .map((item) => ({ action: item.action, tokenAmount: item.tokenAmount }));
+      const total = breakdown.reduce((sum, item) => sum + item.tokenAmount, 0);
+      setMailItems((prev) => prev.filter((i) => !((i.source === 'mail' && claimedMail) || (i.source === 'settlement' && claimedSettlement))));
       setTokenPopup({ amount: total, balance, breakdown });
-    } catch {}
+    }
+    if (hadError) setClaimError(true);
+    setIsClaimingAll(false);
   };
 
   return (
@@ -67,14 +110,18 @@ const MailboxScreen = () => {
 
       <View style={styles.actionRow}>
         <TouchableOpacity
-          style={[styles.claimAllButton, isEmpty && styles.claimAllButtonDisabled]}
-          activeOpacity={isEmpty ? 1 : 0.8}
-          disabled={isEmpty}
+          style={[styles.claimAllButton, (isEmpty || isClaimingAll) && styles.claimAllButtonDisabled]}
+          activeOpacity={isEmpty || isClaimingAll ? 1 : 0.8}
+          disabled={isEmpty || isClaimingAll}
           onPress={claimAll}
         >
           <Text style={styles.claimAllButtonText}>일괄 받기</Text>
         </TouchableOpacity>
       </View>
+
+      {claimError && (
+        <Text style={styles.claimErrorText}>일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.</Text>
+      )}
 
       {isEmpty ? (
         <View style={styles.emptyContainer}>
@@ -83,15 +130,24 @@ const MailboxScreen = () => {
         </View>
       ) : (
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.listContent}>
-          {mailItems.map((item) => (
-            <View key={`${item.source}-${item.id}`} style={styles.mailCard}>
-              <Text style={styles.mailCardTitle}>{item.action} 보상 X {item.tokenAmount} 토큰</Text>
-              <Text style={styles.mailCardBody}>{item.action} 보상으로 {item.tokenAmount} 토큰이 지급되었습니다.</Text>
-              <TouchableOpacity style={styles.receiveButton} activeOpacity={0.8} onPress={() => claimItem(item)}>
-                <Text style={styles.receiveButtonText}>받기</Text>
-              </TouchableOpacity>
-            </View>
-          ))}
+          {mailItems.map((item) => {
+            const key = `${item.source}-${item.id}`;
+            const isClaiming = claimingKeys.has(key) || isClaimingAll;
+            return (
+              <View key={key} style={styles.mailCard}>
+                <Text style={styles.mailCardTitle}>{item.action} 보상 X {item.tokenAmount} 토큰</Text>
+                <Text style={styles.mailCardBody}>{item.action} 보상으로 {item.tokenAmount} 토큰이 지급되었습니다.</Text>
+                <TouchableOpacity
+                  style={[styles.receiveButton, isClaiming && styles.claimAllButtonDisabled]}
+                  activeOpacity={isClaiming ? 1 : 0.8}
+                  disabled={isClaiming}
+                  onPress={() => claimItem(item)}
+                >
+                  <Text style={styles.receiveButtonText}>받기</Text>
+                </TouchableOpacity>
+              </View>
+            );
+          })}
         </ScrollView>
       )}
 
@@ -134,6 +190,12 @@ const styles = StyleSheet.create({
   },
   claimAllButtonDisabled: { backgroundColor: Colors.light.grayLight },
   claimAllButtonText: { ...Typography.button2, color: Colors.light.white },
+  claimErrorText: {
+    ...Typography.body2,
+    color: Colors.light.error,
+    paddingHorizontal: Spacing.h.medium,
+    marginTop: Spacing.v.small,
+  },
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: Spacing.v.medium },
   emptyTitle: { ...Typography.subtitle2, color: Colors.light.black },
   emptySubtitle: { ...Typography.body2, color: Colors.light.grayLight },

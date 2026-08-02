@@ -62,11 +62,16 @@ const PasswordInputBox = ({ label, placeholder, value, onChangeText, onBlur, vis
         />
       </View>
       <View style={styles.boxRightIcons}>
-        <TouchableOpacity activeOpacity={0.7} onPress={onToggleVisible}>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={onToggleVisible}
+          accessibilityRole="button"
+          accessibilityLabel={visible ? '비밀번호 숨기기' : '비밀번호 표시'}
+        >
           {visible ? (
-            <EyeOff size={IconSize.large} color={Colors.light.grayLight} />
+            <EyeOff size={IconSize.large} color={Colors.light.grayDark} />
           ) : (
-            <Eye size={IconSize.large} color={Colors.light.grayLight} />
+            <Eye size={IconSize.large} color={Colors.light.grayDark} />
           )}
         </TouchableOpacity>
         {errorMessage && (
@@ -97,9 +102,13 @@ const PasswordEditScreen = () => {
   const [userId, setUserId] = useState('');
   const [confirmPopupVisible, setConfirmPopupVisible] = useState(false);
   const [successPopupVisible, setSuccessPopupVisible] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [networkError, setNetworkError] = useState(false);
 
   useEffect(() => {
-    userApi.getMe().then((res) => setUserId(res.data.username));
+    userApi.getMe()
+      .then((res) => setUserId(res.data.username))
+      .catch(() => router.replace('/LoginScreen'));
   }, []);
 
   const isActive =
@@ -107,7 +116,8 @@ const PasswordEditScreen = () => {
     newPassword.trim().length > 0 &&
     newPasswordConfirm.trim().length > 0 &&
     hasMinLength(newPassword) &&
-    hasMixedChars(newPassword);
+    hasMixedChars(newPassword) &&
+    !isSubmitting;
 
   const handleChangeCurrentPassword = (text: string) => {
     setCurrentPassword(text);
@@ -126,8 +136,12 @@ const PasswordEditScreen = () => {
 
   const handleBlurCurrentPassword = async () => {
     if (!currentPassword.trim()) return;
-    const res = await userApi.verifyPassword(currentPassword);
-    setCurrentPasswordError(!res.data.success);
+    try {
+      const res = await userApi.verifyPassword(currentPassword);
+      setCurrentPasswordError(!res.data.success);
+    } catch {
+      // 네트워크 오류일 수 있으므로 여기서는 단정하지 않고 제출 시점에 재검증한다.
+    }
   };
 
   const handleBlurNewPassword = () => {
@@ -142,18 +156,25 @@ const PasswordEditScreen = () => {
 
   const handleConfirm = async () => {
     if (!isActive) return;
-    const res = await userApi.verifyPassword(currentPassword);
-    const isCurrentPasswordError = !res.data.success;
-    setCurrentPasswordError(isCurrentPasswordError);
+    setIsSubmitting(true);
+    try {
+      const res = await userApi.verifyPassword(currentPassword);
+      const isCurrentPasswordError = !res.data.success;
+      setCurrentPasswordError(isCurrentPasswordError);
 
-    const nextNewPasswordError = getNewPasswordError(newPassword, userId);
-    setNewPasswordError(nextNewPasswordError);
+      const nextNewPasswordError = getNewPasswordError(newPassword, userId);
+      setNewPasswordError(nextNewPasswordError);
 
-    const isNewPasswordConfirmError = newPasswordConfirm !== newPassword;
-    setNewPasswordConfirmError(isNewPasswordConfirmError);
+      const isNewPasswordConfirmError = newPasswordConfirm !== newPassword;
+      setNewPasswordConfirmError(isNewPasswordConfirmError);
 
-    if (isCurrentPasswordError || nextNewPasswordError || isNewPasswordConfirmError) return;
-    setConfirmPopupVisible(true);
+      if (isCurrentPasswordError || nextNewPasswordError || isNewPasswordConfirmError) return;
+      setConfirmPopupVisible(true);
+    } catch {
+      setNetworkError(true);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -219,6 +240,13 @@ const PasswordEditScreen = () => {
           errorMessage={newPasswordConfirmError ? '입력한 비밀번호가 다릅니다.' : undefined}
         />
 
+        {networkError && (
+          <View style={styles.errorRow}>
+            <AlertCircle size={IconSize.xsmall} color={Colors.light.error} />
+            <Text style={styles.errorText}>일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.</Text>
+          </View>
+        )}
+
         <TouchableOpacity
           style={[styles.confirmButton, !isActive && styles.confirmButtonDisabled]}
           activeOpacity={0.8}
@@ -258,6 +286,8 @@ const PasswordEditScreen = () => {
                       setNewPasswordError('recentlyUsed');
                     } else if (e?.response?.data?.current_password) {
                       setCurrentPasswordError(true);
+                    } else {
+                      setNetworkError(true);
                     }
                   }
                 }}

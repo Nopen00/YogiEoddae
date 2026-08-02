@@ -87,19 +87,26 @@ function TabItem({ label, Icon, isActive, onPress }: TabItemProps) {
     color: interpolateColor(
       progress.value,
       [0, 1],
-      [Colors.light.grayLight, Colors.light.primary],
+      [Colors.light.grayDark, Colors.light.primary],
     ),
   }));
 
   return (
-    <TouchableOpacity style={styles.tab} onPress={onPress} activeOpacity={0.8}>
+    <TouchableOpacity
+      style={styles.tab}
+      onPress={onPress}
+      activeOpacity={0.8}
+      accessibilityRole="tab"
+      accessibilityLabel={label}
+      accessibilityState={{ selected: isActive }}
+    >
       <Animated.View style={[styles.indicator, indicatorStyle]} />
       <View style={styles.tabContent}>
         <View style={styles.iconWrapper}>
           <Animated.View style={[styles.iconOverlay, inactiveIconStyle]}>
             <Icon
               size={IconSize.large}
-              color={Colors.light.grayLight}
+              color={Colors.light.grayDark}
               strokeWidth={IconStroke.regular}
             />
           </Animated.View>

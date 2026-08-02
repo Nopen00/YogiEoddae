@@ -26,15 +26,19 @@ const WithdrawalScreen = () => {
   const [agreedTokenLoss, setAgreedTokenLoss] = useState(false);
   const [passwordError, setPasswordError] = useState(false);
   const [withdrawConfirmVisible, setWithdrawConfirmVisible] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [networkErrorVisible, setNetworkErrorVisible] = useState(false);
 
   const isWithdrawActive =
-    password.trim().length > 0 && agreed && agreedDeletion && agreedTokenLoss;
+    password.trim().length > 0 && agreed && agreedDeletion && agreedTokenLoss && !isSubmitting;
 
   useEffect(() => {
-    userApi.getMe().then((res) => {
-      setUserId(res.data.username);
-      setTokenBalance(res.data.token_balance);
-    });
+    userApi.getMe()
+      .then((res) => {
+        setUserId(res.data.username);
+        setTokenBalance(res.data.token_balance);
+      })
+      .catch(() => router.replace('/LoginScreen'));
   }, []);
 
   const handleChangePassword = (text: string) => {
@@ -44,18 +48,30 @@ const WithdrawalScreen = () => {
 
   const handleBlurPassword = async () => {
     if (!password.trim()) return;
-    const res = await userApi.verifyPassword(password);
-    setPasswordError(!res.data.success);
+    try {
+      const res = await userApi.verifyPassword(password);
+      setPasswordError(!res.data.success);
+    } catch {
+      // 네트워크 오류 등으로 검증에 실패한 경우, 비밀번호가 틀렸다고 단정짓지 않고
+      // 제출 시점(handleWithdraw)에서 다시 시도하도록 조용히 넘어간다.
+    }
   };
 
   const handleWithdraw = async () => {
     if (!isWithdrawActive) return;
-    const res = await userApi.verifyPassword(password);
-    if (!res.data.success) {
-      setPasswordError(true);
-      return;
+    setIsSubmitting(true);
+    try {
+      const res = await userApi.verifyPassword(password);
+      if (!res.data.success) {
+        setPasswordError(true);
+        return;
+      }
+      setWithdrawConfirmVisible(true);
+    } catch {
+      setNetworkErrorVisible(true);
+    } finally {
+      setIsSubmitting(false);
     }
-    setWithdrawConfirmVisible(true);
   };
 
   const handleConfirmWithdraw = async () => {
@@ -66,7 +82,11 @@ const WithdrawalScreen = () => {
       router.dismissAll();
       router.replace('/');
     } catch (e: any) {
-      setPasswordError(true);
+      if (e?.response?.status === 400 || e?.response?.status === 401) {
+        setPasswordError(true);
+      } else {
+        setNetworkErrorVisible(true);
+      }
     }
   };
 
@@ -138,11 +158,16 @@ const WithdrawalScreen = () => {
               />
             </View>
             <View style={styles.boxRightIcons}>
-              <TouchableOpacity activeOpacity={0.7} onPress={() => setPasswordVisible(!passwordVisible)}>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => setPasswordVisible(!passwordVisible)}
+                accessibilityRole="button"
+                accessibilityLabel={passwordVisible ? '비밀번호 숨기기' : '비밀번호 표시'}
+              >
                 {passwordVisible ? (
-                  <EyeOff size={IconSize.large} color={Colors.light.grayLight} />
+                  <EyeOff size={IconSize.large} color={Colors.light.grayDark} />
                 ) : (
-                  <Eye size={IconSize.large} color={Colors.light.grayLight} />
+                  <Eye size={IconSize.large} color={Colors.light.grayDark} />
                 )}
               </TouchableOpacity>
               {passwordError && (
@@ -185,7 +210,9 @@ const WithdrawalScreen = () => {
             disabled={!isWithdrawActive}
             onPress={handleWithdraw}
           >
-            <Text style={[styles.withdrawButtonText, !isWithdrawActive && styles.withdrawButtonTextDisabled]}>탈퇴하기</Text>
+            <Text style={[styles.withdrawButtonText, !isWithdrawActive && styles.withdrawButtonTextDisabled]}>
+              {isSubmitting ? '확인 중...' : '탈퇴하기'}
+            </Text>
           </TouchableOpacity>
         </View>
         </ScrollView>
@@ -202,6 +229,20 @@ const WithdrawalScreen = () => {
               </TouchableOpacity>
               <TouchableOpacity style={styles.btnComplete} activeOpacity={0.8} onPress={handleConfirmWithdraw}>
                 <Text style={styles.btnCompleteText}>예</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={networkErrorVisible} transparent animationType="fade">
+        <View style={styles.overlay}>
+          <View style={styles.popup}>
+            <Text style={styles.popupTitle}>일시적인 오류가 발생했습니다.</Text>
+            <Text style={styles.popupDesc}>네트워크 연결을 확인한 후{'\n'}다시 시도해주세요.</Text>
+            <View style={styles.popupButtons}>
+              <TouchableOpacity style={styles.btnComplete} activeOpacity={0.8} onPress={() => setNetworkErrorVisible(false)}>
+                <Text style={styles.btnCompleteText}>확인</Text>
               </TouchableOpacity>
             </View>
           </View>

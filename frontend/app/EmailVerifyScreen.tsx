@@ -111,6 +111,9 @@ const EmailVerifyScreen = () => {
               value={code}
               onChangeText={handleChangeCode}
               onBlur={handleBlurCode}
+              keyboardType="number-pad"
+              maxLength={6}
+              accessibilityLabel="인증 코드"
             />
           </View>
           {hasError && (

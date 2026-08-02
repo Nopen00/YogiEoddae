@@ -68,6 +68,9 @@ const IdChangeScreen = () => {
               value={userId}
               onChangeText={handleChangeUserId}
               onBlur={handleBlurUserId}
+              autoCapitalize="none"
+              autoCorrect={false}
+              accessibilityLabel="아이디"
             />
           </View>
           {hasError && (
@@ -117,7 +120,14 @@ const IdChangeScreen = () => {
                     setSuccessPopupVisible(true);
                   } catch (e: any) {
                     setConfirmPopupVisible(false);
-                    setErrorText(e?.response?.data?.username?.[0] ?? '이미 사용 중인 아이디입니다.');
+                    const duplicateError = e?.response?.data?.username?.[0];
+                    if (duplicateError) {
+                      setErrorText(duplicateError);
+                    } else if (e?.response) {
+                      setErrorText('이미 사용 중인 아이디입니다.');
+                    } else {
+                      setErrorText('일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+                    }
                     setHasError(true);
                   }
                 }}

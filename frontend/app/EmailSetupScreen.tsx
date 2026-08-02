@@ -12,7 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // 형식만 클라이언트에서 사전 체크. 중복 여부는 서버(requestEmailLink) 응답으로 판단.
-type EmailError = 'invalidFormat' | 'duplicate' | null;
+type EmailError = 'invalidFormat' | 'duplicate' | 'network' | null;
 
 const getEmailFormatError = (email: string): EmailError => {
   if (!EMAIL_REGEX.test(email)) return 'invalidFormat';
@@ -22,6 +22,7 @@ const getEmailFormatError = (email: string): EmailError => {
 const EMAIL_ERROR_MESSAGE: Record<Exclude<EmailError, null>, string> = {
   invalidFormat: '이메일의 형식이 아닙니다.',
   duplicate: '이미 사용중인 이메일 입니다.',
+  network: '일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
 };
 
 const EmailSetupScreen = () => {
@@ -30,6 +31,7 @@ const EmailSetupScreen = () => {
   const [newEmail, setNewEmail] = useState('');
   const [emailError, setEmailError] = useState<EmailError>(null);
   const [setupLaterPopupVisible, setSetupLaterPopupVisible] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChangeNewEmail = (text: string) => {
     setNewEmail(text);
@@ -42,11 +44,12 @@ const EmailSetupScreen = () => {
   };
 
   const handleConfirm = async () => {
-    if (!newEmail.trim()) return;
+    if (!newEmail.trim() || isSubmitting) return;
     const nextEmailError = getEmailFormatError(newEmail.trim());
     setEmailError(nextEmailError);
     if (nextEmailError) return;
 
+    setIsSubmitting(true);
     try {
       await userApi.requestEmailLink(newEmail.trim());
       router.push({
@@ -54,9 +57,9 @@ const EmailSetupScreen = () => {
         params: { email: newEmail, mode: 'setup', fromSignup: '1', nickname: nickname ?? '' },
       });
     } catch (e: any) {
-      if (e?.response?.data?.email) {
-        setEmailError('duplicate');
-      }
+      setEmailError(e?.response?.data?.email ? 'duplicate' : 'network');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -75,6 +78,7 @@ const EmailSetupScreen = () => {
               onChangeText={handleChangeNewEmail}
               onBlur={handleBlurNewEmail}
               errorMessage={emailError ? EMAIL_ERROR_MESSAGE[emailError] : undefined}
+              keyboardType="email-address"
             />
 
             <TouchableOpacity

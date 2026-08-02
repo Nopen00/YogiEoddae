@@ -64,6 +64,7 @@ const CourseDetailScreen = () => {
   const [isScheduleVisible, setIsScheduleVisible] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [savedPhotoSpots, setSavedPhotoSpots] = useState<Record<number, boolean>>({});
+  const [loadError, setLoadError] = useState(false);
   const [media, setMedia] = useState<Media | null>(null);
   const [mediaPlaces, setMediaPlaces] = useState<MediaPlace[]>([]);
   const [photoSpots, setPhotoSpots] = useState<PhotoSpotItem[]>([]);
@@ -96,11 +97,15 @@ const CourseDetailScreen = () => {
           return getReviewLikeCount(b, likedReviews[b.id] ?? false) - getReviewLikeCount(a, likedReviews[a.id] ?? false);
       }
     });
-  useEffect(() => {
-    if (!id) return;
+  const fetchDetail = useCallback(() => {
+    if (!id || Number.isNaN(Number(id))) {
+      setLoadError(true);
+      return;
+    }
+    setLoadError(false);
     mediaApi.getDetail(Number(id))
       .then(res => { setMedia(res.data); setIsSaved(res.data.is_bookmarked); })
-      .catch(() => {});
+      .catch(() => setLoadError(true));
     mediaApi.getPlaces(Number(id))
       .then(res => setMediaPlaces(res.data))
       .catch(() => {});
@@ -108,6 +113,10 @@ const CourseDetailScreen = () => {
       .then(res => setSchedules(res.data))
       .catch(() => {});
   }, [id]);
+
+  useEffect(() => {
+    fetchDetail();
+  }, [fetchDetail]);
 
   useFocusEffect(
     useCallback(() => {
@@ -227,6 +236,15 @@ const CourseDetailScreen = () => {
         </TouchableWithoutFeedback>
       )}
 
+      {loadError && !media ? (
+        <View style={styles.loadErrorContainer}>
+          <Text style={styles.loadErrorText}>정보를 불러오지 못했습니다.</Text>
+          <Text style={styles.loadErrorSubText}>삭제되었거나 일시적인 오류일 수 있습니다.</Text>
+          <TouchableOpacity style={styles.loadErrorRetryButton} activeOpacity={0.8} onPress={fetchDetail}>
+            <Text style={styles.loadErrorRetryText}>다시 시도</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: Spacing.v.screenBottom }}
@@ -535,6 +553,7 @@ const CourseDetailScreen = () => {
             )}
           </View>
         </ScrollView>
+      )}
 
         {isDetailTabPinned && (
           <View style={[styles.detailTabPinnedOverlay, { top: headerHeight }]}>
@@ -645,6 +664,17 @@ const CourseDetailScreen = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.light.background },
+  loadErrorContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.h.medium, gap: Spacing.v.small },
+  loadErrorText: { ...Typography.subtitle2, color: Colors.light.black },
+  loadErrorSubText: { ...Typography.body2, color: Colors.light.grayDark },
+  loadErrorRetryButton: {
+    marginTop: Spacing.v.medium,
+    paddingHorizontal: Spacing.h.large,
+    paddingVertical: Spacing.v.small,
+    borderRadius: Spacing.r.small,
+    backgroundColor: Colors.light.primary,
+  },
+  loadErrorRetryText: { ...Typography.button2, color: Colors.light.white },
   moreButtonWrapper: { position: 'relative', alignItems: 'flex-end' },
   menuBackdrop: { ...StyleSheet.absoluteFillObject, zIndex: 5 },
   imageContainer: {

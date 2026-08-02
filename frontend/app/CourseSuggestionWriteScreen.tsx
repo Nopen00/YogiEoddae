@@ -42,6 +42,8 @@ const CourseSuggestionWriteScreen = () => {
   const [isTokenConfirmVisible, setIsTokenConfirmVisible] = useState(false);
   const [isTokenInsufficientVisible, setIsTokenInsufficientVisible] = useState(false);
   const [tokenBalance, setTokenBalance] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmittingRef = useRef(false);
   const initialSnapshotRef = useRef({ title: '', link: '', mediaType: null as MediaTypeOption | null, description: '' });
 
   useFocusEffect(
@@ -54,7 +56,7 @@ const CourseSuggestionWriteScreen = () => {
     title.trim().length > 0 &&
     link.trim().length > 0 &&
     mediaType !== null &&
-    description.trim().length > 0;
+    description.trim().length >= 10;
 
   const hasUnsavedChanges = () => {
     const snap = initialSnapshotRef.current;
@@ -80,6 +82,9 @@ const CourseSuggestionWriteScreen = () => {
   };
 
   const handleConfirmTokenUse = async () => {
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+    setIsSubmitting(true);
     setIsTokenConfirmVisible(false);
     try {
       const res = await courseSuggestionApi.create({ title, link, media_type: mediaType ?? '', description });
@@ -87,6 +92,9 @@ const CourseSuggestionWriteScreen = () => {
       setIsSubmitSuccessVisible(true);
     } catch {
       setIsSubmitFailVisible(true);
+    } finally {
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);
     }
   };
 
@@ -210,6 +218,7 @@ const CourseSuggestionWriteScreen = () => {
               <TouchableOpacity
                 style={styles.btnDiscard}
                 activeOpacity={0.8}
+                disabled={isSubmitting}
                 onPress={handleConfirmTokenUse}
               >
                 <Text style={styles.btnDiscardText}>확인</Text>
