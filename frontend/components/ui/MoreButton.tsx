@@ -13,10 +13,12 @@ interface MoreButtonProps {
 // 🚀 Named Export: export const 형식을 사용합니다.
 export const MoreButton = ({ onPress, color = Colors.light.black }: MoreButtonProps) => {
   return (
-    <TouchableOpacity 
-      onPress={onPress} 
-      style={styles.button} 
+    <TouchableOpacity
+      onPress={onPress}
+      style={styles.button}
       activeOpacity={0.7} // 클릭 피드백
+      accessibilityRole="button"
+      accessibilityLabel="더보기"
     >
       <MoreVertical size={IconSize.large} color={color} />
     </TouchableOpacity>

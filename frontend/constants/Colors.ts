@@ -11,7 +11,7 @@ export const Colors = {
     // 기존 푸른색 포인트 컬러
     primary: '#1E9BAD',         // 메인 푸른색
     secondary: '#A8EDEE',       // 연한 푸른색
-    dark: '#0F7A8A',            // 깊은 푸른색
+    dark: '#0E6B7A',            // 깊은 푸른색
     tint: tintColorLight,
     
     // 추가된 무채색 계열
@@ -26,8 +26,8 @@ export const Colors = {
     tabIconSelected: tintColorLight,
 
     heart: '#F24C54',
-    error: '#F24C54',
-    skyBlue: '#33A7EA',
+    error: '#DC2626',
+    skyBlue: '#2563EB',
     star: '#F2C94C',
     overlay: 'rgba(0, 0, 0, 0.25)',
   },

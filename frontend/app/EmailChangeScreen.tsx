@@ -36,9 +36,10 @@ interface InputBoxProps {
   visible?: boolean;
   onToggleVisible?: () => void;
   errorMessage?: string;
+  keyboardType?: 'default' | 'email-address';
 }
 
-const InputBox = ({ label, placeholder, value, onChangeText, onBlur, secure, visible, onToggleVisible, errorMessage }: InputBoxProps) => (
+const InputBox = ({ label, placeholder, value, onChangeText, onBlur, secure, visible, onToggleVisible, errorMessage, keyboardType }: InputBoxProps) => (
   <>
     <View style={[styles.inputBox, errorMessage && styles.inputBoxError]}>
       <View style={styles.inputSection}>
@@ -51,15 +52,24 @@ const InputBox = ({ label, placeholder, value, onChangeText, onBlur, secure, vis
           onChangeText={onChangeText}
           onBlur={onBlur}
           secureTextEntry={secure ? !visible : false}
+          autoCapitalize="none"
+          autoCorrect={false}
+          keyboardType={keyboardType}
+          accessibilityLabel={label}
         />
       </View>
       <View style={styles.boxRightIcons}>
         {onToggleVisible && (
-          <TouchableOpacity activeOpacity={0.7} onPress={onToggleVisible}>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={onToggleVisible}
+            accessibilityRole="button"
+            accessibilityLabel={visible ? '비밀번호 숨기기' : '비밀번호 표시'}
+          >
             {visible ? (
-              <EyeOff size={IconSize.large} color={Colors.light.grayLight} />
+              <EyeOff size={IconSize.large} color={Colors.light.grayDark} />
             ) : (
-              <Eye size={IconSize.large} color={Colors.light.grayLight} />
+              <Eye size={IconSize.large} color={Colors.light.grayDark} />
             )}
           </TouchableOpacity>
         )}
@@ -86,8 +96,10 @@ const EmailChangeScreen = () => {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [passwordError, setPasswordError] = useState(false);
   const [emailError, setEmailError] = useState<EmailError>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [networkError, setNetworkError] = useState(false);
 
-  const isActive = newEmail.trim().length > 0 && password.trim().length > 0;
+  const isActive = newEmail.trim().length > 0 && password.trim().length > 0 && !isSubmitting;
 
   const handleChangeNewEmail = (text: string) => {
     setNewEmail(text);
@@ -106,28 +118,37 @@ const EmailChangeScreen = () => {
 
   const handleBlurPassword = async () => {
     if (!password.trim()) return;
-    const res = await userApi.verifyPassword(password);
-    setPasswordError(!res.data.success);
+    try {
+      const res = await userApi.verifyPassword(password);
+      setPasswordError(!res.data.success);
+    } catch {
+      // 네트워크 오류일 수 있으므로 여기서는 비밀번호 오류로 단정하지 않고 제출 시점에 재시도한다.
+    }
   };
 
   const handleConfirm = async () => {
     if (!isActive) return;
-    const res = await userApi.verifyPassword(password);
-    const isPasswordError = !res.data.success;
-    setPasswordError(isPasswordError);
-
-    const nextEmailError = getEmailFormatError(newEmail.trim());
-    setEmailError(nextEmailError);
-
-    if (isPasswordError || nextEmailError) return;
-
+    setIsSubmitting(true);
     try {
+      const res = await userApi.verifyPassword(password);
+      const isPasswordError = !res.data.success;
+      setPasswordError(isPasswordError);
+
+      const nextEmailError = getEmailFormatError(newEmail.trim());
+      setEmailError(nextEmailError);
+
+      if (isPasswordError || nextEmailError) return;
+
       await userApi.requestEmailLink(newEmail.trim());
       router.push({ pathname: '/EmailVerifyScreen', params: { email: newEmail, mode } });
     } catch (e: any) {
       if (e?.response?.data?.email) {
         setEmailError('duplicate');
+      } else {
+        setNetworkError(true);
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -153,6 +174,7 @@ const EmailChangeScreen = () => {
           onChangeText={handleChangeNewEmail}
           onBlur={handleBlurNewEmail}
           errorMessage={emailError ? EMAIL_ERROR_MESSAGE[emailError] : undefined}
+          keyboardType="email-address"
         />
 
         <InputBox
@@ -166,6 +188,13 @@ const EmailChangeScreen = () => {
           onToggleVisible={() => setPasswordVisible(!passwordVisible)}
           errorMessage={passwordError ? '현재 비밀번호와 일치하지 않습니다.' : undefined}
         />
+
+        {networkError && (
+          <View style={styles.errorRow}>
+            <AlertCircle size={IconSize.xsmall} color={Colors.light.error} />
+            <Text style={styles.errorText}>일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.</Text>
+          </View>
+        )}
 
         <TouchableOpacity
           style={[styles.confirmButton, !isActive && styles.confirmButtonDisabled]}
@@ -203,7 +232,7 @@ const styles = StyleSheet.create({
   },
   inputBoxError: { borderColor: Colors.light.error },
   inputSection: { flex: 1 },
-  inputLabel: { ...Typography.body1, color: Colors.light.grayLight, marginBottom: Spacing.v.small },
+  inputLabel: { ...Typography.body1, color: Colors.light.grayDark, marginBottom: Spacing.v.small },
   inputLabelError: { color: Colors.light.error },
   input: { padding: 0, ...Typography.body3 },
   boxRightIcons: { flexDirection: 'row', alignItems: 'center' },

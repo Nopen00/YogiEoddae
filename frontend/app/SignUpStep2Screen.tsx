@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   checklistText: { ...Typography.body2, color: Colors.light.grayDark, marginLeft: Spacing.h.small },
-  checklistTextMet: { color: Colors.light.primary },
+  checklistTextMet: { color: Colors.light.dark },
   nextButton: {
     marginTop: Spacing.v.large,
     minHeight: Size.buttonMd,
@@ -293,8 +293,8 @@ const styles = StyleSheet.create({
     ...Shadows.card,
   },
   confirmTitle: { ...Typography.subtitle2, color: Colors.light.black, textAlign: 'center' },
-  confirmDesc: { ...Typography.body2, color: Colors.light.primary, marginTop: Spacing.v.medium, textAlign: 'center' },
-  confirmDescSpaced: { ...Typography.body2, color: Colors.light.primary, marginTop: Spacing.v.small, textAlign: 'center' },
+  confirmDesc: { ...Typography.body2, color: Colors.light.dark, marginTop: Spacing.v.medium, textAlign: 'center' },
+  confirmDescSpaced: { ...Typography.body2, color: Colors.light.dark, marginTop: Spacing.v.small, textAlign: 'center' },
   confirmButtons: { flexDirection: 'row', justifyContent: 'center', gap: Spacing.h.medium, marginTop: Spacing.v.medium },
   btnConfirm: { width: 80, height: Size.buttonSm, borderRadius: Spacing.r.small, backgroundColor: Colors.light.primary, justifyContent: 'center', alignItems: 'center' },
   btnConfirmText: { ...Typography.button2, color: Colors.light.white },
@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.h.medium,
   },
   resultTitle: { ...Typography.subtitle2, color: Colors.light.black, textAlign: 'center' },
-  resultSub1: { ...Typography.body2, color: Colors.light.primary, marginTop: Spacing.v.medium, textAlign: 'center' },
+  resultSub1: { ...Typography.body2, color: Colors.light.dark, marginTop: Spacing.v.medium, textAlign: 'center' },
 });
 
 export default SignUpStep2Screen;

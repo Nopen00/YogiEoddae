@@ -82,6 +82,7 @@ const PlaceDetailScreen = () => {
   const [isMapTouching, setIsMapTouching] = useState(false);
   const toggleClickTimestamps = useRef<number[]>([]);
   const [isToggleLocked, setIsToggleLocked] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const [place, setPlace] = useState<Place | null>(null);
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [nearbyPlaces, setNearbyPlaces] = useState<Place[]>([]);
@@ -115,11 +116,15 @@ const PlaceDetailScreen = () => {
     });
   const popupReview = imagePopup ? reviews.find((r) => r.id === imagePopup.reviewId) : null;
 
-  useEffect(() => {
-    if (!id) return;
+  const fetchDetail = useCallback(() => {
+    if (!id || Number.isNaN(Number(id))) {
+      setLoadError(true);
+      return;
+    }
+    setLoadError(false);
     placeApi.getDetail(Number(id))
       .then(res => { setPlace(res.data); setIsSaved(res.data.is_bookmarked); })
-      .catch(() => {});
+      .catch(() => setLoadError(true));
     placeApi.getPhotos(Number(id))
       .then(res => setPhotos(res.data))
       .catch(() => {});
@@ -136,6 +141,10 @@ const PlaceDetailScreen = () => {
       .then(res => setSchedules(res.data))
       .catch(() => {});
   }, [id]);
+
+  useEffect(() => {
+    fetchDetail();
+  }, [fetchDetail]);
 
   useFocusEffect(
     useCallback(() => {
@@ -247,6 +256,15 @@ const PlaceDetailScreen = () => {
           </TouchableWithoutFeedback>
         )}
 
+        {loadError && !place ? (
+          <View style={styles.loadErrorContainer}>
+            <Text style={styles.loadErrorText}>정보를 불러오지 못했습니다.</Text>
+            <Text style={styles.loadErrorSubText}>삭제되었거나 일시적인 오류일 수 있습니다.</Text>
+            <TouchableOpacity style={styles.loadErrorRetryButton} activeOpacity={0.8} onPress={fetchDetail}>
+              <Text style={styles.loadErrorRetryText}>다시 시도</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: Spacing.v.screenBottom }}
@@ -529,6 +547,7 @@ const PlaceDetailScreen = () => {
             )}
           </View>
         </ScrollView>
+        )}
 
         {isDetailTabPinned && (
           <View style={[styles.detailTabPinnedOverlay, { top: headerHeight }]}>
@@ -639,6 +658,17 @@ const PlaceDetailScreen = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.light.background },
+  loadErrorContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.h.medium, gap: Spacing.v.small },
+  loadErrorText: { ...Typography.subtitle2, color: Colors.light.black },
+  loadErrorSubText: { ...Typography.body2, color: Colors.light.grayDark },
+  loadErrorRetryButton: {
+    marginTop: Spacing.v.medium,
+    paddingHorizontal: Spacing.h.large,
+    paddingVertical: Spacing.v.small,
+    borderRadius: Spacing.r.small,
+    backgroundColor: Colors.light.primary,
+  },
+  loadErrorRetryText: { ...Typography.button2, color: Colors.light.white },
   moreButtonWrapper: { position: 'relative', alignItems: 'flex-end' },
   menuBackdrop: { ...StyleSheet.absoluteFillObject, zIndex: 5 },
   imageContainer: {
@@ -673,7 +703,7 @@ const styles = StyleSheet.create({
   titleText: { ...Typography.HeadLine5, color: Colors.light.black },
   metaText: { ...Typography.body2, color: Colors.light.grayDark },
   iconTextRow: { flexDirection: 'row', alignItems: 'center' },
-  tagText: { ...Typography.body2, color: Colors.light.primary },
+  tagText: { ...Typography.body2, color: Colors.light.dark },
   actionButtonGroup: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -744,7 +774,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
     marginTop: Spacing.v.medium,
   },
-  kakaoShortcutText: { ...Typography.button4, color: Colors.light.primary, marginLeft: Spacing.h.small },
+  kakaoShortcutText: { ...Typography.button4, color: Colors.light.dark, marginLeft: Spacing.h.small },
   nearbyTitle: {
     ...Typography.title1,
     color: Colors.light.black,
@@ -792,7 +822,7 @@ const styles = StyleSheet.create({
     color: Colors.light.grayDark,
   },
   reviewMoreButton: { alignSelf: 'flex-end', paddingVertical: Spacing.v.small },
-  reviewMoreText: { ...Typography.button4, color: Colors.light.primary },
+  reviewMoreText: { ...Typography.button4, color: Colors.light.dark },
   nearbyScrollContent: {
     gap: Spacing.h.medium,
   },
@@ -830,7 +860,7 @@ const styles = StyleSheet.create({
   },
   reviewTitleRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.h.small },
   reviewTitle: { ...Typography.title1, color: Colors.light.black },
-  reviewCount: { ...Typography.title1, color: Colors.light.primary },
+  reviewCount: { ...Typography.title1, color: Colors.light.dark },
   photoFilterRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.h.small },
   photoFilterText: { ...Typography.body2, color: Colors.light.black },
   checkbox: {
@@ -890,7 +920,7 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.v.medium,
   },
   deleteTitle: { ...Typography.subtitle2, color: Colors.light.black, textAlign: 'center' },
-  deleteDesc: { ...Typography.body2, color: Colors.light.primary, marginTop: Spacing.v.medium, textAlign: 'center' },
+  deleteDesc: { ...Typography.body2, color: Colors.light.dark, marginTop: Spacing.v.medium, textAlign: 'center' },
   deleteButtons: { flexDirection: 'row', justifyContent: 'center', gap: Spacing.h.medium, marginTop: Spacing.v.medium },
   btnConfirm: { width: 80, height: Size.buttonSm, borderRadius: Spacing.r.small, backgroundColor: Colors.light.primary, justifyContent: 'center', alignItems: 'center' },
   btnConfirmText: { ...Typography.button2, color: Colors.light.white },

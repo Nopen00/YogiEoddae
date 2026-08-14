@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
   },
   tokenLabelRow: { flexDirection: 'row', alignItems: 'center' },
   tokenLabel: { ...Typography.title1, color: Colors.light.black },
-  tokenValue: { ...Typography.title1, color: Colors.light.primary, marginLeft: Spacing.h.small },
+  tokenValue: { ...Typography.title1, color: Colors.light.dark, marginLeft: Spacing.h.small },
   chargeButton: {
     width: 80,
     height: Size.buttonSm,

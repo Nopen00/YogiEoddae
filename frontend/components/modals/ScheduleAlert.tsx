@@ -9,7 +9,7 @@ import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import type { DailyPlace, Schedule } from '@/services/types';
 import { X } from 'lucide-react-native';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Image,
   Modal,
@@ -136,6 +136,8 @@ export const ScheduleAlert = ({ visible, onClose, schedules, onConfirm, checkMed
   const [resultVisible, setResultVisible] = useState(false);
   const [failVisible, setFailVisible] = useState(false);
   const [genericFailVisible, setGenericFailVisible] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmittingRef = useRef(false);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -155,7 +157,7 @@ export const ScheduleAlert = ({ visible, onClose, schedules, onConfirm, checkMed
   const isButtonEnabled = selectedDay !== null;
 
   const handleConfirm = async () => {
-    if (!selectedDay) return;
+    if (!selectedDay || isSubmittingRef.current) return;
     if (checkMedia) {
       const target = uniqueSchedules.find(s => s.id === selectedDay.scheduleId);
       if (target?.media) {
@@ -163,12 +165,17 @@ export const ScheduleAlert = ({ visible, onClose, schedules, onConfirm, checkMed
         return;
       }
     }
+    isSubmittingRef.current = true;
+    setIsSubmitting(true);
     try {
       await onConfirm?.(selectedDay.scheduleId, selectedDay.dayIndex + 1);
       onClose();
       setResultVisible(true);
     } catch {
       setGenericFailVisible(true);
+    } finally {
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);
     }
   };
 
@@ -270,8 +277,9 @@ export const ScheduleAlert = ({ visible, onClose, schedules, onConfirm, checkMed
                 )}
 
                 <TouchableOpacity
-                  style={[styles.addButton, isButtonEnabled ? styles.addButtonActive : styles.addButtonInactive]}
-                  activeOpacity={isButtonEnabled ? 0.7 : 1}
+                  style={[styles.addButton, isButtonEnabled && !isSubmitting ? styles.addButtonActive : styles.addButtonInactive]}
+                  activeOpacity={isButtonEnabled && !isSubmitting ? 0.7 : 1}
+                  disabled={!isButtonEnabled || isSubmitting}
                   onPress={handleConfirm}
                 >
                   <Text style={styles.addButtonText}>추가하기</Text>
@@ -371,7 +379,7 @@ const styles = StyleSheet.create({
   infoRow: { flexDirection: 'row', alignItems: 'center', marginTop: Spacing.v.small, gap: Spacing.h.xsmall },
   infoText: { ...Typography.subtitle1, color: Colors.light.grayDark },
   infoSep: { ...Typography.subtitle1, color: Colors.light.grayDark },
-  tagText: { ...Typography.body2, color: Colors.light.primary },
+  tagText: { ...Typography.body2, color: Colors.light.dark },
   dayListSection: { marginTop: Spacing.v.medium },
   dayScrollContent: { gap: Spacing.v.small },
   dayButton: {
@@ -431,5 +439,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.h.medium,
   },
   failTitle: { ...Typography.subtitle2, color: Colors.light.black },
-  failDesc: { ...Typography.body2, color: Colors.light.primary, marginTop: 16 },
+  failDesc: { ...Typography.body2, color: Colors.light.dark, marginTop: 16 },
 });

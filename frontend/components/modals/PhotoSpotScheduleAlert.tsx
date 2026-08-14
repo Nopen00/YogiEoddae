@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
   infoText: { ...Typography.subtitle1, color: Colors.light.grayDark, flexShrink: 1 },
   infoSep: { ...Typography.subtitle1, color: Colors.light.grayDark },
   tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.h.xsmall, marginTop: Spacing.v.small },
-  tagText: { ...Typography.body2, color: Colors.light.primary },
+  tagText: { ...Typography.body2, color: Colors.light.dark },
   questionText: {
     ...Typography.subtitle1,
     color: Colors.light.grayDark,

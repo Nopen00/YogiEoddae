@@ -13,7 +13,13 @@ interface BackButtonProps {
 
 export const BackButton = ({ onPress, color = Colors.light.black }: BackButtonProps) => {
   return (
-    <TouchableOpacity onPress={onPress} style={styles.button} activeOpacity={0.7}>
+    <TouchableOpacity
+      onPress={onPress}
+      style={styles.button}
+      activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityLabel="뒤로 가기"
+    >
       <ArrowLeft size={IconSize.large} color={color} strokeWidth={IconStroke.bold} />
     </TouchableOpacity>
   );

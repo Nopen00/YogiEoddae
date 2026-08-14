@@ -12,7 +12,7 @@ import { Typography } from '@/constants/Typography';
 import { mediaApi } from '@/services/api';
 import type { Media, MediaPlace } from '@/services/types';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Image, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -28,22 +28,43 @@ export default function QuizDetailScreen() {
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [successVisible, setSuccessVisible] = useState(false);
   const [failVisible, setFailVisible] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmittingRef = useRef(false);
+  const [loadError, setLoadError] = useState(false);
 
-  useEffect(() => {
-    if (!id) return;
-    mediaApi.getDetail(Number(id)).then(res => setMedia(res.data)).catch(() => {});
+  const fetchDetail = useCallback(() => {
+    if (!id || Number.isNaN(Number(id))) {
+      setLoadError(true);
+      return;
+    }
+    setLoadError(false);
+    mediaApi.getDetail(Number(id)).then(res => setMedia(res.data)).catch(() => setLoadError(true));
     mediaApi.getPlaces(Number(id)).then(res => setMediaPlaces(res.data)).catch(() => {});
   }, [id]);
 
-  const allAnswered = mediaPlaces.length > 0 && mediaPlaces.every(mp => (answers[mp.id] ?? '').trim().length > 0);
+  useEffect(() => {
+    fetchDetail();
+  }, [fetchDetail]);
+
+  const alreadySubmitted = media?.is_submitted === true;
+  const allAnswered =
+    !alreadySubmitted &&
+    mediaPlaces.length > 0 &&
+    mediaPlaces.every(mp => (answers[mp.id] ?? '').trim().length > 0);
+  const isSubmitEnabled = allAnswered && !isSubmitting;
 
   const handleSubmit = async () => {
-    if (!id) return;
+    if (!id || !isSubmitEnabled || isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+    setIsSubmitting(true);
     try {
       await mediaApi.submitQuiz(Number(id), answers);
       setSuccessVisible(true);
     } catch {
       setFailVisible(true);
+    } finally {
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);
     }
   };
 
@@ -51,6 +72,15 @@ export default function QuizDetailScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScreenHeader onBack={() => router.back()} />
 
+      {loadError && !media ? (
+        <View style={styles.loadErrorContainer}>
+          <Text style={styles.loadErrorText}>정보를 불러오지 못했습니다.</Text>
+          <Text style={styles.loadErrorSubText}>삭제되었거나 일시적인 오류일 수 있습니다.</Text>
+          <TouchableOpacity style={styles.loadErrorRetryButton} activeOpacity={0.8} onPress={fetchDetail}>
+            <Text style={styles.loadErrorRetryText}>다시 시도</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Spacing.v.screenBottom }}>
         <View style={[styles.imageContainer, { width: imageWidth, height: imageHeight }]}>
           <Image source={{ uri: media?.thumbnail_url ?? undefined }} style={styles.mainImage} resizeMode="cover" />
@@ -94,15 +124,20 @@ export default function QuizDetailScreen() {
 
         <Divider marginTop={Spacing.v.large} style={{ marginHorizontal: Spacing.h.medium }} />
 
+        {alreadySubmitted && (
+          <Text style={styles.alreadySubmittedText}>이미 제출한 퀴즈입니다.</Text>
+        )}
+
         <TouchableOpacity
-          style={[styles.submitButton, !allAnswered && styles.submitButtonDisabled]}
+          style={[styles.submitButton, !isSubmitEnabled && styles.submitButtonDisabled]}
           activeOpacity={0.8}
-          disabled={!allAnswered}
+          disabled={!isSubmitEnabled}
           onPress={handleSubmit}
         >
-          <Text style={[styles.submitButtonText, !allAnswered && styles.submitButtonTextDisabled]}>제출하기</Text>
+          <Text style={[styles.submitButtonText, !isSubmitEnabled && styles.submitButtonTextDisabled]}>제출하기</Text>
         </TouchableOpacity>
       </ScrollView>
+      )}
 
       <Modal visible={successVisible} transparent animationType="none">
         <TouchableOpacity style={styles.resultOverlay} activeOpacity={1} onPress={() => { setSuccessVisible(false); router.back(); }}>
@@ -128,6 +163,17 @@ export default function QuizDetailScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.light.background },
+  loadErrorContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.h.medium, gap: Spacing.v.small },
+  loadErrorText: { ...Typography.subtitle2, color: Colors.light.black },
+  loadErrorSubText: { ...Typography.body2, color: Colors.light.grayDark },
+  loadErrorRetryButton: {
+    marginTop: Spacing.v.medium,
+    paddingHorizontal: Spacing.h.large,
+    paddingVertical: Spacing.v.small,
+    borderRadius: Spacing.r.small,
+    backgroundColor: Colors.light.primary,
+  },
+  loadErrorRetryText: { ...Typography.button2, color: Colors.light.white },
   imageContainer: {
     marginTop: Spacing.v.small,
     marginHorizontal: Spacing.h.medium,
@@ -139,7 +185,7 @@ const styles = StyleSheet.create({
   infoContainer: { paddingHorizontal: Spacing.h.medium, marginTop: Spacing.v.medium },
   titleText: { ...Typography.HeadLine5, color: Colors.light.black },
   metaText: { ...Typography.body2, color: Colors.light.grayDark },
-  tagText: { ...Typography.body2, color: Colors.light.primary },
+  tagText: { ...Typography.body2, color: Colors.light.dark },
   questionBlock: { marginTop: Spacing.v.large },
   questionBlockSpaced: { marginTop: Spacing.v.large },
   questionTitle: { ...Typography.title1, color: Colors.light.black, marginHorizontal: Spacing.h.medium },
@@ -172,6 +218,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   submitButtonDisabled: { backgroundColor: Colors.light.grayLight },
+  alreadySubmittedText: {
+    ...Typography.body2,
+    color: Colors.light.grayDark,
+    textAlign: 'center',
+    marginTop: Spacing.v.large,
+    marginHorizontal: Spacing.h.medium,
+  },
   submitButtonText: { ...Typography.button2, color: Colors.light.white },
   submitButtonTextDisabled: { color: Colors.light.grayDark },
   resultOverlay: {
@@ -190,6 +243,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.h.medium,
   },
   resultTitle: { ...Typography.subtitle2, color: Colors.light.black, textAlign: 'center' },
-  resultSub1: { ...Typography.body2, color: Colors.light.primary, marginTop: Spacing.v.medium, textAlign: 'center' },
-  resultSub2: { ...Typography.body2, color: Colors.light.primary, marginTop: Spacing.v.small, textAlign: 'center' },
+  resultSub1: { ...Typography.body2, color: Colors.light.dark, marginTop: Spacing.v.medium, textAlign: 'center' },
+  resultSub2: { ...Typography.body2, color: Colors.light.dark, marginTop: Spacing.v.small, textAlign: 'center' },
 });

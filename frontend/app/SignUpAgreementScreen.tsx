@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
     marginLeft: Spacing.h.small,
   },
   agreeText: { ...Typography.body2, color: Colors.light.black },
-  requiredTag: { color: Colors.light.primary },
+  requiredTag: { color: Colors.light.dark },
   agreeChevron: { marginLeft: Spacing.h.small },
   nextButton: {
     marginTop: Spacing.v.large,

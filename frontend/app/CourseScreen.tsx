@@ -790,7 +790,7 @@ const styles = StyleSheet.create({
   metadataRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', rowGap: Spacing.h.xsmall, marginBottom: Spacing.h.xsmall },
   metaText: { ...Typography.subtitle1, color: Colors.light.grayDark },
   metaChip: { flexDirection: 'row', alignItems: 'center' },
-  tagText: { ...Typography.body2, color: Colors.light.primary, marginRight: Spacing.h.xsmall },
+  tagText: { ...Typography.body2, color: Colors.light.dark, marginRight: Spacing.h.xsmall },
   emptyState: { paddingTop: Spacing.v.medium, alignItems: 'center' },
   emptyTitle: { ...Typography.subtitle2, color: Colors.light.black },
   emptyDesc: { ...Typography.body2, color: Colors.light.grayLight, marginTop: Spacing.v.medium },
@@ -849,7 +849,7 @@ const styles = StyleSheet.create({
   },
   themeCourseTagText: {
     ...Typography.body2,
-    color: Colors.light.primary,
+    color: Colors.light.dark,
     marginRight: Spacing.h.xsmall,
   },
   pickCardWrapper: {
@@ -1098,7 +1098,7 @@ const styles = StyleSheet.create({
   },
   photoSpotTagText: {
     ...Typography.body2,
-    color: Colors.light.primary,
+    color: Colors.light.dark,
     marginRight: Spacing.h.xsmall,
   },
 });

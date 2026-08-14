@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.v.medium,
   },
   myTokenLabel: { ...Typography.title1, color: Colors.light.black },
-  myTokenValue: { ...Typography.title1, color: Colors.light.primary, marginLeft: Spacing.h.small },
+  myTokenValue: { ...Typography.title1, color: Colors.light.dark, marginLeft: Spacing.h.small },
   adButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -257,8 +257,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.h.medium,
   },
   resultTitle: { ...Typography.subtitle2, color: Colors.light.black, textAlign: 'center' },
-  resultSub1: { ...Typography.body2, color: Colors.light.primary, marginTop: Spacing.v.medium, textAlign: 'center' },
-  resultSub2: { ...Typography.body2, color: Colors.light.primary, marginTop: Spacing.v.small, textAlign: 'center' },
+  resultSub1: { ...Typography.body2, color: Colors.light.dark, marginTop: Spacing.v.medium, textAlign: 'center' },
+  resultSub2: { ...Typography.body2, color: Colors.light.dark, marginTop: Spacing.v.small, textAlign: 'center' },
 });
 
 export default TokenChargeScreen;

@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
   sectionTitle: { ...Typography.title1, color: Colors.light.black },
   metaRow: { flexDirection: 'row', alignItems: 'center', marginTop: Spacing.v.small },
   metaText: { ...Typography.body2, color: Colors.light.grayDark },
-  sectionTag: { ...Typography.body2, color: Colors.light.primary },
+  sectionTag: { ...Typography.body2, color: Colors.light.dark },
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: Spacing.v.medium, marginTop: Spacing.v.xlarge },
   emptyTitle: { ...Typography.subtitle2, color: Colors.light.black },
 });

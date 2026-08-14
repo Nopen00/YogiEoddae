@@ -111,6 +111,9 @@ const EmailVerifyScreen = () => {
               value={code}
               onChangeText={handleChangeCode}
               onBlur={handleBlurCode}
+              keyboardType="number-pad"
+              maxLength={6}
+              accessibilityLabel="인증 코드"
             />
           </View>
           {hasError && (
@@ -221,7 +224,7 @@ const styles = StyleSheet.create({
   },
   codeBoxError: { borderColor: Colors.light.error },
   inputSection: { flex: 1 },
-  inputLabel: { ...Typography.body1, color: Colors.light.grayLight, marginBottom: Spacing.v.small },
+  inputLabel: { ...Typography.body1, color: Colors.light.grayDark, marginBottom: Spacing.v.small },
   inputLabelError: { color: Colors.light.error },
   codeInput: { padding: 0, ...Typography.body3 },
   errorRow: {
@@ -230,7 +233,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   errorText: { ...Typography.body2, color: Colors.light.error, marginLeft: Spacing.h.small },
-  timer: { ...Typography.subtitle2, color: Colors.light.primary, marginTop: Spacing.v.large, width: '100%', textAlign: 'center' },
+  timer: { ...Typography.subtitle2, color: Colors.light.dark, marginTop: Spacing.v.large, width: '100%', textAlign: 'center' },
   confirmButton: {
     marginTop: Spacing.v.medium,
     minHeight: Size.buttonMd,
@@ -265,7 +268,7 @@ const styles = StyleSheet.create({
     ...Shadows.card,
   },
   confirmTitle: { ...Typography.subtitle2, color: Colors.light.black, textAlign: 'center' },
-  confirmDesc: { ...Typography.body2, color: Colors.light.primary, marginTop: Spacing.v.medium, textAlign: 'center' },
+  confirmDesc: { ...Typography.body2, color: Colors.light.dark, marginTop: Spacing.v.medium, textAlign: 'center' },
   confirmButtons: { flexDirection: 'row', justifyContent: 'center', gap: Spacing.h.medium, marginTop: Spacing.v.medium },
   btnConfirm: { width: 80, height: Size.buttonSm, borderRadius: Spacing.r.small, backgroundColor: Colors.light.primary, justifyContent: 'center', alignItems: 'center' },
   btnConfirmText: { ...Typography.button2, color: Colors.light.white },

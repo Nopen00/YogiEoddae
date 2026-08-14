@@ -5,7 +5,7 @@ import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { AlertCircle, Eye, EyeOff } from 'lucide-react-native';
 import React from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TextInput, TextInputProps, TouchableOpacity, View } from 'react-native';
 
 interface LabeledInputBoxProps {
   label: string;
@@ -19,6 +19,10 @@ interface LabeledInputBoxProps {
   errorMessage?: string | string[];
   noTopMargin?: boolean;
   hasError?: boolean;
+  autoCapitalize?: TextInputProps['autoCapitalize'];
+  autoCorrect?: boolean;
+  keyboardType?: TextInputProps['keyboardType'];
+  accessibilityLabel?: string;
 }
 
 export function LabeledInputBox({
@@ -33,6 +37,10 @@ export function LabeledInputBox({
   errorMessage,
   noTopMargin,
   hasError: hasErrorProp,
+  autoCapitalize,
+  autoCorrect,
+  keyboardType,
+  accessibilityLabel,
 }: LabeledInputBoxProps) {
   const errorMessages = (Array.isArray(errorMessage) ? errorMessage : errorMessage ? [errorMessage] : []).filter(Boolean);
   const hasError = hasErrorProp || errorMessages.length > 0;
@@ -50,15 +58,24 @@ export function LabeledInputBox({
             onChangeText={onChangeText}
             onBlur={onBlur}
             secureTextEntry={secure ? !visible : false}
+            autoCapitalize={autoCapitalize ?? 'none'}
+            autoCorrect={autoCorrect ?? false}
+            keyboardType={keyboardType}
+            accessibilityLabel={accessibilityLabel ?? label}
           />
         </View>
         <View style={styles.boxRightIcons}>
           {onToggleVisible && (
-            <TouchableOpacity activeOpacity={0.7} onPress={onToggleVisible}>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={onToggleVisible}
+              accessibilityRole="button"
+              accessibilityLabel={visible ? '비밀번호 숨기기' : '비밀번호 표시'}
+            >
               {visible ? (
-                <EyeOff size={IconSize.large} color={Colors.light.grayLight} />
+                <EyeOff size={IconSize.large} color={Colors.light.grayDark} />
               ) : (
-                <Eye size={IconSize.large} color={Colors.light.grayLight} />
+                <Eye size={IconSize.large} color={Colors.light.grayDark} />
               )}
             </TouchableOpacity>
           )}
@@ -92,7 +109,7 @@ const styles = StyleSheet.create({
   boxError: { borderColor: Colors.light.error },
   boxNoTopMargin: { marginTop: 0 },
   inputSection: { flex: 1 },
-  inputLabel: { ...Typography.body1, color: Colors.light.grayLight, marginBottom: Spacing.v.small },
+  inputLabel: { ...Typography.body1, color: Colors.light.grayDark, marginBottom: Spacing.v.small },
   inputLabelError: { color: Colors.light.error },
   input: { padding: 0, ...Typography.body3 },
   boxRightIcons: { flexDirection: 'row', alignItems: 'center' },

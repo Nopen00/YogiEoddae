@@ -293,5 +293,5 @@ const styles = StyleSheet.create({
   cardTitle: { ...Typography.title1, color: Colors.light.black },
   infoRow: { flexDirection: 'row', alignItems: 'center', marginTop: Spacing.v.small, gap: Spacing.h.xsmall },
   infoText: { ...Typography.subtitle1, color: Colors.light.grayDark },
-  tagText: { ...Typography.body2, color: Colors.light.primary },
+  tagText: { ...Typography.body2, color: Colors.light.dark },
 });

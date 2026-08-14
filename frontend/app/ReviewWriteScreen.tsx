@@ -15,7 +15,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { Calendar, ChevronRight, Plus, Star, X } from 'lucide-react-native';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Dimensions, Image, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Dimensions, Image, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -63,6 +63,8 @@ const ReviewWriteScreen = () => {
   const [isSubmitSuccessVisible, setIsSubmitSuccessVisible] = useState(false);
   const [isSubmitFailVisible, setIsSubmitFailVisible] = useState(false);
   const [targetInfo, setTargetInfo] = useState<ReviewTargetInfo | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmittingRef = useRef(false);
   const initialSnapshotRef = useRef({ rating: 0, reviewText: '', visitDate: null as VisitDate | null, reviewImages: [] as string[] });
 
   useEffect(() => {
@@ -119,14 +121,30 @@ const ReviewWriteScreen = () => {
   const handlePickImage = async () => {
     const remaining = MAX_REVIEW_IMAGES - reviewImages.length;
     if (remaining <= 0) return;
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsMultipleSelection: true,
-      selectionLimit: remaining,
-      quality: 0.8,
-    });
-    if (!result.canceled) {
-      setReviewImages((prev) => [...prev, ...result.assets.map((a) => a.uri)].slice(0, MAX_REVIEW_IMAGES));
+    try {
+      const { status, canAskAgain } = await ImagePicker.getMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        if (!canAskAgain) {
+          Alert.alert('사진 접근 권한이 필요합니다', '설정에서 사진 접근 권한을 허용해주세요.');
+          return;
+        }
+        const { status: requested } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (requested !== 'granted') {
+          Alert.alert('사진 접근 권한이 필요합니다', '사진을 선택하려면 접근 권한을 허용해주세요.');
+          return;
+        }
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsMultipleSelection: true,
+        selectionLimit: remaining,
+        quality: 0.8,
+      });
+      if (!result.canceled) {
+        setReviewImages((prev) => [...prev, ...result.assets.map((a) => a.uri)].slice(0, MAX_REVIEW_IMAGES));
+      }
+    } catch {
+      Alert.alert('이미지를 불러오지 못했습니다', '잠시 후 다시 시도해주세요.');
     }
   };
 
@@ -152,22 +170,36 @@ const ReviewWriteScreen = () => {
     []
   );
 
-  const isSubmitEnabled = rating > 0 && visitDate !== null;
+  const isSubmitEnabled =
+    rating > 0 && visitDate !== null && reviewText.trim().length > 0 && !isSubmitting;
 
   const handleSubmit = async () => {
-    if (!isSubmitEnabled || !type) return;
+    if (!isSubmitEnabled || !type || (!reviewId && !id) || isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+    setIsSubmitting(true);
     try {
+      // 새로 선택한 사진(로컬 파일 경로)만 서버에 업로드하고, 이미 업로드된(원격 URL) 사진은 그대로 둔다.
+      const uploadedImages = await Promise.all(
+        reviewImages.map(async (uri) => {
+          if (uri.startsWith('http://') || uri.startsWith('https://')) return uri;
+          const res = await photoApi.uploadImage(uri);
+          return res.data.image_url;
+        })
+      );
       const payload = {
         rating,
         content: reviewText,
-        images: reviewImages,
+        images: uploadedImages,
         visitDate: visitDate ? formatVisitDateValue(visitDate) : undefined,
       };
       if (reviewId) await reviewApi.update(type, Number(reviewId), payload);
-      else if (id) await reviewApi.create(type, Number(id), payload);
+      else await reviewApi.create(type, Number(id), payload);
       setIsSubmitSuccessVisible(true);
     } catch {
       setIsSubmitFailVisible(true);
+    } finally {
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);
     }
   };
 
@@ -175,6 +207,7 @@ const ReviewWriteScreen = () => {
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScreenHeader onBack={handleBack} />
 
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <Text style={styles.titleText}>{targetInfo?.title ?? ''}</Text>
         <Text style={styles.detailText}>{targetInfo?.detail ?? ''}</Text>
@@ -225,6 +258,8 @@ const ReviewWriteScreen = () => {
                 placeholderTextColor={Colors.light.grayDark}
                 multiline
                 textAlignVertical="top"
+                maxLength={1000}
+                accessibilityLabel="리뷰 내용"
               />
 
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.imageRow}>
@@ -243,6 +278,8 @@ const ReviewWriteScreen = () => {
                       style={styles.imageRemoveButton}
                       onPress={() => removeReviewImage(uri)}
                       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      accessibilityRole="button"
+                      accessibilityLabel="사진 삭제"
                     >
                       <X size={24} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
                     </TouchableOpacity>
@@ -256,11 +293,13 @@ const ReviewWriteScreen = () => {
         <TouchableOpacity
           style={[styles.submitButton, !isSubmitEnabled && styles.submitButtonDisabled]}
           activeOpacity={isSubmitEnabled ? 0.8 : 1}
+          disabled={!isSubmitEnabled}
           onPress={handleSubmit}
         >
           <Text style={[styles.submitButtonText, !isSubmitEnabled && styles.submitButtonTextDisabled]}>작성 완료</Text>
         </TouchableOpacity>
       </ScrollView>
+      </KeyboardAvoidingView>
 
       <VisitDateAlert
         visible={isDateVisible}
@@ -332,7 +371,7 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: Spacing.h.medium, marginTop: Spacing.v.medium, paddingBottom: Spacing.v.screenBottom },
   titleText: { ...Typography.title1, color: Colors.light.black },
   detailText: { ...Typography.body2, color: Colors.light.grayDark, marginTop: Spacing.v.small },
-  tagText: { ...Typography.body2, color: Colors.light.primary },
+  tagText: { ...Typography.body2, color: Colors.light.dark },
   ratingTitle: {
     ...Typography.title1,
     color: Colors.light.black,
@@ -400,7 +439,7 @@ const styles = StyleSheet.create({
     ...Shadows.card,
   },
   unsavedTitle: { ...Typography.subtitle2, color: Colors.light.black, textAlign: 'center' },
-  unsavedDesc: { ...Typography.body2, color: Colors.light.primary, marginTop: Spacing.v.medium, textAlign: 'center' },
+  unsavedDesc: { ...Typography.body2, color: Colors.light.dark, marginTop: Spacing.v.medium, textAlign: 'center' },
   unsavedButtons: { flexDirection: 'row', justifyContent: 'center', gap: Spacing.h.medium, marginTop: Spacing.v.medium },
   btnDiscard: { width: 80, height: Size.buttonSm, borderRadius: Spacing.r.small, backgroundColor: Colors.light.primary, justifyContent: 'center', alignItems: 'center' },
   btnDiscardText: { ...Typography.button2, color: Colors.light.white },
@@ -436,5 +475,5 @@ const styles = StyleSheet.create({
     ...Shadows.card,
   },
   submitFailTitle: { ...Typography.subtitle2, color: Colors.light.black },
-  submitFailDesc: { ...Typography.body2, color: Colors.light.primary, marginTop: Spacing.v.medium },
+  submitFailDesc: { ...Typography.body2, color: Colors.light.dark, marginTop: Spacing.v.medium },
 });

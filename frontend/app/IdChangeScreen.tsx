@@ -68,6 +68,9 @@ const IdChangeScreen = () => {
               value={userId}
               onChangeText={handleChangeUserId}
               onBlur={handleBlurUserId}
+              autoCapitalize="none"
+              autoCorrect={false}
+              accessibilityLabel="아이디"
             />
           </View>
           {hasError && (
@@ -117,7 +120,14 @@ const IdChangeScreen = () => {
                     setSuccessPopupVisible(true);
                   } catch (e: any) {
                     setConfirmPopupVisible(false);
-                    setErrorText(e?.response?.data?.username?.[0] ?? '이미 사용 중인 아이디입니다.');
+                    const duplicateError = e?.response?.data?.username?.[0];
+                    if (duplicateError) {
+                      setErrorText(duplicateError);
+                    } else if (e?.response) {
+                      setErrorText('이미 사용 중인 아이디입니다.');
+                    } else {
+                      setErrorText('일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+                    }
                     setHasError(true);
                   }
                 }}
@@ -168,7 +178,7 @@ const styles = StyleSheet.create({
   },
   idBoxError: { borderColor: Colors.light.error },
   inputSection: { flex: 1 },
-  inputLabel: { ...Typography.body1, color: Colors.light.grayLight, marginBottom: Spacing.v.small },
+  inputLabel: { ...Typography.body1, color: Colors.light.grayDark, marginBottom: Spacing.v.small },
   inputLabelError: { color: Colors.light.error },
   idInput: { padding: 0, ...Typography.body3 },
   errorRow: {
@@ -203,7 +213,7 @@ const styles = StyleSheet.create({
     ...Shadows.card,
   },
   confirmTitle: { ...Typography.subtitle2, color: Colors.light.black, textAlign: 'center' },
-  confirmDesc: { ...Typography.body2, color: Colors.light.primary, marginTop: Spacing.v.medium, textAlign: 'center' },
+  confirmDesc: { ...Typography.body2, color: Colors.light.dark, marginTop: Spacing.v.medium, textAlign: 'center' },
   confirmButtons: { flexDirection: 'row', justifyContent: 'center', gap: Spacing.h.medium, marginTop: Spacing.v.medium },
   btnConfirm: { width: 80, height: Size.buttonSm, borderRadius: Spacing.r.small, backgroundColor: Colors.light.primary, justifyContent: 'center', alignItems: 'center' },
   btnConfirmText: { ...Typography.button2, color: Colors.light.white },

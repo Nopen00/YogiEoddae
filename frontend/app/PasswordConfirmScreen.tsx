@@ -74,11 +74,16 @@ const PasswordConfirmScreen = () => {
             />
           </View>
           <View style={styles.boxRightIcons}>
-            <TouchableOpacity activeOpacity={0.7} onPress={() => setIsVisible(!isVisible)}>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => setIsVisible(!isVisible)}
+              accessibilityRole="button"
+              accessibilityLabel={isVisible ? '비밀번호 숨기기' : '비밀번호 표시'}
+            >
               {isVisible ? (
-                <EyeOff size={IconSize.large} color={Colors.light.grayLight} />
+                <EyeOff size={IconSize.large} color={Colors.light.grayDark} />
               ) : (
-                <Eye size={IconSize.large} color={Colors.light.grayLight} />
+                <Eye size={IconSize.large} color={Colors.light.grayDark} />
               )}
             </TouchableOpacity>
             {hasError && (
@@ -138,7 +143,7 @@ const styles = StyleSheet.create({
   },
   passwordBoxError: { borderColor: Colors.light.error },
   inputSection: { flex: 1 },
-  inputLabel: { ...Typography.body1, color: Colors.light.grayLight, marginBottom: Spacing.v.small },
+  inputLabel: { ...Typography.body1, color: Colors.light.grayDark, marginBottom: Spacing.v.small },
   inputLabelError: { color: Colors.light.error },
   passwordInput: { padding: 0, ...Typography.body3 },
   boxRightIcons: { flexDirection: 'row', alignItems: 'center' },

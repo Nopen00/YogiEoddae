@@ -34,7 +34,7 @@ const ERROR_MESSAGE: Record<Exclude<NicknameError, null>, string> = {
 
 interface NicknameEditAlertProps {
   visible: boolean;
-  onConfirm: (newNickname: string) => void;
+  onConfirm: (newNickname: string) => void | Promise<void>;
   onClose: () => void;
 }
 
@@ -45,17 +45,22 @@ export const NicknameEditAlert = ({
 }: NicknameEditAlertProps) => {
   const [nickname, setNickname] = useState('');
   const [error, setError] = useState<NicknameError>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitFailed, setSubmitFailed] = useState(false);
 
   useEffect(() => {
     if (visible) {
       setNickname('');
       setError(null);
+      setIsSubmitting(false);
+      setSubmitFailed(false);
     }
   }, [visible]);
 
   const handleChangeNickname = (text: string) => {
     setNickname(text);
     if (error) setError(null);
+    if (submitFailed) setSubmitFailed(false);
   };
 
   const handleBlurNickname = () => {
@@ -63,13 +68,20 @@ export const NicknameEditAlert = ({
     setError(getNicknameError(nickname));
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
+    if (isSubmitting) return;
     const nextError = getNicknameError(nickname);
     if (nextError) {
       setError(nextError);
       return;
     }
-    onConfirm(nickname);
+    setIsSubmitting(true);
+    try {
+      await onConfirm(nickname);
+    } catch {
+      setSubmitFailed(true);
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -83,10 +95,12 @@ export const NicknameEditAlert = ({
                 <TouchableOpacity
                   onPress={onClose}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  accessibilityRole="button"
+                  accessibilityLabel="닫기"
                 >
                   <X
                     size={IconSize.large}
-                    color={Colors.light.grayLight}
+                    color={Colors.light.grayDark}
                     strokeWidth={IconStroke.regular}
                   />
                 </TouchableOpacity>
@@ -110,10 +124,12 @@ export const NicknameEditAlert = ({
                     <TouchableOpacity
                       onPress={() => setNickname('')}
                       hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                      accessibilityRole="button"
+                      accessibilityLabel="입력 내용 지우기"
                     >
                       <X
                         size={IconSize.medium}
-                        color={Colors.light.grayLight}
+                        color={Colors.light.grayDark}
                         strokeWidth={IconStroke.regular}
                       />
                     </TouchableOpacity>
@@ -135,6 +151,13 @@ export const NicknameEditAlert = ({
                 </View>
               )}
 
+              {submitFailed && (
+                <View style={styles.errorRow}>
+                  <AlertCircle size={IconSize.xsmall} color={Colors.light.error} />
+                  <Text style={styles.errorText}>일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.</Text>
+                </View>
+              )}
+
               <View style={styles.buttonRow}>
                 <TouchableOpacity
                   style={styles.cancelButton}
@@ -144,12 +167,12 @@ export const NicknameEditAlert = ({
                   <Text style={styles.cancelButtonText}>취소</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.confirmButton, !nickname.trim() && styles.buttonDisabled]}
-                  disabled={!nickname.trim()}
+                  style={[styles.confirmButton, (!nickname.trim() || isSubmitting) && styles.buttonDisabled]}
+                  disabled={!nickname.trim() || isSubmitting}
                   activeOpacity={0.8}
                   onPress={handleConfirm}
                 >
-                  <Text style={[styles.confirmButtonText, !nickname.trim() && styles.confirmButtonTextDisabled]}>변경</Text>
+                  <Text style={[styles.confirmButtonText, (!nickname.trim() || isSubmitting) && styles.confirmButtonTextDisabled]}>변경</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -199,7 +222,7 @@ const styles = StyleSheet.create({
     paddingLeft: Spacing.h.medium,
     paddingVertical: Spacing.v.small,
   },
-  inputLabel: { ...Typography.body1, color: Colors.light.grayLight, marginBottom: Spacing.v.small },
+  inputLabel: { ...Typography.body1, color: Colors.light.grayDark, marginBottom: Spacing.v.small },
   inputLabelError: { color: Colors.light.error },
   input: {
     ...Typography.body3,

@@ -41,15 +41,19 @@ const AccountScreen = () => {
   );
 
   const handlePickProfileImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      quality: 0.8,
-    });
-    if (!result.canceled) {
-      const uri = result.assets[0].uri;
-      await userApi.updateProfileImage(uri);
-      setProfileImage(uri);
-      setResultMessage('이미지가 변경되었습니다.');
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        quality: 0.8,
+      });
+      if (!result.canceled) {
+        const uri = result.assets[0].uri;
+        await userApi.updateProfileImage(uri);
+        setProfileImage(uri);
+        setResultMessage('이미지가 변경되었습니다.');
+      }
+    } catch {
+      setResultMessage('이미지 변경에 실패했습니다. 잠시 후 다시 시도해주세요.');
     }
   };
 
