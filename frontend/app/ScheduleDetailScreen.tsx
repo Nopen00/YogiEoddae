@@ -4,6 +4,7 @@ import { AddPlaceAlert } from '@/components/modals/AddPlaceAlert';
 import { ScheduleEditNameAlert } from '@/components/modals/ScheduleEditNameAlert';
 import { Divider } from '@/components/ui/Divider';
 import { MediaMetaText } from '@/components/ui/MediaMetaText';
+import { PlaceThumb } from '@/components/ui/PlaceThumb';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { TagRow } from '@/components/ui/TagRow';
 import { TextSeparator } from '@/components/ui/TextSeparator';
@@ -615,11 +616,7 @@ export default function ScheduleDetailScreen() {
                           activeOpacity={isEditing ? 1 : 0.8}
                           onPress={isEditing ? undefined : () => router.push({ pathname: '/PlaceDetailScreen', params: { id: dp.place.id, name: dp.place.name } })}
                         >
-                          <Image
-                            source={{ uri: dp.place.image_url ?? undefined }}
-                            style={styles.placeCardImage}
-                            resizeMode="cover"
-                          />
+                          <PlaceThumb uri={dp.place.image_url} style={styles.placeCardImage} />
                           <View style={styles.placeCardContent}>
                             <Text style={styles.placeNameText}>{dp.place.name}</Text>
                             <View style={styles.placeSubRow}>

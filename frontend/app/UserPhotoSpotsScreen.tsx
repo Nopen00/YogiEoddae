@@ -9,7 +9,6 @@ import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { photoApi } from '@/services/api';
-import { pseudoRating } from '@/services/mockData';
 import type { Photo } from '@/services/types';
 import { getProcessedTags } from '@/utils/getProcessedTags';
 import { sortByOption } from '@/utils/sortByOption';
@@ -38,7 +37,7 @@ const UserPhotoSpotsScreen = () => {
   useFocusEffect(
     useCallback(() => {
       photoApi.getList({ author }).then(res => {
-        setPhotos(res.data.map(p => ({ ...p, rating: pseudoRating(p), like_count: p.likes })));
+        setPhotos(res.data.map(p => ({ ...p, rating: p.rating ?? 0, like_count: p.likes })));
       }).catch(() => {});
     }, [author])
   );

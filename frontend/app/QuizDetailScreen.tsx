@@ -4,6 +4,7 @@ import { MetaRow } from '@/components/ui/MetaRow';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { TagRow } from '@/components/ui/TagRow';
 import { TextSeparator } from '@/components/ui/TextSeparator';
+import { PlaceThumb } from '@/components/ui/PlaceThumb';
 import { Colors } from '@/constants/Colors';
 import { MEDIA_TYPE_LABEL } from '@/constants/labels';
 import { Size } from '@/constants/Size';
@@ -108,7 +109,7 @@ export default function QuizDetailScreen() {
           <View key={mp.id} style={index === 0 ? styles.questionBlock : [styles.questionBlock, styles.questionBlockSpaced]}>
             <Text style={styles.questionTitle}>{index + 1}. 이 장소는 어디일까?</Text>
             <View style={[styles.questionImageWrapper, { width: imageWidth, height: imageHeight }]}>
-              <Image source={{ uri: mp.place.image_url ?? undefined }} style={styles.questionImage} resizeMode="cover" />
+              <PlaceThumb uri={mp.place.image_url} style={styles.questionImage} />
             </View>
             <View style={styles.answerBox}>
               <TextInput

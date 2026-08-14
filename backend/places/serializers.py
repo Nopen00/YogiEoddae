@@ -1,3 +1,4 @@
+from django.db.models import Avg
 from rest_framework import serializers
 from .models import MediaPlace, Place, Media, Tag, Photo, PhotoImage
 
@@ -23,6 +24,8 @@ class TagSerializer(serializers.ModelSerializer):
 class PlaceSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
     is_bookmarked = serializers.SerializerMethodField()
+    rating = serializers.SerializerMethodField()
+    like_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Place
@@ -30,7 +33,7 @@ class PlaceSerializer(serializers.ModelSerializer):
             'id', 'content_id', 'name', 'address',
             'latitude', 'longitude', 'image_url',
             'category', 'is_verified', 'kakao_place_url',
-            'tags', 'is_bookmarked', 'created_at',
+            'tags', 'is_bookmarked', 'rating', 'like_count', 'created_at',
         ]
 
     def get_is_bookmarked(self, obj):
@@ -39,6 +42,13 @@ class PlaceSerializer(serializers.ModelSerializer):
             return False
         from bookmarks.models import PlaceBookmark
         return PlaceBookmark.objects.filter(user=user, place=obj).exists()
+
+    def get_rating(self, obj):
+        avg = obj.reviews.aggregate(avg=Avg('rating'))['avg']
+        return round(float(avg), 1) if avg is not None else 0
+
+    def get_like_count(self, obj):
+        return obj.bookmarks.count()
 
 
 class PhotoImageSerializer(serializers.ModelSerializer):
@@ -54,12 +64,13 @@ class PhotoSerializer(serializers.ModelSerializer):
     uploaded_by = serializers.SerializerMethodField()
     author = serializers.SerializerMethodField()
     isMine = serializers.SerializerMethodField()
+    rating = serializers.SerializerMethodField()
 
     class Meta:
         model = Photo
         fields = [
             'id', 'image_url', 'sub_images', 'description', 'content', 'travel_date',
-            'likes', 'tags', 'is_bookmarked', 'uploaded_by', 'author', 'isMine',
+            'likes', 'rating', 'tags', 'is_bookmarked', 'uploaded_by', 'author', 'isMine',
             'status', 'created_at',
         ]
 
@@ -83,6 +94,10 @@ class PhotoSerializer(serializers.ModelSerializer):
     def get_isMine(self, obj):
         user = _get_user_from_context(self.context)
         return bool(user) and obj.uploaded_by_id == user.id
+
+    def get_rating(self, obj):
+        avg = obj.reviews.aggregate(avg=Avg('rating'))['avg']
+        return round(float(avg), 1) if avg is not None else 0
 
 
 class PhotoSpotDetailSerializer(serializers.Serializer):
@@ -119,10 +134,12 @@ class MediaSerializer(serializers.ModelSerializer):
     is_bookmarked = serializers.SerializerMethodField()
     place_count = serializers.SerializerMethodField()
     is_submitted = serializers.SerializerMethodField()
+    rating = serializers.SerializerMethodField()
+    like_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Media
-        fields = ['id', 'title', 'media_type', 'year', 'thumbnail_url', 'description', 'tags', 'is_bookmarked', 'place_count', 'is_submitted', 'created_at']
+        fields = ['id', 'title', 'media_type', 'year', 'thumbnail_url', 'source_url', 'description', 'tags', 'is_bookmarked', 'place_count', 'is_submitted', 'rating', 'like_count', 'created_at']
 
     def get_is_bookmarked(self, obj):
         user = _get_user_from_context(self.context)
@@ -133,6 +150,13 @@ class MediaSerializer(serializers.ModelSerializer):
 
     def get_place_count(self, obj):
         return obj.media_places.filter(status='admin_approved').count()
+
+    def get_rating(self, obj):
+        avg = obj.reviews.aggregate(avg=Avg('rating'))['avg']
+        return round(float(avg), 1) if avg is not None else 0
+
+    def get_like_count(self, obj):
+        return obj.bookmarks.count()
 
     def get_is_submitted(self, obj):
         user = _get_user_from_context(self.context)

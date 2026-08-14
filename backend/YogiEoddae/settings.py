@@ -40,6 +40,12 @@ ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[
 
 CSRF_TRUSTED_ORIGINS = env.list('CSRF_TRUSTED_ORIGINS', default=['https://*.up.railway.app'])
 
+# Railway는 바깥에서 HTTPS로 받아 내부적으로 앱엔 HTTP로 전달하는 리버스 프록시 구조라,
+# 이 설정이 없으면 request.is_secure()가 항상 False로 판단돼 build_absolute_uri() 등이
+# http:// URL을 만들어버림 (업로드 이미지 URL이 http://가 되어 AI 검열 다운로드 실패 + 안드로이드
+# cleartext 차단으로 앱에서 이미지 로드 실패를 일으키던 원인, 2026-08-15 발견).
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 
 # Application definition
 

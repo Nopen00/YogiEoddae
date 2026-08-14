@@ -622,6 +622,41 @@ Phase 3(Quiz), Phase 8(인기 코스 정렬), Phase 10-1(코스 건의함), SMTP
 
 ---
 
+## 콘솔 빌드 실기기 테스트에서 발견한 버그 목록 (2026-08-14 발견)
+
+`eas build --profile preview`로 뽑은 APK를 실제 폰에 설치해서 테스트하다 발견한 것들.
+
+**상태 표시**: ✅ 완료(실기기 검증까지 끝남) / 🧪 테스트 중(코드 수정은 끝났고, 실기기 재테스트 결과 기다리는 중 — 결과 나오기 전까지는 후속 작업 보류) / 🔧 백엔드 필요 / (표시 없음) 미착수
+
+1. ~~**프로필 이미지 추가 시 권한 요청 누락**~~ — 🧪 테스트 중 (2026-08-15 수정, 재검증 대기). [AccountScreen.tsx](../frontend/app/AccountScreen.tsx)에 다른 화면들과 동일한 `ensureMediaLibraryPermission` 패턴 추가.
+2. ~~**"아이디 변경" 기능을 빼기로 했었는데 안 빠져있음**~~ — 🧪 테스트 중 (2026-08-15 수정, 재검증 대기). 6번과 함께 처리, 아래 참고.
+3. **MY페이지 토큰 개수 ≠ "건의하기" 화면에 보이는 토큰 개수** — 🧪 테스트 중 (2026-08-15 부분 수정, 재검증 대기): 둘 다 `userApi.getMe()`로 동일 소스를 읽고 있어서 코드상 불일치 원인은 못 찾음. 다만 [CourseSuggestionWriteScreen.tsx](../frontend/app/CourseSuggestionWriteScreen.tsx)가 조회 실패 시 조용히 무시(`catch(() => {})`)하고 있던 걸 401(로그인 만료) 시 로그인 화면으로 보내도록 고침 — SettingScreen.tsx와 동일하게 맞춤. 이번 불일치 제보가 env var 누락으로 API가 아예 안 붙던 구버전 preview APK에서 나온 증상일 가능성도 있어서, 재테스트 후에도 재현되면 다시 조사.
+4. ~~**장소 이미지가 일부만 로드됨**~~ — 🧪 수정 완료, 배포 대기 (2026-08-15). 원인은 버그가 아니라 데이터 한계: 운영 DB 확인 결과 전체 장소 284개 중 122개(빈 문자열 21 + NULL 101)가 애초에 `image_url`이 없음 — KTO(관광공사) API에 사진이 없거나, 카카오 지오코딩 폴백으로만 확정된 장소(카카오 로컬 API엔 사진 필드가 없음)라 구조적으로 이미지가 없는 게 정상. 새 공용 컴포넌트 [PlaceThumb.tsx](../frontend/components/ui/PlaceThumb.tsx)를 만들어서 `image_url`이 없으면 회색 박스+아이콘 플레이스홀더를 보여주도록, 장소 이미지를 쓰는 6개 화면(CourseDetailScreen 2곳/PlaceDetailScreen 2곳/PhotoSpotDetailScreen/QuizDetailScreen/ScheduleDetailScreen)에 전부 적용. (참고: ScheduleScreen의 `SmallCircle`은 원래부터 이미 자체 플레이스홀더 처리가 돼 있어서 손 안 댐)
+5. **지도가 안 불러와짐**
+   5.1. **카카오 관련 정보(장소 정보 등)도 안 불러와짐** — 미착수이지만 원인 유력 후보 찾음: preview APK 빌드에 `EXPO_PUBLIC_KAKAO_JS_KEY`를 포함한 env var가 전부 누락되어 있었음(`.env`가 `.gitignore`에 걸려서 EAS 빌드에 미포함). 2026-08-14에 EAS project의 `preview`/`production` 환경변수로 등록 완료 — 새 빌드로 재테스트해서 해결됐는지 확인.
+6. ~~**"내 정보"의 메뉴명 "아이디 변경" → "아이디 확인"으로 변경**~~ — 🧪 테스트 중 (2026-08-15 수정, 재검증 대기). [AccountScreen.tsx](../frontend/app/AccountScreen.tsx)에서 해당 행을 클릭 불가능한 순수 표시(라벨 "아이디 확인" + 아이디 값)로 변경, [IdChangeScreen.tsx](../frontend/app/IdChangeScreen.tsx) 파일과 `_layout.tsx`의 라우트 등록 전부 삭제.
+7. ~~**코스 리뷰 좋아요(따봉) 버튼 — 눌러도 저장 안 됨**~~ — 🧪 수정 완료, 배포 대기 (2026-08-15): [CourseDetailScreen.tsx:545](../frontend/app/CourseDetailScreen.tsx#L545)의 `onToggleLike`가 로컬 state만 토글하던 문제. `reviews` 앱에 `PlaceReviewLike`/`MediaReviewLike`/`PhotoReviewLike` 모델(각각 `photos` 앱의 `PhotoLike` 패턴 참고, user+review unique_together) 신규 추가하고, `POST/DELETE /api/reviews/<type>/<id>/like/`(`ReviewLikeView`) 신규 구현, 시리얼라이저에 `isLiked` 필드 추가. 프론트 3곳(CourseDetailScreen/PlaceDetailScreen/PhotoSpotDetailScreen)의 로컬 전용 토글도 실제 API 호출로 교체 완료 — 기존에 좋아요 여부 없이 `likeCount`에 로컬로 +1만 하던 "가짜 낙관적 업데이트"(`getReviewLikeCount`의 offset)도 이제 서버 값이 정확해져서 제거함.
+8. ~~**포토스팟 업로드 — 장소/날짜/사진 다 입력해도 "작성 완료" 버튼이 안 켜짐**~~ — 🧪 테스트 중 (2026-08-15 수정, 재검증 대기). 원래도 로직 자체는 정상(메인 이미지·제목·태그·설명 10자 이상·장소 5개 모두 필수인데 제목/태그/설명을 안 채웠던 것으로 추정)이었지만, 뭐가 부족한지 안내가 없었던 게 진짜 문제라 [PhotoSpotWriteScreen.tsx](../frontend/app/PhotoSpotWriteScreen.tsx) 버튼 아래에 부족한 항목을 나열하는 안내 텍스트 추가.
+9. **포토스팟 AI 검수가 이미지를 못 불러와서 "검사 불가 → 검토 대기"로 빠짐** — 🧪 원인 확정 + 수정 완료, 배포 대기 (2026-08-15). 13번과 동일 원인이었음, 아래 13번 설명 참고.
+
+### 추가 발견 (2026-08-15, 프론트 작업 중 새로 올라옴)
+
+10. ~~**포토스팟 상세 페이지 — 내가 작성한 포토스팟인데 디폴트 별점이 4.0으로 표시됨**~~ — 🧪 원인 확정 + 수정 완료, 배포 대기 (2026-08-15). 11번과 원인이 같았음, 아래 참고.
+11. ~~**코스/장소/포토스팟 카드 및 상세화면 — 별점·하트 수가 0일 때 아이콘/숫자 자체가 안 보임**~~ — 🧪 원인 확정 + 수정 완료, 배포 대기 (2026-08-15). 진짜 원인은 falsy(0) 체크가 아니라 **`Place`/`Media`/`Photo`의 `rating`/`like_count`를 백엔드가 애초에 응답에 넣어준 적이 없었던 것**(`PlaceSerializer`/`MediaSerializer`에 필드 자체가 없었음, `PhotoSerializer`도 `rating` 없음) — 프론트는 `!= null` 체크로 이미 올바르게 작성돼 있었는데 값이 늘 `undefined`라 항상 숨겨졌던 것. `places/serializers.py`에 세 시리얼라이저 전부 `get_rating`(관련 리뷰 평점 평균, 리뷰 없으면 0)·`get_like_count`(북마크 수) 신규 추가로 해결. 포토스팟 쪽은 그동안 `services/mockData.ts`의 `pseudoRating()`(id 기반 가짜 랜덤값, 3.8~4.9)으로 눈속임하던 것도 걷어내고 실제 `photo.rating`을 쓰도록 5개 파일(CourseScreen/CourseDetailScreen/SearchResultScreen/UserPhotoSpotsScreen/PhotoSpotDetailScreen) 전부 정리, `pseudoRating` 자체도 삭제 — 이게 10번(디폴트 4.0) 버그의 진짜 원인이었음.
+12. ~~**"작성한 리뷰" 화면 — 코스리뷰의 코스 카드에 표시되는 장소 카운트가 실제 데이터와 불일치**~~ — 🧪 원인 확정 + 수정 완료, 배포 대기 (2026-08-15): 백엔드 `MediaReviewSerializer.get_media()`가 애초에 `place_count` 필드를 응답에 안 넣고 있었음. 프론트 [labels.ts:36](../frontend/constants/labels.ts#L36)의 `` `${media.place_count ?? 0}개 장소` ``가 `undefined`를 항상 0으로 fallback 처리해서 **실제 값과 무관하게 무조건 "0개 장소"로 표시**되던 것. `places/serializers.py`의 `MediaSerializer.get_place_count()`와 동일한 계산식(`media_places.filter(status='admin_approved').count()`)을 `reviews/serializers.py`에도 추가해서 고침.
+13. ~~**리뷰 작성 시 이미지 업로드가 적용 안 됨 (포토스팟 작성과 동일한 오류)**~~ — 🧪 원인 확정 + 수정 완료, 배포 대기 (2026-08-15): 진짜 원인은 이미지 업로드 자체가 아니라 **업로드된 이미지를 다시 불러오는 게 전부 실패**하고 있었음.
+    - **원인 1**: `YogiEoddae/urls.py`가 `if settings.DEBUG: urlpatterns += static(...)` 식으로 media 서빙을 DEBUG 모드에서만 켜뒀는데, 운영 서버는 `DEBUG=False`라서 **`/media/` URL 자체가 항상 404**였음 (파일은 Railway 볼륨에 멀쩡히 있었음 — 라우팅만 안 됨). 게다가 Django의 `static()` 헬퍼는 내부적으로 `DEBUG=False`면 무조건 빈 리스트를 반환해버려서 바깥의 if문만 지워선 안 고쳐지고, `django.views.static.serve`를 직접 등록해야 했음.
+    - **원인 2**: 업로드 시 `request.build_absolute_uri()`로 image_url을 만드는데(`places/views.py:889`), Railway가 바깥엔 HTTPS·내부엔 HTTP로 프록시하는 구조라 `SECURE_PROXY_SSL_HEADER` 없이는 `http://`로 저장돼버림 → 안드로이드가 cleartext(http) 요청을 기본 차단해서 앱에서 이미지를 못 불러옴. `settings.py`에 `SECURE_PROXY_SSL_HEADER` 추가로 해결.
+    - 기존에 이미 `http://`로 저장돼 있던 사진 5건(Photo 2 + PhotoImage 3)도 운영 DB에서 `https://`로 직접 백필해둠.
+14. ~~**리뷰/포토스팟 작성 시 방문일이 작성일(오늘)보다 미래여도 막지 않음**~~ — 🧪 수정 완료, 배포 대기 (2026-08-15). [VisitDateAlert.tsx](../frontend/components/modals/VisitDateAlert.tsx)에 오늘 이후 날짜는 선택 자체가 안 되게(터치 비활성화 + 회색 표시) 하고, 다음 달로 넘어가는 화살표도 이번 달 이후로는 못 넘어가게 막음.
+15. ~~**코스/장소 카드의 더보기(⋮) 메뉴 — "리뷰쓰기" 항목이 작동 안 함**~~ — 🧪 수정 완료, 배포 대기 (2026-08-15). [MoreMenuAlert.tsx:41](../frontend/components/modals/MoreMenuAlert.tsx#L41) "리뷰쓰기" 버튼에 애초에 `onPress` 자체가 없었음(다른 메뉴 항목들은 다 있는데 이것만 빠짐). `onReviewPress` prop 추가하고 Course/Place/PhotoSpotDetailScreen 3곳 모두 연결.
+16. ~~**코스-유튜브 상세에서 유튜브 재생 버튼을 눌러도 유튜브로 이동 안 함**~~ — 🧪 수정 완료, 배포 대기 (2026-08-15). `Media.source_url`이 모델엔 있는데 `MediaSerializer`가 응답 필드에서 빠뜨리고 있었음 — 필드 목록에 추가.
+
+**a. 커스텀 관리자 포탈 접속 제한 적용** (앱 버그 목록과 별도 트랙, 기한 2026-08-28 — 약 14일)
+위 "커스텀 관리 포털들" (`/places/extract/`, `/places/photos/review/`, `/course-suggestions/review/` 등)이 로그인 보호 없이 URL만 알면 누구나 접근 가능한 상태(2026-08-14 발견). 방법 조사 후 적용. 앱 버그 테스트가 끝나기 전까지 처리하면 됨.
+
+---
+
 ## 개발 재개 체크리스트
 
 오랜만에 돌아왔을 때 이것만 확인하면 됩니다:

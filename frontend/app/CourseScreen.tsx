@@ -28,7 +28,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PagerView, { PagerViewHandle } from '@/components/ui/PagerViewWrapper';
 import { mediaApi, photoApi, placeApi } from '../services/api';
-import { pseudoRating } from '../services/mockData';
 import type { Media, Photo } from '../services/types';
 import { Size } from '@/constants/Size';
 
@@ -121,7 +120,7 @@ const CourseScreen = () => {
     placeApi.getList().then(res => {
       Promise.all(res.data.results.map(p => placeApi.getPhotos(p.id).then(r => r.data)))
         .then(results => {
-          const allPhotos: PhotoSpotItem[] = results.flat().map(p => ({ ...p, rating: pseudoRating(p), like_count: p.likes }));
+          const allPhotos: PhotoSpotItem[] = results.flat().map(p => ({ ...p, rating: p.rating ?? 0, like_count: p.likes }));
           setPhotoSpots(allPhotos);
           const map: Record<number, boolean> = {};
           allPhotos.forEach(p => { map[p.id] = p.is_bookmarked ?? false; });

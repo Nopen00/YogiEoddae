@@ -38,3 +38,32 @@ class PhotoReview(ReviewBase):
 
     def __str__(self):
         return f'{self.user} → Photo {self.photo.id} ({self.rating}★)'
+
+
+class ReviewLikeBase(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        abstract = True
+
+
+class PlaceReviewLike(ReviewLikeBase):
+    review = models.ForeignKey(PlaceReview, on_delete=models.CASCADE, related_name='like_records')
+
+    class Meta:
+        unique_together = ('user', 'review')
+
+
+class MediaReviewLike(ReviewLikeBase):
+    review = models.ForeignKey(MediaReview, on_delete=models.CASCADE, related_name='like_records')
+
+    class Meta:
+        unique_together = ('user', 'review')
+
+
+class PhotoReviewLike(ReviewLikeBase):
+    review = models.ForeignKey(PhotoReview, on_delete=models.CASCADE, related_name='like_records')
+
+    class Meta:
+        unique_together = ('user', 'review')

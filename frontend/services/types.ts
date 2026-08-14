@@ -43,6 +43,7 @@ export interface Photo {
   image_url: string;
   description: string;
   likes: number;
+  rating?: number | null;
   tags: Tag[];
   is_bookmarked?: boolean;
   travel_date: string;
@@ -84,6 +85,7 @@ export interface Review {
   hasPhoto: boolean;
   likeCount: number;
   isMine: boolean;
+  isLiked: boolean;
   target?: ReviewTarget;
 }
 

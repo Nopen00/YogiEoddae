@@ -58,6 +58,13 @@ interface VisitDateAlertProps {
   initialDate?: VisitDate | null;
 }
 
+// 방문일은 미래일 수 없음(작성 시점 기준) — 오늘 이후 날짜/월 선택을 막기 위한 기준
+const today = new Date();
+today.setHours(0, 0, 0, 0);
+const isFutureMonth = (date: Date) =>
+  date.getFullYear() > today.getFullYear() ||
+  (date.getFullYear() === today.getFullYear() && date.getMonth() > today.getMonth());
+
 export const VisitDateAlert = ({ visible, onClose, onConfirm, initialDate }: VisitDateAlertProps) => {
   const [calendarMonth, setCalendarMonth] = useState(
     initialDate ? new Date(initialDate.year, initialDate.month, 1) : new Date()
@@ -73,13 +80,20 @@ export const VisitDateAlert = ({ visible, onClose, onConfirm, initialDate }: Vis
     selectedDate.month === calendarMonth.getMonth() &&
     selectedDate.day === cell.day;
 
+  const isFutureCell = (cell: DayCell) =>
+    cell.inCurrentMonth &&
+    new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), cell.day) > today;
+
   const handleCellPress = (cell: DayCell) => {
-    if (!cell.inCurrentMonth) return;
+    if (!cell.inCurrentMonth || isFutureCell(cell)) return;
     setSelectedDate({ year: calendarMonth.getFullYear(), month: calendarMonth.getMonth(), day: cell.day });
   };
 
   const goToPrevMonth = () => setCalendarMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
-  const goToNextMonth = () => setCalendarMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+  const goToNextMonth = () => {
+    if (isFutureMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1))) return;
+    setCalendarMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+  };
 
   const handleConfirm = () => {
     if (!selectedDate) return;
@@ -110,8 +124,16 @@ export const VisitDateAlert = ({ visible, onClose, onConfirm, initialDate }: Vis
                   <TouchableOpacity onPress={() => setShowMonthPicker(true)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                     <Text style={styles.calendarTitle}>{formatYearMonth(calendarMonth)}</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity onPress={goToNextMonth} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                    <ChevronRight size={IconSize.large} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
+                  <TouchableOpacity
+                    onPress={goToNextMonth}
+                    disabled={isFutureMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1))}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  >
+                    <ChevronRight
+                      size={IconSize.large}
+                      color={isFutureMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1)) ? Colors.light.grayLight : Colors.light.grayDark}
+                      strokeWidth={IconStroke.regular}
+                    />
                   </TouchableOpacity>
                 </View>
 
@@ -136,12 +158,14 @@ export const VisitDateAlert = ({ visible, onClose, onConfirm, initialDate }: Vis
                     <View key={weekIndex} style={styles.dayRow}>
                       {week.map((cell, dayIndex) => {
                         const selected = isSelectedCell(cell);
+                        const disabled = isFutureCell(cell);
                         const isLastColumn = dayIndex === 6;
                         return (
                           <TouchableOpacity
                             key={dayIndex}
                             style={{ width: isLastColumn ? IconSize.large : IconSize.large + Spacing.h.medium, height: IconSize.large }}
                             onPress={() => handleCellPress(cell)}
+                            disabled={disabled}
                             activeOpacity={0.7}
                           >
                             {selected && <View style={styles.dayPillBackground} />}
@@ -152,6 +176,7 @@ export const VisitDateAlert = ({ visible, onClose, onConfirm, initialDate }: Vis
                                   dayIndex === 0 && styles.sundayText,
                                   dayIndex === 6 && styles.saturdayText,
                                   !cell.inCurrentMonth && styles.otherMonthText,
+                                  disabled && styles.otherMonthText,
                                   selected && styles.dayTextSelected,
                                 ]}
                               >

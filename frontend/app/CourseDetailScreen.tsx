@@ -10,6 +10,7 @@ import { ScheduleAlert } from '@/components/modals/ScheduleAlert';
 import { SortAlert } from '@/components/modals/SortAlert';
 import { getReviewLikeCount, ReviewCard } from '@/components/ui/ReviewCard';
 import { KakaoMap } from '@/components/ui/KakaoMap';
+import { PlaceThumb } from '@/components/ui/PlaceThumb';
 import PagerView from '@/components/ui/PagerViewWrapper';
 import { useScrollHeaderTitle } from '@/hooks/useScrollHeaderTitle';
 import { SaveHeart32 } from '@/components/icons/SaveHeart'; // 기존 저장 아이콘 가정
@@ -24,7 +25,6 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Calendar, Check, ChevronDown, Edit3, Heart, Play, Star } from 'lucide-react-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { mediaApi, placeApi, photoApi, reviewApi, scheduleApi } from '../services/api';
-import { pseudoRating } from '../services/mockData';
 import type { Media, MediaPlace, Photo, Review, Schedule } from '../services/types';
 import { Animated, Image, Linking, Modal, NativeScrollEvent, NativeSyntheticEvent, ScrollView, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -74,7 +74,6 @@ const CourseDetailScreen = () => {
   const [reviewSort, setReviewSort] = useState<ReviewSortOption>('추천순');
   const [isReviewSortVisible, setIsReviewSortVisible] = useState(false);
   const [expandedReviews, setExpandedReviews] = useState<Record<number, boolean>>({});
-  const [likedReviews, setLikedReviews] = useState<Record<number, boolean>>({});
   const [imagePopup, setImagePopup] = useState<{ images: string[]; index: number } | null>(null);
   const [reviewDeleteTarget, setReviewDeleteTarget] = useState<Review | null>(null);
   const [reviewReportTarget, setReviewReportTarget] = useState<Review | null>(null);
@@ -94,7 +93,7 @@ const CourseDetailScreen = () => {
           return a.rating - b.rating;
         case '추천순':
         default:
-          return getReviewLikeCount(b, likedReviews[b.id] ?? false) - getReviewLikeCount(a, likedReviews[a.id] ?? false);
+          return getReviewLikeCount(b) - getReviewLikeCount(a);
       }
     });
   const fetchDetail = useCallback(() => {
@@ -128,7 +127,7 @@ const CourseDetailScreen = () => {
     if (mediaPlaces.length === 0) return;
     Promise.all(mediaPlaces.map(mp => placeApi.getPhotos(mp.place.id).then(res => res.data)))
       .then(results => {
-        const photos: PhotoSpotItem[] = results.flat().map(p => ({ ...p, rating: pseudoRating(p), like_count: p.likes }));
+        const photos: PhotoSpotItem[] = results.flat().map(p => ({ ...p, rating: p.rating ?? 0, like_count: p.likes }));
         setPhotoSpots(photos);
         setSavedPhotoSpots(prev => {
           const next = { ...prev };
@@ -196,6 +195,15 @@ const CourseDetailScreen = () => {
     setIsScheduleVisible(true);
   };
 
+  const handleToggleReviewLike = async (review: Review) => {
+    try {
+      const res = review.isLiked
+        ? await reviewApi.unlike('course', review.id)
+        : await reviewApi.like('course', review.id);
+      setReviews((prev) => prev.map((r) => (r.id === review.id ? { ...r, likeCount: res.data.likes, isLiked: res.data.isLiked } : r)));
+    } catch {}
+  };
+
   const detailTabBarInner = (
     <>
       <View style={styles.detailTabBackgroundLine} />
@@ -223,7 +231,17 @@ const CourseDetailScreen = () => {
           right={
             <View style={styles.moreButtonWrapper}>
               <MoreButton onPress={() => setIsMenuVisible(!isMenuVisible)} />
-              {isMenuVisible && <MoreMenuAlert isSaved={isSaved} onSavePress={handleSaveToggle} onSchedulePress={handleSchedulePress} />}
+              {isMenuVisible && (
+                <MoreMenuAlert
+                  isSaved={isSaved}
+                  onSavePress={handleSaveToggle}
+                  onSchedulePress={handleSchedulePress}
+                  onReviewPress={() => {
+                    setIsMenuVisible(false);
+                    router.push({ pathname: '/ReviewWriteScreen', params: { type: 'course', id } });
+                  }}
+                />
+              )}
             </View>
           }
         />
@@ -385,7 +403,7 @@ const CourseDetailScreen = () => {
                   onPress={() => setImagePopup({ images: mediaPlaces.map((p) => p.place.image_url ?? ''), index })}
                 >
                   <View style={[styles.locationImageBox, { width: smallImageWidth, height: smallImageHeight }]}>
-                    <Image source={{ uri: mp.place.image_url ?? undefined }} style={styles.locationImage} resizeMode="cover" />
+                    <PlaceThumb uri={mp.place.image_url} style={styles.locationImage} />
                   </View>
                 </TouchableOpacity>
               ))}
@@ -429,11 +447,8 @@ const CourseDetailScreen = () => {
                           onPress={() => router.push({ pathname: '/PlaceDetailScreen', params: { id: mp.place.id, name: mp.place.name } })}
                         >
                           <View style={styles.courseCard}>
-                            <Image
-                              source={{ uri: mp.place.image_url ?? undefined }}
-                              style={styles.courseCardImage}
-                              resizeMode="cover"
-                            />
+                            <PlaceThumb uri={mp.place.image_url} style={styles.courseCardImage} />
+
                             <View style={styles.cardContent}>
                               <View style={styles.cardNameRow}>
                                 <Text style={styles.placeNameText}>{mp.place.name}</Text>
@@ -541,8 +556,8 @@ const CourseDetailScreen = () => {
                     review={review}
                     isExpanded={expandedReviews[review.id] ?? false}
                     onToggleExpand={() => setExpandedReviews((prev) => ({ ...prev, [review.id]: !prev[review.id] }))}
-                    isLiked={likedReviews[review.id] ?? false}
-                    onToggleLike={() => setLikedReviews((prev) => ({ ...prev, [review.id]: !prev[review.id] }))}
+                    isLiked={review.isLiked}
+                    onToggleLike={() => handleToggleReviewLike(review)}
                     onImagePress={(index) => setImagePopup({ images: review.images, index })}
                     onEditPress={() => router.push({ pathname: '/ReviewWriteScreen', params: { type: 'course', id, reviewId: review.id } })}
                     onDeletePress={() => setReviewDeleteTarget(review)}

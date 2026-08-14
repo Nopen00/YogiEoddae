@@ -14,6 +14,7 @@ interface MoreMenuAlertProps {
   isSaved: boolean;
   onSavePress: () => void;
   onSchedulePress?: () => void;
+  onReviewPress?: () => void;
   isToggled?: boolean;
   onTogglePress?: () => void;
   isToggleLocked?: boolean;
@@ -21,7 +22,7 @@ interface MoreMenuAlertProps {
   onEditPress?: () => void;
 }
 
-export const MoreMenuAlert = ({ isSaved, onSavePress, onSchedulePress, isToggled, onTogglePress, isToggleLocked, onReportPress, onEditPress }: MoreMenuAlertProps) => {
+export const MoreMenuAlert = ({ isSaved, onSavePress, onSchedulePress, onReviewPress, isToggled, onTogglePress, isToggleLocked, onReportPress, onEditPress }: MoreMenuAlertProps) => {
   return (
     <View style={styles.container}>
       <TouchableOpacity style={styles.menuItem} onPress={onSavePress} activeOpacity={0.7}>
@@ -38,7 +39,7 @@ export const MoreMenuAlert = ({ isSaved, onSavePress, onSchedulePress, isToggled
 
       <View style={styles.separator} />
 
-      <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
+      <TouchableOpacity style={styles.menuItem} onPress={onReviewPress} activeOpacity={0.7}>
         <Star size={IconSize.large} color={Colors.light.black} strokeWidth={IconStroke.regular} />
         <Text style={styles.menuText}>리뷰쓰기</Text>
       </TouchableOpacity>

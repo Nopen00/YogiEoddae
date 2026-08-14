@@ -8,14 +8,14 @@ from rest_framework.views import APIView
 
 from places.models import Media, Photo, Place
 from mailbox.services import grant_review_write_reward
-from .models import MediaReview, PhotoReview, PlaceReview
+from .models import MediaReview, MediaReviewLike, PhotoReview, PhotoReviewLike, PlaceReview, PlaceReviewLike
 from .serializers import MediaReviewSerializer, PhotoReviewSerializer, PlaceReviewSerializer
 
-# type 문자열 → (대상 모델, 리뷰 모델, 시리얼라이저, 리뷰 모델의 대상 FK 필드명)
+# type 문자열 → (대상 모델, 리뷰 모델, 시리얼라이저, 리뷰 모델의 대상 FK 필드명, 좋아요 모델)
 REVIEW_TYPES = {
-    'place': (Place, PlaceReview, PlaceReviewSerializer, 'place'),
-    'media': (Media, MediaReview, MediaReviewSerializer, 'media'),
-    'photo': (Photo, PhotoReview, PhotoReviewSerializer, 'photo'),
+    'place': (Place, PlaceReview, PlaceReviewSerializer, 'place', PlaceReviewLike),
+    'media': (Media, MediaReview, MediaReviewSerializer, 'media', MediaReviewLike),
+    'photo': (Photo, PhotoReview, PhotoReviewSerializer, 'photo', PhotoReviewLike),
 }
 
 
@@ -55,7 +55,7 @@ class ReviewListCreateView(APIView):
         if not entry or not target_id:
             return Response({'error': 'type과 id를 지정해주세요.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        _, review_model, serializer_class, fk_name = entry
+        _, review_model, serializer_class, fk_name, _ = entry
         reviews = _reviews_queryset(review_model, fk_name, review_type).filter(**{f'{fk_name}_id': target_id})
         return Response(serializer_class(reviews, many=True, context={'request': request}).data)
 
@@ -65,7 +65,7 @@ class ReviewListCreateView(APIView):
         if not entry:
             return Response({'error': '유효하지 않은 type입니다.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        target_model, review_model, serializer_class, fk_name = entry
+        target_model, review_model, serializer_class, fk_name, _ = entry
         target = get_object_or_404(target_model, pk=request.data.get('id'))
 
         rating = _validate_rating(request.data.get('rating'))
@@ -94,7 +94,7 @@ class MyReviewListView(APIView):
         if not entry:
             return Response({'error': '유효하지 않은 type입니다.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        _, review_model, serializer_class, fk_name = entry
+        _, review_model, serializer_class, fk_name, _ = entry
         reviews = _reviews_queryset(review_model, fk_name, review_type).filter(user=request.user)
         return Response(serializer_class(reviews, many=True, context={'request': request}).data)
 
@@ -113,7 +113,7 @@ class ReviewDetailView(APIView):
         entry = REVIEW_TYPES.get(review_type)
         if not entry:
             return Response({'error': '유효하지 않은 type입니다.'}, status=status.HTTP_400_BAD_REQUEST)
-        _, review_model, serializer_class, _ = entry
+        _, review_model, serializer_class, _, _ = entry
         review = get_object_or_404(review_model, pk=pk)
         return Response(serializer_class(review, context={'request': request}).data)
 
@@ -121,7 +121,7 @@ class ReviewDetailView(APIView):
         entry = REVIEW_TYPES.get(review_type)
         if not entry:
             return Response({'error': '유효하지 않은 type입니다.'}, status=status.HTTP_400_BAD_REQUEST)
-        _, review_model, serializer_class, _ = entry
+        _, review_model, serializer_class, _, _ = entry
         review = get_object_or_404(review_model, pk=pk, user=request.user)
 
         if 'rating' in request.data:
@@ -142,7 +142,38 @@ class ReviewDetailView(APIView):
         entry = REVIEW_TYPES.get(review_type)
         if not entry:
             return Response({'error': '유효하지 않은 type입니다.'}, status=status.HTTP_400_BAD_REQUEST)
-        _, review_model, _, _ = entry
+        _, review_model, _, _, _ = entry
         review = get_object_or_404(review_model, pk=pk, user=request.user)
         review.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ReviewLikeView(APIView):
+    """POST/DELETE /api/reviews/<review_type>/<pk>/like/  리뷰 좋아요 등록/취소 (JWT 필요)"""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, review_type, pk):
+        entry = REVIEW_TYPES.get(review_type)
+        if not entry:
+            return Response({'error': '유효하지 않은 type입니다.'}, status=status.HTTP_400_BAD_REQUEST)
+        _, review_model, _, _, like_model = entry
+        review = get_object_or_404(review_model, pk=pk)
+
+        _, created = like_model.objects.get_or_create(user=request.user, review=review)
+        if created:
+            review.likes += 1
+            review.save(update_fields=['likes'])
+        return Response({'likes': review.likes, 'isLiked': True})
+
+    def delete(self, request, review_type, pk):
+        entry = REVIEW_TYPES.get(review_type)
+        if not entry:
+            return Response({'error': '유효하지 않은 type입니다.'}, status=status.HTTP_400_BAD_REQUEST)
+        _, review_model, _, _, like_model = entry
+        review = get_object_or_404(review_model, pk=pk)
+
+        deleted, _ = like_model.objects.filter(user=request.user, review=review).delete()
+        if deleted:
+            review.likes = max(0, review.likes - 1)
+            review.save(update_fields=['likes'])
+        return Response({'likes': review.likes, 'isLiked': False})

@@ -29,7 +29,6 @@ import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { mediaApi, placeApi, photoApi, scheduleApi } from '../services/api';
-import { pseudoRating } from '../services/mockData';
 import type { Media, Place } from '../services/types';
 
 const CATEGORIES = ["전체", "코스", "명소", "포토스팟"];
@@ -78,7 +77,7 @@ const SearchResultScreen = () => {
       setPhotoSpots(res.data.map(photo => ({
         id: photo.id,
         name: photo.description,
-        rating: pseudoRating(photo),
+        rating: photo.rating ?? 0,
         like_count: photo.likes,
         tags: photo.tags.map(t => t.name),
       })));

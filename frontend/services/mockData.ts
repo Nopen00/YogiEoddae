@@ -407,11 +407,6 @@ export const mockPhotoPlaceId: Record<number, number> = Object.fromEntries(
   )
 );
 
-// 백엔드에 별점 필드가 아직 없어 임시로 사용하는 목데이터 전용 평점 — id 기반으로 고정값 산출
-export const pseudoRating = (photo: Photo): number => {
-  const val = 3.8 + ((photo.id * 7) % 12) / 10;
-  return Math.min(5, Math.round(val * 10) / 10);
-};
 
 export const MOCK_SCHEDULES: Schedule[] = [
   {
@@ -512,6 +507,7 @@ export const mockReviewStore: Review[] = [
     hasPhoto: true,
     likeCount: 24,
     isMine: false,
+    isLiked: false,
   },
   {
     id: 2,
@@ -524,6 +520,7 @@ export const mockReviewStore: Review[] = [
     hasPhoto: false,
     likeCount: 3,
     isMine: false,
+    isLiked: false,
   },
   {
     id: 3,
@@ -537,6 +534,7 @@ export const mockReviewStore: Review[] = [
     hasPhoto: true,
     likeCount: 11,
     isMine: false,
+    isLiked: false,
   },
 ];
 

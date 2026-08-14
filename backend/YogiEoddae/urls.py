@@ -15,10 +15,10 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.conf import settings
-from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
 from django.views.generic import TemplateView
+from django.views.static import serve
 from places.views import index_view
 
 urlpatterns = [
@@ -38,5 +38,11 @@ urlpatterns = [
     path('api/',    include('course_suggestions.urls')),
 ]
 
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# media(업로드된 포토스팟 이미지 등)는 별도 스토리지/CDN 없이 Railway 볼륨에 로컬 저장 중이라,
+# DEBUG 여부와 무관하게 항상 서빙해야 함. django.conf.urls.static.static()은 DEBUG=False면
+# 내부적으로 빈 리스트를 반환해버려서(no-op) 쓸 수 없고, serve 뷰를 직접 등록해야 함 —
+# 기존엔 DEBUG일 때만 서빙해서 운영 환경(DEBUG=False)에서 업로드 이미지가 전부 404가 나
+# AI 검열 다운로드 실패 + 앱에서 이미지 로드 실패로 이어졌었음 (2026-08-15 발견).
+urlpatterns += [
+    path('media/<path:path>', serve, {'document_root': settings.MEDIA_ROOT}),
+]

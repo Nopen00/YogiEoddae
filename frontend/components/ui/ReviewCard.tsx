@@ -23,8 +23,9 @@ export interface ReviewCardData {
   isMine?: boolean;
 }
 
-export const getReviewLikeCount = (review: ReviewCardData, isLiked: boolean) =>
-  review.likeCount + (isLiked ? 1 : 0);
+// 좋아요 여부가 서버에 저장되기 전에는 review.likeCount가 내 좋아요를 반영하지 못해서
+// 로컬에서 +1을 더해 보여주는 임시방편이었지만, 이제 likeCount 자체가 서버 값이라 그대로 씀
+export const getReviewLikeCount = (review: ReviewCardData) => review.likeCount;
 
 interface ReviewCardProps {
   review: ReviewCardData;
@@ -56,7 +57,7 @@ export const ReviewCard = ({
   sectionCard,
 }: ReviewCardProps) => {
   const isTruncated = review.content.length > REVIEW_TRUNCATE_LENGTH;
-  const likeCount = getReviewLikeCount(review, isLiked);
+  const likeCount = getReviewLikeCount(review);
 
   return (
     <View style={styles.card}>

@@ -9,6 +9,7 @@ import { ReportReviewAlert } from '@/components/modals/ReportReviewAlert';
 import { ScheduleAlert } from '@/components/modals/ScheduleAlert';
 import { SortAlert } from '@/components/modals/SortAlert';
 import { getReviewLikeCount, ReviewCard } from '@/components/ui/ReviewCard';
+import { PlaceThumb } from '@/components/ui/PlaceThumb';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { TagRow } from '@/components/ui/TagRow';
 import { TextSeparator } from '@/components/ui/TextSeparator';
@@ -27,7 +28,6 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, Image, Modal, NativeScrollEvent, NativeSyntheticEvent, ScrollView, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { photoApi, reviewApi, scheduleApi } from '../services/api';
-import { pseudoRating } from '../services/mockData';
 import type { PhotoSpotDetail, Review, Schedule } from '../services/types';
 
 const REVIEW_SORT_OPTIONS = ['추천순', '최신 여행 순', '최신 리뷰 순', '별점 높은 순', '별점 낮은 순'] as const;
@@ -68,7 +68,6 @@ const PhotoSpotDetailScreen = () => {
   const [reviewSort, setReviewSort] = useState<ReviewSortOption>('추천순');
   const [isReviewSortVisible, setIsReviewSortVisible] = useState(false);
   const [expandedReviews, setExpandedReviews] = useState<Record<number, boolean>>({});
-  const [likedReviews, setLikedReviews] = useState<Record<number, boolean>>({});
   const [imagePopup, setImagePopup] = useState<{ images: string[]; index: number } | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [reviewDeleteTarget, setReviewDeleteTarget] = useState<Review | null>(null);
@@ -91,7 +90,7 @@ const PhotoSpotDetailScreen = () => {
           return a.rating - b.rating;
         case '추천순':
         default:
-          return getReviewLikeCount(b, likedReviews[b.id] ?? false) - getReviewLikeCount(a, likedReviews[a.id] ?? false);
+          return getReviewLikeCount(b) - getReviewLikeCount(a);
       }
     });
   const toggleTag = (tag: string) => {
@@ -174,6 +173,15 @@ const PhotoSpotDetailScreen = () => {
     }).start();
   };
 
+  const handleToggleReviewLike = async (review: Review) => {
+    try {
+      const res = review.isLiked
+        ? await reviewApi.unlike('photospot', review.id)
+        : await reviewApi.like('photospot', review.id);
+      setReviews((prev) => prev.map((r) => (r.id === review.id ? { ...r, likeCount: res.data.likes, isLiked: res.data.isLiked } : r)));
+    } catch {}
+  };
+
   const detailTabBarInner = (
     <>
       <View style={styles.detailTabBackgroundLine} />
@@ -205,6 +213,10 @@ const PhotoSpotDetailScreen = () => {
                     isSaved={isSaved}
                     onSavePress={() => { toggleSaved(); setIsMenuVisible(false); }}
                     onSchedulePress={() => { setIsMenuVisible(false); setIsScheduleVisible(true); }}
+                    onReviewPress={() => {
+                      setIsMenuVisible(false);
+                      router.push({ pathname: '/ReviewWriteScreen', params: { type: 'photospot', id } });
+                    }}
                     onReportPress={photo?.isMine ? undefined : () => { setIsMenuVisible(false); setIsPhotoReportVisible(true); }}
                     onEditPress={photo?.isMine ? () => { setIsMenuVisible(false); router.push({ pathname: '/PhotoSpotWriteScreen', params: { id } }); } : undefined}
                   />
@@ -260,7 +272,7 @@ const PhotoSpotDetailScreen = () => {
 
             <MetaRow>
               <Star size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
-              <Text style={styles.metaText}> {photo ? pseudoRating(photo).toFixed(1) : '-'}</Text>
+              <Text style={styles.metaText}> {photo ? (photo.rating ?? 0).toFixed(1) : '-'}</Text>
               <TextSeparator />
               <Heart size={IconSize.xsmall} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
               <Text style={styles.metaText}> {photo?.likes ?? 0}</Text>
@@ -362,7 +374,7 @@ const PhotoSpotDetailScreen = () => {
                   onPress={() => place && router.push({ pathname: '/PlaceDetailScreen', params: { id: place.id, name: place.name } })}
                 >
                   <View style={styles.placeImageWrapper}>
-                    <Image source={{ uri: place?.image_url }} style={styles.placeImage} resizeMode="cover" />
+                    <PlaceThumb uri={place?.image_url} style={styles.placeImage} />
                   </View>
                   <View style={styles.placeCardContent}>
                     <Text style={styles.placeCardTitle} numberOfLines={1}>{place?.name ?? '로딩 중...'}</Text>
@@ -535,8 +547,8 @@ const PhotoSpotDetailScreen = () => {
                 review={review}
                 isExpanded={expandedReviews[review.id] ?? false}
                 onToggleExpand={() => setExpandedReviews((prev) => ({ ...prev, [review.id]: !prev[review.id] }))}
-                isLiked={likedReviews[review.id] ?? false}
-                onToggleLike={() => setLikedReviews((prev) => ({ ...prev, [review.id]: !prev[review.id] }))}
+                isLiked={review.isLiked}
+                onToggleLike={() => handleToggleReviewLike(review)}
                 onImagePress={(index) => setImagePopup({ images: review.images, index })}
                 onEditPress={() => router.push({ pathname: '/ReviewWriteScreen', params: { type: 'photospot', id, reviewId: review.id } })}
                 onDeletePress={() => setReviewDeleteTarget(review)}

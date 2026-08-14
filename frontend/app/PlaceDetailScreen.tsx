@@ -10,6 +10,7 @@ import { ReportReviewAlert } from '@/components/modals/ReportReviewAlert';
 import { ScheduleAlert } from '@/components/modals/ScheduleAlert';
 import { SortAlert } from '@/components/modals/SortAlert';
 import { getReviewLikeCount, ReviewCard } from '@/components/ui/ReviewCard';
+import { PlaceThumb } from '@/components/ui/PlaceThumb';
 import PagerView from '@/components/ui/PagerViewWrapper';
 import { useScrollHeaderTitle } from '@/hooks/useScrollHeaderTitle';
 import { SaveHeart32 } from '@/components/icons/SaveHeart';
@@ -92,7 +93,6 @@ const PlaceDetailScreen = () => {
   const [reviewSort, setReviewSort] = useState<ReviewSortOption>('추천순');
   const [isReviewSortVisible, setIsReviewSortVisible] = useState(false);
   const [expandedReviews, setExpandedReviews] = useState<Record<number, boolean>>({});
-  const [likedReviews, setLikedReviews] = useState<Record<number, boolean>>({});
   const [imagePopup, setImagePopup] = useState<{ reviewId: number; index: number } | null>(null);
   const [reviewDeleteTarget, setReviewDeleteTarget] = useState<Review | null>(null);
   const [reviewReportTarget, setReviewReportTarget] = useState<Review | null>(null);
@@ -111,7 +111,7 @@ const PlaceDetailScreen = () => {
           return a.rating - b.rating;
         case '추천순':
         default:
-          return getReviewLikeCount(b, likedReviews[b.id] ?? false) - getReviewLikeCount(a, likedReviews[a.id] ?? false);
+          return getReviewLikeCount(b) - getReviewLikeCount(a);
       }
     });
   const popupReview = imagePopup ? reviews.find((r) => r.id === imagePopup.reviewId) : null;
@@ -190,6 +190,15 @@ const PlaceDetailScreen = () => {
     } catch {}
   };
 
+  const handleToggleReviewLike = async (review: Review) => {
+    try {
+      const res = review.isLiked
+        ? await reviewApi.unlike('place', review.id)
+        : await reviewApi.like('place', review.id);
+      setReviews((prev) => prev.map((r) => (r.id === review.id ? { ...r, likeCount: res.data.likes, isLiked: res.data.isLiked } : r)));
+    } catch {}
+  };
+
   const handleSourceTogglePress = () => {
     if (isToggleLocked) return;
     const now = Date.now();
@@ -240,6 +249,10 @@ const PlaceDetailScreen = () => {
                     isSaved={isSaved}
                     onSavePress={handleSaveToggle}
                     onSchedulePress={() => { setIsMenuVisible(false); setIsScheduleVisible(true); }}
+                    onReviewPress={() => {
+                      setIsMenuVisible(false);
+                      router.push({ pathname: '/ReviewWriteScreen', params: { type: 'place', id } });
+                    }}
                     isToggled={isToggled}
                     onTogglePress={handleSourceTogglePress}
                     isToggleLocked={isToggleLocked}
@@ -274,7 +287,7 @@ const PlaceDetailScreen = () => {
         >
           {/* 대표 이미지 */}
           <View style={[styles.imageContainer, { width: imageWidth, height: imageHeight }]}>
-            <Image source={{ uri: place?.image_url ?? undefined }} style={styles.mainImage} resizeMode="cover" />
+            <PlaceThumb uri={place?.image_url} style={styles.mainImage} iconSize={48} />
             {!isLargeIconMode && (
               <>
                 <TouchableOpacity style={styles.imageSaveButton} onPress={handleSaveToggle} activeOpacity={0.8}>
@@ -429,7 +442,7 @@ const PlaceDetailScreen = () => {
                       onPress={() => router.push({ pathname: '/PlaceDetailScreen', params: { id: nearby.id, name: nearby.name } })}
                     >
                       <View style={[styles.nearbyImageBox, { height: smallImageHeight }]}>
-                        <Image source={{ uri: nearby.image_url ?? undefined }} style={styles.nearbyImage} resizeMode="cover" />
+                        <PlaceThumb uri={nearby.image_url} style={styles.nearbyImage} />
                         <TouchableOpacity style={styles.nearbyHeart} onPress={(e) => { e.stopPropagation(); toggleNearby(nearby.id); }} activeOpacity={0.8}>
                           <Heart
                             size={IconSize.large}
@@ -535,8 +548,8 @@ const PlaceDetailScreen = () => {
                     review={review}
                     isExpanded={expandedReviews[review.id] ?? false}
                     onToggleExpand={() => setExpandedReviews((prev) => ({ ...prev, [review.id]: !prev[review.id] }))}
-                    isLiked={likedReviews[review.id] ?? false}
-                    onToggleLike={() => setLikedReviews((prev) => ({ ...prev, [review.id]: !prev[review.id] }))}
+                    isLiked={review.isLiked}
+                    onToggleLike={() => handleToggleReviewLike(review)}
                     onImagePress={(index) => setImagePopup({ reviewId: review.id, index })}
                     onEditPress={() => router.push({ pathname: '/ReviewWriteScreen', params: { type: 'place', id, reviewId: review.id } })}
                     onDeletePress={() => setReviewDeleteTarget(review)}

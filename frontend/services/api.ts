@@ -722,6 +722,7 @@ const normalizeReview = (raw: any, type: ReviewTargetType): Review => {
     hasPhoto: raw.hasPhoto,
     likeCount: raw.likeCount,
     isMine: raw.isMine,
+    isLiked: !!raw.isLiked,
     target,
   };
 };
@@ -775,6 +776,7 @@ export const reviewApi = {
         hasPhoto: data.images.length > 0,
         likeCount: 0,
         isMine: true,
+        isLiked: false,
         target: buildMockReviewTarget(type, targetId),
       };
       mockReviewStore.unshift(newReview);
@@ -822,6 +824,14 @@ export const reviewApi = {
       return mock({});
     }
     return apiClient.delete(`/api/reviews/${REVIEW_TYPE_TO_BACKEND[type]}/${id}/`);
+  },
+  like: (type: ReviewTargetType, id: number) => {
+    if (USE_MOCK) return mock({ likes: 1, isLiked: true });
+    return apiClient.post<{ likes: number; isLiked: boolean }>(`/api/reviews/${REVIEW_TYPE_TO_BACKEND[type]}/${id}/like/`);
+  },
+  unlike: (type: ReviewTargetType, id: number) => {
+    if (USE_MOCK) return mock({ likes: 0, isLiked: false });
+    return apiClient.delete<{ likes: number; isLiked: boolean }>(`/api/reviews/${REVIEW_TYPE_TO_BACKEND[type]}/${id}/like/`);
   },
   report: (type: ReviewTargetType, id: number, reason: string) => {
     if (USE_MOCK) return mock({});

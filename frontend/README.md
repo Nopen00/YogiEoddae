@@ -83,7 +83,7 @@ app/
 포토스팟 탭은 2열 그리드 카드(`photoSpotCard`)로 구성되고, **장소(Place) 단위가 아니라 개별 사진(Photo) 단위**로 카드가 그려집니다 — `placeApi.getList()`로 가져온 모든 장소마다 `placeApi.getPhotos(placeId)`를 호출해 사진을 전부 펼친(`flat`) 뒤 사진 하나당 카드 하나(`photoSpots` state)를 만듭니다. 즉 사진이 2장인 장소는 카드 2개로 보입니다.
 
 - 카드 구조: 4:3 이미지(`photoSpotImageWrapper`, 하단 모서리 각짐) + 하단 정보 박스(`photoSpotInfoBox`, 타이틀·태그). 이미지 위에는 저장 하트 아이콘(우상단)과 별점·하트수(좌하단, 메인 화면 캐러셀과 동일한 하단 그라데이션 오버레이 위에 화이트 텍스트)가 겹쳐집니다.
-- 카드에 쓰이는 타이틀·태그·평점·좋아요 수는 모두 **사진(Photo) 자체의 데이터**입니다 — 타이틀은 `photo.description`, 태그는 `photo.tags`(장소 태그와 별개), 좋아요 수는 `photo.likes`. `Photo`에는 평점 필드가 없어서 `services/mockData.ts`의 `pseudoRating()`으로 임시 평점을 계산합니다(백엔드에 rating 필드 추가되면 교체 필요).
+- 카드에 쓰이는 타이틀·태그·평점·좋아요 수는 모두 **사진(Photo) 자체의 데이터**입니다 — 타이틀은 `photo.description`, 태그는 `photo.tags`(장소 태그와 별개), 좋아요 수는 `photo.likes`, 평점은 `photo.rating`(백엔드에서 해당 포토스팟 리뷰 평점 평균으로 계산, 리뷰 없으면 `null` → 0으로 표시).
 - 저장 하트는 `photoApi.bookmark`/`unbookmark` + 로컬 상태(`savedPhotos`)로 토글되며, 저장 시 채워진 빨간 하트(`#F24C54`)로 바뀌고 좋아요 수도 즉시 ±1 반영됩니다.
 - 상단 포토태그 목록(원형 아이템)을 탭하면 `selectedPhotoTag`가 설정되어 포토태그 박스가 알약형 필터 박스로 교체되고(`renderPhotoTagSection`), 포토스팟 그리드는 해당 태그를 가진 사진만(`filteredPhotoSpots`, `photo.tags` 기준)으로 필터링됩니다. 필터 박스의 X 아이콘으로 해제합니다.
 - 전체 탭의 포토태그 박스도 동일한 선택 상태를 공유해 같이 알약형으로 바뀌지만, 실제 필터링은 포토스팟 탭에서만 동작합니다.

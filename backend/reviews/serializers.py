@@ -9,9 +9,10 @@ class ReviewSerializerBase(serializers.ModelSerializer):
     hasPhoto = serializers.SerializerMethodField()
     likeCount = serializers.IntegerField(source='likes')
     isMine = serializers.SerializerMethodField()
+    isLiked = serializers.SerializerMethodField()
 
     class Meta:
-        fields = ('id', 'author', 'travelDate', 'writtenDate', 'rating', 'content', 'images', 'hasPhoto', 'likeCount', 'isMine')
+        fields = ('id', 'author', 'travelDate', 'writtenDate', 'rating', 'content', 'images', 'hasPhoto', 'likeCount', 'isMine', 'isLiked')
 
     def get_author(self, obj):
         return obj.user.nickname
@@ -26,6 +27,13 @@ class ReviewSerializerBase(serializers.ModelSerializer):
         request = self.context.get('request')
         user = getattr(request, 'user', None) if request else None
         return bool(user and user.is_authenticated and user.id == obj.user_id)
+
+    def get_isLiked(self, obj):
+        request = self.context.get('request')
+        user = getattr(request, 'user', None) if request else None
+        if not user or not user.is_authenticated:
+            return False
+        return obj.like_records.filter(user_id=user.id).exists()
 
 
 def _tag_list(tags):
@@ -64,6 +72,7 @@ class MediaReviewSerializer(ReviewSerializerBase):
             'media_type': obj.media.media_type,
             'thumbnail_url': obj.media.thumbnail_url,
             'tags': _tag_list(obj.media.tags),
+            'place_count': obj.media.media_places.filter(status='admin_approved').count(),
         }
 
 
