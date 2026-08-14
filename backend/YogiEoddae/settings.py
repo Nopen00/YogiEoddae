@@ -26,12 +26,19 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-snr@nu(e$fi4_2+45md-(x%(_05&qn(%lx8ezx3vyu=6gqn!%3'
+# 배포 환경에서는 Railway 등 환경변수에 SECRET_KEY를 새로 발급해 넣을 것 (아래 default는 로컬 개발용)
+SECRET_KEY = env('SECRET_KEY', default='django-insecure-snr@nu(e$fi4_2+45md-(x%(_05&qn(%lx8ezx3vyu=6gqn!%3')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env.bool('DEBUG', default=True)
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '192.168.0.6', '192.168.0.7', '.ngrok-free.app', '.ngrok-free.dev', '.ngrok.io']
+# .up.railway.app는 Railway가 배포 시 자동 발급하는 도메인이라 미리 허용해둠
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[
+    'localhost', '127.0.0.1', '192.168.0.6', '192.168.0.7',
+    '.ngrok-free.app', '.ngrok-free.dev', '.ngrok.io', '.up.railway.app',
+])
+
+CSRF_TRUSTED_ORIGINS = env.list('CSRF_TRUSTED_ORIGINS', default=['https://*.up.railway.app'])
 
 
 # Application definition
@@ -57,6 +64,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'users.middleware.UpdateLastActiveMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -146,8 +154,11 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # 유저 업로드 이미지(포토스팟 등). 배포 시 S3/R2 등으로 전환 예정 — DEVPLAN.md "이미지 스토리지 배포 전환 가이드" 참고.
+# Railway 배포 시 이 경로에 Volume을 마운트해야 재배포 후에도 업로드 이미지가 유지됨.
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
