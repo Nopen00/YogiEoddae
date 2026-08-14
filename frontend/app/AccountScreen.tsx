@@ -34,8 +34,12 @@ const AccountScreen = () => {
         setUserId(res.data.username);
         setEmail(res.data.email);
         setProfileImage(res.data.profile_image);
-      }).catch(() => {
-        router.replace('/LoginScreen');
+      }).catch((error) => {
+        if (error?.response?.status === 401) {
+          router.replace('/LoginScreen');
+        } else {
+          setResultMessage('정보를 불러오지 못했어요. 잠시 후 다시 시도해주세요.');
+        }
       });
     }, [])
   );

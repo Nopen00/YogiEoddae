@@ -19,7 +19,7 @@ const HIDDEN_TAB_ROUTES = ['/SearchScreen', '/LoginScreen', '/SignInScreen', '/S
 // +not-found 화면으로 떨어지는데, 그런 미확정 경로에서까지 탭바가 화면 위에 겹쳐 뜨는 것을 막기 위해
 // "알려진 경로일 때만" 탭바를 보여주는 화이트리스트 방식으로 판단한다.
 const KNOWN_ROUTES = [
-  'SearchScreen', 'SearchResultScreen', 'CourseDetailScreen', 'PlaceDetailScreen', 'PhotoSpotDetailScreen',
+  'MainScreen', 'SearchScreen', 'SearchResultScreen', 'CourseDetailScreen', 'PlaceDetailScreen', 'PhotoSpotDetailScreen',
   'ReviewWriteScreen', 'PhotoSpotWriteScreen', 'ScheduleScreen', 'SavedListScreen', 'QuizListScreen', 'QuizDetailScreen',
   'SettingScreen', 'MailboxScreen', 'TokenChargeScreen', 'ReviewManageScreen', 'PhotoSpotManageScreen',
   'CourseSuggestionWriteScreen', 'UserPhotoSpotsScreen', 'LoginScreen', 'SignInScreen', 'SignUpAgreementScreen',

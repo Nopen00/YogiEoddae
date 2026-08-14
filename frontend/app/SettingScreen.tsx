@@ -31,8 +31,10 @@ const SettingScreen = () => {
         setProfileImage(res.data.profile_image);
         setTokenBalance(res.data.token_balance);
         setHasEmail(res.data.email.trim().length > 0);
-      }).catch(() => {
-        router.replace('/LoginScreen');
+      }).catch((error) => {
+        if (error?.response?.status === 401) {
+          router.replace('/LoginScreen');
+        }
       });
       mailApi.getList().then(res => setHasMail(res.data.length > 0)).catch(() => {});
     }, [])
