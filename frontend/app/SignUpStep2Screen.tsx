@@ -41,6 +41,7 @@ const SignUpStep2Screen = () => {
   const [usernameErrors, setUsernameErrors] = useState<string[]>([]);
   const [confirmPopupVisible, setConfirmPopupVisible] = useState(false);
   const [setupLaterPopupVisible, setSetupLaterPopupVisible] = useState(false);
+  const [signupErrorMessage, setSignupErrorMessage] = useState<string | null>(null);
 
   const handleChangeUsername = (text: string) => {
     setUsername(text);
@@ -103,6 +104,8 @@ const SignUpStep2Screen = () => {
       const duplicateUsername = e?.response?.data?.username?.[0];
       if (duplicateUsername) {
         setUsernameErrors([duplicateUsername]);
+      } else {
+        setSignupErrorMessage('회원가입에 실패했습니다. 잠시 후 다시 시도해주세요.');
       }
     }
   };
@@ -232,6 +235,18 @@ const SignUpStep2Screen = () => {
           <View style={styles.resultPopupBox}>
             <Text style={styles.resultTitle}>다음에 설정하기로 완료되었습니다.</Text>
             <Text style={styles.resultSub1}>MY페이지에서 언제든지 이메일을 연동하실 수 있어요.</Text>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      <Modal visible={signupErrorMessage !== null} transparent animationType="none">
+        <TouchableOpacity
+          style={styles.resultOverlay}
+          activeOpacity={1}
+          onPress={() => setSignupErrorMessage(null)}
+        >
+          <View style={styles.resultPopupBox}>
+            <Text style={styles.resultTitle}>{signupErrorMessage}</Text>
           </View>
         </TouchableOpacity>
       </Modal>
