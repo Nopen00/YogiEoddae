@@ -26,6 +26,7 @@ urlpatterns = [
     path('admin/',  admin.site.urls),
     path('privacy/', TemplateView.as_view(template_name='legal/privacy.html'), name='privacy'),
     path('terms/',   TemplateView.as_view(template_name='legal/terms.html'),   name='terms'),
+    path('account-deletion/', TemplateView.as_view(template_name='legal/account-deletion.html'), name='account-deletion'),
     path('places/', include('places.urls')),
     path('course-suggestions/', include('course_suggestions.admin_urls')),
     path('api/',    include('places.api_urls')),
