@@ -94,6 +94,13 @@ const PhotoSpotWriteScreen = () => {
     description.trim().length >= 10 &&
     selectedPlace !== null;
 
+  const missingFieldLabels: string[] = [];
+  if (mainImage === null) missingFieldLabels.push('메인 이미지');
+  if (title.trim().length === 0) missingFieldLabels.push('제목');
+  if (tags.length === 0) missingFieldLabels.push('태그');
+  if (description.trim().length < 10) missingFieldLabels.push('설명(10자 이상)');
+  if (selectedPlace === null) missingFieldLabels.push('장소');
+
   const hasUnsavedChanges = () => {
     const snap = initialSnapshotRef.current;
     if (title !== snap.title) return true;
@@ -337,6 +344,10 @@ const PhotoSpotWriteScreen = () => {
             <Text style={[styles.submitButtonText, !isSubmitEnabled && styles.submitButtonTextDisabled]}>{isEditMode ? '수정 완료' : '작성 완료'}</Text>
           )}
         </TouchableOpacity>
+
+        {!isSubmitEnabled && missingFieldLabels.length > 0 && (
+          <Text style={styles.missingFieldsText}>{missingFieldLabels.join(', ')} 입력이 필요해요.</Text>
+        )}
       </ScrollView>
 
       <TagAddAlert
@@ -570,6 +581,13 @@ const styles = StyleSheet.create({
   submitButtonDisabled: { backgroundColor: Colors.light.grayLight },
   submitButtonText: { ...Typography.button2, color: Colors.light.white },
   submitButtonTextDisabled: { color: Colors.light.grayDark },
+  missingFieldsText: {
+    ...Typography.body2,
+    color: Colors.light.error,
+    textAlign: 'center',
+    marginTop: Spacing.v.small,
+    marginHorizontal: Spacing.h.medium,
+  },
   overlay: { flex: 1, backgroundColor: Colors.light.overlay, justifyContent: 'center', alignItems: 'center' },
   unsavedPopup: {
     width: width - 64,

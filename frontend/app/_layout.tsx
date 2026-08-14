@@ -24,7 +24,7 @@ const KNOWN_ROUTES = [
   'SettingScreen', 'MailboxScreen', 'TokenChargeScreen', 'ReviewManageScreen', 'PhotoSpotManageScreen',
   'CourseSuggestionWriteScreen', 'UserPhotoSpotsScreen', 'LoginScreen', 'SignInScreen', 'SignUpAgreementScreen',
   'SignUpScreen', 'SignUpStep2Screen', 'EmailSetupScreen', 'FindIdScreen', 'FindIdResultScreen', 'FindPasswordScreen',
-  'AccountScreen', 'PasswordConfirmScreen', 'PasswordChangeScreen', 'IdChangeScreen', 'PasswordEditScreen',
+  'AccountScreen', 'PasswordConfirmScreen', 'PasswordChangeScreen', 'PasswordEditScreen',
   'PasswordResetScreen', 'EmailChangeScreen', 'EmailVerifyScreen', 'WithdrawalScreen', 'ScheduleDetailScreen', 'CourseScreen',
 ];
 
@@ -84,7 +84,6 @@ function RootLayoutNav() {
             <Stack.Screen name="AccountScreen" options={{ headerShown: false }} />
             <Stack.Screen name="PasswordConfirmScreen" options={{ headerShown: false }} />
             <Stack.Screen name="PasswordChangeScreen" options={{ headerShown: false }} />
-            <Stack.Screen name="IdChangeScreen" options={{ headerShown: false }} />
             <Stack.Screen name="PasswordEditScreen" options={{ headerShown: false }} />
             <Stack.Screen name="PasswordResetScreen" options={{ headerShown: false }} />
             <Stack.Screen name="EmailChangeScreen" options={{ headerShown: false }} />

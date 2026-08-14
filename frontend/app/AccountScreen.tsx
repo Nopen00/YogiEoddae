@@ -44,8 +44,24 @@ const AccountScreen = () => {
     }, [])
   );
 
+  const ensureMediaLibraryPermission = async () => {
+    const { status, canAskAgain } = await ImagePicker.getMediaLibraryPermissionsAsync();
+    if (status === 'granted') return true;
+    if (!canAskAgain) {
+      setResultMessage('사진 접근 권한이 필요합니다. 설정에서 사진 접근 권한을 허용해주세요.');
+      return false;
+    }
+    const { status: requested } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (requested !== 'granted') {
+      setResultMessage('사진을 선택하려면 접근 권한을 허용해주세요.');
+      return false;
+    }
+    return true;
+  };
+
   const handlePickProfileImage = async () => {
     try {
+      if (!(await ensureMediaLibraryPermission())) return;
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
         quality: 0.8,
@@ -89,13 +105,10 @@ const AccountScreen = () => {
           </View>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.sectionRow} activeOpacity={0.7} onPress={() => router.push('/IdChangeScreen')}>
-          <Text style={styles.sectionRowTitle}>아이디 변경</Text>
-          <View style={styles.sectionRowRight}>
-            <Text style={styles.sectionRowValue}>{userId}</Text>
-            <ChevronRight size={IconSize.medium} color={Colors.light.grayDark} strokeWidth={IconStroke.regular} />
-          </View>
-        </TouchableOpacity>
+        <View style={styles.sectionRow}>
+          <Text style={styles.sectionRowTitle}>아이디 확인</Text>
+          <Text style={styles.sectionRowValue}>{userId}</Text>
+        </View>
 
         <TouchableOpacity style={styles.sectionRow} activeOpacity={0.7} onPress={() => router.push('/PasswordEditScreen')}>
           <Text style={styles.sectionRowTitle}>비밀번호 변경</Text>

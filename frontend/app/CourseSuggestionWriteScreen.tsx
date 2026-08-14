@@ -48,7 +48,9 @@ const CourseSuggestionWriteScreen = () => {
 
   useFocusEffect(
     useCallback(() => {
-      userApi.getMe().then(res => setTokenBalance(res.data.token_balance)).catch(() => {});
+      userApi.getMe().then(res => setTokenBalance(res.data.token_balance)).catch((error) => {
+        if (error?.response?.status === 401) router.replace('/LoginScreen');
+      });
     }, [])
   );
 

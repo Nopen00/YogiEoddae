@@ -15,13 +15,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-// 백엔드 규칙(영문 소문자+숫자+_/., 4~20자) 기준
-const USERNAME_REGEX = /^[a-z0-9_.]*$/;
+// 백엔드 규칙(영문+숫자, 5~20자) 기준
+const USERNAME_REGEX = /^[a-zA-Z0-9]*$/;
 
 const getUsernameErrors = (username: string): string[] => {
   const errors: string[] = [];
-  if (!USERNAME_REGEX.test(username)) errors.push("영문 소문자, 숫자, '_', '.'만 입력가능합니다.");
-  if (username.length < 4 || username.length > 20) errors.push('4~20자로 입력해주세요.');
+  if (!USERNAME_REGEX.test(username)) errors.push('영문, 숫자만 입력가능합니다.');
+  if (username.length < 5 || username.length > 20) errors.push('5~20자로 입력해주세요.');
   return errors;
 };
 
@@ -121,7 +121,7 @@ const SignUpStep2Screen = () => {
 
             <LabeledInputBox
               label="아이디"
-              placeholder="영문 소문자, 숫자, 특수문자(_, .) (4~20자)"
+              placeholder="영문, 숫자 (5~20자)"
               value={username}
               onChangeText={handleChangeUsername}
               onBlur={handleBlurUsername}
