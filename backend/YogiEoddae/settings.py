@@ -210,6 +210,11 @@ if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
     EMAIL_HOST = 'smtp.gmail.com'
     EMAIL_PORT = 587
     EMAIL_USE_TLS = True
+    # 배포 환경에서 587 포트로 나가는 연결이 막혀있으면 소켓 connect()가 응답 없이
+    # 무한 대기하다 gunicorn 자체 타임아웃(기본 30초)에 워커 프로세스 전체가
+    # SIGABRT로 죽는 문제가 있었음(2026-08-18 Railway 배포 로그로 확인).
+    # 타임아웃을 짧게 걸어서 워커를 죽이는 대신 예외로 빨리 실패하게 한다.
+    EMAIL_TIMEOUT = 10
 else:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
