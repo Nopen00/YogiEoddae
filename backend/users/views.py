@@ -1,10 +1,13 @@
+import os
 import uuid
 from datetime import timedelta
 
 from django.contrib.auth.hashers import check_password, make_password
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.core.files.storage import default_storage
 from django.utils import timezone
 from rest_framework import status
+from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -399,6 +402,7 @@ class UserMeView(APIView):
             'username': user.username,
             'nickname': user.nickname,
             'email': user.email,
+            'profile_image': user.profile_image,
             'token_balance': user.token_balance,
         })
 
@@ -410,6 +414,10 @@ class UserMeView(APIView):
         if 'nickname' in request.data:
             user.nickname = (request.data.get('nickname') or '').strip()
             update_fields.append('nickname')
+
+        if 'profile_image' in request.data:
+            user.profile_image = (request.data.get('profile_image') or '').strip() or None
+            update_fields.append('profile_image')
 
         if 'username' in request.data:
             username = (request.data.get('username') or '').strip()
@@ -436,8 +444,27 @@ class UserMeView(APIView):
             'username': user.username,
             'nickname': user.nickname,
             'email': user.email,
+            'profile_image': user.profile_image,
             'token_balance': user.token_balance,
         })
+
+
+class UserAvatarUploadView(APIView):
+    """POST /api/users/upload-avatar/  프로필 사진 파일 업로드(multipart, JWT) → profile_image URL 반환.
+    /api/photos/upload-image/와 동일한 패턴(로컬 디스크 저장 후 절대 URL 반환), 저장 폴더만 avatars/로 분리."""
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser]
+
+    def post(self, request):
+        file = request.FILES.get('image')
+        if not file:
+            return Response({'image': ['이미지 파일이 필요합니다.']}, status=status.HTTP_400_BAD_REQUEST)
+
+        ext = os.path.splitext(file.name)[1].lower() or '.jpg'
+        filename = f'avatars/{uuid.uuid4().hex}{ext}'
+        saved_path = default_storage.save(filename, file)
+        image_url = request.build_absolute_uri(default_storage.url(saved_path))
+        return Response({'profile_image': image_url}, status=status.HTTP_201_CREATED)
 
 
 # 실제 PG(토스페이먼츠 등) 연동 전까지의 mock 카탈로그.

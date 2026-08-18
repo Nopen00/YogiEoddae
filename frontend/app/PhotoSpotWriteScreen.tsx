@@ -23,7 +23,7 @@ const imageWidth = width - Spacing.h.medium * 2;
 const imageHeight = (imageWidth * 3) / 4;
 
 const MAX_EXTRA_IMAGES = 10;
-const DESC_PLACEHOLDER = '- 메인 이미지, 제목, 태그, 장소, 설명을 모두 작성해야 완료할 수 있어요.\n- 포토스팟에 대한 설명을 남겨주세요. (10자 이상)\n- 사진을 최대 10장 첨부 할 수 있어요. (선택)';
+const DESC_PLACEHOLDER = '- 메인 이미지, 제목, 장소를 작성해야 완료할 수 있어요.\n- 태그와 설명은 선택 입력이에요.\n- 사진을 최대 10장 첨부 할 수 있어요. (선택)';
 
 const formatVisitDateValue = (date: VisitDate) =>
   `${date.year}.${String(date.month + 1).padStart(2, '0')}.${String(date.day).padStart(2, '0')}`;
@@ -90,15 +90,11 @@ const PhotoSpotWriteScreen = () => {
   const isSubmitEnabled =
     mainImage !== null &&
     title.trim().length > 0 &&
-    tags.length > 0 &&
-    description.trim().length >= 10 &&
     selectedPlace !== null;
 
   const missingFieldLabels: string[] = [];
   if (mainImage === null) missingFieldLabels.push('메인 이미지');
   if (title.trim().length === 0) missingFieldLabels.push('제목');
-  if (tags.length === 0) missingFieldLabels.push('태그');
-  if (description.trim().length < 10) missingFieldLabels.push('설명(10자 이상)');
   if (selectedPlace === null) missingFieldLabels.push('장소');
 
   const hasUnsavedChanges = () => {

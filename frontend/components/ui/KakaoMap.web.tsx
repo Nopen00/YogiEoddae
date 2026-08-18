@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { StyleProp, StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
 import { Colors } from '@/constants/Colors';
-import { buildKakaoMapHtml, buildKakaoMapHtmlMulti, KakaoMapPlace } from './kakaoMapHtml';
+import { buildKakaoMapEmbedUrl, KakaoMapPlace } from './kakaoMapHtml';
 
 interface KakaoMapProps {
   latitude?: number;
@@ -18,15 +18,15 @@ interface KakaoMapProps {
 export function KakaoMap({ latitude, longitude, markerTitle, places, height, style }: KakaoMapProps) {
   // 지도가 페이지 스크롤을 가로채지 않도록, 클릭하기 전까진 iframe이 터치/마우스 이벤트를 안 받는다.
   const [active, setActive] = useState(false);
-  const html = useMemo(
-    () => (places ? buildKakaoMapHtmlMulti(places) : buildKakaoMapHtml(latitude ?? 0, longitude ?? 0, markerTitle)),
+  const uri = useMemo(
+    () => buildKakaoMapEmbedUrl({ latitude, longitude, markerTitle, places }),
     [places, latitude, longitude, markerTitle]
   );
 
   return (
     <View style={[styles.wrapper, height != null ? { height } : { flex: 1 }, style]}>
       {React.createElement('iframe', {
-        srcDoc: html,
+        src: uri,
         style: { width: '100%', height: '100%', border: 0, pointerEvents: active ? 'auto' : 'none' },
         title: 'kakao-map',
       })}

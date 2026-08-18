@@ -14,6 +14,7 @@ from .views import (
     PasswordResetConfirmView,
     UserCreateView,
     UserMeView,
+    UserAvatarUploadView,
     TokenChargeView,
     TokenResetView,
 )
@@ -33,6 +34,7 @@ urlpatterns = [
     path('users/password-reset/confirm/', PasswordResetConfirmView.as_view(), name='password-reset-confirm'),
     path('users/', UserCreateView.as_view(), name='user-create'),
     path('users/me/', UserMeView.as_view(), name='user-me'),
+    path('users/upload-avatar/', UserAvatarUploadView.as_view(), name='user-upload-avatar'),
     path('users/charge-token/', TokenChargeView.as_view(), name='token-charge'),
     path('users/reset-token/', TokenResetView.as_view(), name='token-reset'),
 ]

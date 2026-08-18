@@ -225,12 +225,18 @@ export const userApi = {
     }
     return apiClient.patch<{ nickname: string }>('/api/users/me/', { nickname });
   },
-  updateProfileImage: (imageUri: string) => {
+  updateProfileImage: async (imageUri: string) => {
     if (USE_MOCK) {
       setMockProfileImage(imageUri);
       return mock({ profile_image: mockProfileImage });
     }
-    return apiClient.patch<{ profile_image: string }>('/api/users/me/', { profile_image: imageUri });
+    // 기기 로컬 uri를 그대로 저장하면 안 되므로, 먼저 서버에 업로드해 실제 접근 가능한 URL을 받은 뒤 저장한다.
+    const form = new FormData();
+    form.append('image', { uri: imageUri, name: 'avatar.jpg', type: 'image/jpeg' } as any);
+    const uploadRes = await apiClient.post<{ profile_image: string }>('/api/users/upload-avatar/', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return apiClient.patch<{ profile_image: string }>('/api/users/me/', { profile_image: uploadRes.data.profile_image });
   },
   updateUserId: (userId: string) => {
     if (USE_MOCK) {

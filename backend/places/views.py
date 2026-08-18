@@ -46,6 +46,46 @@ def demo_view(request):
         'kakao_js_key': settings.KAKAO_JS_KEY,
     })
 
+
+def _parse_float(value):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def map_embed_view(request):
+    """앱 WebView가 실제 URL로 내비게이션해서 불러오는 카카오 지도 임베드 페이지.
+    앱 안에서 인라인 HTML(baseUrl 트릭)로 로드하면 Referer가 안 실려 카카오 도메인 인증이
+    조용히 실패하는 문제가 있어서(2026-08-18 실기기 확인), 진짜 서버 URL로 내비게이션시켜
+    데모 페이지와 동일하게 정상적으로 도메인 인증이 되도록 만든 전용 엔드포인트."""
+    places = []
+    places_raw = request.GET.get('places')
+    if places_raw:
+        try:
+            raw_list = json.loads(places_raw)
+        except (ValueError, TypeError):
+            raw_list = []
+        for p in raw_list if isinstance(raw_list, list) else []:
+            if not isinstance(p, dict):
+                continue
+            lat = _parse_float(p.get('lat'))
+            lng = _parse_float(p.get('lng'))
+            if lat is not None and lng is not None:
+                places.append({'name': str(p.get('name', ''))[:100], 'lat': lat, 'lng': lng})
+
+    lat = _parse_float(request.GET.get('lat'))
+    lng = _parse_float(request.GET.get('lng'))
+
+    return render(request, 'places/map_embed.html', {
+        'kakao_js_key': settings.KAKAO_JS_KEY,
+        'lat': lat if lat is not None else 0,
+        'lng': lng if lng is not None else 0,
+        'title': (request.GET.get('title') or '')[:100],
+        'places': places,
+    })
+
+
 def fetch_and_save_places(request):
     # 1. API 호출 설정
     keyword = request.GET.get('keyword', '잠수교')  # 검색어 (기본값: 잠수교)

@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { StyleProp, StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { Colors } from '@/constants/Colors';
-import { buildKakaoMapHtml, buildKakaoMapHtmlMulti, KakaoMapPlace } from './kakaoMapHtml';
+import { buildKakaoMapEmbedUrl, KakaoMapPlace } from './kakaoMapHtml';
 
 interface KakaoMapProps {
   latitude?: number;
@@ -20,8 +20,9 @@ interface KakaoMapProps {
 export function KakaoMap({ latitude, longitude, markerTitle, places, height, style, onTouchStart, onTouchEnd }: KakaoMapProps) {
   // 지도가 스크롤 제스처를 가로채지 않도록, 탭하기 전까진 터치를 아예 안 받는다.
   const [active, setActive] = useState(false);
-  const html = useMemo(
-    () => (places ? buildKakaoMapHtmlMulti(places) : buildKakaoMapHtml(latitude ?? 0, longitude ?? 0, markerTitle)),
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const uri = useMemo(
+    () => buildKakaoMapEmbedUrl({ latitude, longitude, markerTitle, places }),
     [places, latitude, longitude, markerTitle]
   );
 
@@ -33,15 +34,18 @@ export function KakaoMap({ latitude, longitude, markerTitle, places, height, sty
       onTouchCancel={onTouchEnd}
     >
       <WebView
-        originWhitelist={['*']}
-        // baseUrl 없이 인라인 html만 로드하면 WebView의 origin이 비어서(about:blank 등)
-        // 카카오 JS SDK 도메인 화이트리스트에 걸린 도메인이 하나도 아닌 걸로 처리돼 조용히 막힌다.
-        // 카카오 콘솔에 등록해둔 도메인으로 baseUrl을 지정해서 그 도메인에서 로드된 것처럼 맞춰준다.
-        source={{ html, baseUrl: 'http://localhost' }}
+        source={{ uri }}
         style={styles.webview}
         scrollEnabled={false}
         pointerEvents={active ? 'auto' : 'none'}
+        onError={(event) => setLoadError(`페이지 로드 실패: ${event.nativeEvent.description}`)}
+        onHttpError={(event) => setLoadError(`서버 응답 오류: HTTP ${event.nativeEvent.statusCode}`)}
       />
+      {loadError && (
+        <View style={styles.debugErrorBox} pointerEvents="none">
+          <Text style={styles.debugErrorText}>{loadError}</Text>
+        </View>
+      )}
       {!active && (
         <TouchableOpacity style={styles.overlay} activeOpacity={0.8} onPress={() => setActive(true)}>
           <Text style={styles.overlayText}>지도를 눌러 조작하기</Text>
@@ -67,5 +71,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
+  },
+  debugErrorBox: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    right: 8,
+    backgroundColor: 'rgba(220,38,38,0.92)',
+    borderRadius: 8,
+    padding: 8,
+  },
+  debugErrorText: {
+    fontSize: 11,
+    color: '#fff',
   },
 });

@@ -21,6 +21,7 @@ class User(models.Model):
     device_id_hash = models.CharField(max_length=64, unique=True, editable=False, null=True, blank=True)
     username = models.CharField(max_length=20, unique=True, null=True, blank=True, validators=[username_validator])
     nickname = models.CharField(max_length=10, null=True, blank=True, validators=[nickname_validator])
+    profile_image = models.URLField(max_length=500, null=True, blank=True)
     email = models.EmailField(unique=True, null=True, blank=True)
     password_hash = models.CharField(max_length=128, null=True, blank=True)
     token_balance = models.PositiveIntegerField(default=0)

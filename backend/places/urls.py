@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import (
-    fetch_and_save_places, get_place_list, place_map_test, demo_view,
+    fetch_and_save_places, get_place_list, place_map_test, demo_view, map_embed_view,
     index_view, admin_media_list_view, admin_extract_view, admin_review_view,
     admin_place_update_view, admin_place_search_view,
     admin_geocode_media_view, admin_revoke_approval_view, admin_delete_media_view,
@@ -16,6 +16,7 @@ urlpatterns = [
     path('list/',   get_place_list,        name='place_list'),
     path('map-test/', place_map_test,      name='map_test'),
     path('demo/',   demo_view,             name='demo'),
+    path('map-embed/', map_embed_view,     name='map_embed'),
 
     # 관리자 포털
     path('extract/',                        admin_extract_view,    name='admin_extract'),

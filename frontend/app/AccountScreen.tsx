@@ -68,8 +68,8 @@ const AccountScreen = () => {
       });
       if (!result.canceled) {
         const uri = result.assets[0].uri;
-        await userApi.updateProfileImage(uri);
-        setProfileImage(uri);
+        const res = await userApi.updateProfileImage(uri);
+        setProfileImage(res.data.profile_image);
         setResultMessage('이미지가 변경되었습니다.');
       }
     } catch {

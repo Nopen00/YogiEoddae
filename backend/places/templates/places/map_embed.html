@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<style>html, body, #map { width: 100%; height: 100%; margin: 0; padding: 0; }</style>
+</head>
+<body>
+<div id="map"></div>
+{{ places|json_script:"places-data" }}
+{{ title|json_script:"title-data" }}
+<script src="//dapi.kakao.com/v2/maps/sdk.js?appkey={{ kakao_js_key }}" onerror="document.body.innerHTML='<div style=\'color:red;padding:8px;font-family:sans-serif;\'>Kakao SDK 스크립트 로드 실패</div>'"></script>
+<script>
+  try {
+    var places = JSON.parse(document.getElementById('places-data').textContent);
+    var title = JSON.parse(document.getElementById('title-data').textContent);
+
+    if (places.length > 0) {
+      var map = new kakao.maps.Map(document.getElementById('map'), {
+        center: new kakao.maps.LatLng(36.5, 127.8),
+        level: 12
+      });
+      var bounds = new kakao.maps.LatLngBounds();
+      places.forEach(function (p) {
+        var pos = new kakao.maps.LatLng(p.lat, p.lng);
+        new kakao.maps.Marker({ position: pos, map: map, title: p.name });
+        bounds.extend(pos);
+      });
+      map.setBounds(bounds);
+    } else {
+      var lat = {{ lat }};
+      var lng = {{ lng }};
+      var map = new kakao.maps.Map(document.getElementById('map'), {
+        center: new kakao.maps.LatLng(lat, lng),
+        level: 3
+      });
+      var marker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(lat, lng) });
+      marker.setMap(map);
+      if (title) {
+        var iwEl = document.createElement('div');
+        iwEl.style.cssText = 'padding:4px 8px;font-size:12px;white-space:nowrap;';
+        iwEl.textContent = title;
+        var iw = new kakao.maps.InfoWindow({ content: iwEl });
+        iw.open(map, marker);
+      }
+    }
+  } catch (e) {
+    document.body.innerHTML = '<div style="color:red;padding:8px;font-family:sans-serif;">' + (e && e.message ? e.message : e) + '</div>';
+  }
+</script>
+</body>
+</html>

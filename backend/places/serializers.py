@@ -203,10 +203,13 @@ class MediaDetailSerializer(serializers.ModelSerializer):
     places = serializers.SerializerMethodField()
     is_bookmarked = serializers.SerializerMethodField()
     is_submitted = serializers.SerializerMethodField()
+    place_count = serializers.SerializerMethodField()
+    rating = serializers.SerializerMethodField()
+    like_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Media
-        fields = ['id', 'title', 'media_type', 'year', 'thumbnail_url', 'description', 'tags', 'is_bookmarked', 'is_submitted', 'places', 'created_at']
+        fields = ['id', 'title', 'media_type', 'year', 'thumbnail_url', 'source_url', 'description', 'tags', 'is_bookmarked', 'is_submitted', 'places', 'place_count', 'rating', 'like_count', 'created_at']
 
     def get_places(self, obj):
         media_places = obj.media_places.select_related('place').all()
@@ -225,3 +228,13 @@ class MediaDetailSerializer(serializers.ModelSerializer):
             return False
         from quiz.models import QuizSubmission
         return QuizSubmission.objects.filter(user=user, media=obj).exists()
+
+    def get_place_count(self, obj):
+        return obj.media_places.filter(status='admin_approved').count()
+
+    def get_rating(self, obj):
+        avg = obj.reviews.aggregate(avg=Avg('rating'))['avg']
+        return round(float(avg), 1) if avg is not None else 0
+
+    def get_like_count(self, obj):
+        return obj.bookmarks.count()
