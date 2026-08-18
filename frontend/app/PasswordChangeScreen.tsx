@@ -115,6 +115,7 @@ const PasswordChangeScreen = () => {
         <Text style={styles.title}>인증 코드를 메일로 전송했습니다.</Text>
         <Text style={styles.subtitle}>5분 내에, 이메일로 전송받은 코드를 입력해 주세요.</Text>
         <Text style={styles.subtitle}>전송된 이메일 주소 : {email || '이메일이 없습니다.'}</Text>
+        <Text style={styles.subtitle}>noreply@yogieoddae.shop에서 발송돼요. 메일이 안 보이면 스팸함도 확인해주세요.</Text>
 
         <View style={[styles.codeBox, hasError && styles.codeBoxError]}>
           <View style={styles.inputSection}>
