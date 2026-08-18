@@ -26,6 +26,7 @@ class PlaceSerializer(serializers.ModelSerializer):
     is_bookmarked = serializers.SerializerMethodField()
     rating = serializers.SerializerMethodField()
     like_count = serializers.SerializerMethodField()
+    image_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Place
@@ -42,6 +43,13 @@ class PlaceSerializer(serializers.ModelSerializer):
             return False
         from bookmarks.models import PlaceBookmark
         return PlaceBookmark.objects.filter(user=user, place=obj).exists()
+
+    def get_image_url(self, obj):
+        """관광공사 등록 이미지가 없으면, 유저가 이 장소에 올린 승인된 포토스팟 사진으로 대체한다."""
+        if obj.image_url:
+            return obj.image_url
+        photo = obj.photos.filter(status=Photo.STATUS_APPROVED).order_by('-created_at').first()
+        return photo.image_url if photo else ''
 
     def get_rating(self, obj):
         avg = obj.reviews.aggregate(avg=Avg('rating'))['avg']
@@ -63,6 +71,7 @@ class PhotoSerializer(serializers.ModelSerializer):
     is_bookmarked = serializers.SerializerMethodField()
     uploaded_by = serializers.SerializerMethodField()
     author = serializers.SerializerMethodField()
+    authorAvatar = serializers.SerializerMethodField()
     isMine = serializers.SerializerMethodField()
     rating = serializers.SerializerMethodField()
 
@@ -70,7 +79,7 @@ class PhotoSerializer(serializers.ModelSerializer):
         model = Photo
         fields = [
             'id', 'image_url', 'sub_images', 'description', 'content', 'travel_date',
-            'likes', 'rating', 'tags', 'is_bookmarked', 'uploaded_by', 'author', 'isMine',
+            'likes', 'rating', 'tags', 'is_bookmarked', 'uploaded_by', 'author', 'authorAvatar', 'isMine',
             'status', 'created_at',
         ]
 
@@ -84,12 +93,17 @@ class PhotoSerializer(serializers.ModelSerializer):
     def get_uploaded_by(self, obj):
         if not obj.uploaded_by_id:
             return None
-        return {'id': obj.uploaded_by_id, 'nickname': obj.uploaded_by.nickname}
+        return {'id': obj.uploaded_by_id, 'nickname': obj.uploaded_by.nickname, 'profile_image': obj.uploaded_by.profile_image}
 
     def get_author(self, obj):
         if not obj.uploaded_by_id:
             return None
         return obj.uploaded_by.nickname or '익명 여행자'
+
+    def get_authorAvatar(self, obj):
+        if not obj.uploaded_by_id:
+            return None
+        return obj.uploaded_by.profile_image
 
     def get_isMine(self, obj):
         user = _get_user_from_context(self.context)

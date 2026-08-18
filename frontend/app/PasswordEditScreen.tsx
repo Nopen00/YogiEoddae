@@ -59,6 +59,7 @@ const PasswordInputBox = ({ label, placeholder, value, onChangeText, onBlur, vis
           onChangeText={onChangeText}
           onBlur={onBlur}
           secureTextEntry={!visible}
+          autoCapitalize="none"
         />
       </View>
       <View style={styles.boxRightIcons}>

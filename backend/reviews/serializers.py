@@ -4,6 +4,7 @@ from .models import MediaReview, PlaceReview, PhotoReview
 
 class ReviewSerializerBase(serializers.ModelSerializer):
     author = serializers.SerializerMethodField()
+    authorAvatar = serializers.SerializerMethodField()
     travelDate = serializers.CharField(source='visit_date')
     writtenDate = serializers.SerializerMethodField()
     hasPhoto = serializers.SerializerMethodField()
@@ -12,10 +13,13 @@ class ReviewSerializerBase(serializers.ModelSerializer):
     isLiked = serializers.SerializerMethodField()
 
     class Meta:
-        fields = ('id', 'author', 'travelDate', 'writtenDate', 'rating', 'content', 'images', 'hasPhoto', 'likeCount', 'isMine', 'isLiked')
+        fields = ('id', 'author', 'authorAvatar', 'travelDate', 'writtenDate', 'rating', 'content', 'images', 'hasPhoto', 'likeCount', 'isMine', 'isLiked')
 
     def get_author(self, obj):
         return obj.user.nickname
+
+    def get_authorAvatar(self, obj):
+        return obj.user.profile_image
 
     def get_writtenDate(self, obj):
         return obj.created_at.strftime('%Y.%m.%d')

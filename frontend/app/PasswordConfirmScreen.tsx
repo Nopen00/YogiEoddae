@@ -71,6 +71,7 @@ const PasswordConfirmScreen = () => {
               onChangeText={handleChangePassword}
               onBlur={handleBlurPassword}
               secureTextEntry={!isVisible}
+              autoCapitalize="none"
             />
           </View>
           <View style={styles.boxRightIcons}>

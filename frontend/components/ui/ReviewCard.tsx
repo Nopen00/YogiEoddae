@@ -14,6 +14,7 @@ const REVIEW_TRUNCATE_LENGTH = 80;
 export interface ReviewCardData {
   id: number;
   author: string;
+  authorAvatar?: string | null;
   travelDate: string;
   writtenDate: string;
   rating: number;
@@ -65,7 +66,11 @@ export const ReviewCard = ({
         sectionCard
       ) : (
         <View style={styles.header}>
-          <View style={styles.avatar} />
+          {review.authorAvatar ? (
+            <Image source={{ uri: review.authorAvatar }} style={styles.avatar} />
+          ) : (
+            <View style={styles.avatar} />
+          )}
           <View style={styles.authorInfo}>
             <Text style={styles.authorName}>{review.author}</Text>
             <View style={styles.dateRow}>

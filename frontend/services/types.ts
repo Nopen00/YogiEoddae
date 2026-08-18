@@ -77,6 +77,7 @@ export interface ReviewTarget {
 export interface Review {
   id: number;
   author: string;
+  authorAvatar?: string | null;
   travelDate: string;
   writtenDate: string;
   rating: number;

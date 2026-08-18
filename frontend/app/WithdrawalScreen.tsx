@@ -155,6 +155,7 @@ const WithdrawalScreen = () => {
                 onChangeText={handleChangePassword}
                 onBlur={handleBlurPassword}
                 secureTextEntry={!passwordVisible}
+                autoCapitalize="none"
               />
             </View>
             <View style={styles.boxRightIcons}>
