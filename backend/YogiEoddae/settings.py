@@ -199,24 +199,16 @@ GEMINI_API_KEY = env('GEMINI_API_KEY', default='')
 YOUTUBE_API_KEY = env('YOUTUBE_API_KEY', default='')
 DEVICE_ID_HASH_KEY = env('DEVICE_ID_HASH_KEY')
 
-# 이메일 발송 (Gmail SMTP) — .env에 EMAIL_HOST_USER/EMAIL_HOST_PASSWORD(앱 비밀번호)가 없으면
-# 콘솔 출력으로 자동 대체되어 로컬 개발 중에도 크래시 없이 동작한다.
-EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
-EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER or 'noreply@yogieoddae.local'
-
-if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
-    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-    EMAIL_HOST = 'smtp.gmail.com'
-    EMAIL_PORT = 587
-    EMAIL_USE_TLS = True
-    # 배포 환경에서 587 포트로 나가는 연결이 막혀있으면 소켓 connect()가 응답 없이
-    # 무한 대기하다 gunicorn 자체 타임아웃(기본 30초)에 워커 프로세스 전체가
-    # SIGABRT로 죽는 문제가 있었음(2026-08-18 Railway 배포 로그로 확인).
-    # 타임아웃을 짧게 걸어서 워커를 죽이는 대신 예외로 빨리 실패하게 한다.
-    EMAIL_TIMEOUT = 10
-else:
-    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# 이메일 발송 (Resend HTTP API) — Gmail SMTP(587)를 썼었는데 Railway가 아웃바운드
+# SMTP 포트를 네트워크 레벨에서 막고 있는 게 확인돼(2026-08-18, railway ssh로 직접
+# 소켓 테스트: google.com:443은 즉시 연결되는데 gmail SMTP IP:587은 10초 내내 무응답)
+# 443 포트로 동작하는 HTTP API 방식으로 전환. RESEND_API_KEY가 없으면 콘솔 출력으로
+# 대체되어 로컬 개발은 계속 크래시 없이 동작한다.
+RESEND_API_KEY = env('RESEND_API_KEY', default='')
+# 도메인 인증 전까지는 Resend 샌드박스 발신 주소(가입한 본인 이메일로만 수신 가능).
+# 도메인 인증 끝나면 이 값을 인증된 도메인의 주소로 바꾸면 됨(코드 변경 불필요).
+RESEND_FROM_EMAIL = env('RESEND_FROM_EMAIL', default='onboarding@resend.dev')
+DEFAULT_FROM_EMAIL = RESEND_FROM_EMAIL
 
 # Kakao Maps SDK 403 방지: Referer 헤더를 크로스 오리진 요청에도 포함
 SECURE_REFERRER_POLICY = 'no-referrer-when-downgrade'
