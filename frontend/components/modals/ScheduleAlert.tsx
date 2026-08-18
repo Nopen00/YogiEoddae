@@ -256,7 +256,7 @@ export const ScheduleAlert = ({ visible, onClose, schedules, onConfirm, checkMed
                 {!hasSchedules ? (
                   <View style={styles.emptyContainer}>
                     <Text style={styles.emptyTitle}>일정이 없습니다.</Text>
-                    <Text style={styles.emptySubtitle}>일정을 추가해주세요.</Text>
+                    <Text style={styles.emptySubtitle}>일정 탭에서 일정을 추가해주세요.</Text>
                   </View>
                 ) : (
                   <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>

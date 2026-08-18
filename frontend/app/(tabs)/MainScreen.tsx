@@ -8,6 +8,7 @@ import {
   Modal,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -43,6 +44,7 @@ const MainScreen = () => {
   const [carouselData, setCarouselData] = useState<Media[]>([]);
   const [popularCourses, setPopularCourses] = useState<Media[]>([]);
   const [recommendedCourses, setRecommendedCourses] = useState<Media[]>([]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // 루프 캐러셀용: [마지막, ...원본, 첫번째]
   const extendedCarouselData = useMemo(() =>
@@ -53,20 +55,31 @@ const MainScreen = () => {
   );
   const currentExtendedIndexRef = useRef(1);
 
-  useEffect(() => {
+  const loadHomeData = async () => {
     // 원래는 "요즘 뜨는 영상"을 큐레이션해서 보여줄 자리인데 그 기능이 아직 없어서,
     // 우선 등록된 코스 중 썸네일 있는 것들을 무작위로 뽑아 채워둔다
     // (type:'drama'로 고정 필터링하면 썸네일 없는 특정 항목만 항상 뜨는 문제가 있었음).
-    mediaApi.getList().then(res => {
+    const carouselPromise = mediaApi.getList().then(res => {
       const withThumbnail = res.data.results.filter(m => m.thumbnail_url);
       const pool = withThumbnail.length > 0 ? withThumbnail : res.data.results;
       const shuffled = [...pool].sort(() => Math.random() - 0.5);
       setCarouselData(shuffled.slice(0, 8));
     }).catch((e) => console.error('carousel error:', e));
-    mediaApi.getList({ ordering: 'popular' }).then(res => setPopularCourses(res.data.results.slice(0, 4))).catch((e) => console.error('popular courses error:', e));
+    const popularPromise = mediaApi.getList({ ordering: 'popular' }).then(res => setPopularCourses(res.data.results.slice(0, 4))).catch((e) => console.error('popular courses error:', e));
     // "추천"은 개인화 추천 로직 설계 전(DEVPLAN 보류 항목)이라 임시로 전체 목록에서 자름
-    mediaApi.getList().then(res => setRecommendedCourses(res.data.results.slice(4, 8))).catch((e) => console.error('recommended courses error:', e));
+    const recommendedPromise = mediaApi.getList().then(res => setRecommendedCourses(res.data.results.slice(4, 8))).catch((e) => console.error('recommended courses error:', e));
+    await Promise.all([carouselPromise, popularPromise, recommendedPromise]);
+  };
+
+  useEffect(() => {
+    loadHomeData();
   }, []);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await loadHomeData();
+    setIsRefreshing(false);
+  };
 
   // 데이터 로드 후 실제 첫 번째 아이템(index 1)으로 순간이동
   useEffect(() => {
@@ -169,9 +182,10 @@ const MainScreen = () => {
         </TouchableOpacity>
       </View>
 
-      <ScrollView 
+      <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: Spacing.v.screenBottom }}
+        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[Colors.light.primary]} tintColor={Colors.light.primary} />}
       >
         {/* 2. 메인 캐러셀 */}
         <View style={styles.imageBox}>

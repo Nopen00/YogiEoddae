@@ -7,6 +7,7 @@ class Tag(models.Model):
         ('media_type', '미디어 유형'),
         ('genre',      '장르'),
         ('place_type', '장소 유형'),
+        ('photo_custom', '포토스팟 자유 태그'),
     ]
 
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)

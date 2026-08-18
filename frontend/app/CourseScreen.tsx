@@ -19,6 +19,7 @@ import {
   FlatList,
   Image,
   LayoutChangeEvent,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -110,14 +111,10 @@ const CourseScreen = () => {
   const [photoSpots, setPhotoSpots] = useState<PhotoSpotItem[]>([]);
   const [savedPhotos, setSavedPhotos] = useState<Record<number, boolean>>({});
   const [selectedPhotoTag, setSelectedPhotoTag] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  useEffect(() => {
-    mediaApi.getList().then(res => setAllMedia(res.data.results)).catch(() => {});
-    mediaApi.getList({ ordering: 'popular' }).then(res => setPopularMedia(res.data.results)).catch(() => {});
-    mediaApi.getList({ type: 'youtube' }).then(res => setYoutubeMedia(res.data.results)).catch(() => {});
-    mediaApi.getList({ type: 'drama' }).then(res => setDramaMedia(res.data.results)).catch(() => {});
-    mediaApi.getList({ type: 'movie' }).then(res => setMovieMedia(res.data.results)).catch(() => {});
-    placeApi.getList().then(res => {
+  const loadCourseData = async () => {
+    const photoSpotsPromise = placeApi.getList().then(res =>
       Promise.all(res.data.results.map(p => placeApi.getPhotos(p.id).then(r => r.data)))
         .then(results => {
           const allPhotos: PhotoSpotItem[] = results.flat().map(p => ({ ...p, rating: p.rating ?? 0, like_count: p.likes }));
@@ -126,9 +123,27 @@ const CourseScreen = () => {
           allPhotos.forEach(p => { map[p.id] = p.is_bookmarked ?? false; });
           setSavedPhotos(map);
         })
-        .catch(() => {});
-    }).catch(() => {});
+    ).catch(() => {});
+
+    await Promise.all([
+      mediaApi.getList().then(res => setAllMedia(res.data.results)).catch(() => {}),
+      mediaApi.getList({ ordering: 'popular' }).then(res => setPopularMedia(res.data.results)).catch(() => {}),
+      mediaApi.getList({ type: 'youtube' }).then(res => setYoutubeMedia(res.data.results)).catch(() => {}),
+      mediaApi.getList({ type: 'drama' }).then(res => setDramaMedia(res.data.results)).catch(() => {}),
+      mediaApi.getList({ type: 'movie' }).then(res => setMovieMedia(res.data.results)).catch(() => {}),
+      photoSpotsPromise,
+    ]);
+  };
+
+  useEffect(() => {
+    loadCourseData();
   }, []);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await loadCourseData();
+    setIsRefreshing(false);
+  };
 
   const toggleSavedPhoto = async (photoId: number) => {
     const isSavedNow = savedPhotos[photoId];
@@ -511,7 +526,7 @@ const CourseScreen = () => {
         onPageSelected={handlePageSelected}
       >
         {/* ── 전체 탭 ── */}
-        <ScrollView key="0" showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContainer}>
+        <ScrollView key="0" showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContainer} refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[Colors.light.primary]} tintColor={Colors.light.primary} />}>
         {/* 이 달의 테마 박스 */}
         {allMedia[0] && (
           <TouchableOpacity
@@ -612,7 +627,7 @@ const CourseScreen = () => {
         </ScrollView>
 
         {/* ── 유튜브 PICK 탭 ── */}
-        <ScrollView key="1" showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContainer}>
+        <ScrollView key="1" showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContainer} refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[Colors.light.primary]} tintColor={Colors.light.primary} />}>
           {youtubeMedia.length > 0 ? (
             <View>
               {sortedYoutubeMedia.map(item => renderPickCard(item))}
@@ -626,7 +641,7 @@ const CourseScreen = () => {
         </ScrollView>
 
         {/* ── 드라마 PICK 탭 ── */}
-        <ScrollView key="2" showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContainer}>
+        <ScrollView key="2" showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContainer} refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[Colors.light.primary]} tintColor={Colors.light.primary} />}>
           {dramaMedia.length > 0 ? (
             <View>
               {sortedDramaMedia.map(item => renderPickCard(item))}
@@ -640,7 +655,7 @@ const CourseScreen = () => {
         </ScrollView>
 
         {/* ── 영화 PICK 탭 ── */}
-        <ScrollView key="3" showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContainer}>
+        <ScrollView key="3" showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContainer} refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[Colors.light.primary]} tintColor={Colors.light.primary} />}>
           {movieMedia.length > 0 ? (
             <View>
               {sortedMovieMedia.map(item => renderPickCard(item))}
@@ -654,7 +669,7 @@ const CourseScreen = () => {
         </ScrollView>
 
         {/* ── 포토스팟 탭 ── */}
-        <ScrollView key="4" showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContainer}>
+        <ScrollView key="4" showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContainer} refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[Colors.light.primary]} tintColor={Colors.light.primary} />}>
           {renderPhotoTagSection(Spacing.v.medium, 'photo-spot-theme')}
           {filteredPhotoSpots.length > 0 ? (
             <View style={styles.photoSpotGrid}>

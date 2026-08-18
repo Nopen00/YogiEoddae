@@ -865,6 +865,27 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
         return qs
 
 
+def _resolve_photo_tag_ids(request):
+    """포토스팟 태그 입력을 Tag id 목록으로 변환한다. 'tag_ids'/'tags' 둘 다 없으면
+    태그를 건드리지 않는다는 뜻으로 None을 반환한다(부분수정 시 다른 필드만 바꾸는 경우 보존).
+    프론트(TagAddAlert)는 기존 태그 체계와 무관한 자유 텍스트를 'tags'(이름 배열)로 보내는데,
+    지금까지 백엔드는 'tag_ids'만 읽고 있어서 태그가 저장된 적이 없었다(2026-08-18 확인).
+    이름으로 넘어오면 category='photo_custom'으로 get_or_create해서 매칭한다."""
+    if 'tag_ids' in request.data:
+        return request.data.get('tag_ids') or []
+    if 'tags' not in request.data:
+        return None
+    tag_names = request.data.get('tags') or []
+    tag_ids = []
+    for name in tag_names:
+        name = (name or '').strip()
+        if not name:
+            continue
+        tag, _ = Tag.objects.get_or_create(category='photo_custom', name=name)
+        tag_ids.append(tag.id)
+    return tag_ids
+
+
 class PhotoViewSet(viewsets.ModelViewSet):
     """
     GET   /api/photos/               전체 포토스팟 목록 (승인된 것 + 내가 올린 것, keyword로 설명/장소명 검색, author로 작성자 닉네임 필터)
@@ -954,7 +975,7 @@ class PhotoViewSet(viewsets.ModelViewSet):
             uploaded_by=request.user,
             status=Photo.STATUS_PENDING,
         )
-        tag_ids = request.data.get('tag_ids') or []
+        tag_ids = _resolve_photo_tag_ids(request)
         if tag_ids:
             photo.tags.set(tag_ids)
         if sub_image_urls:
@@ -988,8 +1009,9 @@ class PhotoViewSet(viewsets.ModelViewSet):
             update_fields.append('travel_date')
         if update_fields:
             photo.save(update_fields=update_fields)
-        if 'tag_ids' in request.data:
-            photo.tags.set(request.data.get('tag_ids') or [])
+        tag_ids = _resolve_photo_tag_ids(request)
+        if tag_ids is not None:
+            photo.tags.set(tag_ids)
 
         return Response(PhotoSerializer(photo, context={'request': request}).data)
 
