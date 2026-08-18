@@ -16,13 +16,15 @@ Including another URLconf
 """
 from django.conf import settings
 from django.contrib import admin
+from django.contrib.admin.views.decorators import staff_member_required
 from django.urls import path, include
 from django.views.generic import TemplateView
 from django.views.static import serve
 from places.views import index_view
 
 urlpatterns = [
-    path('',        index_view,                name='index'),
+    # 관리 대시보드(승인/검토 대기 통계) — 관리자 포털 로그인 보호 대상, 2026-08-18 추가
+    path('',        staff_member_required(index_view), name='index'),
     path('admin/',  admin.site.urls),
     path('privacy/', TemplateView.as_view(template_name='legal/privacy.html'), name='privacy'),
     path('terms/',   TemplateView.as_view(template_name='legal/terms.html'),   name='terms'),
