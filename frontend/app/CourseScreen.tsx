@@ -50,6 +50,9 @@ const CATEGORIES = ['추천', '유튜브 PICK', '드라마 PICK', '영화 PICK',
 const COURSE_SORT_OPTIONS = SORT_OPTIONS.filter(option => option !== '관련도 높은 순');
 const PLACE_COUNT_SORT_OPTIONS: SortOption[] = ['장소 많은 순', '장소 적은 순'];
 const PHOTO_TAGS = ['자연', '음식', '풍경', '야경', '감성', '카페', '도심', '계절'];
+// 태그별 대표 이미지 무작위 선택 결과 캐시 — 앱 프로세스가 살아있는 동안(=이 모듈이
+// 다시 로드되기 전까지) 유지된다. 앱을 완전히 종료했다 다시 켜면 초기화됨.
+let photoTagThumbnailsCache: Record<string, string | undefined> | null = null;
 
 const formatLikeCount = (count: number): string => {
   if (count < 100) return count.toString();
@@ -224,6 +227,23 @@ const CourseScreen = () => {
   const filteredPhotoSpots = selectedPhotoTag
     ? sortedPhotoSpots.filter(p => p.tags.some(t => t.name === selectedPhotoTag))
     : sortedPhotoSpots;
+
+  // 태그별 대표 이미지 — 그 태그가 달린 포토스팟들 중 하나를 무작위로 골라서 보여준다.
+  // photoTagThumbnailsCache(모듈 스코프)에 한 번 뽑히면 고정돼서, 새로고침/북마크
+  // 토글/탭 전환으로는 안 바뀌고 앱을 완전히 껐다 켜야(=JS가 새로 로드돼야) 다시 뽑힌다.
+  const [photoTagThumbnails, setPhotoTagThumbnails] = useState(photoTagThumbnailsCache ?? {});
+  useEffect(() => {
+    if (photoTagThumbnailsCache || photoSpots.length === 0) return;
+    const map: Record<string, string | undefined> = {};
+    PHOTO_TAGS.forEach(tag => {
+      const matches = photoSpots.filter(p => p.image_url && p.tags.some(t => t.name === tag));
+      if (matches.length > 0) {
+        map[tag] = matches[Math.floor(Math.random() * matches.length)].image_url;
+      }
+    });
+    photoTagThumbnailsCache = map;
+    setPhotoTagThumbnails(map);
+  }, [photoSpots]);
 
   const renderThemeCourseCard = (item: Media) => {
     const { visibleTags, extraCount } = getProcessedTags(item.tags);
@@ -425,7 +445,11 @@ const CourseScreen = () => {
         handleTabPress(4);
       }}
     >
-      <View style={styles.photoTagCircle} />
+      {photoTagThumbnails[item] ? (
+        <Image source={{ uri: photoTagThumbnails[item] }} style={styles.photoTagCircle} />
+      ) : (
+        <View style={styles.photoTagCircle} />
+      )}
       <Text style={styles.photoTagTitleText} numberOfLines={1}>{item}</Text>
     </TouchableOpacity>
   );
@@ -436,7 +460,7 @@ const CourseScreen = () => {
         <View style={styles.photoTagPillLeftGroup}>
           <Text style={styles.photoTagPillTitle} numberOfLines={1}>{selectedPhotoTag}</Text>
           <View style={styles.photoTagPillImageBox}>
-            <Image source={{ uri: undefined }} style={styles.photoTagPillImage} resizeMode="cover" />
+            <Image source={{ uri: photoTagThumbnails[selectedPhotoTag] }} style={styles.photoTagPillImage} resizeMode="cover" />
           </View>
           <Text style={styles.photoTagPillSubtitle} numberOfLines={1}>태그 선택</Text>
         </View>
