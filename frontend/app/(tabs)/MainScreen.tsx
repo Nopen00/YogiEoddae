@@ -1,7 +1,8 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { HelpCircle, Search } from 'lucide-react-native';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  BackHandler,
   Dimensions,
   FlatList,
   Image,
@@ -17,7 +18,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
@@ -25,6 +26,7 @@ import { MEDIA_TYPE_LABEL } from '@/constants/labels';
 import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
+import { ExitConfirmAlert } from '@/components/modals/ExitConfirmAlert';
 import { mediaApi } from '../../services/api';
 import type { Media } from '../../services/types';
 
@@ -38,6 +40,21 @@ const MainScreen = () => {
   const router = useRouter();
   const { welcome, nickname, welcomeSource } = useLocalSearchParams<{ welcome?: string; nickname?: string; welcomeSource?: string }>();
   const [welcomePopupVisible, setWelcomePopupVisible] = useState(welcome === '1');
+  const [isExitConfirmVisible, setIsExitConfirmVisible] = useState(false);
+
+  // 홈 화면에 있을 때만 하드웨어 뒤로가기를 가로채 종료 확인 팝업을 띄운다.
+  // 팝업이 떠있는 상태에서 뒤로가기를 또 누르면 ExitConfirmAlert의 Modal이
+  // onRequestClose로 자동 처리해서 팝업만 닫힘(종료 안 됨).
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        setIsExitConfirmVisible(true);
+        return true;
+      };
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => subscription.remove();
+    }, [])
+  );
 
   const [activeIndex, setActiveIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
@@ -267,6 +284,12 @@ const MainScreen = () => {
           </View>
         </TouchableOpacity>
       </Modal>
+
+      <ExitConfirmAlert
+        visible={isExitConfirmVisible}
+        onCancel={() => setIsExitConfirmVisible(false)}
+        onConfirm={() => BackHandler.exitApp()}
+      />
     </SafeAreaView>
   );
 };
