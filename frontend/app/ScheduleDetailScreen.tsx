@@ -21,7 +21,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Animated as RNAnimated,
   Dimensions,
-  Image,
   Modal,
   NativeScrollEvent,
   NativeSyntheticEvent,
@@ -689,11 +688,7 @@ export default function ScheduleDetailScreen() {
                       onPress={() => router.push({ pathname: '/CourseDetailScreen', params: { id: schedule.media!.id } })}
                     >
                       <View style={styles.importedCourseImageWrapper}>
-                        <Image
-                          source={{ uri: schedule.media.thumbnail_url ?? undefined }}
-                          style={styles.importedCourseImage}
-                          resizeMode="cover"
-                        />
+                        <PlaceThumb uri={schedule.media.thumbnail_url} style={styles.importedCourseImage} />
                       </View>
                       <View style={styles.importedCourseContent}>
                         <Text style={styles.importedCourseTitle} numberOfLines={1}>{schedule.media.title}</Text>

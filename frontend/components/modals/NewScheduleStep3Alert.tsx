@@ -7,7 +7,8 @@ import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { ArrowLeft, X } from 'lucide-react-native';
 import React from 'react';
-import { Image, Modal, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
+import { Modal, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
+import { PlaceThumb } from '@/components/ui/PlaceThumb';
 import type { Media } from '../../services/types';
 
 interface NewScheduleStep3AlertProps {
@@ -42,11 +43,7 @@ export const NewScheduleStep3Alert = ({ visible, onClose, onBack, onConfirm, med
               </View>
               <View style={styles.card}>
                 <View style={styles.imageWrapper}>
-                  {media.thumbnail_url ? (
-                    <Image source={{ uri: media.thumbnail_url }} style={styles.cardImage} />
-                  ) : (
-                    <View style={[styles.cardImage, { backgroundColor: Colors.light.grayLight }]} />
-                  )}
+                  <PlaceThumb uri={media.thumbnail_url} style={styles.cardImage} />
                 </View>
                 <View style={styles.cardContent}>
                   <Text style={styles.cardTitle} numberOfLines={1}>{media.title}</Text>

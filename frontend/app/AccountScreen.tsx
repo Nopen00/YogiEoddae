@@ -1,5 +1,6 @@
 import { NicknameEditAlert } from '@/components/modals/NicknameEditAlert';
 import { Divider } from '@/components/ui/Divider';
+import { PlaceThumb } from '@/components/ui/PlaceThumb';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
@@ -12,7 +13,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { ChevronRight, Edit3 } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
-import { Dimensions, Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -84,11 +85,7 @@ const AccountScreen = () => {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Spacing.v.screenBottom }}>
         <View style={styles.profileSection}>
           <View style={styles.profileImageWrapper}>
-            {profileImage ? (
-              <Image source={{ uri: profileImage }} style={styles.profileImage} />
-            ) : (
-              <View style={[styles.profileImage, styles.profileImagePlaceholder]} />
-            )}
+            <PlaceThumb uri={profileImage} style={styles.profileImage} shape="circle" />
             <TouchableOpacity style={styles.editButton} activeOpacity={0.8} onPress={handlePickProfileImage}>
               <Edit3 size={IconSize.medium} color={Colors.light.white} strokeWidth={IconStroke.regular} />
             </TouchableOpacity>
@@ -212,7 +209,6 @@ const styles = StyleSheet.create({
     height: Size.avatarXl,
     borderRadius: Size.avatarXl / 2,
   },
-  profileImagePlaceholder: { backgroundColor: Colors.light.grayLight },
   editButton: {
     position: 'absolute',
     bottom: 0,

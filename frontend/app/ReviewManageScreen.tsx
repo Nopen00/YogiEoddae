@@ -1,6 +1,7 @@
 import { ReviewCard } from '@/components/ui/ReviewCard';
 import { MediaMetaText } from '@/components/ui/MediaMetaText';
 import PagerView, { PagerViewHandle } from '@/components/ui/PagerViewWrapper';
+import { PlaceThumb } from '@/components/ui/PlaceThumb';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { TagRow } from '@/components/ui/TagRow';
 import { TextSeparator } from '@/components/ui/TextSeparator';
@@ -77,7 +78,7 @@ const ReviewManageScreen = () => {
         onPress={() => router.push({ pathname: TARGET_SCREEN[target.type] as any, params: { id: target.id } })}
       >
         <View style={styles.sectionImageWrapper}>
-          <Image source={{ uri: target.imageUrl }} style={styles.sectionImage} />
+          <PlaceThumb uri={target.imageUrl} style={styles.sectionImage} />
         </View>
         <View style={styles.sectionContent}>
           <Text style={styles.sectionTitle} numberOfLines={1}>{target.title}</Text>

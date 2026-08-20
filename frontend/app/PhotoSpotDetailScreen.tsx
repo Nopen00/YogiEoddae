@@ -248,7 +248,7 @@ const PhotoSpotDetailScreen = () => {
           scrollEventThrottle={16}
         >
           <View style={[styles.imageContainer, { width: imageWidth, height: imageHeight }]}>
-            <Image source={{ uri: photo?.image_url }} style={styles.mainImage} resizeMode="cover" />
+            <PlaceThumb uri={photo?.image_url} style={styles.mainImage} />
             {!isLargeIconMode && (
               <>
                 <TouchableOpacity style={styles.imageSaveButton} onPress={toggleSaved} activeOpacity={0.8}>
@@ -328,11 +328,7 @@ const PhotoSpotDetailScreen = () => {
                     activeOpacity={0.7}
                     onPress={() => router.push({ pathname: '/UserPhotoSpotsScreen', params: { author: photo.author ?? '익명 여행자', authorAvatar: photo.authorAvatar ?? '' } })}
                   >
-                    {photo.authorAvatar ? (
-                      <Image source={{ uri: photo.authorAvatar }} style={styles.uploaderAvatar} />
-                    ) : (
-                      <View style={styles.uploaderAvatar} />
-                    )}
+                    <PlaceThumb uri={photo.authorAvatar} style={styles.uploaderAvatar} shape="circle" />
                     <View style={styles.uploaderInfo}>
                       <Text style={styles.uploaderName}>{photo.author ?? '익명 여행자'}</Text>
                       <View style={styles.uploaderDateRow}>
@@ -356,7 +352,7 @@ const PhotoSpotDetailScreen = () => {
                       activeOpacity={0.9}
                     >
                       <View style={[styles.photoInfoImageBox, { width: smallImageWidth, height: smallImageHeight }]}>
-                        <Image source={{ uri: photo.image_url }} style={styles.photoInfoImage} resizeMode="cover" />
+                        <PlaceThumb uri={photo.image_url} style={styles.photoInfoImage} />
                       </View>
                     </TouchableOpacity>
                   </ScrollView>
@@ -419,7 +415,7 @@ const PhotoSpotDetailScreen = () => {
                   onPress={() => router.push({ pathname: '/PhotoSpotDetailScreen', params: { id: p.id } })}
                 >
                   <View style={[styles.nearbyImageBox, { width: smallImageWidth, height: smallImageHeight }]}>
-                    <Image source={{ uri: p.image_url }} style={styles.nearbyImage} resizeMode="cover" />
+                    <PlaceThumb uri={p.image_url} style={styles.nearbyImage} />
                     <TouchableOpacity
                       style={styles.nearbyHeart}
                       onPress={(e) => { e.stopPropagation(); setSavedPlacePhotos(prev => ({ ...prev, [p.id]: !prev[p.id] })); }}
@@ -482,7 +478,7 @@ const PhotoSpotDetailScreen = () => {
                     onPress={() => router.push({ pathname: '/PhotoSpotDetailScreen', params: { id: p.id } })}
                   >
                     <View style={[styles.nearbyImageBox, { width: smallImageWidth, height: smallImageHeight }]}>
-                      <Image source={{ uri: p.image_url }} style={styles.nearbyImage} resizeMode="cover" />
+                      <PlaceThumb uri={p.image_url} style={styles.nearbyImage} />
                       <TouchableOpacity
                         style={styles.nearbyHeart}
                         onPress={(e) => { e.stopPropagation(); setSavedTagPhotos(prev => ({ ...prev, [p.id]: !prev[p.id] })); }}

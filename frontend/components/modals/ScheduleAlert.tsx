@@ -1,4 +1,5 @@
 //components\modals\ScheduleAlert.tsx
+import { PlaceThumb } from '@/components/ui/PlaceThumb';
 import { TagRow } from '@/components/ui/TagRow';
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
@@ -11,7 +12,6 @@ import type { DailyPlace, Schedule } from '@/services/types';
 import { X } from 'lucide-react-native';
 import React, { useRef, useState } from 'react';
 import {
-  Image,
   Modal,
   ScrollView,
   StyleSheet,
@@ -26,11 +26,9 @@ const CLUSTER = Size.circleMd;
 const SMALL = 22;
 const GAP = Spacing.r.xsmall;
 
-const SmallCircle = ({ uri, size, style }: { uri: string | null; size: number; style?: object }) => {
-  const base = { width: size, height: size, borderRadius: size / 2 };
-  if (uri) return <Image source={{ uri }} style={[base, style]} />;
-  return <View style={[base, { backgroundColor: Colors.light.grayLight }, style]} />;
-};
+const SmallCircle = ({ uri, size, style }: { uri: string | null; size: number; style?: object }) => (
+  <PlaceThumb uri={uri} shape="circle" style={[{ width: size, height: size, borderRadius: size / 2 }, style]} />
+);
 
 const PlaceImageCluster = ({ dailyPlaces }: { dailyPlaces: DailyPlace[] }) => {
   const count = dailyPlaces.length;

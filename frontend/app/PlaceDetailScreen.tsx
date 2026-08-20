@@ -479,7 +479,7 @@ const PlaceDetailScreen = () => {
                       onPress={() => router.push({ pathname: '/PhotoSpotDetailScreen', params: { id: photo.id } })}
                     >
                       <View style={[styles.nearbyImageBox, { width: smallImageWidth, height: smallImageHeight }]}>
-                        <Image source={{ uri: photo.image_url }} style={styles.nearbyImage} resizeMode="cover" />
+                        <PlaceThumb uri={photo.image_url} style={styles.nearbyImage} />
                         <TouchableOpacity
                           style={styles.nearbyHeart}
                           onPress={(e) => { e.stopPropagation(); setSavedPhotoSpots(prev => ({ ...prev, [photo.id]: !prev[photo.id] })); }}

@@ -5,7 +5,6 @@ import {
   BackHandler,
   Dimensions,
   FlatList,
-  Image,
   Modal,
   NativeScrollEvent,
   NativeSyntheticEvent,
@@ -27,6 +26,7 @@ import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { ExitConfirmAlert } from '@/components/modals/ExitConfirmAlert';
+import { PlaceThumb } from '@/components/ui/PlaceThumb';
 import { mediaApi } from '../../services/api';
 import type { Media } from '../../services/types';
 
@@ -153,7 +153,7 @@ const MainScreen = () => {
       onPress={() => router.push({ pathname: '/CourseDetailScreen', params: { id: item.id, title: item.title } })}
     >
       <View style={styles.carouselInner}>
-        <Image source={{ uri: item.thumbnail_url ?? undefined }} style={styles.fullImage} resizeMode="cover" />
+        <PlaceThumb uri={item.thumbnail_url} style={styles.fullImage} />
         <LinearGradient colors={['transparent', 'rgba(0,0,0,0.75)']} style={styles.gradientOverlay}>
           <View style={styles.textOverlay}>
             <Text style={styles.carouselSubtitleText}>{MEDIA_TYPE_LABEL[item.media_type] ?? item.media_type}</Text>
@@ -171,7 +171,7 @@ const MainScreen = () => {
       onPress={() => router.push({ pathname: '/CourseDetailScreen', params: { id: item.id, title: item.title } })}
     >
       <View style={styles.courseImageWrapper}>
-        <Image source={{ uri: item.thumbnail_url ?? undefined }} style={styles.courseImage} />
+        <PlaceThumb uri={item.thumbnail_url} style={styles.courseImage} />
       </View>
       <Text style={styles.courseTitleText} numberOfLines={1}>{item.title}</Text>
     </TouchableOpacity>

@@ -7,11 +7,11 @@ import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { placeApi } from '@/services/api';
+import { PlaceThumb } from '@/components/ui/PlaceThumb';
 import type { Place } from '@/services/types';
 import { ChevronLeft, ChevronRight, Search, X } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import {
-  Image,
   Modal,
   StyleSheet,
   Text,
@@ -109,7 +109,7 @@ export const PlaceSelectAlert = ({ visible, onConfirm, onClose }: PlaceSelectAle
                         onPress={() => setConfirmTarget(place)}
                       >
                         <View style={styles.placeImageWrapper}>
-                          <Image source={{ uri: place.image_url }} style={styles.placeImage} resizeMode="cover" />
+                          <PlaceThumb uri={place.image_url} style={styles.placeImage} />
                         </View>
                         <View style={styles.placeCardContent}>
                           <Text style={styles.placeCardTitle} numberOfLines={1}>{place.name}</Text>

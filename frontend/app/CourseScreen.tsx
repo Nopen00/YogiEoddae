@@ -1,5 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { SORT_OPTIONS, SortAlert, SortOption } from '@/components/modals/SortAlert';
+import { PlaceThumb } from '@/components/ui/PlaceThumb';
 import SearchBar from '@/components/ui/SearchBar';
 import { TextSeparator } from '@/components/ui/TextSeparator';
 import { Colors } from '@/constants/Colors';
@@ -17,7 +18,6 @@ import {
   Animated,
   Dimensions,
   FlatList,
-  Image,
   LayoutChangeEvent,
   RefreshControl,
   ScrollView,
@@ -257,11 +257,7 @@ const CourseScreen = () => {
         <Text style={styles.themeCourseBoxTitle}>{getThemeCardTitle(item, themeRegions[item.id])}</Text>
         <View style={styles.themeCourseRow}>
           <View style={styles.themeCourseImageBox}>
-            <Image
-              source={{ uri: item.thumbnail_url ?? undefined }}
-              style={styles.themeCourseImageFill}
-              resizeMode="cover"
-            />
+            <PlaceThumb uri={item.thumbnail_url} style={styles.themeCourseImageFill} />
           </View>
           <View style={styles.themeCourseContent}>
             <Text style={styles.themeCourseTitle} numberOfLines={2}>{item.title}</Text>
@@ -351,11 +347,7 @@ const CourseScreen = () => {
             )}
           </View>
           <View style={styles.pickCardTitleImageWrapper}>
-            <Image
-              source={{ uri: item.thumbnail_url ?? undefined }}
-              style={styles.pickCardTitleImage}
-              resizeMode="cover"
-            />
+            <PlaceThumb uri={item.thumbnail_url} style={styles.pickCardTitleImage} />
           </View>
         </TouchableOpacity>
         {slideImages.length > 0 && (
@@ -363,7 +355,7 @@ const CourseScreen = () => {
             data={slideImages}
             renderItem={({ item: uri }) => (
               <View style={styles.pickCardSlideImageWrapper}>
-                <Image source={{ uri }} style={styles.pickCardSlideImage} resizeMode="cover" />
+                <PlaceThumb uri={uri} style={styles.pickCardSlideImage} />
               </View>
             )}
             keyExtractor={(uri, idx) => `pick-card-${item.id}-slide-${idx}`}
@@ -388,11 +380,7 @@ const CourseScreen = () => {
         onPress={() => router.push({ pathname: '/PhotoSpotDetailScreen', params: { id: item.id, name: item.description } })}
       >
         <View style={styles.photoSpotImageWrapper}>
-          <Image
-            source={{ uri: item.image_url ?? undefined }}
-            style={styles.photoSpotImage}
-            resizeMode="cover"
-          />
+          <PlaceThumb uri={item.image_url} style={styles.photoSpotImage} />
           {(item.rating != null || item.like_count != null) && (
             <LinearGradient colors={['transparent', 'rgba(0,0,0,0.75)']} style={styles.photoSpotGradient}>
               <View style={styles.photoSpotInfoOverlay}>
@@ -445,11 +433,7 @@ const CourseScreen = () => {
         handleTabPress(4);
       }}
     >
-      {photoTagThumbnails[item] ? (
-        <Image source={{ uri: photoTagThumbnails[item] }} style={styles.photoTagCircle} />
-      ) : (
-        <View style={styles.photoTagCircle} />
-      )}
+      <PlaceThumb uri={photoTagThumbnails[item]} style={styles.photoTagCircle} shape="circle" />
       <Text style={styles.photoTagTitleText} numberOfLines={1}>{item}</Text>
     </TouchableOpacity>
   );
@@ -460,7 +444,7 @@ const CourseScreen = () => {
         <View style={styles.photoTagPillLeftGroup}>
           <Text style={styles.photoTagPillTitle} numberOfLines={1}>{selectedPhotoTag}</Text>
           <View style={styles.photoTagPillImageBox}>
-            <Image source={{ uri: photoTagThumbnails[selectedPhotoTag] }} style={styles.photoTagPillImage} resizeMode="cover" />
+            <PlaceThumb uri={photoTagThumbnails[selectedPhotoTag]} style={styles.photoTagPillImage} shape="circle" />
           </View>
           <Text style={styles.photoTagPillSubtitle} numberOfLines={1}>태그 선택</Text>
         </View>
@@ -490,7 +474,7 @@ const CourseScreen = () => {
       onPress={() => router.push({ pathname: '/CourseDetailScreen', params: { id: item.id, title: item.title } })}
     >
       <View style={styles.courseImageWrapper}>
-        <Image source={{ uri: item.thumbnail_url ?? undefined }} style={styles.courseImage} />
+        <PlaceThumb uri={item.thumbnail_url} style={styles.courseImage} />
       </View>
       <Text style={styles.courseTitleText} numberOfLines={1}>{item.title}</Text>
     </TouchableOpacity>
@@ -560,11 +544,7 @@ const CourseScreen = () => {
           >
             <Text style={styles.themeTitle}>이 달의 코스 : {allMedia[0].title}</Text>
             <View style={styles.themeImageWrapper}>
-              <Image
-                source={{ uri: allMedia[0].thumbnail_url ?? undefined }}
-                style={styles.themeImage}
-                resizeMode="cover"
-              />
+              <PlaceThumb uri={allMedia[0].thumbnail_url} style={styles.themeImage} />
               <LinearGradient
                 colors={['transparent', 'rgba(0,0,0,0.75)']}
                 style={styles.themeGradient}

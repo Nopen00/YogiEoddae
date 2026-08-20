@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -7,6 +9,21 @@ from django.shortcuts import get_object_or_404
 from .models import Schedule, DailyPlace, ScheduleBookmark
 from .serializers import ScheduleSerializer, ScheduleCreateSerializer, DailyPlaceSerializer
 from places.models import Media, MediaPlace
+
+
+def _extend_end_date_for_max_day(start_date, end_date, max_day):
+    """선택한 날짜 범위가 가져올 장소들의 최대 day_number보다 짧으면 end_date를 늘려서
+    day_number가 편집 화면(dayEntries)의 날짜 범위 밖으로 밀려나 안 보이는 걸 막는다."""
+    if not start_date or not end_date or max_day <= 1:
+        return end_date
+    try:
+        start = datetime.strptime(start_date, '%Y-%m-%d').date()
+        end = datetime.strptime(end_date, '%Y-%m-%d').date()
+    except (TypeError, ValueError):
+        return end_date
+    if (end - start).days + 1 >= max_day:
+        return end_date
+    return (start + timedelta(days=max_day - 1)).isoformat()
 
 
 class ScheduleListCreateView(APIView):
@@ -85,17 +102,20 @@ class MediaImportView(APIView):
 
     def post(self, request, pk):
         media = get_object_or_404(Media, pk=pk)
-        schedule = Schedule.objects.create(
-            user=request.user,
-            title=request.data.get('title', media.title),
-            media=media,
-            start_date=request.data.get('start_date'),
-            end_date=request.data.get('end_date'),
-        )
         media_places = (MediaPlace.objects
                         .filter(media=media, status=MediaPlace.STATUS_ADMIN_APPROVED)
                         .select_related('place')
                         .order_by('day', 'id'))
+        max_day = max((mp.day or 1 for mp in media_places), default=1)
+        start_date = request.data.get('start_date')
+        end_date = _extend_end_date_for_max_day(start_date, request.data.get('end_date'), max_day)
+        schedule = Schedule.objects.create(
+            user=request.user,
+            title=request.data.get('title', media.title),
+            media=media,
+            start_date=start_date,
+            end_date=end_date,
+        )
         for i, mp in enumerate(media_places):
             DailyPlace.objects.create(
                 schedule=schedule,
@@ -112,14 +132,18 @@ class ScheduleImportView(APIView):
 
     def post(self, request, pk):
         source = get_object_or_404(Schedule, pk=pk)
+        source_places = list(source.daily_places.all())
+        max_day = max((dp.day_number for dp in source_places), default=1)
+        start_date = request.data.get('start_date')
+        end_date = _extend_end_date_for_max_day(start_date, request.data.get('end_date'), max_day)
         new_schedule = Schedule.objects.create(
             user=request.user,
             title=request.data.get('title', f'{source.title} (복사)'),
             media=source.media,
-            start_date=request.data.get('start_date'),
-            end_date=request.data.get('end_date'),
+            start_date=start_date,
+            end_date=end_date,
         )
-        for dp in source.daily_places.all():
+        for dp in source_places:
             DailyPlace.objects.create(
                 schedule=new_schedule,
                 place=dp.place,

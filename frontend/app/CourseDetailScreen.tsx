@@ -272,7 +272,7 @@ const CourseDetailScreen = () => {
       >
           {/* 메인 이미지 */}
           <View style={[styles.imageContainer, { width: imageWidth, height: imageHeight }]}>
-            <Image source={{ uri: media?.thumbnail_url ?? undefined }} style={styles.mainImage} resizeMode="cover" />
+            <PlaceThumb uri={media?.thumbnail_url} style={styles.mainImage} />
             {!isLargeIconMode && (
               <>
                 <TouchableOpacity style={styles.imageSaveButton} onPress={handleSaveToggle} activeOpacity={0.8}>
@@ -368,14 +368,14 @@ const CourseDetailScreen = () => {
                     activeOpacity={0.85}
                     onPress={() => media.source_url && Linking.openURL(media.source_url)}
                   >
-                    <Image source={{ uri: media?.thumbnail_url ?? undefined }} style={styles.mediaImage} resizeMode="cover" />
+                    <PlaceThumb uri={media?.thumbnail_url} style={styles.mediaImage} />
                     <View style={styles.mediaPlayIconWrapper} pointerEvents="none">
                       <Play size={IconSize.xxlarge} color={Colors.light.white} fill={Colors.light.white} strokeWidth={0} />
                     </View>
                   </TouchableOpacity>
                 ) : (
                   <View style={[styles.mediaImageContainer, { height: imageHeight }]}>
-                    <Image source={{ uri: media?.thumbnail_url ?? undefined }} style={styles.mediaImage} resizeMode="cover" />
+                    <PlaceThumb uri={media?.thumbnail_url} style={styles.mediaImage} />
                   </View>
                 )}
                 <Text style={styles.mediaDescText}>{media?.description}</Text>
@@ -489,7 +489,7 @@ const CourseDetailScreen = () => {
                       onPress={() => router.push({ pathname: '/PhotoSpotDetailScreen', params: { id: photo.id, name: photo.description } })}
                     >
                       <View style={[styles.photoSpotImageBox, { width: smallImageWidth, height: smallImageHeight }]}>
-                        <Image source={{ uri: photo.image_url ?? undefined }} style={styles.photoSpotImage} resizeMode="cover" />
+                        <PlaceThumb uri={photo.image_url} style={styles.photoSpotImage} />
                         <TouchableOpacity
                           style={styles.photoSpotHeart}
                           onPress={(e) => { e.stopPropagation(); toggleSavedPhotoSpot(photo.id); }}

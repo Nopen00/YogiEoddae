@@ -1,4 +1,5 @@
 import { Divider } from '@/components/ui/Divider';
+import { PlaceThumb } from '@/components/ui/PlaceThumb';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { Colors } from '@/constants/Colors';
 import { IconSize, IconStroke } from '@/constants/IconSize';
@@ -11,7 +12,7 @@ import { useLargeIconMode } from '@/hooks/useLargeIconMode';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { AlertCircle, ChevronRight, HelpCircle } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
-import { Image, Linking, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Linking, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const SettingScreen = () => {
@@ -46,11 +47,7 @@ const SettingScreen = () => {
 
       {/* 유저 정보 섹션 */}
       <View style={styles.userSection}>
-        {profileImage ? (
-          <Image source={{ uri: profileImage }} style={styles.profileImage} />
-        ) : (
-          <View style={styles.profileImage} />
-        )}
+        <PlaceThumb uri={profileImage} style={styles.profileImage} shape="circle" />
 
         <View style={styles.userInfoColumn}>
           <Text style={styles.nickname}>{nickname}</Text>

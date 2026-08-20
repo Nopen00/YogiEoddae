@@ -1,6 +1,7 @@
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { SortAlert, SortOption } from '@/components/modals/SortAlert';
 import { Divider } from '@/components/ui/Divider';
+import { PlaceThumb } from '@/components/ui/PlaceThumb';
 import { TagRow } from '@/components/ui/TagRow';
 import { TextSeparator } from '@/components/ui/TextSeparator';
 import { Colors } from '@/constants/Colors';
@@ -15,7 +16,7 @@ import { sortByOption } from '@/utils/sortByOption';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowUpDown, Heart, Star } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const SORT_OPTIONS: SortOption[] = ['이름순', '별점 높은 순', '하트 많은 순'];
@@ -58,11 +59,7 @@ const UserPhotoSpotsScreen = () => {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <View style={styles.profileCard}>
-          {authorAvatar ? (
-            <Image source={{ uri: authorAvatar }} style={styles.profileAvatar} />
-          ) : (
-            <View style={styles.profileAvatar} />
-          )}
+          <PlaceThumb uri={authorAvatar} style={styles.profileAvatar} shape="circle" />
           <View style={styles.profileInfo}>
             <Text style={styles.profileName}>{author}</Text>
             <Text style={styles.profileCount}>작성한 포토스팟 : {photos.length}개</Text>
@@ -87,7 +84,7 @@ const UserPhotoSpotsScreen = () => {
                   onPress={() => router.push({ pathname: '/PhotoSpotDetailScreen', params: { id: photo.id } })}
                 >
                   <View style={styles.sectionImageWrapper}>
-                    <Image source={{ uri: photo.image_url }} style={styles.sectionImage} />
+                    <PlaceThumb uri={photo.image_url} style={styles.sectionImage} />
                   </View>
                   <View style={styles.sectionContent}>
                     <Text style={styles.sectionTitle} numberOfLines={1}>{photo.description}</Text>

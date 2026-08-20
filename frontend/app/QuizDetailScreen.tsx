@@ -14,7 +14,7 @@ import { mediaApi } from '@/services/api';
 import type { Media, MediaPlace } from '@/services/types';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Image, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import { Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function QuizDetailScreen() {
@@ -84,7 +84,7 @@ export default function QuizDetailScreen() {
       ) : (
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Spacing.v.screenBottom }}>
         <View style={[styles.imageContainer, { width: imageWidth, height: imageHeight }]}>
-          <Image source={{ uri: media?.thumbnail_url ?? undefined }} style={styles.mainImage} resizeMode="cover" />
+          <PlaceThumb uri={media?.thumbnail_url} style={styles.mainImage} />
         </View>
 
         <View style={styles.infoContainer}>

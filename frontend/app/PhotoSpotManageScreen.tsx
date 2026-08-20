@@ -1,4 +1,5 @@
 import { ScheduleMoreMenuAlert } from '@/components/modals/ScheduleMoreMenuAlert';
+import { PlaceThumb } from '@/components/ui/PlaceThumb';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { TagRow } from '@/components/ui/TagRow';
 import { Colors } from '@/constants/Colors';
@@ -12,7 +13,7 @@ import { getProcessedTags } from '@/utils/getProcessedTags';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MoreVertical } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
-import { Dimensions, Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
@@ -54,7 +55,7 @@ const PhotoSpotManageScreen = () => {
                 }}
               >
                 <View style={styles.sectionImageWrapper}>
-                  <Image source={{ uri: photo.image_url }} style={styles.sectionImage} />
+                  <PlaceThumb uri={photo.image_url} style={styles.sectionImage} />
                 </View>
                 <View style={styles.sectionContent}>
                   <Text style={styles.sectionTitle} numberOfLines={1}>{photo.description}</Text>

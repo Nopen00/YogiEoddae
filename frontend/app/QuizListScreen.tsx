@@ -4,6 +4,7 @@ import { Divider } from '@/components/ui/Divider';
 import { FilterButton } from '@/components/ui/FilterButton';
 import { MediaMetaText } from '@/components/ui/MediaMetaText';
 import PagerView, { PagerViewHandle } from '@/components/ui/PagerViewWrapper';
+import { PlaceThumb } from '@/components/ui/PlaceThumb';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { TagRow } from '@/components/ui/TagRow';
 import { Colors } from '@/constants/Colors';
@@ -16,7 +17,7 @@ import type { Media } from '@/services/types';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { CheckCircle } from 'lucide-react-native';
 import React, { useCallback, useRef, useState } from 'react';
-import { Animated, Dimensions, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const CATEGORIES = ['전체', '영화', '드라마', '유튜브'];
@@ -36,11 +37,7 @@ const QuizCard = ({ media, onPress }: { media: Media; onPress: () => void }) => 
       disabled={isSubmitted}
     >
       <View style={styles.imageWrapper}>
-        {media.thumbnail_url ? (
-          <Image source={{ uri: media.thumbnail_url }} style={styles.cardImage} />
-        ) : (
-          <View style={[styles.cardImage, { backgroundColor: Colors.light.grayLight }]} />
-        )}
+        <PlaceThumb uri={media.thumbnail_url} style={styles.cardImage} />
       </View>
       <View style={styles.cardContent}>
         <Text style={styles.cardTitle} numberOfLines={1}>{media.title}</Text>

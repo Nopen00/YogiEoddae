@@ -1,3 +1,4 @@
+import { PlaceThumb } from '@/components/ui/PlaceThumb';
 import { TextSeparator } from '@/components/ui/TextSeparator';
 import { Colors } from '@/constants/Colors';
 import { IconStroke } from '@/constants/IconSize';
@@ -6,7 +7,7 @@ import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { Star, ThumbsUp } from 'lucide-react-native';
 import React, { ReactNode } from 'react';
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 // 카드 너비 기준 대략 4줄을 넘는 글자 수 (플랫폼 간 onTextLayout 신뢰도 문제로 근사치 사용)
 const REVIEW_TRUNCATE_LENGTH = 80;
@@ -66,11 +67,7 @@ export const ReviewCard = ({
         sectionCard
       ) : (
         <View style={styles.header}>
-          {review.authorAvatar ? (
-            <Image source={{ uri: review.authorAvatar }} style={styles.avatar} />
-          ) : (
-            <View style={styles.avatar} />
-          )}
+          <PlaceThumb uri={review.authorAvatar} style={styles.avatar} shape="circle" />
           <View style={styles.authorInfo}>
             <Text style={styles.authorName}>{review.author}</Text>
             <View style={styles.dateRow}>
@@ -118,7 +115,7 @@ export const ReviewCard = ({
         >
           {review.images.map((img, idx) => (
             <TouchableOpacity key={img} onPress={() => onImagePress(idx)} activeOpacity={0.9}>
-              <Image source={{ uri: img }} style={styles.imageThumb} resizeMode="cover" />
+              <PlaceThumb uri={img} style={styles.imageThumb} />
             </TouchableOpacity>
           ))}
         </ScrollView>

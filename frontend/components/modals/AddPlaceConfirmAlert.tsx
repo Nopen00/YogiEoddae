@@ -8,7 +8,8 @@ import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { ArrowLeft, X } from 'lucide-react-native';
 import React from 'react';
-import { Image, Modal, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
+import { Modal, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
+import { PlaceThumb } from '@/components/ui/PlaceThumb';
 import type { Place } from '../../services/types';
 
 interface AddPlaceConfirmAlertProps {
@@ -49,11 +50,7 @@ export const AddPlaceConfirmAlert = ({
               </View>
               <View style={styles.card}>
                 <View style={styles.imageWrapper}>
-                  {place.image_url ? (
-                    <Image source={{ uri: place.image_url }} style={styles.cardImage} />
-                  ) : (
-                    <View style={[styles.cardImage, { backgroundColor: Colors.light.grayLight }]} />
-                  )}
+                  <PlaceThumb uri={place.image_url} style={styles.cardImage} />
                 </View>
                 <View style={styles.cardContent}>
                   <Text style={styles.cardTitle} numberOfLines={1}>{place.name}</Text>

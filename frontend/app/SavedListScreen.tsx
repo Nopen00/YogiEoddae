@@ -3,6 +3,7 @@ import { AddPlaceConfirmAlert } from '@/components/modals/AddPlaceConfirmAlert';
 import { CourseSelectPopup } from '@/components/modals/CourseSelectPopup';
 import { NewScheduleStep3Alert } from '@/components/modals/NewScheduleStep3Alert';
 import { Divider } from '@/components/ui/Divider';
+import { PlaceThumb } from '@/components/ui/PlaceThumb';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { TagRow } from '@/components/ui/TagRow';
 import { TextSeparator } from '@/components/ui/TextSeparator';
@@ -17,7 +18,7 @@ import type { Media, Place, Tag } from '@/services/types';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
-import { Dimensions, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const TABS = ['내 일정', '과거 일정', '저장소'];
@@ -185,11 +186,7 @@ export default function SavedListScreen() {
               onPress={() => handleCardPress(item.id)}
             >
               <View style={styles.imageWrapper}>
-                {item.imageUrl ? (
-                  <Image source={{ uri: item.imageUrl }} style={styles.cardImage} />
-                ) : (
-                  <View style={[styles.cardImage, { backgroundColor: Colors.light.grayLight }]} />
-                )}
+                <PlaceThumb uri={item.imageUrl} style={styles.cardImage} />
               </View>
               <View style={styles.cardContent}>
                 <Text style={styles.cardTitle} numberOfLines={1}>{item.title}</Text>

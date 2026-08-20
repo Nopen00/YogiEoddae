@@ -1,5 +1,6 @@
 //app\(tabs)\ScheduleScreen.tsx
 import { Divider } from '@/components/ui/Divider';
+import { PlaceThumb } from '@/components/ui/PlaceThumb';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { NewScheduleAlert } from '@/components/modals/NewScheduleAlert';
 import { ScheduleMoreMenuAlert } from '@/components/modals/ScheduleMoreMenuAlert';
@@ -15,7 +16,6 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Dimensions,
-  Image,
   Modal,
   ScrollView,
   StyleProp,
@@ -105,11 +105,9 @@ const CLUSTER = Size.circleMd;  // 48
 const SMALL   = 22;
 const GAP     = Spacing.r.xsmall; // 4
 
-const SmallCircle = ({ uri, size, style }: { uri: string | null; size: number; style?: object }) => {
-  const base = { width: size, height: size, borderRadius: size / 2 };
-  if (uri) return <Image source={{ uri }} style={[base, style]} />;
-  return <View style={[base, { backgroundColor: Colors.light.grayLight }, style]} />;
-};
+const SmallCircle = ({ uri, size, style }: { uri: string | null; size: number; style?: object }) => (
+  <PlaceThumb uri={uri} shape="circle" style={[{ width: size, height: size, borderRadius: size / 2 }, style]} />
+);
 
 const PlaceImageCluster = ({ dailyPlaces }: { dailyPlaces: DailyPlace[] }) => {
   const count = dailyPlaces.length;
