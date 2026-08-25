@@ -587,7 +587,7 @@ Place ──── DailyPlace ── Schedule ── User
 | confidence_score 업데이트 로직 없음 | ✅ 해결됨 | Phase 3(퀴즈 정답 집계로 자동 갱신) 완료, 2026-07-27 |
 | 사용자 인증 없음 | ✅ 해결됨 | `users` 앱에 익명 device_id 기반 인증 구현 완료 (Phase 4), Phase 6에서 JWT 실계정으로 전환 |
 | 이메일 SMTP 미연동 | ✅ 해결됨 | Gmail SMTP 연동 완료, 실기 수신까지 확인(2026-07-27) — Phase 6 항목 참고 |
-| 장소 매칭 시 동명 구/군 오매칭으로 좌표가 엉뚱한 도시에 찍힘 | 미해결 (2026-07-30 발견) | 아래 상세 참고 |
+| 장소 매칭 시 동명 구/군 오매칭으로 좌표가 엉뚱한 도시에 찍힘 | 근본 원인 미해결, 관리자 수동 도구는 추가됨 (2026-08-25) | 아래 상세 참고 |
 
 ---
 
@@ -603,6 +603,8 @@ Place ──── DailyPlace ── Schedule ── User
 **다음에 손볼 방향(제안, 미착수):**
 1. `_address_matches()`의 정규식에 시/도 이름 자체(부산/대구/서울/인천/광주/대전/울산/세종 등, "시" 접미사 없이도)를 별도로 인식하도록 보강해서 광역 단위까지 비교하게 하기.
 2. 카카오 폴백 경로에서 `place.address`를 `address_hint` 원문 대신 실제 매칭된 카카오 후보의 주소로 저장하도록 수정(불일치를 애초에 눈에 안 보이게 만들지 않기).
+
+**2026-08-25 업데이트:** "부산의 횟집"(관리자 승인까지 됐던 건) 사례로 이 문제가 다시 확인됨 — `kakao_geocode()`가 카카오 후보의 좌표만 반환하고 name/address/kakao_place_id/url은 버리는 게 근본 원인. `resolve_place()`의 카카오 폴백 경로가 정확한 좌표를 찾아놓고도 `name`/`address`는 AI의 원본 추측 텍스트를 그대로 저장해서 생김. 아직 위 1·2번 자체는 고치지 않았고, 대신 관리자가 수동으로 빠르게 바로잡을 수 있도록 "위치 수정" 모달에 좌표 역지오코딩 + 근처 실제 업체 지도(클릭 선택) + 지도 직접 클릭 조회 기능을 추가함(`kakao_reverse_geocode`/`kakao_nearby_search`, [places/services.py](../backend/places/services.py)). **다음 작업(내일): 이 보조 도구 말고 `resolve_place()`/`kakao_geocode()` 자체를 고쳐서, 애초에 이런 불일치가 안 생기게 하기.**
 
 ---
 
@@ -652,8 +654,27 @@ Phase 3(Quiz), Phase 8(인기 코스 정렬), Phase 10-1(코스 건의함), SMTP
 15. ~~**코스/장소 카드의 더보기(⋮) 메뉴 — "리뷰쓰기" 항목이 작동 안 함**~~ — 🧪 수정 완료, 배포 대기 (2026-08-15). [MoreMenuAlert.tsx:41](../frontend/components/modals/MoreMenuAlert.tsx#L41) "리뷰쓰기" 버튼에 애초에 `onPress` 자체가 없었음(다른 메뉴 항목들은 다 있는데 이것만 빠짐). `onReviewPress` prop 추가하고 Course/Place/PhotoSpotDetailScreen 3곳 모두 연결.
 16. ~~**코스-유튜브 상세에서 유튜브 재생 버튼을 눌러도 유튜브로 이동 안 함**~~ — 🧪 수정 완료, 배포 대기 (2026-08-15). `Media.source_url`이 모델엔 있는데 `MediaSerializer`가 응답 필드에서 빠뜨리고 있었음 — 필드 목록에 추가.
 
-**a. 커스텀 관리자 포탈 접속 제한 적용** (앱 버그 목록과 별도 트랙, 기한 2026-08-28 — 약 14일)
-위 "커스텀 관리 포털들" (`/places/extract/`, `/places/photos/review/`, `/course-suggestions/review/` 등)이 로그인 보호 없이 URL만 알면 누구나 접근 가능한 상태(2026-08-14 발견). 방법 조사 후 적용. 앱 버그 테스트가 끝나기 전까지 처리하면 됨.
+**a. 커스텀 관리자 포탈 접속 제한 적용** — ✅ 완료. `staff_member_required`로 관리자 포털 전체에 로그인 보호 적용됨.
+
+---
+
+## 2026-08-25 작업 내역
+
+### 완료
+1. **장소 정보 lazy 최신화** — `Place.last_synced_at` 필드 추가. 조회 시점 기준 가장 최근 08:00(KST) 이전이면 백그라운드 스레드로 KTO 상세조회(`detailCommon2`)를 재호출해 갱신(stale-while-revalidate). 정기 배치가 아니라 실제 접근 시점에만 갱신되므로 특정 시각에 호출이 몰리지 않음. `refresh_place_if_stale()` ([places/services.py](../backend/places/services.py)), `PlaceViewSet.retrieve()`.
+2. **근처 추천 장소** — 장소 상세 화면 하단에 KTO `locationBasedList2`로 좌표 주변 장소를 매 요청마다 실시간 조회(DB 저장 안 함). 카드를 탭하면 `POST /api/places/register/`로 그 순간 정식 `Place`로 등록 후 상세 페이지로 이동. `fetch_nearby_places()`/`get_or_create_place_by_content_id()`, [PlaceDetailScreen.tsx](../frontend/app/PlaceDetailScreen.tsx).
+3. **한국관광공사 관광 데이터 활용 공모전 — 로컬 DB 저장 신청서 제출 및 승인 완료.** 신청 사유는 위 1·2번 구조(FK로 연결된 자체 데이터 + lazy 08:00 동기화 + 근처 추천은 완전 실시간)를 근거로 함. 1차 심사 마감 2026-09-21 16:00, 스토어 등록 예정 2026-09-06.
+4. **관리자 "위치 수정" 모달 강화** — 좌표→실제 주소 역지오코딩 표시, 좌표 주변 실제 업체를 지도에 마커로 표시(클릭 시 장소명/주소 자동 채움), "핀을 이 주소로 이동" 버튼, 지도 직접 클릭으로 미등록 위치(전망 좋은 공터 등)도 주소 조회 가능. `kakao_reverse_geocode()`/`kakao_nearby_search()` ([places/services.py](../backend/places/services.py)), [admin_review.html](../backend/places/templates/places/admin_review.html). 근본 원인은 아래 "장소 매칭 지역 오매칭 버그" 섹션의 2026-08-25 업데이트 참고 — 이건 근본 수정이 아니라 관리자용 보조 도구.
+5. **포토스팟 목록이 빈 화면으로 뜨던 버그 근본 원인 수정** — `GET /api/photos/`가 페이지네이션 응답(`{count,next,previous,results}`)인데 `photoApi.getList()`의 타입 선언과 호출부 3곳(CourseScreen/UserPhotoSpotsScreen/SearchResultScreen)이 전부 배열로 착각하고 `res.data.map()`을 호출해서 `catch(() => {})`에 조용히 먹히는 크래시가 나던 것. `res.data.results`로 수정.
+6. **숨겨진 디버그 로그 화면 추가** — MY 화면 타이틀 5연타로 진입([DebugLogScreen.tsx](../frontend/app/DebugLogScreen.tsx)). API 요청 실패와 처리되지 않은 JS 예외를 자동으로 기록(최근 200건, 재부팅해도 유지), 화면에서 확인/복사/전체삭제 가능. [logger.ts](../frontend/services/logger.ts).
+7. **앱 전역의 무음 `catch(() => {})` 40건(19개 파일) → 위 디버그 로그 기록으로 일괄 교체.** 동작은 그대로 두고 로깅만 추가.
+8. **앱 아이콘 교체** — iOS/안드로이드/웹 파비콘이 전부 기본 Expo 템플릿 아이콘("A" 로고)이었던 것을 실제 브랜드 아이콘(`app_icon.png`)으로 교체. 안드로이드 적응형 아이콘은 남색 배경을 색상 키로 제거해 safe zone에 맞춘 전경 이미지를 새로 생성. **네이티브 빌드에 포함되는 값이라 `eas update`(OTA)로는 반영 안 되고, 다음 네이티브 빌드부터 적용됨.**
+9. **검색창 "#태그" 필터** — "#국밥"처럼 `#`으로 시작하면 이름/설명이 아니라 태그 기준으로 코스/장소/포토스팟 공통 검색. 코스·장소는 기존 `tag` 파라미터 재사용, 포토스팟(`PhotoViewSet`)은 태그 필터가 아예 없어서 신규 추가.
+10. **검색 결과 화면(코스/명소/포토스팟) 썸네일이 빈 회색 원만 뜨던 버그 수정** — 애초에 이미지 표시가 구현된 적이 없었음(`<View style={imageCircle}/>` 플레이스홀더만 렌더링, 포토스팟은 매핑에서 `image_url` 자체를 안 담고 있었음). `PlaceThumb`로 교체.
+
+### 내일 할 일
+1. **[최우선] 카카오 정보 매칭 파이프라인 근본 수정** — 위 "장소 매칭 지역 오매칭 버그" 섹션 2026-08-25 업데이트 참고. `kakao_geocode()`가 좌표만 반환하고 매칭된 후보의 실제 name/address/kakao_place_id/url을 버리는 부분, `resolve_place()`의 카카오 폴백 경로가 AI의 `address_hint` 원문을 그대로 저장하는 부분을 고쳐서, 오늘 추가한 관리자 수동 도구 없이도 애초에 정확한 데이터가 들어가게 만들기.
+2. Play Console용 production AAB 재빌드(WSL 로컬 빌드) — 오늘 저녁 진행 예정이었음, 완료 여부 및 새 앱 아이콘 반영 확인 필요.
 
 ---
 
