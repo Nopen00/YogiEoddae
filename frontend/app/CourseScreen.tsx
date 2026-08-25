@@ -117,16 +117,13 @@ const CourseScreen = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const loadCourseData = async () => {
-    const photoSpotsPromise = placeApi.getList().then(res =>
-      Promise.all(res.data.results.map(p => placeApi.getPhotos(p.id).then(r => r.data)))
-        .then(results => {
-          const allPhotos: PhotoSpotItem[] = results.flat().map(p => ({ ...p, rating: p.rating ?? 0, like_count: p.likes }));
-          setPhotoSpots(allPhotos);
-          const map: Record<number, boolean> = {};
-          allPhotos.forEach(p => { map[p.id] = p.is_bookmarked ?? false; });
-          setSavedPhotos(map);
-        })
-    ).catch(() => {});
+    const photoSpotsPromise = photoApi.getList().then(res => {
+      const allPhotos: PhotoSpotItem[] = res.data.map(p => ({ ...p, rating: p.rating ?? 0, like_count: p.likes }));
+      setPhotoSpots(allPhotos);
+      const map: Record<number, boolean> = {};
+      allPhotos.forEach(p => { map[p.id] = p.is_bookmarked ?? false; });
+      setSavedPhotos(map);
+    }).catch(() => {});
 
     await Promise.all([
       mediaApi.getList().then(res => setAllMedia(res.data.results)).catch(() => {}),
