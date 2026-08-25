@@ -323,7 +323,10 @@
     </div>
     <div class="field-wrap">
       <label class="field-label">주소</label>
-      <input type="text" id="modalAddr" class="field-input" placeholder="예: 부산 북구 구포동 123">
+      <div class="name-row">
+        <input type="text" id="modalAddr" class="field-input" placeholder="예: 부산 북구 구포동 123">
+        <button type="button" class="btn-search" id="movePinBtn" onclick="movePinToSelected()">핀을 이 주소로 이동</button>
+      </div>
     </div>
 
     <div class="pin-section">
@@ -459,6 +462,19 @@
         })
         .catch(() => {});
     }, 0); });
+  }
+
+  function movePinToSelected() {
+    const msgEl = document.getElementById('modalMsg');
+    if (_selectedLat == null || _selectedLng == null) {
+      msgEl.textContent = '먼저 위의 "검색"으로 정확한 장소를 선택하거나, 지도에서 근처 업체 마커를 클릭하세요.';
+      msgEl.className = 'modal-msg err';
+      return;
+    }
+    msgEl.textContent = '';
+    msgEl.className = 'modal-msg';
+    const placeId = document.getElementById('modalPlaceId').value;
+    loadPinInfo(placeId, _selectedLat, _selectedLng);
   }
 
   function closeModal() {
