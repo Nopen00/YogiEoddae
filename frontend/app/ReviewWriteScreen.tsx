@@ -20,6 +20,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Shadow } from 'react-native-shadow-2';
+import { logEvent } from '@/services/logger';
 
 interface ReviewTargetInfo {
   title: string;
@@ -72,17 +73,17 @@ const ReviewWriteScreen = () => {
     if (type === 'course') {
       mediaApi.getDetail(Number(id)).then((media) => {
         setTargetInfo({ title: media.data.title, detail: getMediaMetaParts(media.data).join(' | '), tags: media.data.tags.map(t => t.name) });
-      }).catch(() => {});
+      }).catch(err => logEvent('error', 'ReviewWriteScreen.tsx:75', err?.message || String(err)));
     } else if (type === 'place') {
       placeApi.getDetail(Number(id)).then((place) => {
         const p = place.data;
         setTargetInfo({ title: p.name, detail: `${CATEGORY_LABEL[p.category] ?? p.category} | ${shortAddress(p.address)}`, tags: p.tags.map(t => t.name) });
-      }).catch(() => {});
+      }).catch(err => logEvent('error', 'ReviewWriteScreen.tsx:80', err?.message || String(err)));
     } else if (type === 'photospot') {
       photoApi.getDetail(Number(id)).then((res) => {
         const { photo, place } = res.data;
         setTargetInfo({ title: photo.description || place.name, detail: place.name, tags: photo.tags.map(t => t.name) });
-      }).catch(() => {});
+      }).catch(err => logEvent('error', 'ReviewWriteScreen.tsx:85', err?.message || String(err)));
     }
   }, [type, id]);
 
@@ -100,7 +101,7 @@ const ReviewWriteScreen = () => {
         if (parsedDate) setVisitDate(parsedDate);
       }
       initialSnapshotRef.current = { rating: review.rating, reviewText: review.content, visitDate: parsedDate, reviewImages: review.images };
-    }).catch(() => {});
+    }).catch(err => logEvent('error', 'ReviewWriteScreen.tsx:103', err?.message || String(err)));
   }, [type, reviewId]);
 
   const hasUnsavedChanges = () => {

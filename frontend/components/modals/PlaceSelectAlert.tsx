@@ -23,6 +23,7 @@ import {
 import { AddPlaceConfirmAlert } from './AddPlaceConfirmAlert';
 import { TagRow } from '../ui/TagRow';
 import { TextSeparator } from '../ui/TextSeparator';
+import { logEvent } from '@/services/logger';
 
 const PAGE_SIZE = 3;
 
@@ -43,7 +44,7 @@ export const PlaceSelectAlert = ({ visible, onConfirm, onClose }: PlaceSelectAle
       setInputText('');
       setPage(0);
       setConfirmTarget(null);
-      placeApi.getList().then((res) => setAllPlaces(res.data.results)).catch(() => {});
+      placeApi.getList().then((res) => setAllPlaces(res.data.results)).catch(err => logEvent('error', 'PlaceSelectAlert.tsx:46', err?.message || String(err)));
     }
   }, [visible]);
 

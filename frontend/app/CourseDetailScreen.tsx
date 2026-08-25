@@ -29,6 +29,7 @@ import type { Media, MediaPlace, Photo, Review, Schedule } from '../services/typ
 import { Animated, Image, Linking, Modal, NativeScrollEvent, NativeSyntheticEvent, ScrollView, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CATEGORY_LABEL, MEDIA_TYPE_LABEL, shortAddress } from '@/constants/labels';
+import { logEvent } from '@/services/logger';
 
 const REVIEW_SORT_OPTIONS = ['추천순', '최신 여행 순', '최신 리뷰 순', '별점 높은 순', '별점 낮은 순'] as const;
 type ReviewSortOption = typeof REVIEW_SORT_OPTIONS[number];
@@ -107,10 +108,10 @@ const CourseDetailScreen = () => {
       .catch(() => setLoadError(true));
     mediaApi.getPlaces(Number(id))
       .then(res => setMediaPlaces(res.data))
-      .catch(() => {});
+      .catch(err => logEvent('error', 'CourseDetailScreen.tsx:110', err?.message || String(err)));
     scheduleApi.getList()
       .then(res => setSchedules(res.data))
-      .catch(() => {});
+      .catch(err => logEvent('error', 'CourseDetailScreen.tsx:113', err?.message || String(err)));
   }, [id]);
 
   useEffect(() => {
@@ -119,7 +120,7 @@ const CourseDetailScreen = () => {
 
   useFocusEffect(
     useCallback(() => {
-      reviewApi.getList('course', Number(id)).then(res => setReviews(res.data)).catch(() => {});
+      reviewApi.getList('course', Number(id)).then(res => setReviews(res.data)).catch(err => logEvent('error', 'CourseDetailScreen.tsx:122', err?.message || String(err)));
     }, [id])
   );
 
@@ -135,7 +136,7 @@ const CourseDetailScreen = () => {
           return next;
         });
       })
-      .catch(() => {});
+      .catch(err => logEvent('error', 'CourseDetailScreen.tsx:138', err?.message || String(err)));
   }, [mediaPlaces]);
 
   const toggleSavedPhotoSpot = async (photoId: number) => {

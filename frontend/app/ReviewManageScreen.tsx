@@ -16,6 +16,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useRef, useState } from 'react';
 import { Animated, Dimensions, Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { logEvent } from '@/services/logger';
 
 const TABS = ['코스', '명소', '포토스팟'];
 const { width } = Dimensions.get('window');
@@ -37,7 +38,7 @@ const ReviewManageScreen = () => {
     useCallback(() => {
       Promise.all(REVIEW_TARGET_TYPES.map(type => reviewApi.getMine(type)))
         .then(results => setReviews(results.flatMap(res => res.data)))
-        .catch(() => {});
+        .catch(err => logEvent('error', 'ReviewManageScreen.tsx:40', err?.message || String(err)));
     }, [])
   );
 

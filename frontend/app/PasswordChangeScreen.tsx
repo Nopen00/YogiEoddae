@@ -10,6 +10,7 @@ import { AlertCircle } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { logEvent } from '@/services/logger';
 
 const CODE_TIMEOUT_SECONDS = 5 * 60;
 const RESEND_COOLDOWN_SECONDS = 60;
@@ -48,7 +49,7 @@ const PasswordChangeScreen = () => {
       if (res.data.username) {
         authApi.requestPasswordReset(res.data.username)
           .then(() => setResendCooldown(RESEND_COOLDOWN_SECONDS))
-          .catch(() => {});
+          .catch(err => logEvent('error', 'PasswordChangeScreen.tsx:51', err?.message || String(err)));
       }
     });
   }, [isFromPublic, paramUsername, maskedEmail]);

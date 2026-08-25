@@ -29,6 +29,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import PagerView, { PagerViewHandle } from '@/components/ui/PagerViewWrapper';
 import { scheduleApi } from '../services/api';
 import type { DailyPlace, Schedule } from '../services/types';
+import { logEvent } from '@/services/logger';
 
 const TABS = ['내 일정', '과거 일정', '저장소'];
 const { width } = Dimensions.get('window');
@@ -240,7 +241,7 @@ export default function ScheduleScreen() {
         const all = [...new Map(res.data.map((s: Schedule) => [s.id, s])).values()];
         setMySchedules(all.filter((s: Schedule) => !isExpired(s.end_date)));
         setPastSchedules(all.filter((s: Schedule) => isExpired(s.end_date)));
-      }).catch(() => {});
+      }).catch(err => logEvent('error', 'ScheduleScreen.tsx:243', err?.message || String(err)));
     }, [])
   );
 

@@ -14,6 +14,7 @@ import { AlertCircle, ChevronRight, HelpCircle } from 'lucide-react-native';
 import React, { useCallback, useRef, useState } from 'react';
 import { Linking, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { logEvent } from '@/services/logger';
 
 const SettingScreen = () => {
   const router = useRouter();
@@ -50,7 +51,7 @@ const SettingScreen = () => {
           router.replace('/LoginScreen');
         }
       });
-      mailApi.getList().then(res => setHasMail(res.data.length > 0)).catch(() => {});
+      mailApi.getList().then(res => setHasMail(res.data.length > 0)).catch(err => logEvent('error', 'SettingScreen.tsx:53', err?.message || String(err)));
     }, [])
   );
 

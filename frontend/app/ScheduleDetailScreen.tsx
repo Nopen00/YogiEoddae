@@ -37,6 +37,7 @@ import { runOnJS } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { scheduleApi } from '../services/api';
 import type { DailyPlace, Schedule } from '../services/types';
+import { logEvent } from '@/services/logger';
 
 const WEEKDAY_KO = ['일', '월', '화', '수', '목', '금', '토'];
 
@@ -230,7 +231,7 @@ export default function ScheduleDetailScreen() {
             originalPlacesRef.current = [...originalPlacesRef.current, ...newPlaces];
           }
         }
-      }).catch(() => {});
+      }).catch(err => logEvent('error', 'ScheduleDetailScreen.tsx:233', err?.message || String(err)));
     }, [id])
   );
 

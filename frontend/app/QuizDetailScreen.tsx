@@ -16,6 +16,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { logEvent } from '@/services/logger';
 
 export default function QuizDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -40,7 +41,7 @@ export default function QuizDetailScreen() {
     }
     setLoadError(false);
     mediaApi.getDetail(Number(id)).then(res => setMedia(res.data)).catch(() => setLoadError(true));
-    mediaApi.getPlaces(Number(id)).then(res => setMediaPlaces(res.data)).catch(() => {});
+    mediaApi.getPlaces(Number(id)).then(res => setMediaPlaces(res.data)).catch(err => logEvent('error', 'QuizDetailScreen.tsx:43', err?.message || String(err)));
   }, [id]);
 
   useEffect(() => {

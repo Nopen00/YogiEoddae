@@ -30,6 +30,7 @@ import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { mediaApi, placeApi, photoApi, scheduleApi } from '../services/api';
 import type { Media, Place } from '../services/types';
+import { logEvent } from '@/services/logger';
 
 const CATEGORIES = ["전체", "코스", "명소", "포토스팟"];
 const PLACE_COUNT_SORT_OPTIONS: SortOption[] = ['장소 많은 순', '장소 적은 순'];
@@ -81,7 +82,7 @@ const SearchResultScreen = () => {
         like_count: photo.likes,
         tags: photo.tags.map(t => t.name),
       })));
-    }).catch(() => {});
+    }).catch(err => logEvent('error', 'SearchResultScreen.tsx:84', err?.message || String(err)));
   }, [searchKeyword]);
 
   const handleSearch = () => {

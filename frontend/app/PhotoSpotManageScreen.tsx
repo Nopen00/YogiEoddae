@@ -15,6 +15,7 @@ import { MoreVertical } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
 import { Dimensions, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { logEvent } from '@/services/logger';
 
 const { width } = Dimensions.get('window');
 
@@ -26,7 +27,7 @@ const PhotoSpotManageScreen = () => {
 
   useFocusEffect(
     useCallback(() => {
-      photoApi.getMine().then(res => setPhotos(res.data)).catch(() => {});
+      photoApi.getMine().then(res => setPhotos(res.data)).catch(err => logEvent('error', 'PhotoSpotManageScreen.tsx:29', err?.message || String(err)));
     }, [])
   );
 

@@ -11,6 +11,7 @@ import { Compass, Film } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { logEvent } from '@/services/logger';
 
 const AD_REWARD_TOKENS = 10;
 const AD_COOLDOWN_SEC = 60;
@@ -44,7 +45,7 @@ const TokenChargeScreen = () => {
 
   useFocusEffect(
     useCallback(() => {
-      userApi.getMe().then(res => setTokenBalance(res.data.token_balance)).catch(() => {});
+      userApi.getMe().then(res => setTokenBalance(res.data.token_balance)).catch(err => logEvent('error', 'TokenChargeScreen.tsx:47', err?.message || String(err)));
       setAdCooldownSec(getAdCooldownRemainingSec());
     }, [])
   );

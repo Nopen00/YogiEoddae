@@ -20,6 +20,7 @@ import { ChevronLeft } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
 import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { logEvent } from '@/services/logger';
 
 const TABS = ['내 일정', '과거 일정', '저장소'];
 const { width } = Dimensions.get('window');
@@ -80,11 +81,11 @@ export default function SavedListScreen() {
   useFocusEffect(
     useCallback(() => {
       if (listType === 'course') {
-        mediaApi.getBookmarked().then(res => setCourses(res.data)).catch(() => {});
+        mediaApi.getBookmarked().then(res => setCourses(res.data)).catch(err => logEvent('error', 'SavedListScreen.tsx:83', err?.message || String(err)));
       } else if (listType === 'place') {
-        placeApi.getBookmarked().then(res => setPlaces(res.data)).catch(() => {});
+        placeApi.getBookmarked().then(res => setPlaces(res.data)).catch(err => logEvent('error', 'SavedListScreen.tsx:85', err?.message || String(err)));
       } else {
-        bookmarkApi.getAll().then((res: any) => setPhotos(res.data?.saved_photos ?? [])).catch(() => {});
+        bookmarkApi.getAll().then((res: any) => setPhotos(res.data?.saved_photos ?? [])).catch(err => logEvent('error', 'SavedListScreen.tsx:87', err?.message || String(err)));
       }
     }, [listType])
   );

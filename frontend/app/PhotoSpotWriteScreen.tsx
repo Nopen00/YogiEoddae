@@ -17,6 +17,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Dimensions, Image, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Shadow } from 'react-native-shadow-2';
+import { logEvent } from '@/services/logger';
 
 const { width } = Dimensions.get('window');
 const imageWidth = width - Spacing.h.medium * 2;
@@ -84,7 +85,7 @@ const PhotoSpotWriteScreen = () => {
         visitDateKey: visitDateKey(parsedDate),
         placeId: place.id,
       };
-    }).catch(() => {});
+    }).catch(err => logEvent('error', 'PhotoSpotWriteScreen.tsx:87', err?.message || String(err)));
   }, [id]);
 
   const isSubmitEnabled =

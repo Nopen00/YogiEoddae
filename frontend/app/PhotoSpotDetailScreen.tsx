@@ -29,6 +29,7 @@ import { Animated, Image, Modal, NativeScrollEvent, NativeSyntheticEvent, Scroll
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { photoApi, reviewApi, scheduleApi } from '../services/api';
 import type { PhotoSpotDetail, Review, Schedule } from '../services/types';
+import { logEvent } from '@/services/logger';
 
 const REVIEW_SORT_OPTIONS = ['추천순', '최신 여행 순', '최신 리뷰 순', '별점 높은 순', '별점 낮은 순'] as const;
 type ReviewSortOption = typeof REVIEW_SORT_OPTIONS[number];
@@ -109,12 +110,12 @@ const PhotoSpotDetailScreen = () => {
   );
 
   useEffect(() => {
-    scheduleApi.getList().then(res => setSchedules(res.data)).catch(() => {});
+    scheduleApi.getList().then(res => setSchedules(res.data)).catch(err => logEvent('error', 'PhotoSpotDetailScreen.tsx:112', err?.message || String(err)));
   }, []);
 
   useFocusEffect(
     useCallback(() => {
-      reviewApi.getList('photospot', Number(id)).then(res => setReviews(res.data)).catch(() => {});
+      reviewApi.getList('photospot', Number(id)).then(res => setReviews(res.data)).catch(err => logEvent('error', 'PhotoSpotDetailScreen.tsx:117', err?.message || String(err)));
     }, [id])
   );
 

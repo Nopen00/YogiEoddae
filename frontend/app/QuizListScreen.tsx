@@ -19,6 +19,7 @@ import { CheckCircle } from 'lucide-react-native';
 import React, { useCallback, useRef, useState } from 'react';
 import { Animated, Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { logEvent } from '@/services/logger';
 
 const CATEGORIES = ['전체', '영화', '드라마', '유튜브'];
 const { width } = Dimensions.get('window');
@@ -81,9 +82,9 @@ export default function QuizListScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      mediaApi.getList({ type: 'movie' }).then(res => setMovieMedia(res.data.results)).catch(() => {});
-      mediaApi.getList({ type: 'drama' }).then(res => setDramaMedia(res.data.results)).catch(() => {});
-      mediaApi.getList({ type: 'youtube' }).then(res => setYoutubeMedia(res.data.results)).catch(() => {});
+      mediaApi.getList({ type: 'movie' }).then(res => setMovieMedia(res.data.results)).catch(err => logEvent('error', 'QuizListScreen.tsx:84', err?.message || String(err)));
+      mediaApi.getList({ type: 'drama' }).then(res => setDramaMedia(res.data.results)).catch(err => logEvent('error', 'QuizListScreen.tsx:85', err?.message || String(err)));
+      mediaApi.getList({ type: 'youtube' }).then(res => setYoutubeMedia(res.data.results)).catch(err => logEvent('error', 'QuizListScreen.tsx:86', err?.message || String(err)));
     }, [])
   );
 

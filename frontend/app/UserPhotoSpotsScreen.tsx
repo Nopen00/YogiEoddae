@@ -18,6 +18,7 @@ import { ArrowUpDown, Heart, Star } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { logEvent } from '@/services/logger';
 
 const SORT_OPTIONS: SortOption[] = ['이름순', '별점 높은 순', '하트 많은 순'];
 
@@ -39,7 +40,7 @@ const UserPhotoSpotsScreen = () => {
     useCallback(() => {
       photoApi.getList({ author }).then(res => {
         setPhotos(res.data.results.map(p => ({ ...p, rating: p.rating ?? 0, like_count: p.likes })));
-      }).catch(() => {});
+      }).catch(err => logEvent('error', 'UserPhotoSpotsScreen.tsx:42', err?.message || String(err)));
     }, [author])
   );
 

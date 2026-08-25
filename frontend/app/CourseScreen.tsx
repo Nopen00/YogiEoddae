@@ -31,6 +31,7 @@ import PagerView, { PagerViewHandle } from '@/components/ui/PagerViewWrapper';
 import { mediaApi, photoApi, placeApi } from '../services/api';
 import type { Media, Photo } from '../services/types';
 import { Size } from '@/constants/Size';
+import { logEvent } from '@/services/logger';
 
 type PhotoSpotItem = Photo & { rating: number; like_count: number };
 
@@ -123,14 +124,14 @@ const CourseScreen = () => {
       const map: Record<number, boolean> = {};
       allPhotos.forEach(p => { map[p.id] = p.is_bookmarked ?? false; });
       setSavedPhotos(map);
-    }).catch(() => {});
+    }).catch(err => logEvent('error', 'CourseScreen.tsx:126', err?.message || String(err)));
 
     await Promise.all([
-      mediaApi.getList().then(res => setAllMedia(res.data.results)).catch(() => {}),
-      mediaApi.getList({ ordering: 'popular' }).then(res => setPopularMedia(res.data.results)).catch(() => {}),
-      mediaApi.getList({ type: 'youtube' }).then(res => setYoutubeMedia(res.data.results)).catch(() => {}),
-      mediaApi.getList({ type: 'drama' }).then(res => setDramaMedia(res.data.results)).catch(() => {}),
-      mediaApi.getList({ type: 'movie' }).then(res => setMovieMedia(res.data.results)).catch(() => {}),
+      mediaApi.getList().then(res => setAllMedia(res.data.results)).catch(err => logEvent('error', 'CourseScreen.tsx:129', err?.message || String(err))),
+      mediaApi.getList({ ordering: 'popular' }).then(res => setPopularMedia(res.data.results)).catch(err => logEvent('error', 'CourseScreen.tsx:130', err?.message || String(err))),
+      mediaApi.getList({ type: 'youtube' }).then(res => setYoutubeMedia(res.data.results)).catch(err => logEvent('error', 'CourseScreen.tsx:131', err?.message || String(err))),
+      mediaApi.getList({ type: 'drama' }).then(res => setDramaMedia(res.data.results)).catch(err => logEvent('error', 'CourseScreen.tsx:132', err?.message || String(err))),
+      mediaApi.getList({ type: 'movie' }).then(res => setMovieMedia(res.data.results)).catch(err => logEvent('error', 'CourseScreen.tsx:133', err?.message || String(err))),
       photoSpotsPromise,
     ]);
   };
@@ -167,7 +168,7 @@ const CourseScreen = () => {
           const city = res.data[0].place.address.split(' ')[0];
           setThemeRegions(prev => ({ ...prev, [media.id]: CITY_SHORT[city] ?? city }));
         }
-      }).catch(() => {});
+      }).catch(err => logEvent('error', 'CourseScreen.tsx:170', err?.message || String(err)));
     });
   }, [allMedia]);
 
@@ -177,7 +178,7 @@ const CourseScreen = () => {
         const images = res.data.map(mp => mp.place.image_url).filter(Boolean);
         setPickCardImages(prev => ({ ...prev, [media.id]: images }));
         setPickCardPlaceCounts(prev => ({ ...prev, [media.id]: res.data.length }));
-      }).catch(() => {});
+      }).catch(err => logEvent('error', 'CourseScreen.tsx:180', err?.message || String(err)));
     });
   }, [youtubeMedia, dramaMedia, movieMedia]);
 
