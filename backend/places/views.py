@@ -975,6 +975,9 @@ class PhotoViewSet(viewsets.ModelViewSet):
         keyword = self.request.query_params.get('keyword')
         if keyword:
             qs = qs.filter(Q(description__icontains=keyword) | Q(place__name__icontains=keyword))
+        tag = self.request.query_params.get('tag')
+        if tag:
+            qs = qs.filter(tags__name__icontains=tag)
         author = self.request.query_params.get('author')
         if author:
             qs = qs.filter(uploaded_by__nickname=author)

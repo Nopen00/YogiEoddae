@@ -451,7 +451,7 @@ export const photoApi = {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
-  getList: (params?: { keyword?: string; author?: string }) => {
+  getList: (params?: { keyword?: string; tag?: string; author?: string }) => {
     if (USE_MOCK) {
       const list = params?.author ? mockPhotoStore.filter(p => p.author === params.author) : [...mockPhotoStore];
       return mock(paginatedOf(list));

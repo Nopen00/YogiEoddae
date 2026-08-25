@@ -72,9 +72,15 @@ const SearchResultScreen = () => {
 
   useEffect(() => {
     if (!searchKeyword) return;
-    mediaApi.getList({ keyword: searchKeyword }).then(res => setCourses(res.data.results)).catch((e) => console.error('media error:', e));
-    placeApi.getList({ keyword: searchKeyword }).then(res => setAttractions(res.data.results)).catch((e) => console.error('place error:', e));
-    photoApi.getList({ keyword: searchKeyword }).then(res => {
+    // "#국밥"처럼 #으로 시작하면 이름/설명이 아니라 태그로 검색한다.
+    const isTagSearch = searchKeyword.startsWith('#');
+    const trimmedTag = searchKeyword.slice(1).trim();
+    if (isTagSearch && !trimmedTag) return;
+    const query: { keyword?: string; tag?: string } = isTagSearch ? { tag: trimmedTag } : { keyword: searchKeyword };
+
+    mediaApi.getList(query).then(res => setCourses(res.data.results)).catch((e) => console.error('media error:', e));
+    placeApi.getList(query).then(res => setAttractions(res.data.results)).catch((e) => console.error('place error:', e));
+    photoApi.getList(query).then(res => {
       setPhotoSpots(res.data.results.map(photo => ({
         id: photo.id,
         name: photo.description,
