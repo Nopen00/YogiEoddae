@@ -342,6 +342,23 @@ def admin_place_search_view(request):
     return JsonResponse({'results': results})
 
 
+def admin_place_reverse_geocode_view(request, place_id):
+    """저장된 좌표(핀 위치)가 실제로 어느 주소를 가리키는지 역지오코딩으로 확인.
+    AI가 추정한 장소명/주소가 부정확할 때, 관리자가 좌표 기준 실제 주소와 비교할 수 있게 한다."""
+    from places.services import kakao_reverse_geocode
+    place = get_object_or_404(Place, pk=place_id)
+    address = kakao_reverse_geocode(place.latitude, place.longitude)
+    return JsonResponse({'address': address})
+
+
+def admin_place_nearby_view(request, place_id):
+    """저장된 좌표 주변의 실제 업체 목록(지도에 마커로 표시할 후보)을 반환."""
+    from places.services import kakao_nearby_search
+    place = get_object_or_404(Place, pk=place_id)
+    results = kakao_nearby_search(place.latitude, place.longitude)
+    return JsonResponse({'results': results, 'lat': float(place.latitude), 'lng': float(place.longitude)})
+
+
 def admin_place_update_view(request, place_id):
     """장소 이름/주소 수정 (추가 확인 필요 섹션에서 인라인 편집용)."""
     import json
@@ -432,6 +449,7 @@ def admin_review_view(request, media_id):
         'inferred_uncertain':  inferred_uncertain,
         'approved':            approved,
         'rejected':            rejected,
+        'kakao_js_key':        settings.KAKAO_JS_KEY,
     })
 
 

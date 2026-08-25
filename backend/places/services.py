@@ -105,6 +105,70 @@ def _kakao_search_candidates(query: str, size: int = 5) -> list:
         return []
 
 
+def kakao_reverse_geocode(lat, lng):
+    """좌표 → 행정 주소(도로명 우선, 없으면 지번) 변환. 실패 시 None.
+    AI가 추정한 장소명/주소가 부정확할 때, 저장된 좌표가 실제로 어디를 가리키는지
+    관리자가 확인할 수 있도록 지원한다."""
+    if not settings.KAKAO_REST_KEY or lat is None or lng is None:
+        return None
+    headers = {'Authorization': f'KakaoAK {settings.KAKAO_REST_KEY}'}
+    try:
+        r = http_requests.get(
+            'https://dapi.kakao.com/v2/local/geo/coord2address.json',
+            params={'x': lng, 'y': lat},
+            headers=headers, timeout=5,
+        )
+        docs = r.json().get('documents', [])
+        if not docs:
+            return None
+        doc = docs[0]
+        road = doc.get('road_address')
+        if road and road.get('address_name'):
+            return road['address_name']
+        jibun = doc.get('address')
+        return jibun['address_name'] if jibun else None
+    except Exception:
+        return None
+
+
+NEARBY_CATEGORY_CODES = ['AT4', 'FD6', 'CE7', 'CT1', 'AD5']  # 관광명소/음식점/카페/문화시설/숙박
+
+
+def kakao_nearby_search(lat, lng, radius: int = 200, limit: int = 15) -> list:
+    """좌표 주변의 실제 업체 목록을 카테고리 검색으로 가져온다(거리순, 중복 제거, 최대 limit개).
+    관리자가 AI 추정 위치의 핀 주변에 실제로 어떤 업체들이 있는지 지도에서 확인하고
+    직접 선택할 수 있도록 지원한다."""
+    if not settings.KAKAO_REST_KEY or lat is None or lng is None:
+        return []
+    headers = {'Authorization': f'KakaoAK {settings.KAKAO_REST_KEY}'}
+    seen = set()
+    results = []
+    for code in NEARBY_CATEGORY_CODES:
+        try:
+            r = http_requests.get(
+                'https://dapi.kakao.com/v2/local/search/category.json',
+                params={'category_group_code': code, 'x': lng, 'y': lat, 'radius': radius, 'sort': 'distance'},
+                headers=headers, timeout=5,
+            )
+            for d in r.json().get('documents', []):
+                place_id = d.get('id')
+                if not place_id or place_id in seen:
+                    continue
+                seen.add(place_id)
+                results.append({
+                    'name': d['place_name'],
+                    'address': d.get('road_address_name') or d.get('address_name', ''),
+                    'lat': float(d['y']),
+                    'lng': float(d['x']),
+                    'distance': int(d['distance']) if d.get('distance') else None,
+                    'category': d.get('category_group_name', ''),
+                })
+        except Exception:
+            continue
+    results.sort(key=lambda r: r['distance'] if r['distance'] is not None else 999999)
+    return results[:limit]
+
+
 def kakao_search(query: str):
     """
     카카오 키워드 검색 → {name, address, lat, lng} 반환(1순위 후보). 실패 시 None.

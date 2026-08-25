@@ -5,6 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>장소 검토 | 요기어때?</title>
+  <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={{ kakao_js_key }}&autoload=false"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: #f9fafb; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #1f2937; }
@@ -113,6 +114,16 @@
     .modal-msg { font-size: 13px; margin-top: 10px; text-align: center; min-height: 18px; }
     .modal-msg.ok  { color: #16a34a; }
     .modal-msg.err { color: #dc2626; }
+
+    /* 좌표 기준 실제 주소 + 근처 업체 지도 */
+    .pin-section { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px; margin-bottom: 14px; }
+    .pin-address-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+    .pin-address-label { font-size: 12px; color: #6b7280; white-space: nowrap; }
+    .pin-address-value { font-size: 13px; color: #1f2937; font-weight: 500; flex: 1; min-width: 120px; }
+    .btn-apply-pin { background: #dbeafe; color: #1d4ed8; border: none; border-radius: 6px; padding: 5px 10px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+    .btn-apply-pin:hover { background: #bfdbfe; }
+    .pin-map { width: 100%; height: 200px; border-radius: 8px; overflow: hidden; background: #e5e7eb; }
+    .pin-map-hint { font-size: 11px; color: #9ca3af; margin-top: 6px; }
 
     /* 검색 버튼 + 결과 */
     .name-row { display: flex; gap: 8px; }
@@ -225,7 +236,7 @@
               <p class="card-addr" id="addr-{{ mp.place.pk }}">{% if mp.place.address %}<img class="ic" src="{% static 'places/icons/map-pin.svg' %}" alt="">{{ mp.place.address }}{% else %}주소 미확인{% endif %}</p>
               {% if mp.ai_reason %}<p class="card-reason">{{ mp.ai_reason }}</p>{% endif %}
               <p class="warn-label">위치 추정 필요 — 수정 후 승인하세요</p>
-              <button type="button" class="btn-edit" onclick="openModal(event, {{ mp.place.pk }}, '{{ mp.place.name|escapejs }}', '{{ mp.place.address|escapejs }}')"><img class="ic" src="{% static 'places/icons/more-vertical.svg' %}" alt="">위치 수정</button>
+              <button type="button" class="btn-edit" onclick="openModal(event, {{ mp.place.pk }}, '{{ mp.place.name|escapejs }}', '{{ mp.place.address|escapejs }}', {{ mp.place.latitude|default:'null' }}, {{ mp.place.longitude|default:'null' }})"><img class="ic" src="{% static 'places/icons/more-vertical.svg' %}" alt="">위치 수정</button>
             </div>
             <div class="conf-bar-wrap">
               <div class="conf-bar-bg"><div class="conf-bar-fill" style="width:{{ mp.confidence_score|floatformat:0 }}%; background:#fb923c"></div></div>
@@ -264,7 +275,7 @@
         {% if mp.place.address %}<span class="simple-addr" id="addr-{{ mp.place.pk }}">{{ mp.place.address }}</span>{% endif %}
         <span class="simple-conf">{{ mp.confidence_score|floatformat:0 }}%</span>
         <button type="button" class="btn-edit" style="margin-top:0; margin-left:8px;"
-          onclick="openModal(event, {{ mp.place.pk }}, '{{ mp.place.name|escapejs }}', '{{ mp.place.address|escapejs }}')"><img class="ic" style="margin-right:0" src="{% static 'places/icons/more-vertical.svg' %}" alt=""></button>
+          onclick="openModal(event, {{ mp.place.pk }}, '{{ mp.place.name|escapejs }}', '{{ mp.place.address|escapejs }}', {{ mp.place.latitude|default:'null' }}, {{ mp.place.longitude|default:'null' }})"><img class="ic" style="margin-right:0" src="{% static 'places/icons/more-vertical.svg' %}" alt=""></button>
         <button type="button" class="btn-revoke"
           onclick="openRevoke({{ mp.pk }}, '{{ mp.place.name|escapejs }}')"><img class="ic" src="{% static 'places/icons/x.svg' %}" alt="">승인 취소</button>
       </div>
@@ -315,6 +326,16 @@
       <input type="text" id="modalAddr" class="field-input" placeholder="예: 부산 북구 구포동 123">
     </div>
 
+    <div class="pin-section">
+      <div class="pin-address-row">
+        <span class="pin-address-label">📍 좌표 기준 실제 주소</span>
+        <span class="pin-address-value" id="pinAddress">-</span>
+        <button type="button" class="btn-apply-pin" id="applyPinAddrBtn" onclick="applyPinAddress()" style="display:none">이 주소 적용</button>
+      </div>
+      <div class="pin-map" id="pinMap"></div>
+      <p class="pin-map-hint">핀 근처 실제 업체 마커를 클릭하면 장소명/주소가 자동으로 채워집니다.</p>
+    </div>
+
     <p class="modal-msg" id="modalMsg"></p>
 
     <div class="modal-actions">
@@ -355,7 +376,7 @@
     });
   }
 
-  function openModal(e, placeId, name, addr) {
+  function openModal(e, placeId, name, addr, lat, lng) {
     e.preventDefault();
     e.stopPropagation();
     document.getElementById('modalPlaceId').value = placeId;
@@ -367,6 +388,77 @@
     closeSearchResults();
     document.getElementById('editModal').classList.add('open');
     document.getElementById('modalName').focus();
+    loadPinInfo(placeId, lat, lng);
+  }
+
+  /* ── 좌표 기준 실제 주소 + 근처 업체 지도 ── */
+  let _pinMap = null, _pinMarkers = [], _fetchedPinAddress = null;
+
+  function applyPinAddress() {
+    if (!_fetchedPinAddress) return;
+    document.getElementById('modalAddr').value = _fetchedPinAddress;
+  }
+
+  function loadPinInfo(placeId, lat, lng) {
+    const addrEl = document.getElementById('pinAddress');
+    const applyBtn = document.getElementById('applyPinAddrBtn');
+    const mapEl = document.getElementById('pinMap');
+    _fetchedPinAddress = null;
+    applyBtn.style.display = 'none';
+    _pinMarkers = [];
+
+    if (!lat || !lng || (Math.abs(lat) < 0.0001 && Math.abs(lng) < 0.0001)) {
+      addrEl.textContent = '좌표 정보 없음';
+      mapEl.innerHTML = '';
+      return;
+    }
+
+    addrEl.textContent = '조회 중...';
+
+    fetch(`/places/place/${placeId}/reverse-geocode/`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.address) {
+          _fetchedPinAddress = data.address;
+          addrEl.textContent = data.address;
+          applyBtn.style.display = '';
+        } else {
+          addrEl.textContent = '주소 조회 실패';
+        }
+      })
+      .catch(() => { addrEl.textContent = '주소 조회 실패'; });
+
+    kakao.maps.load(() => { setTimeout(() => {
+      mapEl.innerHTML = '';
+      const center = new kakao.maps.LatLng(lat, lng);
+      _pinMap = new kakao.maps.Map(mapEl, { center, level: 3 });
+
+      new kakao.maps.Marker({
+        map: _pinMap,
+        position: center,
+        image: new kakao.maps.MarkerImage(
+          'data:image/svg+xml;base64,' + btoa('<svg xmlns="http://www.w3.org/2000/svg" width="28" height="38"><path d="M14 0C6.3 0 0 6.3 0 14c0 10.5 14 24 14 24s14-13.5 14-24C28 6.3 21.7 0 14 0z" fill="#ea580c"/><circle cx="14" cy="14" r="6" fill="white"/></svg>'),
+          new kakao.maps.Size(28, 38),
+        ),
+      });
+
+      fetch(`/places/place/${placeId}/nearby-candidates/`)
+        .then(r => r.json())
+        .then(data => {
+          (data.results || []).forEach(place => {
+            const pos = new kakao.maps.LatLng(place.lat, place.lng);
+            const marker = new kakao.maps.Marker({ map: _pinMap, position: pos, title: place.name });
+            const info = new kakao.maps.InfoWindow({
+              content: `<div style="padding:6px 10px;font-size:12px;white-space:nowrap;">${place.name}</div>`,
+            });
+            kakao.maps.event.addListener(marker, 'mouseover', () => info.open(_pinMap, marker));
+            kakao.maps.event.addListener(marker, 'mouseout',  () => info.close());
+            kakao.maps.event.addListener(marker, 'click', () => selectResult(place.name, place.address, place.lat, place.lng));
+            _pinMarkers.push(marker);
+          });
+        })
+        .catch(() => {});
+    }, 0); });
   }
 
   function closeModal() {
