@@ -4,7 +4,7 @@ import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import React, { ReactNode } from 'react';
-import { StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
+import { StyleProp, StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
 
 interface ScreenHeaderProps {
   onBack?: () => void;
@@ -15,16 +15,25 @@ interface ScreenHeaderProps {
   right?: ReactNode;
   style?: StyleProp<ViewStyle>;
   children?: ReactNode;
+  // 지정하면 타이틀이 탭 가능해진다(기본은 pointerEvents="none"이라 클릭이 그냥 통과함).
+  // 숨겨진 진입점(예: MY 타이틀 5연타로 디버그 로그 화면 진입) 용도.
+  onTitlePress?: () => void;
 }
 
-export function ScreenHeader({ onBack, title, scrollTitle, right, style, children }: ScreenHeaderProps) {
+export function ScreenHeader({ onBack, title, scrollTitle, right, style, children, onTitlePress }: ScreenHeaderProps) {
   const hasFlexContent = !!(children || right || scrollTitle);
   return (
     <View style={[styles.header, style]}>
       {onBack ? <BackButton onPress={onBack} /> : <View style={styles.rightBalance} />}
       {title && (
-        <View style={styles.titleContainer} pointerEvents="none">
-          <Text style={styles.title}>{title}</Text>
+        <View style={styles.titleContainer} pointerEvents={onTitlePress ? 'auto' : 'none'}>
+          {onTitlePress ? (
+            <TouchableOpacity onPress={onTitlePress} activeOpacity={1}>
+              <Text style={styles.title}>{title}</Text>
+            </TouchableOpacity>
+          ) : (
+            <Text style={styles.title}>{title}</Text>
+          )}
         </View>
       )}
       {hasFlexContent && (

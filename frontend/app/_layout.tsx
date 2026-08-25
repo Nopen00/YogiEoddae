@@ -8,6 +8,19 @@ import { View } from 'react-native';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { LargeIconModeProvider } from '@/hooks/useLargeIconMode';
 import BottomTabBar from '@/components/navigation/BottomTabBar';
+import { logEvent } from '@/services/logger';
+
+// 처리되지 않은 JS 예외(진짜 크래시)를 숨겨진 디버그 로그 화면(MY 타이틀 5연타)에서
+// 볼 수 있게 기록해둔다. 기본 핸들러도 그대로 호출해서 기존 크래시 동작은 유지한다.
+const globalErrorUtils = (global as any).ErrorUtils;
+if (globalErrorUtils && !(globalErrorUtils as any)._loggerPatched) {
+  const defaultHandler = globalErrorUtils.getGlobalHandler?.();
+  globalErrorUtils.setGlobalHandler((error: any, isFatal?: boolean) => {
+    logEvent('error', isFatal ? 'FATAL' : 'JS 예외', error?.message || String(error));
+    defaultHandler?.(error, isFatal);
+  });
+  (globalErrorUtils as any)._loggerPatched = true;
+}
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -91,6 +104,7 @@ function RootLayoutNav() {
             <Stack.Screen name="WithdrawalScreen" options={{ headerShown: false }} />
             <Stack.Screen name="ScheduleDetailScreen" options={{ headerShown: false }} />
             <Stack.Screen name="CourseScreen" options={{ headerShown: false }} />
+            <Stack.Screen name="DebugLogScreen" options={{ headerShown: false }} />
           </Stack>
         </View>
         {showTabBar && <BottomTabBar />}

@@ -11,7 +11,7 @@ import { mailApi, userApi } from '@/services/api';
 import { useLargeIconMode } from '@/hooks/useLargeIconMode';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { AlertCircle, ChevronRight, HelpCircle } from 'lucide-react-native';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { Linking, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -24,6 +24,19 @@ const SettingScreen = () => {
   const [isIconModeToastVisible, setIsIconModeToastVisible] = useState(false);
   const [hasMail, setHasMail] = useState(false);
   const [hasEmail, setHasEmail] = useState(true);
+
+  // "MY" 타이틀 5연타(1초 이내) 시 숨겨진 디버그 로그 화면으로 진입
+  const titleClickTimestamps = useRef<number[]>([]);
+  const handleTitlePress = () => {
+    const now = Date.now();
+    const recentClicks = titleClickTimestamps.current.filter(t => now - t < 1000);
+    recentClicks.push(now);
+    titleClickTimestamps.current = recentClicks;
+    if (recentClicks.length >= 5) {
+      titleClickTimestamps.current = [];
+      router.push('/DebugLogScreen' as any);
+    }
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -43,7 +56,7 @@ const SettingScreen = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScreenHeader title="MY" onBack={() => router.back()} />
+      <ScreenHeader title="MY" onBack={() => router.back()} onTitlePress={handleTitlePress} />
 
       {/* 유저 정보 섹션 */}
       <View style={styles.userSection}>

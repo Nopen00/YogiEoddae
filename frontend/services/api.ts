@@ -1,5 +1,6 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { logEvent } from './logger';
 import type { Media, Place, NearbyPlace, Photo, MediaPlace, PhotoSpotDetail, Review, ReviewTarget, ReviewTargetType, Schedule, PaginatedResponse, MailItem } from './types';
 import {
   MOCK_MEDIA_LIST, MOCK_MEDIA_PLACES_MAP, MOCK_PHOTOS, MOCK_PHOTOS_BY_PLACE, mockPhotoStore, mockPhotoPlaceName,
@@ -97,6 +98,12 @@ apiClient.interceptors.response.use(
         return apiClient(original);
       }
     }
+    const method = (original?.method || '?').toUpperCase();
+    const url = original?.url || '?';
+    const detail = error.response
+      ? `HTTP ${error.response.status}: ${JSON.stringify(error.response.data).slice(0, 300)}`
+      : (error.message || String(error));
+    logEvent('error', `API ${method} ${url}`, detail);
     return Promise.reject(error);
   }
 );
