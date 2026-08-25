@@ -20,6 +20,7 @@ import PagerView, { PagerViewHandle } from '@/components/ui/PagerViewWrapper';
 
 // 디자인 시스템 임포트
 import { Divider } from '@/components/ui/Divider';
+import { PlaceThumb } from '@/components/ui/PlaceThumb';
 import { TextSeparator } from '@/components/ui/TextSeparator';
 import SearchBar from '@/components/ui/SearchBar';
 import { Colors } from '@/constants/Colors';
@@ -38,6 +39,7 @@ const PLACE_COUNT_SORT_OPTIONS: SortOption[] = ['장소 많은 순', '장소 적
 interface PhotoSpotCardData {
   id: number;
   name: string;
+  image_url: string;
   rating: number;
   like_count: number;
   tags: string[];
@@ -84,6 +86,7 @@ const SearchResultScreen = () => {
       setPhotoSpots(res.data.results.map(photo => ({
         id: photo.id,
         name: photo.description,
+        image_url: photo.image_url,
         rating: photo.rating ?? 0,
         like_count: photo.likes,
         tags: photo.tags.map(t => t.name),
@@ -130,7 +133,7 @@ const SearchResultScreen = () => {
         onPress={() => router.push({ pathname: '/CourseDetailScreen', params: { id: course.id, title: course.title } })}
       >
         <View style={styles.cardInner}>
-          <View style={styles.imageCircle} />
+          <PlaceThumb uri={course.thumbnail_url} style={styles.imageCircle} shape="circle" />
           <View style={styles.infoContent}>
             <Text style={styles.courseTitle} numberOfLines={1}>{course.title}</Text>
             <View style={styles.metadataRow}>
@@ -197,7 +200,7 @@ const SearchResultScreen = () => {
         }}
       >
         <View style={styles.cardInner}>
-          <View style={styles.imageCircle} />
+          <PlaceThumb uri={attr.image_url} style={styles.imageCircle} shape="circle" />
           <View style={styles.infoContent}>
             <Text style={styles.courseTitle} numberOfLines={1}>{attr.name}</Text>
             <View style={styles.metadataRow}>
@@ -249,7 +252,7 @@ const SearchResultScreen = () => {
       onPress={() => router.push({ pathname: '/PhotoSpotDetailScreen', params: { id: spot.id, name: spot.name } })}
     >
       <View style={styles.cardInner}>
-        <View style={styles.imageCircle} />
+        <PlaceThumb uri={spot.image_url} style={styles.imageCircle} shape="circle" />
         <View style={styles.infoContent}>
           <Text style={styles.courseTitle} numberOfLines={1}>{spot.name}</Text>
           <View style={styles.metadataRow}>
