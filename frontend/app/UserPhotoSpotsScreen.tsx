@@ -38,7 +38,7 @@ const UserPhotoSpotsScreen = () => {
   useFocusEffect(
     useCallback(() => {
       photoApi.getList({ author }).then(res => {
-        setPhotos(res.data.map(p => ({ ...p, rating: p.rating ?? 0, like_count: p.likes })));
+        setPhotos(res.data.results.map(p => ({ ...p, rating: p.rating ?? 0, like_count: p.likes })));
       }).catch(() => {});
     }, [author])
   );

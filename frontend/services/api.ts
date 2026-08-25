@@ -447,9 +447,9 @@ export const photoApi = {
   getList: (params?: { keyword?: string; author?: string }) => {
     if (USE_MOCK) {
       const list = params?.author ? mockPhotoStore.filter(p => p.author === params.author) : [...mockPhotoStore];
-      return mock(list);
+      return mock(paginatedOf(list));
     }
-    return apiClient.get<Photo[]>('/api/photos/', { params });
+    return apiClient.get<PaginatedResponse<Photo>>('/api/photos/', { params });
   },
   getDetail: (id: number) => {
     if (USE_MOCK) {

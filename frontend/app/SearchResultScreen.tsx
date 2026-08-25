@@ -74,7 +74,7 @@ const SearchResultScreen = () => {
     mediaApi.getList({ keyword: searchKeyword }).then(res => setCourses(res.data.results)).catch((e) => console.error('media error:', e));
     placeApi.getList({ keyword: searchKeyword }).then(res => setAttractions(res.data.results)).catch((e) => console.error('place error:', e));
     photoApi.getList({ keyword: searchKeyword }).then(res => {
-      setPhotoSpots(res.data.map(photo => ({
+      setPhotoSpots(res.data.results.map(photo => ({
         id: photo.id,
         name: photo.description,
         rating: photo.rating ?? 0,
