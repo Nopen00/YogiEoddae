@@ -28,7 +28,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PagerView, { PagerViewHandle } from '@/components/ui/PagerViewWrapper';
-import { mediaApi, photoApi, placeApi } from '../services/api';
+import { BASE_URL, mediaApi, photoApi, placeApi } from '../services/api';
 import type { Media, Photo } from '../services/types';
 import { Size } from '@/constants/Size';
 
@@ -115,15 +115,23 @@ const CourseScreen = () => {
   const [savedPhotos, setSavedPhotos] = useState<Record<number, boolean>>({});
   const [selectedPhotoTag, setSelectedPhotoTag] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  // TODO: 임시 디버그용 — 포토스팟이 안 불러와지는 원인 확인되면 제거
+  const [photoLoadError, setPhotoLoadError] = useState<string | null>(null);
 
   const loadCourseData = async () => {
     const photoSpotsPromise = photoApi.getList().then(res => {
+      setPhotoLoadError(null);
       const allPhotos: PhotoSpotItem[] = res.data.map(p => ({ ...p, rating: p.rating ?? 0, like_count: p.likes }));
       setPhotoSpots(allPhotos);
       const map: Record<number, boolean> = {};
       allPhotos.forEach(p => { map[p.id] = p.is_bookmarked ?? false; });
       setSavedPhotos(map);
-    }).catch(() => {});
+    }).catch(err => {
+      const detail = err?.response
+        ? `HTTP ${err.response.status}: ${JSON.stringify(err.response.data).slice(0, 300)}`
+        : (err?.message || String(err));
+      setPhotoLoadError(`[${BASE_URL}/api/photos/] ${detail}`);
+    });
 
     await Promise.all([
       mediaApi.getList().then(res => setAllMedia(res.data.results)).catch(() => {}),
@@ -687,6 +695,11 @@ const CourseScreen = () => {
                 <>
                   <Text style={styles.emptyTitle}>포토스팟이 존재하지 않습니다.</Text>
                   <Text style={styles.emptyDesc}>다른 탭를 확인해보세요.</Text>
+                  {photoLoadError && (
+                    <Text style={{ marginTop: 12, fontSize: 11, color: '#dc2626', textAlign: 'center' }} selectable>
+                      DEBUG: {photoLoadError}
+                    </Text>
+                  )}
                 </>
               )}
             </View>
