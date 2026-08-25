@@ -38,6 +38,18 @@ export interface Place {
   created_at: string;
 }
 
+// 아직 우리 DB에 등록되지 않은, 관광공사 API에서 실시간으로 받아온 근처 추천 장소.
+// 탭하면 placeApi.register()로 정식 Place로 등록된 뒤에야 id가 생긴다.
+export interface NearbyPlace {
+  content_id: string;
+  name: string;
+  address: string;
+  latitude: string;
+  longitude: string;
+  image_url: string;
+  category: string;
+}
+
 export interface Photo {
   id: number;
   image_url: string;

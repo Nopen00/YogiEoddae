@@ -32,6 +32,7 @@ import re
 import requests
 from django.conf import settings
 from django.core.management.base import BaseCommand
+from django.utils import timezone
 from googleapiclient.discovery import build
 
 from places.models import Media, MediaPlace, Place
@@ -162,6 +163,7 @@ def _kto_search(keyword: str, num_rows: int = 5) -> list:
                     'image_url': item.get('firstimage', ''),
                     'category': item.get('contenttypeid', ''),
                     'is_verified': True,
+                    'last_synced_at': timezone.now(),
                 },
             )
             places.append(place)

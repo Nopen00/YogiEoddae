@@ -46,6 +46,9 @@ class Place(models.Model):
     kakao_place_id = models.CharField(max_length=50, blank=True, null=True)
     kakao_place_url = models.URLField(max_length=500, blank=True, null=True)
     tags = models.ManyToManyField(Tag, blank=True, related_name='places')
+    # 관광공사 API에서 이 장소 정보를 마지막으로 가져온 시점. 조회 시점 기준 이 값이
+    # 오래되면(30일+) 그때 재호출해서 갱신한다(lazy TTL) — 특정 날짜에 갱신이 몰리는 것을 방지.
+    last_synced_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

@@ -1,6 +1,6 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { Media, Place, Photo, MediaPlace, PhotoSpotDetail, Review, ReviewTarget, ReviewTargetType, Schedule, PaginatedResponse, MailItem } from './types';
+import type { Media, Place, NearbyPlace, Photo, MediaPlace, PhotoSpotDetail, Review, ReviewTarget, ReviewTargetType, Schedule, PaginatedResponse, MailItem } from './types';
 import {
   MOCK_MEDIA_LIST, MOCK_MEDIA_PLACES_MAP, MOCK_PHOTOS, MOCK_PHOTOS_BY_PLACE, mockPhotoStore, mockPhotoPlaceName,
   mockPhotoPlaceId, mockScheduleStore, mockPlaceStore, mockReviewStore, mockMailStore, mockSettlementStore, paginatedOf,
@@ -405,6 +405,33 @@ export const placeApi = {
       return mock({});
     }
     return apiClient.delete(`/api/places/${id}/bookmark/`);
+  },
+  getNearby: (id: number) => {
+    if (USE_MOCK) {
+      const nearby: NearbyPlace[] = mockPlaceStore
+        .filter(p => p.id !== id)
+        .slice(0, 5)
+        .map(p => ({
+          content_id: `mock_${p.id}`,
+          name: p.name,
+          address: p.address,
+          latitude: p.latitude,
+          longitude: p.longitude,
+          image_url: p.image_url,
+          category: p.category,
+        }));
+      return mock(nearby);
+    }
+    return apiClient.get<NearbyPlace[]>(`/api/places/${id}/nearby/`);
+  },
+  register: (contentId: string) => {
+    if (USE_MOCK) {
+      const mockId = Number(contentId.replace('mock_', ''));
+      const existing = mockPlaceStore.find(p => p.id === mockId);
+      if (existing) return mock(existing);
+      return mock(mockPlaceStore[0]);
+    }
+    return apiClient.post<Place>('/api/places/register/', { content_id: contentId });
   },
 };
 

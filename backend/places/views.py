@@ -25,6 +25,7 @@ from .serializers import (
     TagSerializer, PhotoSerializer, PhotoSpotDetailSerializer,
 )
 from .moderation import moderate_photo, CATEGORY_LABELS
+from .services import refresh_place_if_stale, fetch_nearby_places, get_or_create_place_by_content_id
 from bookmarks.models import MediaBookmark, PlaceBookmark
 from mailbox.services import check_and_grant_like_milestone, grant_photo_publish_reward
 from quiz.models import QuizSubmission, QuizAnswer
@@ -132,6 +133,7 @@ def fetch_and_save_places(request):
                     'longitude': item['mapx'],
                     'image_url': item.get('firstimage', ''),
                     'category': item.get('contenttypeid', ''),
+                    'last_synced_at': timezone.now(),
                 }
             )
             if created:
@@ -708,12 +710,40 @@ class PlaceViewSet(viewsets.ReadOnlyModelViewSet):
             qs = qs.filter(tags__name__icontains=tag)
         return qs.distinct()
 
+    def retrieve(self, request, *args, **kwargs):
+        """캐시된 장소 정보를 그대로 즉시 응답하고, 최신화 기한(30일)이 지났으면
+        백그라운드 스레드로 KTO 상세조회를 돌려 갱신한다(stale-while-revalidate).
+        갱신은 다음 조회부터 반영되며, 이번 응답의 지연에는 영향을 주지 않는다."""
+        instance = self.get_object()
+        threading.Thread(target=refresh_place_if_stale, args=(instance,), daemon=True).start()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
     @action(detail=False, methods=['get'], url_path='bookmarked', permission_classes=[IsAuthenticated])
     def bookmarked(self, request):
         """GET /api/places/bookmarked/  저장한 장소 목록"""
         bookmarks = PlaceBookmark.objects.filter(user=request.user).select_related('place').prefetch_related('place__tags')
         places = [b.place for b in bookmarks]
         return Response(PlaceSerializer(places, many=True, context={'request': request}).data)
+
+    @action(detail=True, methods=['get'], url_path='nearby')
+    def nearby(self, request, pk=None):
+        """GET /api/places/{id}/nearby/  근처 추천 장소 3~5곳 (매 요청마다 실시간 조회, 미저장)"""
+        place = self.get_object()
+        results = fetch_nearby_places(place.latitude, place.longitude, place.content_id)
+        return Response(results)
+
+    @action(detail=False, methods=['post'], url_path='register')
+    def register(self, request):
+        """POST /api/places/register/ {content_id}  근처 추천 장소 카드를 탭한 시점에
+        정식 Place로 등록(get_or_create)하고 상세 진입에 쓸 데이터를 반환한다."""
+        content_id = request.data.get('content_id')
+        if not content_id:
+            return Response({'error': 'content_id가 필요합니다.'}, status=status.HTTP_400_BAD_REQUEST)
+        place = get_or_create_place_by_content_id(content_id)
+        if not place:
+            return Response({'error': '장소 정보를 가져오지 못했습니다.'}, status=status.HTTP_502_BAD_GATEWAY)
+        return Response(PlaceSerializer(place, context={'request': request}).data)
 
     @action(detail=True, methods=['get'])
     def photos(self, request, pk=None):

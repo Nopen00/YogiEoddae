@@ -40,7 +40,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { placeApi, reviewApi, scheduleApi } from '../services/api';
-import type { Photo, Place, Review, Schedule } from '../services/types';
+import type { NearbyPlace, Photo, Place, Review, Schedule } from '../services/types';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Shadow } from 'react-native-shadow-2';
 import { CATEGORY_LABEL, shortAddress } from '@/constants/labels';
@@ -77,7 +77,6 @@ const PlaceDetailScreen = () => {
   const [isMenuVisible, setIsMenuVisible] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [isScheduleVisible, setIsScheduleVisible] = useState(false);
-  const [savedNearby, setSavedNearby] = useState<Record<number, boolean>>({});
   const [savedPhotoSpots, setSavedPhotoSpots] = useState<Record<number, boolean>>({});
   const [isToggled, setIsToggled] = useState(false);
   const [isMapTouching, setIsMapTouching] = useState(false);
@@ -86,7 +85,8 @@ const PlaceDetailScreen = () => {
   const [loadError, setLoadError] = useState(false);
   const [place, setPlace] = useState<Place | null>(null);
   const [photos, setPhotos] = useState<Photo[]>([]);
-  const [nearbyPlaces, setNearbyPlaces] = useState<Place[]>([]);
+  const [nearbyPlaces, setNearbyPlaces] = useState<NearbyPlace[]>([]);
+  const [registeringNearby, setRegisteringNearby] = useState<string | null>(null);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [photoOnly, setPhotoOnly] = useState(false);
@@ -128,14 +128,8 @@ const PlaceDetailScreen = () => {
     placeApi.getPhotos(Number(id))
       .then(res => setPhotos(res.data))
       .catch(() => {});
-    placeApi.getList()
-      .then(res => {
-        const nearby = res.data.results.filter(p => String(p.id) !== id).slice(0, 4);
-        setNearbyPlaces(nearby);
-        const map: Record<number, boolean> = {};
-        nearby.forEach(p => { map[p.id] = p.is_bookmarked; });
-        setSavedNearby(map);
-      })
+    placeApi.getNearby(Number(id))
+      .then(res => setNearbyPlaces(res.data))
       .catch(() => {});
     scheduleApi.getList()
       .then(res => setSchedules(res.data))
@@ -152,13 +146,16 @@ const PlaceDetailScreen = () => {
     }, [id])
   );
 
-  const toggleNearby = async (placeId: number) => {
-    const isSavedNow = savedNearby[placeId];
+  const handleNearbyPress = async (nearby: NearbyPlace) => {
+    if (registeringNearby) return;
+    setRegisteringNearby(nearby.content_id);
     try {
-      if (isSavedNow) await placeApi.unbookmark(placeId);
-      else await placeApi.bookmark(placeId);
-      setSavedNearby(prev => ({ ...prev, [placeId]: !prev[placeId] }));
-    } catch {}
+      const res = await placeApi.register(nearby.content_id);
+      router.push({ pathname: '/PlaceDetailScreen', params: { id: res.data.id, name: res.data.name } });
+    } catch {
+    } finally {
+      setRegisteringNearby(null);
+    }
   };
 
   const closeMenu = () => { if (isMenuVisible) setIsMenuVisible(false); };
@@ -434,23 +431,16 @@ const PlaceDetailScreen = () => {
                 <Text style={styles.nearbyTitle}>근처 추천 장소</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: Spacing.v.medium }}
                   contentContainerStyle={styles.nearbyScrollContent}>
-                  {nearbyPlaces.map((nearby, i) => (
+                  {nearbyPlaces.map((nearby) => (
                     <TouchableOpacity
-                      key={nearby.id}
-                      style={{ width: smallImageWidth }}
+                      key={nearby.content_id}
+                      style={{ width: smallImageWidth, opacity: registeringNearby === nearby.content_id ? 0.6 : 1 }}
                       activeOpacity={0.9}
-                      onPress={() => router.push({ pathname: '/PlaceDetailScreen', params: { id: nearby.id, name: nearby.name } })}
+                      disabled={registeringNearby !== null}
+                      onPress={() => handleNearbyPress(nearby)}
                     >
                       <View style={[styles.nearbyImageBox, { height: smallImageHeight }]}>
                         <PlaceThumb uri={nearby.image_url} style={styles.nearbyImage} />
-                        <TouchableOpacity style={styles.nearbyHeart} onPress={(e) => { e.stopPropagation(); toggleNearby(nearby.id); }} activeOpacity={0.8}>
-                          <Heart
-                            size={IconSize.large}
-                            color={savedNearby[nearby.id] ? Colors.light.heart : Colors.light.white}
-                            fill={savedNearby[nearby.id] ? Colors.light.heart : 'transparent'}
-                            strokeWidth={IconStroke.thin}
-                          />
-                        </TouchableOpacity>
                       </View>
                       <Text style={styles.nearbyPlaceName} numberOfLines={1}>{nearby.name}</Text>
                       <Text style={styles.nearbyCategory}>{CATEGORY_LABEL[nearby.category] ?? nearby.category}</Text>

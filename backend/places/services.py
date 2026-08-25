@@ -3,9 +3,13 @@
 """
 import re
 import logging
+import random
+from datetime import timedelta
+from zoneinfo import ZoneInfo
 
 import requests as http_requests
 from django.conf import settings
+from django.utils import timezone
 from googleapiclient.discovery import build
 
 from places.management.commands.fetch_youtube_place import (
@@ -189,6 +193,144 @@ def resolve_place(name: str, address_hint: str, video_id: str, log=lambda msg: N
 
     log(f'  카카오 좌표: {place.name} ({lat}, {lng})' if coords else f'  미확정 저장: {place.name}')
     return place
+
+
+# ── 장소 최신화 / 근처 추천 장소 ──────────────────────────────────────────────
+
+KST = ZoneInfo('Asia/Seoul')
+# 관광공사 원본 데이터는 콘텐츠 수정일 기준 다음날 새벽 04:30 또는 07:30에 서비스별로
+# 동기화된다(공사 안내). 지금 쓰는 국내관광정보는 04:30 티어지만, 이후 두루누비 등
+# 07:30 티어 데이터를 추가로 쓸 수도 있어 더 늦은 07:30 기준으로 30분 여유를 두고
+# 08:00을 공통 기준으로 삼는다.
+DAILY_SYNC_HOUR = 8
+
+
+def _last_sync_cutoff(now=None):
+    """가장 최근에 지난 08:00(KST) 시각을 반환한다.
+    이 시각 이전에 저장된 값은 전날 이전 데이터일 수 있으므로 '오래됨'으로 취급한다."""
+    now = (now or timezone.now()).astimezone(KST)
+    cutoff = now.replace(hour=DAILY_SYNC_HOUR, minute=0, second=0, microsecond=0)
+    if now < cutoff:
+        cutoff -= timedelta(days=1)
+    return cutoff
+
+
+def _kto_detail_common(content_id: str):
+    """KTO 상세조회(detailCommon2) — contentId로 특정 장소의 최신 정보를 가져온다.
+    유튜브 파싱으로 생성된 미확정 장소(content_id가 'yt_'로 시작)는 KTO 데이터가 아니므로 건너뛴다."""
+    if not content_id or content_id.startswith('yt_'):
+        return None
+    url = "http://apis.data.go.kr/B551011/KorService2/detailCommon2"
+    params = {
+        'serviceKey': settings.TOUR_API_KEY,
+        'MobileApp': 'YogiEoddae',
+        'MobileOS': 'ETC',
+        'contentId': content_id,
+        '_type': 'json',
+    }
+    try:
+        response = http_requests.get(url, params=params, timeout=10)
+        data = response.json()
+        items_data = data.get('response', {}).get('body', {}).get('items')
+        if not items_data or not items_data.get('item'):
+            return None
+        item = items_data['item']
+        return item[0] if isinstance(item, list) else item
+    except Exception:
+        return None
+
+
+def refresh_place_if_stale(place: 'Place') -> bool:
+    """조회 시점 기준 last_synced_at이 가장 최근 05:00(KST) 동기화 시각보다 이전이면
+    KTO 상세조회로 갱신한다(lazy, 정기 배치 아님 — 실제로 조회되는 시점에만 갱신하므로
+    특정 시각에 호출이 몰리지 않는다). 실패해도 조용히 무시 — 캐시된 값을 그대로 유지해
+    사용자 응답에는 영향을 주지 않는다."""
+    if place.last_synced_at and place.last_synced_at >= _last_sync_cutoff():
+        return False
+
+    item = _kto_detail_common(place.content_id)
+    if not item:
+        return False
+
+    place.name = item.get('title') or place.name
+    place.address = item.get('addr1') or place.address
+    place.latitude = item.get('mapy') or place.latitude
+    place.longitude = item.get('mapx') or place.longitude
+    place.image_url = item.get('firstimage') or place.image_url
+    place.category = item.get('contenttypeid') or place.category
+    place.last_synced_at = timezone.now()
+    place.save(update_fields=['name', 'address', 'latitude', 'longitude', 'image_url', 'category', 'last_synced_at'])
+    return True
+
+
+def fetch_nearby_places(lat, lng, exclude_content_id: str = '', radius: int = 2000, count: int = 5) -> list:
+    """좌표 근처의 장소를 KTO locationBasedList2로 매 요청마다 실시간 조회한다.
+    결과는 DB에 저장하지 않고, 후보 중 무작위로 count개를 뽑아 가벼운 dict로 반환한다."""
+    if not lat or not lng:
+        return []
+    url = "http://apis.data.go.kr/B551011/KorService2/locationBasedList2"
+    params = {
+        'serviceKey': settings.TOUR_API_KEY,
+        'MobileApp': 'YogiEoddae',
+        'MobileOS': 'ETC',
+        'mapX': lng,
+        'mapY': lat,
+        'radius': radius,
+        'arrange': 'E',
+        'numOfRows': 30,
+        '_type': 'json',
+    }
+    try:
+        response = http_requests.get(url, params=params, timeout=10)
+        data = response.json()
+        items_data = data.get('response', {}).get('body', {}).get('items')
+        if not items_data or not items_data.get('item'):
+            return []
+        items = items_data['item']
+        if isinstance(items, dict):
+            items = [items]
+    except Exception:
+        return []
+
+    candidates = [
+        {
+            'content_id': it['contentid'],
+            'name': it.get('title', ''),
+            'address': it.get('addr1', ''),
+            'latitude': it.get('mapy'),
+            'longitude': it.get('mapx'),
+            'image_url': it.get('firstimage', ''),
+            'category': it.get('contenttypeid', ''),
+        }
+        for it in items
+        if it.get('contentid') and it['contentid'] != exclude_content_id
+    ]
+    random.shuffle(candidates)
+    return candidates[:count]
+
+
+def get_or_create_place_by_content_id(content_id: str):
+    """근처 추천 장소 카드를 탭한 시점에 그 장소를 정식 Place로 등록한다.
+    이미 등록돼 있으면 그대로 반환하고, 없으면 KTO 상세조회로 채워서 새로 만든다."""
+    existing = Place.objects.filter(content_id=content_id).first()
+    if existing:
+        return existing
+
+    item = _kto_detail_common(content_id)
+    if not item:
+        return None
+
+    return Place.objects.create(
+        content_id=content_id,
+        name=item.get('title', ''),
+        address=item.get('addr1', ''),
+        latitude=item.get('mapy') or 0,
+        longitude=item.get('mapx') or 0,
+        image_url=item.get('firstimage', ''),
+        category=item.get('contenttypeid', ''),
+        is_verified=True,
+        last_synced_at=timezone.now(),
+    )
 
 
 class _Writer:
