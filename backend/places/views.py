@@ -343,20 +343,27 @@ def admin_place_search_view(request):
 
 
 def admin_place_reverse_geocode_view(request, place_id):
-    """저장된 좌표(핀 위치)가 실제로 어느 주소를 가리키는지 역지오코딩으로 확인.
-    AI가 추정한 장소명/주소가 부정확할 때, 관리자가 좌표 기준 실제 주소와 비교할 수 있게 한다."""
+    """좌표가 실제로 어느 주소를 가리키는지 역지오코딩으로 확인.
+    AI가 추정한 장소명/주소가 부정확할 때, 관리자가 좌표 기준 실제 주소와 비교할 수 있게 한다.
+    ?lat=&lng= 쿼리파라미터로 임의 좌표(지도 클릭/검색 선택 등 아직 저장 전인 좌표)를 넘기면
+    그 좌표를 조회하고, 없으면 저장된 좌표를 사용한다."""
     from places.services import kakao_reverse_geocode
     place = get_object_or_404(Place, pk=place_id)
-    address = kakao_reverse_geocode(place.latitude, place.longitude)
+    lat = request.GET.get('lat') or place.latitude
+    lng = request.GET.get('lng') or place.longitude
+    address = kakao_reverse_geocode(lat, lng)
     return JsonResponse({'address': address})
 
 
 def admin_place_nearby_view(request, place_id):
-    """저장된 좌표 주변의 실제 업체 목록(지도에 마커로 표시할 후보)을 반환."""
+    """좌표 주변의 실제 업체 목록(지도에 마커로 표시할 후보)을 반환.
+    ?lat=&lng= 쿼리파라미터가 있으면 그 좌표 기준, 없으면 저장된 좌표 기준으로 조회한다."""
     from places.services import kakao_nearby_search
     place = get_object_or_404(Place, pk=place_id)
-    results = kakao_nearby_search(place.latitude, place.longitude)
-    return JsonResponse({'results': results, 'lat': float(place.latitude), 'lng': float(place.longitude)})
+    lat = request.GET.get('lat') or place.latitude
+    lng = request.GET.get('lng') or place.longitude
+    results = kakao_nearby_search(lat, lng)
+    return JsonResponse({'results': results, 'lat': float(lat), 'lng': float(lng)})
 
 
 def admin_place_update_view(request, place_id):

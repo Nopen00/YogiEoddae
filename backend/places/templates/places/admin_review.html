@@ -395,30 +395,29 @@
   }
 
   /* ── 좌표 기준 실제 주소 + 근처 업체 지도 ── */
-  let _pinMap = null, _pinMarkers = [], _fetchedPinAddress = null;
+  let _pinMap = null, _pinMarkers = [], _centerMarker = null, _fetchedPinAddress = null, _pinPlaceId = null;
 
   function applyPinAddress() {
     if (!_fetchedPinAddress) return;
     document.getElementById('modalAddr').value = _fetchedPinAddress;
   }
 
-  function loadPinInfo(placeId, lat, lng) {
+  function centerMarkerImage() {
+    return new kakao.maps.MarkerImage(
+      'data:image/svg+xml;base64,' + btoa('<svg xmlns="http://www.w3.org/2000/svg" width="28" height="38"><path d="M14 0C6.3 0 0 6.3 0 14c0 10.5 14 24 14 24s14-13.5 14-24C28 6.3 21.7 0 14 0z" fill="#ea580c"/><circle cx="14" cy="14" r="6" fill="white"/></svg>'),
+      new kakao.maps.Size(28, 38),
+    );
+  }
+
+  // 좌표 기준 실제 주소만 새로 조회 (지도는 그대로 두고 핀 위치/주소 갱신할 때 사용 — 지도 클릭 등)
+  function refreshPinAddress(lat, lng) {
     const addrEl = document.getElementById('pinAddress');
     const applyBtn = document.getElementById('applyPinAddrBtn');
-    const mapEl = document.getElementById('pinMap');
     _fetchedPinAddress = null;
     applyBtn.style.display = 'none';
-    _pinMarkers = [];
-
-    if (!lat || !lng || (Math.abs(lat) < 0.0001 && Math.abs(lng) < 0.0001)) {
-      addrEl.textContent = '좌표 정보 없음';
-      mapEl.innerHTML = '';
-      return;
-    }
-
     addrEl.textContent = '조회 중...';
 
-    fetch(`/places/place/${placeId}/reverse-geocode/`)
+    fetch(`/places/place/${_pinPlaceId}/reverse-geocode/?lat=${lat}&lng=${lng}`)
       .then(r => r.json())
       .then(data => {
         if (data.address) {
@@ -430,22 +429,42 @@
         }
       })
       .catch(() => { addrEl.textContent = '주소 조회 실패'; });
+  }
+
+  function loadPinInfo(placeId, lat, lng) {
+    const addrEl = document.getElementById('pinAddress');
+    const mapEl = document.getElementById('pinMap');
+    _pinPlaceId = placeId;
+    _pinMarkers = [];
+    _centerMarker = null;
+
+    if (!lat || !lng || (Math.abs(lat) < 0.0001 && Math.abs(lng) < 0.0001)) {
+      addrEl.textContent = '좌표 정보 없음';
+      mapEl.innerHTML = '';
+      return;
+    }
+
+    refreshPinAddress(lat, lng);
 
     kakao.maps.load(() => { setTimeout(() => {
       mapEl.innerHTML = '';
       const center = new kakao.maps.LatLng(lat, lng);
       _pinMap = new kakao.maps.Map(mapEl, { center, level: 3 });
 
-      new kakao.maps.Marker({
-        map: _pinMap,
-        position: center,
-        image: new kakao.maps.MarkerImage(
-          'data:image/svg+xml;base64,' + btoa('<svg xmlns="http://www.w3.org/2000/svg" width="28" height="38"><path d="M14 0C6.3 0 0 6.3 0 14c0 10.5 14 24 14 24s14-13.5 14-24C28 6.3 21.7 0 14 0z" fill="#ea580c"/><circle cx="14" cy="14" r="6" fill="white"/></svg>'),
-          new kakao.maps.Size(28, 38),
-        ),
+      _centerMarker = new kakao.maps.Marker({ map: _pinMap, position: center, image: centerMarkerImage() });
+
+      // 지도의 빈 공간을 클릭하면 그 좌표로 핀을 옮기고 주소를 다시 조회한다.
+      // 영상에 나온 곳이 등록된 업체가 아닌 경우(전망 좋은 공터, 산책로 등) 검색으로는
+      // 못 찾으니, 지도를 보면서 직접 위치를 짚어 주소를 알아낼 수 있게 하기 위함.
+      kakao.maps.event.addListener(_pinMap, 'click', (mouseEvent) => {
+        const pos = mouseEvent.latLng;
+        _centerMarker.setPosition(pos);
+        _selectedLat = pos.getLat();
+        _selectedLng = pos.getLng();
+        refreshPinAddress(_selectedLat, _selectedLng);
       });
 
-      fetch(`/places/place/${placeId}/nearby-candidates/`)
+      fetch(`/places/place/${placeId}/nearby-candidates/?lat=${lat}&lng=${lng}`)
         .then(r => r.json())
         .then(data => {
           (data.results || []).forEach(place => {
