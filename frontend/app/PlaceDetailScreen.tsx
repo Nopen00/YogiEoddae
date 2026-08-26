@@ -25,6 +25,7 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Calendar, Check, ChevronDown, ChevronRight, Edit3, Heart, Star } from 'lucide-react-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Animated,
   Image,
   Linking,
@@ -84,6 +85,9 @@ const PlaceDetailScreen = () => {
   const toggleClickTimestamps = useRef<number[]>([]);
   const [isToggleLocked, setIsToggleLocked] = useState(false);
   const [loadError, setLoadError] = useState(false);
+  const [isSlowLoading, setIsSlowLoading] = useState(false);
+  const isMountedRef = useRef(true);
+  useEffect(() => () => { isMountedRef.current = false; }, []);
   const [place, setPlace] = useState<Place | null>(null);
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [nearbyPlaces, setNearbyPlaces] = useState<NearbyPlace[]>([]);
@@ -123,9 +127,24 @@ const PlaceDetailScreen = () => {
       return;
     }
     setLoadError(false);
+    setIsSlowLoading(false);
+    // 최신화가 필요한 장소는 응답 전에 서버가 KTO/카카오 재조회를 먼저 하고 나서
+    // 응답하므로(관리자 페이지 최신화 로직 참고) 평소보다 오래 걸릴 수 있다.
+    // 5초 넘게 걸리면 "시간이 걸리고 있어요" 안내를 추가로 보여준다.
+    const slowTimer = setTimeout(() => {
+      if (isMountedRef.current) setIsSlowLoading(true);
+    }, 5000);
     placeApi.getDetail(Number(id))
-      .then(res => { setPlace(res.data); setIsSaved(res.data.is_bookmarked); })
-      .catch(() => setLoadError(true));
+      .then(res => {
+        if (!isMountedRef.current) return;
+        setPlace(res.data);
+        setIsSaved(res.data.is_bookmarked);
+      })
+      .catch(() => { if (isMountedRef.current) setLoadError(true); })
+      .finally(() => {
+        clearTimeout(slowTimer);
+        if (isMountedRef.current) setIsSlowLoading(false);
+      });
     placeApi.getPhotos(Number(id))
       .then(res => setPhotos(res.data))
       .catch(err => logEvent('error', 'PlaceDetailScreen.tsx:130', err?.message || String(err)));
@@ -267,7 +286,15 @@ const PlaceDetailScreen = () => {
           </TouchableWithoutFeedback>
         )}
 
-        {loadError && !place ? (
+        {!place && !loadError ? (
+          <View style={styles.loadErrorContainer}>
+            <ActivityIndicator color={Colors.light.primary} />
+            <Text style={styles.loadErrorSubText}>불러오는 중...</Text>
+            {isSlowLoading && (
+              <Text style={styles.loadErrorSubText}>시간이 걸리고 있습니다. 잠시만 기다려 주세요.</Text>
+            )}
+          </View>
+        ) : loadError && !place ? (
           <View style={styles.loadErrorContainer}>
             <Text style={styles.loadErrorText}>정보를 불러오지 못했습니다.</Text>
             <Text style={styles.loadErrorSubText}>삭제되었거나 일시적인 오류일 수 있습니다.</Text>

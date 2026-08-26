@@ -405,14 +405,71 @@ def _extract_business_hours(content_type_id: str, item: dict) -> str:
     return _clean_hours_text(raw) if raw else ''
 
 
-def refresh_place_if_stale(place: 'Place') -> bool:
-    """조회 시점 기준 last_synced_at이 가장 최근 05:00(KST) 동기화 시각보다 이전이면
-    KTO 상세조회로 갱신한다(lazy, 정기 배치 아님 — 실제로 조회되는 시점에만 갱신하므로
-    특정 시각에 호출이 몰리지 않는다). 실패해도 조용히 무시 — 캐시된 값을 그대로 유지해
-    사용자 응답에는 영향을 주지 않는다."""
-    if place.last_synced_at and place.last_synced_at >= _last_sync_cutoff():
+def _kto_search_readonly(keyword: str, num_rows: int = 5) -> list:
+    """KTO 키워드 검색(searchKeyword2) — DB에 저장하지 않고 원본 결과만 반환한다.
+    management/fetch_youtube_place._kto_search()는 검색 결과를 그 자리에서 바로
+    새 Place로 저장해버려서(원래 유튜브 추출 파이프라인용), 기존 Place를 KTO로
+    승격할 수 있는지 '확인만' 할 때 그걸 쓰면 중복 Place가 생겨버린다 — 그래서
+    저장 없는 버전을 따로 둔다."""
+    if not keyword:
+        return []
+    url = "http://apis.data.go.kr/B551011/KorService2/searchKeyword2"
+    params = {
+        'serviceKey': settings.TOUR_API_KEY,
+        'MobileApp': 'YogiEoddae',
+        'MobileOS': 'ETC',
+        'keyword': keyword,
+        '_type': 'json',
+        'numOfRows': num_rows,
+    }
+    try:
+        response = http_requests.get(url, params=params, timeout=10)
+        data = response.json()
+        items_data = data.get('response', {}).get('body', {}).get('items')
+        if not items_data or not items_data.get('item'):
+            return []
+        items = items_data['item']
+        return items if isinstance(items, list) else [items]
+    except Exception:
+        return []
+
+
+def _try_promote_to_kto(place: 'Place', name_hint: str, address_hint: str) -> bool:
+    """yt_ 미확정 장소를 실제 KTO content_id로 승격 시도.
+    같은 행(PK)의 content_id만 바꿔치기하므로 북마크/리뷰/일정 연결은 그대로 유지된다.
+    이미 다른 Place 행이 그 KTO content_id를 쓰고 있으면(중복) 승격하지 않는다 —
+    두 행 병합은 자동화하기엔 위험해서 여기서는 하지 않는다."""
+    # 승격은 content_id를 바꿔치기하는 되돌리기 번거로운 작업이라 다른 매칭들보다 엄격하게 고른다.
+    # KTO 자체 검색은 관련성 순으로 반환되는데, 검색어를 상호명 일부로만 포함한 완전히
+    # 다른 업종(예: "해운대해수욕장"으로 검색했는데 "다비치안경 해운대해수욕장입구점"이
+    # 1순위로 나오고 진짜 해수욕장은 2순위)이 지역만 맞으면 먼저 뽑혀버리는 문제가 실제로
+    # 있었음 — 그래서 이름이 정확히 일치하는 후보를 최우선으로 하고, 정확히 일치하는 게
+    # 없으면 지역이 맞는 후보가 단 하나뿐일 때만(애매하지 않을 때만) 그걸 쓴다.
+    region_matched = [it for it in _kto_search_readonly(name_hint) if _address_matches(it.get('addr1', ''), address_hint)]
+    exact = [it for it in region_matched if it.get('title') == name_hint]
+    if exact:
+        matched = exact[0]
+    elif len(region_matched) == 1:
+        matched = region_matched[0]
+    else:
         return False
 
+    kto_content_id = matched.get('contentid')
+    if not kto_content_id or Place.objects.exclude(pk=place.pk).filter(content_id=kto_content_id).exists():
+        return False
+
+    place.content_id = kto_content_id
+    place.name = matched.get('title') or place.name
+    place.address = matched.get('addr1') or place.address
+    place.latitude = matched.get('mapy') or place.latitude
+    place.longitude = matched.get('mapx') or place.longitude
+    place.category = matched.get('contenttypeid') or place.category
+    place.is_verified = True
+    return True
+
+
+def _refresh_via_kto(place: 'Place') -> bool:
+    """실제 KTO content_id를 가진 장소를 detailCommon2/detailIntro2로 갱신."""
     item = _kto_detail_common(place.content_id)
     if not item:
         return False
@@ -431,12 +488,70 @@ def refresh_place_if_stale(place: 'Place') -> bool:
         if hours:
             place.business_hours = hours
 
-    place.last_synced_at = timezone.now()
     place.save(update_fields=[
         'name', 'address', 'latitude', 'longitude', 'image_url',
-        'category', 'phone', 'business_hours', 'last_synced_at',
+        'category', 'phone', 'business_hours',
     ])
     return True
+
+
+def _refresh_via_kakao(place: 'Place') -> bool:
+    """KTO에 등록이 없어 yt_ 접두사로 저장된 미확정 장소를 카카오로 재검증한다.
+    매칭되면 name/address/좌표/전화/kakao_place_id를 갱신하고, 그 확인된
+    이름+주소로 KTO 승격도 같이 시도한다(_try_promote_to_kto) — 승격되면
+    이 장소는 다음 최신화부터 KTO 경로(_refresh_via_kto)를 타게 된다.
+    영업시간은 카카오 공개 API에 필드 자체가 없어 이 경로로는 못 채운다."""
+    lat = float(place.latitude) if place.latitude else None
+    lng = float(place.longitude) if place.longitude else None
+    if lat == 0 and lng == 0:
+        lat = lng = None
+
+    match = kakao_geocode_full(place.name, place.address, lat=lat, lng=lng)
+    if not match:
+        return False
+    # 이미 연결된 kakao_place_id가 있는데 재검색 결과가 다르면(오매칭 위험) 건드리지 않는다.
+    if place.kakao_place_id and str(match.get('kakao_place_id')) != str(place.kakao_place_id):
+        return False
+
+    resolved_name = match.get('name') or place.name
+    resolved_address = match.get('address') or place.address
+    place.name = resolved_name
+    place.address = resolved_address
+    place.latitude = match['lat']
+    place.longitude = match['lng']
+    place.is_verified = True
+    if match.get('kakao_place_id'):
+        place.kakao_place_id = match['kakao_place_id']
+        place.kakao_place_url = match.get('kakao_place_url')
+    if match.get('phone'):
+        place.phone = match['phone']
+
+    _try_promote_to_kto(place, resolved_name, resolved_address)
+
+    place.save(update_fields=[
+        'content_id', 'name', 'address', 'latitude', 'longitude',
+        'is_verified', 'kakao_place_id', 'kakao_place_url', 'phone', 'category',
+    ])
+    return True
+
+
+def refresh_place_if_stale(place: 'Place') -> bool:
+    """조회 시점 기준 last_synced_at이 가장 최근 08:00(KST) 동기화 시각보다 이전이면
+    갱신한다(lazy, 정기 배치 아님 — 실제로 조회되는 시점에만 갱신하므로 특정 시각에
+    호출이 몰리지 않는다). 실제 KTO content_id가 있는 장소는 KTO로, yt_ 접두사
+    미확정 장소는 카카오로 재검증한다(카카오 매칭이 되면 KTO 승격도 같이 시도).
+    실패해도 조용히 무시 — 캐시된 값을 그대로 유지해 사용자 응답에는 영향을 주지 않는다."""
+    if place.last_synced_at and place.last_synced_at >= _last_sync_cutoff():
+        return False
+
+    refreshed = (
+        _refresh_via_kakao(place) if place.content_id.startswith('yt_')
+        else _refresh_via_kto(place)
+    )
+
+    place.last_synced_at = timezone.now()
+    place.save(update_fields=['last_synced_at'])
+    return refreshed
 
 
 def fetch_nearby_places(lat, lng, exclude_content_id: str = '', radius: int = 2000, count: int = 5) -> list:

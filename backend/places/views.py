@@ -744,11 +744,15 @@ class PlaceViewSet(viewsets.ReadOnlyModelViewSet):
         return qs.distinct()
 
     def retrieve(self, request, *args, **kwargs):
-        """캐시된 장소 정보를 그대로 즉시 응답하고, 최신화 기한(30일)이 지났으면
-        백그라운드 스레드로 KTO 상세조회를 돌려 갱신한다(stale-while-revalidate).
-        갱신은 다음 조회부터 반영되며, 이번 응답의 지연에는 영향을 주지 않는다."""
+        """최신화 기한(08:00 KST)이 지났으면 응답 전에 동기적으로 갱신부터 하고
+        최신 정보를 응답한다(첫 조회자가 옛날 캐시값을 받는 것을 방지). 유튜브
+        추출 미확정(yt_) 장소는 카카오로, 그 외에는 KTO로 갱신한다. 유저가 응답을
+        기다리다 화면을 나가도(요청을 취소해도) 서버 쪽 갱신/저장은 그대로 끝까지
+        진행된다 — Django가 클라이언트 연결 종료 때문에 뷰 실행을 중간에 멈추지
+        않기 때문. 갱신 자체가 실패해도(네트워크 오류 등) 조용히 무시하고 캐시된
+        값을 그대로 응답한다."""
         instance = self.get_object()
-        threading.Thread(target=refresh_place_if_stale, args=(instance,), daemon=True).start()
+        refresh_place_if_stale(instance)
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
 
