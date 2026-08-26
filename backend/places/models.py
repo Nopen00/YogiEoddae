@@ -45,6 +45,8 @@ class Place(models.Model):
     is_verified = models.BooleanField(default=True)
     kakao_place_id = models.CharField(max_length=50, blank=True, null=True)
     kakao_place_url = models.URLField(max_length=500, blank=True, null=True)
+    # KTO detailIntro2에서 가져온 영업시간(카테고리별 필드명이 달라 사람이 읽을 문자열로 정규화해서 저장)
+    business_hours = models.CharField(max_length=1000, blank=True, default='')
     tags = models.ManyToManyField(Tag, blank=True, related_name='places')
     # 관광공사 API에서 이 장소 정보를 마지막으로 가져온 시점. 조회 시점 기준 이 값이
     # 오래되면(30일+) 그때 재호출해서 갱신한다(lazy TTL) — 특정 날짜에 갱신이 몰리는 것을 방지.

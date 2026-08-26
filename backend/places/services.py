@@ -341,6 +341,63 @@ def _kto_detail_common(content_id: str):
         return None
 
 
+def _kto_detail_intro(content_id: str, content_type_id: str):
+    """KTO 상세소개조회(detailIntro2) — 카테고리별 부가정보(영업시간 등)를 가져온다.
+    유튜브 파싱으로 생성된 미확정 장소나 카테고리를 모르는 장소는 건너뛴다."""
+    if not content_id or content_id.startswith('yt_') or not content_type_id:
+        return None
+    url = "http://apis.data.go.kr/B551011/KorService2/detailIntro2"
+    params = {
+        'serviceKey': settings.TOUR_API_KEY,
+        'MobileApp': 'YogiEoddae',
+        'MobileOS': 'ETC',
+        'contentId': content_id,
+        'contentTypeId': content_type_id,
+        '_type': 'json',
+    }
+    try:
+        response = http_requests.get(url, params=params, timeout=10)
+        data = response.json()
+        items_data = data.get('response', {}).get('body', {}).get('items')
+        if not items_data or not items_data.get('item'):
+            return None
+        item = items_data['item']
+        return item[0] if isinstance(item, list) else item
+    except Exception:
+        return None
+
+
+# 콘텐츠 타입별로 detailIntro2 응답의 영업시간 관련 필드명이 다르다.
+_HOURS_FIELD_BY_CONTENT_TYPE = {
+    '12': 'usetime',           # 관광지
+    '14': 'usetimeculture',    # 문화시설
+    '15': 'playtime',          # 축제공연행사
+    '28': 'usetimeleports',    # 레포츠
+    '38': 'opentime',          # 쇼핑
+    '39': 'opentimefood',      # 음식점
+}
+
+
+def _clean_hours_text(text: str) -> str:
+    """KTO 원문에 섞여 있는 <br> 계열 HTML 태그를 줄바꿈으로 바꾸고 다듬는다."""
+    text = re.sub(r'<br\s*/?>', '\n', text, flags=re.IGNORECASE)
+    text = re.sub(r'\n\s*\n+', '\n', text)
+    return text.strip()
+
+
+def _extract_business_hours(content_type_id: str, item: dict) -> str:
+    """detailIntro2 응답에서 카테고리에 맞는 영업시간 필드를 뽑아 사람이 읽을 문자열로 반환.
+    숙박(32)은 필드가 체크인/체크아웃으로 나뉘어 있어 따로 조합한다."""
+    if content_type_id == '32':
+        checkin, checkout = item.get('checkintime', ''), item.get('checkouttime', '')
+        if checkin or checkout:
+            return _clean_hours_text(f'체크인 {checkin or "-"} / 체크아웃 {checkout or "-"}')
+        return ''
+    field = _HOURS_FIELD_BY_CONTENT_TYPE.get(content_type_id)
+    raw = (item.get(field, '') if field else '') or ''
+    return _clean_hours_text(raw) if raw else ''
+
+
 def refresh_place_if_stale(place: 'Place') -> bool:
     """조회 시점 기준 last_synced_at이 가장 최근 05:00(KST) 동기화 시각보다 이전이면
     KTO 상세조회로 갱신한다(lazy, 정기 배치 아님 — 실제로 조회되는 시점에만 갱신하므로
@@ -359,8 +416,18 @@ def refresh_place_if_stale(place: 'Place') -> bool:
     place.longitude = item.get('mapx') or place.longitude
     place.image_url = item.get('firstimage') or place.image_url
     place.category = item.get('contenttypeid') or place.category
+
+    intro = _kto_detail_intro(place.content_id, place.category)
+    if intro:
+        hours = _extract_business_hours(place.category, intro)
+        if hours:
+            place.business_hours = hours
+
     place.last_synced_at = timezone.now()
-    place.save(update_fields=['name', 'address', 'latitude', 'longitude', 'image_url', 'category', 'last_synced_at'])
+    place.save(update_fields=[
+        'name', 'address', 'latitude', 'longitude', 'image_url',
+        'category', 'business_hours', 'last_synced_at',
+    ])
     return True
 
 

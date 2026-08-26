@@ -31,6 +31,7 @@ export interface Place {
   category: string;
   is_verified: boolean;
   kakao_place_url?: string;
+  business_hours?: string;
   is_bookmarked: boolean;
   rating: number | null;
   like_count: number | null;

@@ -401,7 +401,7 @@ const PlaceDetailScreen = () => {
                       </View>
                       <View style={[styles.infoGroupRow, { marginTop: Spacing.v.medium }]}>
                         <Text style={styles.infoLabel}>영업시간</Text>
-                        <Text style={styles.infoValue}>-</Text>
+                        <Text style={styles.infoValue}>{place?.business_hours || '-'}</Text>
                       </View>
                       <View style={[styles.infoGroupRow, { marginTop: Spacing.v.medium }]}>
                         <Text style={styles.infoLabel}>전화</Text>
