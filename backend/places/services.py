@@ -78,15 +78,24 @@ def _pick_kakao_match(candidates: list, address_hint: str):
     return candidates[0]
 
 
-def _kakao_search_candidates(query: str, size: int = 5) -> list:
-    """카카오 키워드 검색 → 후보 리스트(최대 size개) 반환. 실패 시 빈 리스트."""
+def _kakao_search_candidates(query: str, size: int = 5, lat=None, lng=None, radius: int = None) -> list:
+    """카카오 키워드 검색 → 후보 리스트(최대 size개) 반환. 실패 시 빈 리스트.
+    lat/lng를 주면 그 좌표 반경(radius, 기본 1000m) 내로 검색을 제한한다 — 이미
+    위치를 아는 장소를 이름으로 재검색할 때, "성균관"처럼 훨씬 유명한 동명의
+    다른 지역 후보가 전국 검색 순위를 다 차지해서 진짜 후보가 애초에 후보군에
+    들어오지도 못하는 문제를 막기 위함."""
     if not settings.KAKAO_REST_KEY or not query:
         return []
     headers = {'Authorization': f'KakaoAK {settings.KAKAO_REST_KEY}'}
+    params = {'query': query, 'size': size}
+    if lat is not None and lng is not None:
+        params['x'] = lng
+        params['y'] = lat
+        params['radius'] = radius or 1000
     try:
         r = http_requests.get(
             'https://dapi.kakao.com/v2/local/search/keyword.json',
-            params={'query': query, 'size': size},
+            params=params,
             headers=headers, timeout=5,
         )
         docs = r.json().get('documents', [])
@@ -169,27 +178,29 @@ def kakao_nearby_search(lat, lng, radius: int = 200, limit: int = 15) -> list:
     return results[:limit]
 
 
-def kakao_search(query: str):
+def kakao_search(query: str, lat=None, lng=None, radius: int = None):
     """
     카카오 키워드 검색 → {name, address, lat, lng} 반환(1순위 후보). 실패 시 None.
     주소는 도로명 > 지번 순으로 우선 사용.
     """
-    candidates = _kakao_search_candidates(query, size=1)
+    candidates = _kakao_search_candidates(query, size=1, lat=lat, lng=lng, radius=radius)
     return candidates[0] if candidates else None
 
 
-def kakao_geocode_full(query: str, address_hint: str = ''):
+def kakao_geocode_full(query: str, address_hint: str = '', lat=None, lng=None, radius: int = None):
     """
     카카오 REST API로 장소명/주소 검색 → 매칭된 후보 전체
     ({name, address, lat, lng, kakao_place_id, kakao_place_url})를 반환. 실패 시 None.
     address_hint를 주면 후보들 중 지역이 일치하는 곳을 우선 선택한다.
+    lat/lng를 주면(이미 신뢰할 수 있는 좌표를 아는 경우) 그 근처로 검색을 좁혀서,
+    이름이 유명해서 다른 지역 동명 후보에 밀리는 것을 방지한다.
     키워드 검색으로 후보를 못 찾으면 주소 검색 API로 좌표만 얻어
     name/kakao_place_id/kakao_place_url을 None으로 채운 dict를 반환한다.
     """
     if address_hint:
-        match = _pick_kakao_match(_kakao_search_candidates(query), address_hint)
+        match = _pick_kakao_match(_kakao_search_candidates(query, lat=lat, lng=lng, radius=radius), address_hint)
     else:
-        match = kakao_search(query)
+        match = kakao_search(query, lat=lat, lng=lng, radius=radius)
     if match:
         return match
     if not settings.KAKAO_REST_KEY or not query:
