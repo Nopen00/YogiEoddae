@@ -383,6 +383,7 @@ def admin_place_update_view(request, place_id):
     lng     = data.get('lng')
 
     update_fields = []
+    address_changed = bool(address) and address != place.address
     if name:
         place.name = name
         update_fields.append('name')
@@ -391,7 +392,7 @@ def admin_place_update_view(request, place_id):
         update_fields.append('address')
 
     if lat is not None and lng is not None:
-        # KTO 검색 결과에서 좌표를 직접 받은 경우
+        # 검색 결과/지도 마커를 클릭해서 좌표를 직접 받은 경우 — 그대로 사용
         try:
             place.latitude    = float(lat)
             place.longitude   = float(lng)
@@ -399,17 +400,21 @@ def admin_place_update_view(request, place_id):
             update_fields += ['latitude', 'longitude', 'is_verified']
         except (ValueError, TypeError):
             pass
-    elif address and (float(place.latitude) == 0 or float(place.longitude) == 0):
-        # 좌표가 없고 주소가 있으면 카카오 지오코딩으로 자동 변환
-        from .services import kakao_geocode
-        coords = kakao_geocode(address)
-        if not coords and name:
-            coords = kakao_geocode(name)
-        if coords:
-            place.latitude    = coords[0]
-            place.longitude   = coords[1]
+    elif address_changed:
+        # 좌표를 직접 고르지 않고 주소 텍스트만 손으로 고친 경우 — 기존 좌표가
+        # 이미 있어도(0이 아니어도) 새 주소 기준으로 다시 지오코딩해서 맞춘다.
+        # (안 그러면 주소 텍스트와 실제 핀 위치가 계속 어긋난 채로 남음)
+        from .services import kakao_geocode_full
+        match = kakao_geocode_full(address) or (kakao_geocode_full(name) if name else None)
+        if match:
+            place.latitude    = match['lat']
+            place.longitude   = match['lng']
             place.is_verified = True
             update_fields += ['latitude', 'longitude', 'is_verified']
+            if match.get('kakao_place_id'):
+                place.kakao_place_id  = match['kakao_place_id']
+                place.kakao_place_url = match.get('kakao_place_url')
+                update_fields += ['kakao_place_id', 'kakao_place_url']
 
     if update_fields:
         place.save(update_fields=update_fields)
