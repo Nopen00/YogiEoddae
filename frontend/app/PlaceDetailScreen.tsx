@@ -405,7 +405,13 @@ const PlaceDetailScreen = () => {
                       </View>
                       <View style={[styles.infoGroupRow, { marginTop: Spacing.v.medium }]}>
                         <Text style={styles.infoLabel}>전화</Text>
-                        <Text style={styles.infoValue}>-</Text>
+                        {place?.phone ? (
+                          <TouchableOpacity onPress={() => Linking.openURL(`tel:${place.phone}`)}>
+                            <Text style={[styles.infoValue, styles.phoneLink]}>{place.phone}</Text>
+                          </TouchableOpacity>
+                        ) : (
+                          <Text style={styles.infoValue}>-</Text>
+                        )}
                       </View>
                       <View style={[styles.infoGroupRow, { marginTop: Spacing.v.medium }]}>
                         <Text style={styles.infoLabel}>출처</Text>
@@ -771,6 +777,10 @@ const styles = StyleSheet.create({
     color: Colors.light.grayDark,
     marginLeft: Spacing.h.medium,
     flex: 1,
+  },
+  phoneLink: {
+    color: Colors.light.primary,
+    textDecorationLine: 'underline',
   },
   kakaoShortcutRow: {
     flexDirection: 'row',

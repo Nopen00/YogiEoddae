@@ -107,6 +107,7 @@ def _kakao_search_candidates(query: str, size: int = 5, lat=None, lng=None, radi
                 'lng':              float(d['x']),
                 'kakao_place_id':   d.get('id'),
                 'kakao_place_url':  d.get('place_url'),
+                'phone':            d.get('phone', ''),
             }
             for d in docs
         ]
@@ -223,6 +224,7 @@ def kakao_geocode_full(query: str, address_hint: str = '', lat=None, lng=None, r
                 'lng': float(d['x']),
                 'kakao_place_id': None,
                 'kakao_place_url': None,
+                'phone': None,
             }
     except Exception:
         pass
@@ -256,7 +258,11 @@ def resolve_place(name: str, address_hint: str, video_id: str, log=lambda msg: N
                 place.address = kakao_match['address']
                 place.latitude = kakao_match['lat']
                 place.longitude = kakao_match['lng']
-                place.save(update_fields=['address', 'latitude', 'longitude'])
+                update_fields = ['address', 'latitude', 'longitude']
+                if kakao_match.get('phone'):
+                    place.phone = kakao_match['phone']
+                    update_fields.append('phone')
+                place.save(update_fields=update_fields)
                 log(f'  KTO+카카오 주소 보완: {place.name} → {place.address}')
             else:
                 log(f'  KTO 확인: {place.name}')
@@ -284,6 +290,7 @@ def resolve_place(name: str, address_hint: str, video_id: str, log=lambda msg: N
             'is_verified': verified,
             'kakao_place_id': match.get('kakao_place_id') if match else None,
             'kakao_place_url': match.get('kakao_place_url') if match else None,
+            'phone': (match.get('phone') if match else '') or '',
         },
     )
     if not created and float(place.latitude) == 0 and match:
@@ -416,6 +423,7 @@ def refresh_place_if_stale(place: 'Place') -> bool:
     place.longitude = item.get('mapx') or place.longitude
     place.image_url = item.get('firstimage') or place.image_url
     place.category = item.get('contenttypeid') or place.category
+    place.phone = item.get('tel') or place.phone
 
     intro = _kto_detail_intro(place.content_id, place.category)
     if intro:
@@ -426,7 +434,7 @@ def refresh_place_if_stale(place: 'Place') -> bool:
     place.last_synced_at = timezone.now()
     place.save(update_fields=[
         'name', 'address', 'latitude', 'longitude', 'image_url',
-        'category', 'business_hours', 'last_synced_at',
+        'category', 'phone', 'business_hours', 'last_synced_at',
     ])
     return True
 

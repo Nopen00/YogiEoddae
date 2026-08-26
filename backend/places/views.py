@@ -415,6 +415,9 @@ def admin_place_update_view(request, place_id):
                 place.kakao_place_id  = match['kakao_place_id']
                 place.kakao_place_url = match.get('kakao_place_url')
                 update_fields += ['kakao_place_id', 'kakao_place_url']
+            if match.get('phone'):
+                place.phone = match['phone']
+                update_fields.append('phone')
 
     if update_fields:
         place.save(update_fields=update_fields)

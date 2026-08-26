@@ -33,7 +33,7 @@ class PlaceSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'content_id', 'name', 'address',
             'latitude', 'longitude', 'image_url',
-            'category', 'is_verified', 'kakao_place_url', 'business_hours',
+            'category', 'is_verified', 'kakao_place_url', 'business_hours', 'phone',
             'tags', 'is_bookmarked', 'rating', 'like_count', 'created_at',
         ]
 
