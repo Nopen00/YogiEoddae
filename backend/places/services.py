@@ -178,17 +178,20 @@ def kakao_search(query: str):
     return candidates[0] if candidates else None
 
 
-def kakao_geocode(query: str, address_hint: str = ''):
+def kakao_geocode_full(query: str, address_hint: str = ''):
     """
-    카카오 REST API로 장소명/주소 → (lat, lng) 변환. 실패 시 None 반환.
+    카카오 REST API로 장소명/주소 검색 → 매칭된 후보 전체
+    ({name, address, lat, lng, kakao_place_id, kakao_place_url})를 반환. 실패 시 None.
     address_hint를 주면 후보들 중 지역이 일치하는 곳을 우선 선택한다.
+    키워드 검색으로 후보를 못 찾으면 주소 검색 API로 좌표만 얻어
+    name/kakao_place_id/kakao_place_url을 None으로 채운 dict를 반환한다.
     """
     if address_hint:
         match = _pick_kakao_match(_kakao_search_candidates(query), address_hint)
     else:
         match = kakao_search(query)
     if match:
-        return match['lat'], match['lng']
+        return match
     if not settings.KAKAO_REST_KEY or not query:
         return None
     # 주소 검색도 시도
@@ -201,10 +204,27 @@ def kakao_geocode(query: str, address_hint: str = ''):
         )
         docs = r.json().get('documents', [])
         if docs:
-            return float(docs[0]['y']), float(docs[0]['x'])
+            d = docs[0]
+            return {
+                'name': None,
+                'address': d.get('address_name', query),
+                'lat': float(d['y']),
+                'lng': float(d['x']),
+                'kakao_place_id': None,
+                'kakao_place_url': None,
+            }
     except Exception:
         pass
     return None
+
+
+def kakao_geocode(query: str, address_hint: str = ''):
+    """
+    카카오 REST API로 장소명/주소 → (lat, lng) 변환. 실패 시 None 반환.
+    address_hint를 주면 후보들 중 지역이 일치하는 곳을 우선 선택한다.
+    """
+    match = kakao_geocode_full(query, address_hint)
+    return (match['lat'], match['lng']) if match else None
 
 
 def resolve_place(name: str, address_hint: str, video_id: str, log=lambda msg: None):
@@ -233,29 +253,35 @@ def resolve_place(name: str, address_hint: str, video_id: str, log=lambda msg: N
             log(f'  KTO 확인: {place.name}')
         return place
 
-    # KTO 매칭 없음 → 카카오 좌표 검색으로 미확정 Place 생성
-    coords = kakao_geocode(name, address_hint) or kakao_geocode(address_hint, address_hint)
-    lat, lng = coords if coords else (0, 0)
-    verified = coords is not None
+    # KTO 매칭 없음 → 카카오 검색으로 미확정 Place 생성
+    # (좌표뿐 아니라 매칭된 후보의 실제 name/address/kakao_place_id/url까지 그대로 사용 —
+    # AI의 address_hint 원문을 저장하면 좌표는 맞는데 주소 텍스트만 틀린 채 안 보이게 남는 문제 방지)
+    match = kakao_geocode_full(name, address_hint) or kakao_geocode_full(address_hint, address_hint)
+    verified = match is not None
+    lat, lng = (match['lat'], match['lng']) if match else (0, 0)
+    resolved_name = (match and match.get('name')) or name
+    resolved_address = (match and match.get('address')) or address_hint
 
     safe = re.sub(r'[^a-zA-Z0-9가-힣]', '_', name)[:20]
     place, created = Place.objects.get_or_create(
         content_id=f'yt_{video_id}_{safe}',
         defaults={
-            'name': name,
-            'address': address_hint,
+            'name': resolved_name,
+            'address': resolved_address,
             'latitude': lat,
             'longitude': lng,
             'is_verified': verified,
+            'kakao_place_id': match.get('kakao_place_id') if match else None,
+            'kakao_place_url': match.get('kakao_place_url') if match else None,
         },
     )
-    if not created and float(place.latitude) == 0 and coords:
+    if not created and float(place.latitude) == 0 and match:
         place.latitude = lat
         place.longitude = lng
         place.is_verified = True
         place.save(update_fields=['latitude', 'longitude', 'is_verified'])
 
-    log(f'  카카오 좌표: {place.name} ({lat}, {lng})' if coords else f'  미확정 저장: {place.name}')
+    log(f'  카카오 매칭: {place.name} → {resolved_address} ({lat}, {lng})' if match else f'  미확정 저장: {place.name}')
     return place
 
 
@@ -369,8 +395,13 @@ def fetch_nearby_places(lat, lng, exclude_content_id: str = '', radius: int = 20
         for it in items
         if it.get('contentid') and it['contentid'] != exclude_content_id
     ]
-    random.shuffle(candidates)
-    return candidates[:count]
+    # 후보 풀(최대 30개)이 필요 개수(count)보다 넉넉하므로, 이미지 있는 후보를 우선 채우고
+    # 부족할 때만 이미지 없는 후보로 채운다(KTO의 firstimage가 일부 항목만 비어있는 경우가 많음).
+    with_image = [c for c in candidates if c['image_url']]
+    without_image = [c for c in candidates if not c['image_url']]
+    random.shuffle(with_image)
+    random.shuffle(without_image)
+    return (with_image + without_image)[:count]
 
 
 def get_or_create_place_by_content_id(content_id: str):
