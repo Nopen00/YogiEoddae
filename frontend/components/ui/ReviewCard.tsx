@@ -67,7 +67,7 @@ export const ReviewCard = ({
         sectionCard
       ) : (
         <View style={styles.header}>
-          <PlaceThumb uri={review.authorAvatar} style={styles.avatar} shape="circle" />
+          <PlaceThumb uri={review.authorAvatar} style={styles.avatar} shape="avatar" seedKey={review.author} />
           <View style={styles.authorInfo}>
             <Text style={styles.authorName}>{review.author}</Text>
             <View style={styles.dateRow}>

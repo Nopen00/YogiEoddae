@@ -1,4 +1,5 @@
 import { NicknameEditAlert } from '@/components/modals/NicknameEditAlert';
+import { ProfileImageMenuAlert } from '@/components/modals/ProfileImageMenuAlert';
 import { Divider } from '@/components/ui/Divider';
 import { PlaceThumb } from '@/components/ui/PlaceThumb';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
@@ -27,6 +28,8 @@ const AccountScreen = () => {
   const [email, setEmail] = useState('');
   const [resultMessage, setResultMessage] = useState<string | null>(null);
   const [logoutConfirmVisible, setLogoutConfirmVisible] = useState(false);
+  const [isProfileMenuVisible, setIsProfileMenuVisible] = useState(false);
+  const [profileDeleteConfirmVisible, setProfileDeleteConfirmVisible] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -78,20 +81,47 @@ const AccountScreen = () => {
     }
   };
 
+  const handleDeleteProfileImage = async () => {
+    try {
+      await userApi.deleteProfileImage();
+      setProfileImage(null);
+      setResultMessage('프로필 사진이 삭제되었습니다.');
+    } catch {
+      setResultMessage('사진 삭제에 실패했습니다. 잠시 후 다시 시도해주세요.');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScreenHeader onBack={() => router.back()} title="내 정보" />
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Spacing.v.screenBottom }}>
-        <View style={styles.profileSection}>
-          <View style={styles.profileImageWrapper}>
-            <PlaceThumb uri={profileImage} style={styles.profileImage} shape="circle" />
-            <TouchableOpacity style={styles.editButton} activeOpacity={0.8} onPress={handlePickProfileImage}>
-              <Edit3 size={IconSize.medium} color={Colors.light.white} strokeWidth={IconStroke.regular} />
-            </TouchableOpacity>
-          </View>
+      {/* profileSection은 아바타 편집 드롭다운(zIndex 9999)을 담고 있어서, 스크롤뷰 밖의
+          독립된 형제로 둬야 한다 — 스크롤뷰 안에 있으면 zIndex 비교가 스크롤뷰 전체 대
+          백드롭으로 이뤄져서(스크롤뷰=0, 백드롭=5) 백드롭이 드롭다운 터치를 가로채 버린다. */}
+      <View style={styles.profileSection}>
+        <View style={styles.profileImageWrapper}>
+          <PlaceThumb uri={profileImage} style={styles.profileImage} shape="avatar" seedKey={userId} />
+          <TouchableOpacity style={styles.editButton} activeOpacity={0.8} onPress={() => setIsProfileMenuVisible((v) => !v)}>
+            <Edit3 size={IconSize.medium} color={Colors.light.white} strokeWidth={IconStroke.regular} />
+          </TouchableOpacity>
+          {isProfileMenuVisible && (
+            <ProfileImageMenuAlert
+              onEditPress={() => { setIsProfileMenuVisible(false); handlePickProfileImage(); }}
+              onDeletePress={profileImage ? () => { setIsProfileMenuVisible(false); setProfileDeleteConfirmVisible(true); } : undefined}
+            />
+          )}
         </View>
+      </View>
 
+      {isProfileMenuVisible && (
+        <TouchableOpacity
+          style={styles.menuBackdrop}
+          activeOpacity={1}
+          onPress={() => setIsProfileMenuVisible(false)}
+        />
+      )}
+
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Spacing.v.screenBottom }}>
         <Divider marginTop={Spacing.v.large} style={{ marginHorizontal: Spacing.h.medium }} />
 
         <TouchableOpacity style={styles.sectionRow} activeOpacity={0.7} onPress={() => setNicknameEditVisible(true)}>
@@ -162,6 +192,33 @@ const AccountScreen = () => {
         </TouchableOpacity>
       </Modal>
 
+      <Modal visible={profileDeleteConfirmVisible} transparent animationType="fade">
+        <View style={styles.confirmOverlay}>
+          <View style={styles.confirmPopup}>
+            <Text style={styles.confirmTitle}>프로필 사진을 삭제하시겠습니까?</Text>
+            <View style={styles.confirmButtons}>
+              <TouchableOpacity
+                style={styles.btnCancel}
+                activeOpacity={0.8}
+                onPress={() => setProfileDeleteConfirmVisible(false)}
+              >
+                <Text style={styles.btnCancelText}>아니오</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.btnConfirm}
+                activeOpacity={0.8}
+                onPress={async () => {
+                  setProfileDeleteConfirmVisible(false);
+                  await handleDeleteProfileImage();
+                }}
+              >
+                <Text style={styles.btnConfirmText}>예</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       <Modal visible={logoutConfirmVisible} transparent animationType="fade">
         <View style={styles.confirmOverlay}>
           <View style={styles.confirmPopup}>
@@ -199,11 +256,13 @@ const styles = StyleSheet.create({
   profileSection: {
     marginTop: Spacing.v.medium,
     alignItems: 'center',
+    zIndex: 10,
   },
   profileImageWrapper: {
     width: Size.avatarXl,
     height: Size.avatarXl,
   },
+  menuBackdrop: { ...StyleSheet.absoluteFillObject, zIndex: 5 },
   profileImage: {
     width: Size.avatarXl,
     height: Size.avatarXl,

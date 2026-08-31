@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LoadingScreen } from '@/components/ui/LoadingScreen';
 import { USE_MOCK } from '@/services/api';
 import { useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
@@ -15,7 +16,7 @@ const AuthGateScreen = () => {
     });
   }, [router]);
 
-  return null;
+  return <LoadingScreen />;
 };
 
 export default AuthGateScreen;

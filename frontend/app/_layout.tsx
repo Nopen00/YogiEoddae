@@ -1,6 +1,9 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { useFonts } from 'expo-font';
 import { Stack, useGlobalSearchParams, usePathname } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
 import 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { View } from 'react-native';
@@ -9,6 +12,8 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { LargeIconModeProvider } from '@/hooks/useLargeIconMode';
 import BottomTabBar from '@/components/navigation/BottomTabBar';
 import { logEvent } from '@/services/logger';
+
+SplashScreen.preventAutoHideAsync();
 
 // 처리되지 않은 JS 예외(진짜 크래시)를 숨겨진 디버그 로그 화면(MY 타이틀 5연타)에서
 // 볼 수 있게 기록해둔다. 기본 핸들러도 그대로 호출해서 기존 크래시 동작은 유지한다.
@@ -115,6 +120,20 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
+  const [fontsLoaded] = useFonts({
+    LoadingFont: require('@/assets/fonts/ongeulip_demong_gothic.ttf'),
+  });
+
+  useEffect(() => {
+    if (fontsLoaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded]);
+
+  if (!fontsLoaded) {
+    return null;
+  }
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <LargeIconModeProvider>

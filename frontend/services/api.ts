@@ -245,6 +245,13 @@ export const userApi = {
     });
     return apiClient.patch<{ profile_image: string }>('/api/users/me/', { profile_image: uploadRes.data.profile_image });
   },
+  deleteProfileImage: () => {
+    if (USE_MOCK) {
+      setMockProfileImage(null);
+      return mock({ profile_image: null });
+    }
+    return apiClient.patch<{ profile_image: string | null }>('/api/users/me/', { profile_image: null });
+  },
   updateUserId: (userId: string) => {
     if (USE_MOCK) {
       setMockUserId(userId);

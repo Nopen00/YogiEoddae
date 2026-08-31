@@ -19,6 +19,7 @@ import { logEvent } from '@/services/logger';
 const SettingScreen = () => {
   const router = useRouter();
   const [nickname, setNickname] = useState('');
+  const [userId, setUserId] = useState('');
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [tokenBalance, setTokenBalance] = useState(0);
   const { isLargeIconMode, setIsLargeIconMode } = useLargeIconMode();
@@ -43,6 +44,7 @@ const SettingScreen = () => {
     useCallback(() => {
       userApi.getMe().then(res => {
         setNickname(res.data.nickname);
+        setUserId(res.data.username);
         setProfileImage(res.data.profile_image);
         setTokenBalance(res.data.token_balance);
         setHasEmail(res.data.email.trim().length > 0);
@@ -61,7 +63,7 @@ const SettingScreen = () => {
 
       {/* 유저 정보 섹션 */}
       <View style={styles.userSection}>
-        <PlaceThumb uri={profileImage} style={styles.profileImage} shape="circle" />
+        <PlaceThumb uri={profileImage} style={styles.profileImage} shape="avatar" seedKey={userId} />
 
         <View style={styles.userInfoColumn}>
           <Text style={styles.nickname}>{nickname}</Text>

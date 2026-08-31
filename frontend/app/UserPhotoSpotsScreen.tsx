@@ -60,7 +60,7 @@ const UserPhotoSpotsScreen = () => {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <View style={styles.profileCard}>
-          <PlaceThumb uri={authorAvatar} style={styles.profileAvatar} shape="circle" />
+          <PlaceThumb uri={authorAvatar} style={styles.profileAvatar} shape="avatar" seedKey={author} />
           <View style={styles.profileInfo}>
             <Text style={styles.profileName}>{author}</Text>
             <Text style={styles.profileCount}>작성한 포토스팟 : {photos.length}개</Text>

@@ -10,6 +10,7 @@ import { ScheduleAlert } from '@/components/modals/ScheduleAlert';
 import { SortAlert } from '@/components/modals/SortAlert';
 import { getReviewLikeCount, ReviewCard } from '@/components/ui/ReviewCard';
 import { PlaceThumb } from '@/components/ui/PlaceThumb';
+import { LoadingScreen } from '@/components/ui/LoadingScreen';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { TagRow } from '@/components/ui/TagRow';
 import { TextSeparator } from '@/components/ui/TextSeparator';
@@ -199,6 +200,10 @@ const PhotoSpotDetailScreen = () => {
     </>
   );
 
+  if (!detail && !loadError) {
+    return <LoadingScreen onClose={() => router.dismiss()} />;
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
         <View onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.y + e.nativeEvent.layout.height)}>
@@ -329,7 +334,7 @@ const PhotoSpotDetailScreen = () => {
                     activeOpacity={0.7}
                     onPress={() => router.push({ pathname: '/UserPhotoSpotsScreen', params: { author: photo.author ?? '익명 여행자', authorAvatar: photo.authorAvatar ?? '' } })}
                   >
-                    <PlaceThumb uri={photo.authorAvatar} style={styles.uploaderAvatar} shape="circle" />
+                    <PlaceThumb uri={photo.authorAvatar} style={styles.uploaderAvatar} shape="avatar" seedKey={photo.author ?? '익명 여행자'} />
                     <View style={styles.uploaderInfo}>
                       <Text style={styles.uploaderName}>{photo.author ?? '익명 여행자'}</Text>
                       <View style={styles.uploaderDateRow}>

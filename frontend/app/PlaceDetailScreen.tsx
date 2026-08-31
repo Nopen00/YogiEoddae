@@ -11,6 +11,7 @@ import { ScheduleAlert } from '@/components/modals/ScheduleAlert';
 import { SortAlert } from '@/components/modals/SortAlert';
 import { getReviewLikeCount, ReviewCard } from '@/components/ui/ReviewCard';
 import { PlaceThumb } from '@/components/ui/PlaceThumb';
+import { LoadingScreen } from '@/components/ui/LoadingScreen';
 import PagerView from '@/components/ui/PagerViewWrapper';
 import { useScrollHeaderTitle } from '@/hooks/useScrollHeaderTitle';
 import { SaveHeart32 } from '@/components/icons/SaveHeart';
@@ -25,7 +26,6 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Calendar, Check, ChevronDown, ChevronRight, Edit3, Heart, Star } from 'lucide-react-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   Animated,
   Image,
   Linking,
@@ -250,6 +250,15 @@ const PlaceDetailScreen = () => {
     </>
   );
 
+  if (!place && !loadError) {
+    return (
+      <LoadingScreen
+        onClose={() => router.dismiss()}
+        message={isSlowLoading ? '시간이 걸리고 있습니다. 잠시만 기다려 주세요.' : undefined}
+      />
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
         {/* 헤더 */}
@@ -286,15 +295,7 @@ const PlaceDetailScreen = () => {
           </TouchableWithoutFeedback>
         )}
 
-        {!place && !loadError ? (
-          <View style={styles.loadErrorContainer}>
-            <ActivityIndicator color={Colors.light.primary} />
-            <Text style={styles.loadErrorSubText}>불러오는 중...</Text>
-            {isSlowLoading && (
-              <Text style={styles.loadErrorSubText}>시간이 걸리고 있습니다. 잠시만 기다려 주세요.</Text>
-            )}
-          </View>
-        ) : loadError && !place ? (
+        {loadError && !place ? (
           <View style={styles.loadErrorContainer}>
             <Text style={styles.loadErrorText}>정보를 불러오지 못했습니다.</Text>
             <Text style={styles.loadErrorSubText}>삭제되었거나 일시적인 오류일 수 있습니다.</Text>

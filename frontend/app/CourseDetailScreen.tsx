@@ -11,6 +11,7 @@ import { SortAlert } from '@/components/modals/SortAlert';
 import { getReviewLikeCount, ReviewCard } from '@/components/ui/ReviewCard';
 import { KakaoMap } from '@/components/ui/KakaoMap';
 import { PlaceThumb } from '@/components/ui/PlaceThumb';
+import { LoadingScreen } from '@/components/ui/LoadingScreen';
 import PagerView from '@/components/ui/PagerViewWrapper';
 import { useScrollHeaderTitle } from '@/hooks/useScrollHeaderTitle';
 import { SaveHeart32 } from '@/components/icons/SaveHeart'; // 기존 저장 아이콘 가정
@@ -220,6 +221,10 @@ const CourseDetailScreen = () => {
       />
     </>
   );
+
+  if (!media && !loadError) {
+    return <LoadingScreen onClose={() => router.dismiss()} />;
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>

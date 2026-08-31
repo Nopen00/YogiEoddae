@@ -5,6 +5,7 @@ import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { TagRow } from '@/components/ui/TagRow';
 import { TextSeparator } from '@/components/ui/TextSeparator';
 import { PlaceThumb } from '@/components/ui/PlaceThumb';
+import { LoadingScreen } from '@/components/ui/LoadingScreen';
 import { Colors } from '@/constants/Colors';
 import { MEDIA_TYPE_LABEL } from '@/constants/labels';
 import { Size } from '@/constants/Size';
@@ -69,6 +70,10 @@ export default function QuizDetailScreen() {
       setIsSubmitting(false);
     }
   };
+
+  if (!media && !loadError) {
+    return <LoadingScreen onClose={() => router.back()} />;
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
