@@ -38,7 +38,13 @@ export const LoadingScreen = ({ onClose, message }: LoadingScreenProps) => {
       <View style={styles.content}>
         <Image source={MASCOT} style={styles.mascot} resizeMode="contain" />
         <Text style={styles.loadingText}>Loading...</Text>
-        {message && <Text style={styles.messageText}>{message}</Text>}
+        {message && (
+          <View>
+            {message.split('\n').map((line, i) => (
+              <Text key={i} style={[styles.messageText, i > 0 && styles.messageLineSpacing]}>{line}</Text>
+            ))}
+          </View>
+        )}
       </View>
     </View>
   );
@@ -87,5 +93,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.light.white,
     opacity: 0.85,
+    textAlign: 'center',
+  },
+  messageLineSpacing: {
+    marginTop: Spacing.v.small,
   },
 });

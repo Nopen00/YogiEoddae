@@ -1,10 +1,13 @@
 // components/modals/ExitConfirmAlert.tsx
 import { Colors } from '@/constants/Colors';
 import { Shadows } from '@/constants/Shadows';
+import { Size } from '@/constants/Size';
 import { Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import React from 'react';
-import { Modal, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
+import { Dimensions, Modal, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
+
+const { width } = Dimensions.get('window');
 
 interface ExitConfirmAlertProps {
   visible: boolean;
@@ -24,11 +27,11 @@ export const ExitConfirmAlert = ({ visible, onCancel, onConfirm }: ExitConfirmAl
             <View style={styles.alertContainer}>
               <Text style={styles.title}>앱을 종료하시겠습니까?</Text>
               <View style={styles.buttonRow}>
-                <TouchableOpacity style={styles.cancelButton} onPress={onCancel}>
-                  <Text style={styles.cancelButtonText}>취소</Text>
+                <TouchableOpacity style={styles.btnCancel} activeOpacity={0.8} onPress={onCancel}>
+                  <Text style={styles.btnCancelText}>취소</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.confirmButton} onPress={onConfirm}>
-                  <Text style={styles.confirmButtonText}>종료</Text>
+                <TouchableOpacity style={styles.btnConfirm} activeOpacity={0.8} onPress={onConfirm}>
+                  <Text style={styles.btnConfirmText}>종료</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -42,51 +45,25 @@ export const ExitConfirmAlert = ({ visible, onCancel, onConfirm }: ExitConfirmAl
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.25)',
+    backgroundColor: Colors.light.overlay,
     justifyContent: 'center',
-    paddingHorizontal: Spacing.h.medium,
+    alignItems: 'center',
   },
   alertContainer: {
-    backgroundColor: Colors.light.white,
+    width: width - 64,
     borderRadius: Spacing.r.small,
     borderWidth: Spacing.lw.small,
     borderColor: Colors.light.grayLight,
-    paddingVertical: Spacing.v.large,
+    backgroundColor: Colors.light.white,
+    paddingTop: Spacing.v.medium,
     paddingHorizontal: Spacing.h.medium,
+    paddingBottom: Spacing.v.medium,
     ...Shadows.card,
   },
-  title: {
-    ...Typography.title1,
-    color: Colors.light.black,
-    textAlign: 'center',
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    gap: Spacing.h.medium,
-    marginTop: Spacing.v.large,
-  },
-  confirmButton: {
-    flex: 1,
-    height: 48,
-    backgroundColor: Colors.light.primary,
-    borderRadius: Spacing.r.small,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  confirmButtonText: {
-    ...Typography.button2,
-    color: Colors.light.white,
-  },
-  cancelButton: {
-    flex: 1,
-    height: 48,
-    backgroundColor: Colors.light.grayLight,
-    borderRadius: Spacing.r.small,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cancelButtonText: {
-    ...Typography.button2,
-    color: Colors.light.grayDark,
-  },
+  title: { ...Typography.subtitle2, color: Colors.light.black, textAlign: 'center' },
+  buttonRow: { flexDirection: 'row', justifyContent: 'center', gap: Spacing.h.medium, marginTop: Spacing.v.medium },
+  btnConfirm: { width: 80, height: Size.buttonSm, borderRadius: Spacing.r.small, backgroundColor: Colors.light.primary, justifyContent: 'center', alignItems: 'center' },
+  btnConfirmText: { ...Typography.button2, color: Colors.light.white },
+  btnCancel: { width: 80, height: Size.buttonSm, borderRadius: Spacing.r.small, backgroundColor: Colors.light.grayLight, justifyContent: 'center', alignItems: 'center' },
+  btnCancelText: { ...Typography.button2, color: Colors.light.grayDark },
 });

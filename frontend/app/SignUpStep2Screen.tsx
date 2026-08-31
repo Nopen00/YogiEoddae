@@ -41,7 +41,7 @@ const SignUpStep2Screen = () => {
   const [usernameErrors, setUsernameErrors] = useState<string[]>([]);
   const [confirmPopupVisible, setConfirmPopupVisible] = useState(false);
   const [setupLaterPopupVisible, setSetupLaterPopupVisible] = useState(false);
-  const [signupErrorMessage, setSignupErrorMessage] = useState<string | null>(null);
+  const [signupErrorVisible, setSignupErrorVisible] = useState(false);
 
   const handleChangeUsername = (text: string) => {
     setUsername(text);
@@ -105,7 +105,7 @@ const SignUpStep2Screen = () => {
       if (duplicateUsername) {
         setUsernameErrors([duplicateUsername]);
       } else {
-        setSignupErrorMessage('회원가입에 실패했습니다. 잠시 후 다시 시도해주세요.');
+        setSignupErrorVisible(true);
       }
     }
   };
@@ -239,14 +239,15 @@ const SignUpStep2Screen = () => {
         </TouchableOpacity>
       </Modal>
 
-      <Modal visible={signupErrorMessage !== null} transparent animationType="none">
+      <Modal visible={signupErrorVisible} transparent animationType="none">
         <TouchableOpacity
           style={styles.resultOverlay}
           activeOpacity={1}
-          onPress={() => setSignupErrorMessage(null)}
+          onPress={() => setSignupErrorVisible(false)}
         >
           <View style={styles.resultPopupBox}>
-            <Text style={styles.resultTitle}>{signupErrorMessage}</Text>
+            <Text style={styles.resultTitle}>회원가입에 실패했습니다.</Text>
+            <Text style={styles.resultSub1}>잠시 후 다시 시도해주세요.</Text>
           </View>
         </TouchableOpacity>
       </Modal>

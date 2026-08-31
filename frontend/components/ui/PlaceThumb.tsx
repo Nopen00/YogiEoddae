@@ -17,7 +17,7 @@ interface PlaceThumbProps {
   seedKey?: string;
 }
 
-const MASCOT_AVATAR = require('@/assets/images/mascot/mascot_face_transparent.png');
+const MASCOT_AVATAR = require('@/assets/images/mascot/mascot_avatar_default.png');
 const MASCOT_ROTATIONS = [90, 180, 270];
 
 // 같은 유저는 항상 같은 회전값을 받도록 seedKey(닉네임/아이디 등)로 결정.

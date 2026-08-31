@@ -254,7 +254,7 @@ const PlaceDetailScreen = () => {
     return (
       <LoadingScreen
         onClose={() => router.dismiss()}
-        message={isSlowLoading ? '시간이 걸리고 있습니다. 잠시만 기다려 주세요.' : undefined}
+        message={isSlowLoading ? '시간이 걸리고 있어요.\n잠시만 기다려 주세요.' : undefined}
       />
     );
   }
