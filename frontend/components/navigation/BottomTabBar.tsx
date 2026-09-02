@@ -87,7 +87,7 @@ function TabItem({ label, Icon, isActive, onPress }: TabItemProps) {
     color: interpolateColor(
       progress.value,
       [0, 1],
-      [Colors.light.grayDark, Colors.light.primary],
+      [Colors.light.grayLight, Colors.light.primary],
     ),
   }));
 
@@ -106,7 +106,7 @@ function TabItem({ label, Icon, isActive, onPress }: TabItemProps) {
           <Animated.View style={[styles.iconOverlay, inactiveIconStyle]}>
             <Icon
               size={IconSize.large}
-              color={Colors.light.grayDark}
+              color={Colors.light.grayLight}
               strokeWidth={IconStroke.regular}
             />
           </Animated.View>
@@ -161,7 +161,7 @@ export default function BottomTabBar() {
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    backgroundColor: Colors.light.white,
     borderTopWidth: Spacing.lw.small,
     borderTopColor: Colors.light.grayLight,
   },

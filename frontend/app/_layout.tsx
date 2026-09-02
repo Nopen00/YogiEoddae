@@ -114,7 +114,10 @@ function RootLayoutNav() {
         </View>
         {showTabBar && <BottomTabBar />}
       </View>
-      <StatusBar style="auto" />
+      {/* 앱 화면이 항상 흰 배경(라이트 UI)이라, OS가 다크모드일 때 style="auto"가
+          상태바 아이콘을 흰색으로 바꾸면 흰 배경에 묻혀 안 보이는 문제가 있었음.
+          앱 자체는 다크모드를 지원하지 않으므로 상태바도 항상 어두운 색으로 고정. */}
+      <StatusBar style="dark" />
     </ThemeProvider>
   );
 }
