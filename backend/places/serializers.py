@@ -254,6 +254,8 @@ class MediaDetailSerializer(serializers.ModelSerializer):
 
     def get_places(self, obj):
         media_places = obj.media_places.select_related('place').all()
+        from .services import ensure_google_photos_for_places
+        ensure_google_photos_for_places([mp.place for mp in media_places])
         return MediaPlaceSerializer(media_places, many=True, context=self.context).data
 
     def get_is_bookmarked(self, obj):

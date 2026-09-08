@@ -5,6 +5,7 @@ import re
 import uuid
 import logging
 import random
+from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 from zoneinfo import ZoneInfo
 
@@ -611,6 +612,20 @@ def _refresh_via_google_photo(place: 'Place') -> bool:
     except Exception:
         logger.exception('구글 대표사진 갱신 중 오류')
         return False
+
+
+def ensure_google_photos_for_places(places, max_workers: int = 5) -> None:
+    """코스/근처추천처럼 여러 장소를 한 번에 나열하는 화면에서, 개별 상세페이지를 열어본 적
+    없어도 목록에 미리보기 사진이 보이도록 구글 사진을 미리 채워둔다.
+    개별 조회(refresh_place_if_stale)와 동일한 가드(_google_photo_stale, image_url 존재 여부)를
+    그대로 타므로 이미 최신인 장소는 네트워크 호출 없이 즉시 스킵된다 — 이 함수를 여러 번 불러도
+    실제 API 호출은 필요한 만큼만 나간다. 여러 장소를 병렬로 처리해 목록 하나에 사진 없는 장소가
+    몰려 있어도 응답 지연이 장소 수만큼 그대로 누적되지 않게 한다."""
+    targets = [p for p in places if not p.image_url and _google_photo_stale(p)]
+    if not targets:
+        return
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        list(executor.map(_refresh_via_google_photo, targets))
 
 
 def refresh_place_if_stale(place: 'Place') -> bool:

@@ -25,7 +25,10 @@ from .serializers import (
     TagSerializer, PhotoSerializer, PhotoSpotDetailSerializer,
 )
 from .moderation import moderate_photo, CATEGORY_LABELS
-from .services import refresh_place_if_stale, fetch_nearby_places, get_or_create_place_by_content_id
+from .services import (
+    refresh_place_if_stale, fetch_nearby_places, get_or_create_place_by_content_id,
+    ensure_google_photos_for_places,
+)
 from bookmarks.models import MediaBookmark, PlaceBookmark
 from mailbox.services import check_and_grant_like_milestone, grant_photo_publish_reward
 from quiz.models import QuizSubmission, QuizAnswer
@@ -859,12 +862,15 @@ class MediaViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=True, methods=['get'])
     def places(self, request, pk=None):
+        """코스 목록 화면은 개별 장소 상세페이지를 거치지 않고 바로 나열되므로, 여기서
+        미리 구글 대표사진을 채워둬야 미리보기 사진이 보인다(ensure_google_photos_for_places)."""
         media = self.get_object()
         media_places = (MediaPlace.objects
                         .filter(media=media, status=MediaPlace.STATUS_ADMIN_APPROVED)
                         .select_related('place')
                         .prefetch_related('place__tags')
                         .order_by('day', 'id'))
+        ensure_google_photos_for_places([mp.place for mp in media_places])
         return Response(MediaPlaceSerializer(media_places, many=True, context={'request': request}).data)
 
     @action(detail=True, methods=['post'], url_path='quiz/submit', permission_classes=[IsAuthenticated])
