@@ -52,6 +52,21 @@ class Place(models.Model):
     # 관광공사 API에서 이 장소 정보를 마지막으로 가져온 시점. 조회 시점 기준 이 값이
     # 오래되면(30일+) 그때 재호출해서 갱신한다(lazy TTL) — 특정 날짜에 갱신이 몰리는 것을 방지.
     last_synced_at = models.DateTimeField(null=True, blank=True)
+    # 대표사진 2차 폴백(구글 Places API New). 관광공사(image_url)가 없는 장소에 한해 채워진다.
+    # google_photo_url은 구글이 주는 사진을 다운로드해 자체 스토리지(MEDIA_ROOT)에 저장한 뒤의
+    # 상대 경로(예: /media/google_photos/xxx.jpg) — 구글 원본 리다이렉트 URL은 단기 만료
+    # 가능성이 높아 직접 저장한다. 아바타는 부가정보라 URL만 저장(구글 원본 그대로).
+    # google_photo_path는 default_storage 기준 원본 저장 경로(예: google_photos/xxx.jpg) —
+    # 배포 환경 디스크가 재시작마다 초기화되는 경우(예: 영구 볼륨 미설정) 파일이 사라져도
+    # DB의 google_photo_synced_at만 보고 "최신"이라 오판해 깨진 이미지가 방치되는 것을 막기
+    # 위해, 이 경로로 실제 파일 존재 여부를 확인해서 없으면 즉시 재수집한다(_google_photo_stale).
+    google_photo_path = models.CharField(max_length=500, blank=True, default='')
+    google_photo_url = models.URLField(max_length=500, blank=True, default='')
+    google_photo_author_name = models.CharField(max_length=255, blank=True, default='')
+    google_photo_author_avatar_url = models.URLField(max_length=500, blank=True, default='')
+    google_photo_author_uri = models.URLField(max_length=500, blank=True, default='')
+    google_photo_maps_uri = models.URLField(max_length=500, blank=True, default='')
+    google_photo_synced_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

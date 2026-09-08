@@ -34,7 +34,7 @@ DEBUG = env.bool('DEBUG', default=True)
 
 # .up.railway.app는 Railway가 배포 시 자동 발급하는 도메인이라 미리 허용해둠
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[
-    'localhost', '127.0.0.1', '192.168.0.6', '192.168.0.7',
+    'localhost', '127.0.0.1', '192.168.0.2', '192.168.0.6', '192.168.0.7',
     '.ngrok-free.app', '.ngrok-free.dev', '.ngrok.io', '.up.railway.app',
 ])
 
@@ -197,6 +197,8 @@ KAKAO_REST_KEY = env('KAKAO_REST_KEY', default='')
 ANTHROPIC_API_KEY = env('ANTHROPIC_API_KEY', default='')
 GEMINI_API_KEY = env('GEMINI_API_KEY', default='')
 YOUTUBE_API_KEY = env('YOUTUBE_API_KEY', default='')
+# 대표사진 2차 폴백(구글 Places API New). 비어있으면 services._refresh_via_google_photo가 즉시 no-op.
+GOOGLE_PLACES_API_KEY = env('GOOGLE_PLACES_API_KEY', default='')
 DEVICE_ID_HASH_KEY = env('DEVICE_ID_HASH_KEY')
 
 # 이메일 발송 (Resend HTTP API) — Gmail SMTP(587)를 썼었는데 Railway가 아웃바운드

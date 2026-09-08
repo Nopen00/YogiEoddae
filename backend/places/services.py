@@ -2,6 +2,7 @@
 장소 추출 서비스 — management command와 web view 양쪽에서 호출 가능.
 """
 import re
+import uuid
 import logging
 import random
 from datetime import timedelta
@@ -9,6 +10,8 @@ from zoneinfo import ZoneInfo
 
 import requests as http_requests
 from django.conf import settings
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
 from django.utils import timezone
 from googleapiclient.discovery import build
 
@@ -535,12 +538,91 @@ def _refresh_via_kakao(place: 'Place') -> bool:
     return True
 
 
+GOOGLE_PHOTO_TTL_DAYS = 7
+
+
+def _google_photo_stale(place: 'Place') -> bool:
+    """구글 대표사진을 마지막으로 갱신한 지 GOOGLE_PHOTO_TTL_DAYS(7일)가 지났는지.
+    place_id 외 콘텐츠는 구글 정책상 캐싱 예외가 없어 완전한 영구 저장은 피하고,
+    짧은 주기로 계속 다시 받아오는 절충안을 택했다.
+    배포 환경 디스크에 영구 볼륨이 없으면 컨테이너 재시작/재배포 때마다 저장된 파일이
+    사라질 수 있는데, DB의 synced_at만 보면 '최신'으로 오판해 깨진 이미지가 그대로
+    방치된다 — 그래서 파일이 실제로 존재하는지도 함께 확인해서, 사라졌으면 기간과
+    무관하게 즉시 stale로 취급해 재수집을 트리거한다(자연 복구)."""
+    if not place.google_photo_synced_at:
+        return True
+    if place.google_photo_path and not default_storage.exists(place.google_photo_path):
+        return True
+    return timezone.now() - place.google_photo_synced_at > timedelta(days=GOOGLE_PHOTO_TTL_DAYS)
+
+
+def _refresh_via_google_photo(place: 'Place') -> bool:
+    """대표사진 2차 폴백 — 구글 Places API(New)에서 사진+저작자 정보를 가져온다.
+    GOOGLE_PLACES_API_KEY가 비어있으면(아직 발급 전) 아무 것도 하지 않고 즉시 리턴한다 —
+    키만 발급받아 넣으면 바로 동작하도록 미리 배선해 둔 것. 1차(관광공사 image_url)가
+    이미 있으면 호출하지 않는다(비용 절감, 2차는 1차가 없을 때만 의미가 있음).
+    구글이 photo media 엔드포인트에서 리다이렉트하는 이미지 URL은 단기 만료 가능성이
+    높아 실제 파일을 다운로드해 저장하고, 작성자 아바타는 부가정보라 URL만 저장한다."""
+    if not settings.GOOGLE_PLACES_API_KEY or place.image_url:
+        return False
+
+    try:
+        search_resp = http_requests.post(
+            'https://places.googleapis.com/v1/places:searchText',
+            json={'textQuery': f'{place.name} {place.address}'},
+            headers={
+                'X-Goog-Api-Key': settings.GOOGLE_PLACES_API_KEY,
+                'X-Goog-FieldMask': 'places.photos',
+                'Content-Type': 'application/json',
+            },
+            timeout=10,
+        )
+        candidates = search_resp.json().get('places', [])
+        photos = candidates[0].get('photos', []) if candidates else []
+        if not photos:
+            return False
+        photo = photos[0]
+
+        media_resp = http_requests.get(
+            f'https://places.googleapis.com/v1/{photo["name"]}/media',
+            params={'maxWidthPx': 1200, 'key': settings.GOOGLE_PLACES_API_KEY},
+            timeout=10,
+        )
+        if media_resp.status_code != 200 or not media_resp.content:
+            return False
+
+        ext = '.png' if 'png' in media_resp.headers.get('Content-Type', '') else '.jpg'
+        saved_path = default_storage.save(f'google_photos/{uuid.uuid4().hex}{ext}', ContentFile(media_resp.content))
+
+        author = (photo.get('authorAttributions') or [{}])[0]
+        place.google_photo_path = saved_path
+        place.google_photo_url = default_storage.url(saved_path)
+        place.google_photo_author_name = author.get('displayName', '')
+        place.google_photo_author_avatar_url = author.get('photoUri', '')
+        place.google_photo_author_uri = author.get('uri', '')
+        place.google_photo_maps_uri = photo.get('googleMapsUri', '')
+        place.google_photo_synced_at = timezone.now()
+        place.save(update_fields=[
+            'google_photo_path', 'google_photo_url', 'google_photo_author_name',
+            'google_photo_author_avatar_url', 'google_photo_author_uri',
+            'google_photo_maps_uri', 'google_photo_synced_at',
+        ])
+        return True
+    except Exception:
+        logger.exception('구글 대표사진 갱신 중 오류')
+        return False
+
+
 def refresh_place_if_stale(place: 'Place') -> bool:
     """조회 시점 기준 last_synced_at이 가장 최근 08:00(KST) 동기화 시각보다 이전이면
     갱신한다(lazy, 정기 배치 아님 — 실제로 조회되는 시점에만 갱신하므로 특정 시각에
     호출이 몰리지 않는다). 실제 KTO content_id가 있는 장소는 KTO로, yt_ 접두사
     미확정 장소는 카카오로 재검증한다(카카오 매칭이 되면 KTO 승격도 같이 시도).
-    실패해도 조용히 무시 — 캐시된 값을 그대로 유지해 사용자 응답에는 영향을 주지 않는다."""
+    실패해도 조용히 무시 — 캐시된 값을 그대로 유지해 사용자 응답에는 영향을 주지 않는다.
+    대표사진 2차(구글) 갱신은 KTO/카카오와 별개로 7일 주기로 확인한다(_google_photo_stale)."""
+    if not place.image_url and _google_photo_stale(place):
+        _refresh_via_google_photo(place)
+
     if place.last_synced_at and place.last_synced_at >= _last_sync_cutoff():
         return False
 

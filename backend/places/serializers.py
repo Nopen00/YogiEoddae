@@ -27,6 +27,8 @@ class PlaceSerializer(serializers.ModelSerializer):
     rating = serializers.SerializerMethodField()
     like_count = serializers.SerializerMethodField()
     image_url = serializers.SerializerMethodField()
+    photo_source = serializers.SerializerMethodField()
+    photo_attribution = serializers.SerializerMethodField()
 
     class Meta:
         model = Place
@@ -35,6 +37,7 @@ class PlaceSerializer(serializers.ModelSerializer):
             'latitude', 'longitude', 'image_url',
             'category', 'is_verified', 'kakao_place_url', 'business_hours', 'phone',
             'tags', 'is_bookmarked', 'rating', 'like_count', 'created_at',
+            'photo_source', 'photo_attribution',
         ]
 
     def get_is_bookmarked(self, obj):
@@ -45,11 +48,35 @@ class PlaceSerializer(serializers.ModelSerializer):
         return PlaceBookmark.objects.filter(user=user, place=obj).exists()
 
     def get_image_url(self, obj):
-        """관광공사 등록 이미지가 없으면, 유저가 이 장소에 올린 승인된 포토스팟 사진으로 대체한다."""
+        """대표사진 우선순위: 1차 관광공사 → 2차 구글(Places API) → 3차 유저 포토스팟."""
         if obj.image_url:
             return obj.image_url
+        if obj.google_photo_url:
+            request = self.context.get('request')
+            return request.build_absolute_uri(obj.google_photo_url) if request else obj.google_photo_url
         photo = obj.photos.filter(status=Photo.STATUS_APPROVED).order_by('-created_at').first()
         return photo.image_url if photo else ''
+
+    def get_photo_source(self, obj):
+        """대표사진이 어디서 왔는지 — 프론트 '대표사진 출처' 표시용."""
+        if obj.image_url:
+            return 'kto'
+        if obj.google_photo_url:
+            return 'google'
+        if obj.photos.filter(status=Photo.STATUS_APPROVED).exists():
+            return 'user'
+        return None
+
+    def get_photo_attribution(self, obj):
+        """구글 사진일 때만 저작자 표시 정보를 내려준다(구글 정책상 attribution 필수)."""
+        if not obj.google_photo_url:
+            return None
+        return {
+            'author_name': obj.google_photo_author_name,
+            'author_avatar_url': obj.google_photo_author_avatar_url,
+            'author_uri': obj.google_photo_author_uri,
+            'source_uri': obj.google_photo_maps_uri,
+        }
 
     def get_rating(self, obj):
         avg = obj.reviews.aggregate(avg=Avg('rating'))['avg']

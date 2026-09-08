@@ -442,10 +442,37 @@ const PlaceDetailScreen = () => {
                         )}
                       </View>
                       <View style={[styles.infoGroupRow, { marginTop: Spacing.v.medium }]}>
-                        <Text style={styles.infoLabel}>출처</Text>
+                        <Text style={styles.infoLabel}>정보 출처</Text>
                         <Text style={styles.infoValue}>
                           {isToggled ? (place?.kakao_place_url ? '카카오' : '카카오 정보 없음') : '한국관광공사'}
                         </Text>
+                      </View>
+                      <View style={[styles.infoGroupRow, { marginTop: Spacing.v.medium }]}>
+                        <Text style={styles.infoLabel}>대표사진 출처</Text>
+                        {place?.photo_source === 'google' && place.photo_attribution ? (
+                          <View style={styles.photoSourceGoogle}>
+                            <TouchableOpacity
+                              style={styles.photoSourceAuthor}
+                              onPress={() => Linking.openURL(place.photo_attribution!.author_uri)}
+                            >
+                              <PlaceThumb
+                                uri={place.photo_attribution.author_avatar_url}
+                                style={styles.attributionAvatar}
+                                shape="avatar"
+                                seedKey={place.photo_attribution.author_name}
+                              />
+                              <Text style={styles.photoSourceText}>{place.photo_attribution.author_name}</Text>
+                            </TouchableOpacity>
+                            <Text style={styles.photoSourceText}> · </Text>
+                            <TouchableOpacity onPress={() => Linking.openURL(place.photo_attribution!.source_uri)}>
+                              <Text style={[styles.photoSourceText, styles.phoneLink]}>구글</Text>
+                            </TouchableOpacity>
+                          </View>
+                        ) : (
+                          <Text style={styles.infoValue}>
+                            {place?.photo_source === 'user' ? '포토스팟' : place?.photo_source === 'kto' ? '한국관광공사' : '-'}
+                          </Text>
+                        )}
                       </View>
                       {isToggled && place?.kakao_place_url && (
                         <TouchableOpacity
@@ -809,6 +836,27 @@ const styles = StyleSheet.create({
   phoneLink: {
     color: Colors.light.primary,
     textDecorationLine: 'underline',
+  },
+  photoSourceGoogle: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    marginLeft: Spacing.h.medium,
+  },
+  photoSourceAuthor: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  photoSourceText: {
+    ...Typography.body2,
+    color: Colors.light.grayDark,
+  },
+  attributionAvatar: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
   },
   kakaoShortcutRow: {
     flexDirection: 'row',

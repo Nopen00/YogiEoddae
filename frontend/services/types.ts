@@ -21,6 +21,13 @@ export interface Media {
   created_at: string;
 }
 
+export interface PhotoAttribution {
+  author_name: string;
+  author_avatar_url: string;
+  author_uri: string;
+  source_uri: string;
+}
+
 export interface Place {
   id: number;
   name: string;
@@ -38,6 +45,9 @@ export interface Place {
   like_count: number | null;
   tags: Tag[];
   created_at: string;
+  // 대표사진 출처 — 관광공사(1차) / 구글(2차, API 키 설정 전엔 항상 null) / 유저 포토스팟(3차)
+  photo_source?: 'kto' | 'google' | 'user' | null;
+  photo_attribution?: PhotoAttribution | null;
 }
 
 // 아직 우리 DB에 등록되지 않은, 관광공사 API에서 실시간으로 받아온 근처 추천 장소.
