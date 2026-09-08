@@ -131,6 +131,15 @@ def _build_chapter_transcript(segments: list, chapters: list) -> str:
     return '\n'.join(result)
 
 
+def _kto_image_url_https(raw: str) -> str:
+    """관광공사 API가 항상 http://(비암호화)로 내려주는 firstimage를 https로 올려준다.
+    Android 9+ 기본 cleartext 차단 때문에 http:// 그대로 저장하면 앱에서 이미지 로드가
+    실패한다(services._kto_image_url과 동일 로직 — 순환 임포트를 피하려 여기 따로 둠)."""
+    if raw and raw.startswith('http://'):
+        return 'https://' + raw[len('http://'):]
+    return raw
+
+
 def _kto_search(keyword: str, num_rows: int = 5) -> list:
     """KTO API로 장소 검색 후 DB 저장, Place 목록 반환."""
     url = "http://apis.data.go.kr/B551011/KorService2/searchKeyword2"
@@ -160,7 +169,7 @@ def _kto_search(keyword: str, num_rows: int = 5) -> list:
                     'address': item.get('addr1', ''),
                     'latitude': item['mapy'],
                     'longitude': item['mapx'],
-                    'image_url': item.get('firstimage', ''),
+                    'image_url': _kto_image_url_https(item.get('firstimage', '')),
                     'category': item.get('contenttypeid', ''),
                     'is_verified': True,
                     'last_synced_at': timezone.now(),

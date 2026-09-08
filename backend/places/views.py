@@ -27,7 +27,7 @@ from .serializers import (
 from .moderation import moderate_photo, CATEGORY_LABELS
 from .services import (
     refresh_place_if_stale, fetch_nearby_places, get_or_create_place_by_content_id,
-    ensure_google_photos_for_places,
+    ensure_google_photos_for_places, _kto_image_url,
 )
 from bookmarks.models import MediaBookmark, PlaceBookmark
 from mailbox.services import check_and_grant_like_milestone, grant_photo_publish_reward
@@ -134,7 +134,7 @@ def fetch_and_save_places(request):
                     'address': item.get('addr1', ''),
                     'latitude': item['mapy'],
                     'longitude': item['mapx'],
-                    'image_url': item.get('firstimage', ''),
+                    'image_url': _kto_image_url(item.get('firstimage', '')),
                     'category': item.get('contenttypeid', ''),
                     'last_synced_at': timezone.now(),
                 }

@@ -33,6 +33,15 @@ from places.models import Media, MediaPlace, Place
 logger = logging.getLogger(__name__)
 
 
+def _kto_image_url(raw: str) -> str:
+    """관광공사 API는 firstimage를 항상 http://(비암호화)로 내려주는데, Android는
+    9(API 28) 이상부터 cleartext 트래픽을 기본 차단해서 앱에서 이미지 로드가 실패한다.
+    같은 호스트가 https도 그대로 지원하는 걸 확인했으므로 저장 시점에 스킴만 올려준다."""
+    if raw and raw.startswith('http://'):
+        return 'https://' + raw[len('http://'):]
+    return raw
+
+
 def _has_precise_address(address: str) -> bool:
     """도로명/지번 번호가 포함된 정확한 주소인지 확인."""
     if not address:
@@ -482,7 +491,7 @@ def _refresh_via_kto(place: 'Place') -> bool:
     place.address = item.get('addr1') or place.address
     place.latitude = item.get('mapy') or place.latitude
     place.longitude = item.get('mapx') or place.longitude
-    place.image_url = item.get('firstimage') or place.image_url
+    place.image_url = _kto_image_url(item.get('firstimage')) or place.image_url
     place.category = item.get('contenttypeid') or place.category
     place.phone = item.get('tel') or place.phone
 
@@ -687,7 +696,7 @@ def fetch_nearby_places(lat, lng, exclude_content_id: str = '', radius: int = 20
             'address': it.get('addr1', ''),
             'latitude': it.get('mapy'),
             'longitude': it.get('mapx'),
-            'image_url': it.get('firstimage', ''),
+            'image_url': _kto_image_url(it.get('firstimage', '')),
             'category': it.get('contenttypeid', ''),
         }
         for it in items
@@ -719,7 +728,7 @@ def get_or_create_place_by_content_id(content_id: str):
         address=item.get('addr1', ''),
         latitude=item.get('mapy') or 0,
         longitude=item.get('mapx') or 0,
-        image_url=item.get('firstimage', ''),
+        image_url=_kto_image_url(item.get('firstimage', '')),
         category=item.get('contenttypeid', ''),
         is_verified=True,
         last_synced_at=timezone.now(),

@@ -3,6 +3,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 
 from places.models import MediaPlace, Media, Place, Tag
+from places.services import _kto_image_url
 
 
 # 기본 태그 데이터 (category, name)
@@ -124,7 +125,7 @@ def _fetch_places_from_kto(keyword, num_rows=3):
                     'address': item.get('addr1', ''),
                     'latitude': item['mapy'],
                     'longitude': item['mapx'],
-                    'image_url': item.get('firstimage', ''),
+                    'image_url': _kto_image_url(item.get('firstimage', '')),
                     'category': item.get('contenttypeid', ''),
                 },
             )
