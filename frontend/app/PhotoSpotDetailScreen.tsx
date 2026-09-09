@@ -35,7 +35,20 @@ import { logEvent } from '@/services/logger';
 const REVIEW_SORT_OPTIONS = ['추천순', '최신 여행 순', '최신 리뷰 순', '별점 높은 순', '별점 낮은 순'] as const;
 type ReviewSortOption = typeof REVIEW_SORT_OPTIONS[number];
 
-const formatDateDots = (dateStr: string) => dateStr.slice(0, 10).replace(/-/g, '.');
+const formatDateDots = (dateStr: string) => {
+  if (!dateStr) return '';
+  // travel_date는 사용자가 고른 순수 날짜 문자열(YYYY-MM-DD)이라 그대로 써도 되지만,
+  // created_at은 서버가 UTC 기준 ISO 문자열('...T...')로 내려주므로 기기 로컬(KST) 시간으로 변환해야
+  // 자정 근처(UTC 15:00~23:59 = KST 00:00~08:59) 작성분이 하루 전 날짜로 잘못 표시되지 않는다.
+  if (dateStr.includes('T')) {
+    const d = new Date(dateStr);
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}.${mm}.${dd}`;
+  }
+  return dateStr.slice(0, 10).replace(/-/g, '.');
+};
 
 const DETAIL_TABS = ['기본 정보', '리뷰', '포토스팟'] as const;
 

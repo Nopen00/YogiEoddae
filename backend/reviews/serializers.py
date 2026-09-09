@@ -1,5 +1,9 @@
+from zoneinfo import ZoneInfo
+
 from rest_framework import serializers
 from .models import MediaReview, PlaceReview, PhotoReview
+
+KST = ZoneInfo('Asia/Seoul')
 
 
 class ReviewSerializerBase(serializers.ModelSerializer):
@@ -22,7 +26,7 @@ class ReviewSerializerBase(serializers.ModelSerializer):
         return obj.user.profile_image
 
     def get_writtenDate(self, obj):
-        return obj.created_at.strftime('%Y.%m.%d')
+        return obj.created_at.astimezone(KST).strftime('%Y.%m.%d')
 
     def get_hasPhoto(self, obj):
         return bool(obj.images)
