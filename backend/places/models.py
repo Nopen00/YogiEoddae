@@ -67,6 +67,12 @@ class Place(models.Model):
     google_photo_author_uri = models.URLField(max_length=500, blank=True, default='')
     google_photo_maps_uri = models.URLField(max_length=500, blank=True, default='')
     google_photo_synced_at = models.DateTimeField(null=True, blank=True)
+    # 대표사진 1.5차 폴백(한국관광공사_관광사진 정보 API, 공공누리 1유형이라 구글과 달리
+    # 원본 URL을 영구 캐싱해도 무방하다 — 한 번 채워지면 다시 확인하지 않는다).
+    # kto_photo_synced_at은 성공/실패와 무관하게 "오늘 이미 시도했는지"만 판단하는 용도로,
+    # 08:00(KST) 동기화 주기당 최대 1회만 재시도해 일일 호출 한도를 아낀다.
+    kto_photo_url = models.URLField(max_length=500, blank=True, default='')
+    kto_photo_synced_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

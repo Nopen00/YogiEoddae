@@ -199,6 +199,9 @@ GEMINI_API_KEY = env('GEMINI_API_KEY', default='')
 YOUTUBE_API_KEY = env('YOUTUBE_API_KEY', default='')
 # 대표사진 2차 폴백(구글 Places API New). 비어있으면 services._refresh_via_google_photo가 즉시 no-op.
 GOOGLE_PLACES_API_KEY = env('GOOGLE_PLACES_API_KEY', default='')
+# 한국관광공사_관광사진 정보 API(data.go.kr/data/15101914) — 아직 미발급 시 빈 문자열로 두면
+# 대표사진 1.5차 폴백(_refresh_via_kto_photo)이 자동으로 건너뛴다(GOOGLE_PLACES_API_KEY와 동일 패턴).
+TOUR_PHOTO_API_KEY = env('TOUR_PHOTO_API_KEY', default='')
 DEVICE_ID_HASH_KEY = env('DEVICE_ID_HASH_KEY')
 
 # 이메일 발송 (Resend HTTP API) — Gmail SMTP(587)를 썼었는데 Railway가 아웃바운드

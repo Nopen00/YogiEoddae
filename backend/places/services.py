@@ -28,7 +28,7 @@ from places.management.commands.fetch_youtube_place import (
     _gemini_infer,
     _claude_infer,
 )
-from places.models import Media, MediaPlace, Place
+from places.models import Media, MediaPlace, Place, Photo
 
 logger = logging.getLogger(__name__)
 
@@ -548,6 +548,62 @@ def _refresh_via_kakao(place: 'Place') -> bool:
     return True
 
 
+def _kto_photo_not_tried_today(place: 'Place') -> bool:
+    """오늘(08:00 KST 주기 기준) 아직 관광사진 API를 시도해보지 않았는지.
+    kto_photo_url이 이미 있으면(공공누리 1유형이라 영구 캐싱 가능) 이 함수 호출 전에
+    별도로 걸러지므로, 여기서는 '아직 못 구했지만 오늘 재시도할 때가 됐는지'만 본다."""
+    if not place.kto_photo_synced_at:
+        return True
+    return place.kto_photo_synced_at < _last_sync_cutoff()
+
+
+def _refresh_via_kto_photo(place: 'Place') -> bool:
+    """대표사진 1.5차 폴백 — 한국관광공사_관광사진 정보 API(PhotoGalleryService1,
+    공공누리 1유형, data.go.kr/data/15101914)의 gallerySearchList1(장소명 키워드검색)로
+    사진을 찾는다. TOUR_PHOTO_API_KEY가 비어있으면(아직 미발급) 아무 것도 하지 않고
+    즉시 리턴한다 — 키만 발급받아 .env에 넣으면 바로 동작하도록 미리 배선해 둔 것.
+    1차(관광공사 image_url)가 이미 있으면 호출하지 않는다. kto_photo_url을 이미 구했다면
+    (공공누리 1유형이라 만료 개념이 없어) 다시 확인하지 않고, 아직 못 구했을 때만
+    08:00(KST) 주기당 최대 1회 재시도한다(일일 호출 한도 절약)."""
+    if not settings.TOUR_PHOTO_API_KEY or place.image_url or place.kto_photo_url:
+        return False
+    if not _kto_photo_not_tried_today(place):
+        return False
+    if not place.content_id or place.content_id.startswith('yt_'):
+        return False
+
+    place.kto_photo_synced_at = timezone.now()
+    place.save(update_fields=['kto_photo_synced_at'])
+
+    url = "https://apis.data.go.kr/B551011/PhotoGalleryService1/gallerySearchList1"
+    params = {
+        'serviceKey': settings.TOUR_PHOTO_API_KEY,
+        'MobileApp': 'YogiEoddae',
+        'MobileOS': 'ETC',
+        'keyword': place.name,
+        'numOfRows': 1,
+        'pageNo': 1,
+        '_type': 'json',
+    }
+    try:
+        response = http_requests.get(url, params=params, timeout=10)
+        data = response.json()
+        items_data = data.get('response', {}).get('body', {}).get('items')
+        if not items_data or not items_data.get('item'):
+            return False
+        item = items_data['item']
+        item = item[0] if isinstance(item, list) else item
+        img_url = item.get('galWebImageUrl', '')
+        if not img_url:
+            return False
+        place.kto_photo_url = _kto_image_url(img_url)
+        place.save(update_fields=['kto_photo_url'])
+        return True
+    except Exception:
+        logger.exception('관광사진 API 갱신 중 오류')
+        return False
+
+
 GOOGLE_PHOTO_TTL_DAYS = 7
 
 
@@ -566,14 +622,23 @@ def _google_photo_stale(place: 'Place') -> bool:
     return timezone.now() - place.google_photo_synced_at > timedelta(days=GOOGLE_PHOTO_TTL_DAYS)
 
 
+def _has_approved_user_photo(place: 'Place') -> bool:
+    """포토스팟(사용자 업로드) 중 승인된 사진이 있는지. 대표사진 우선순위가
+    KTO → KTO사진API → 포토스팟 → 구글 순이라, 포토스팟이 이미 있으면 어차피
+    화면에는 그게 먼저 뜨므로 비용이 드는 구글 API 호출을 아예 건너뛴다."""
+    return place.photos.filter(status=Photo.STATUS_APPROVED).exists()
+
+
 def _refresh_via_google_photo(place: 'Place') -> bool:
-    """대표사진 2차 폴백 — 구글 Places API(New)에서 사진+저작자 정보를 가져온다.
+    """대표사진 최후 폴백 — 구글 Places API(New)에서 사진+저작자 정보를 가져온다.
     GOOGLE_PLACES_API_KEY가 비어있으면(아직 발급 전) 아무 것도 하지 않고 즉시 리턴한다 —
-    키만 발급받아 넣으면 바로 동작하도록 미리 배선해 둔 것. 1차(관광공사 image_url)가
-    이미 있으면 호출하지 않는다(비용 절감, 2차는 1차가 없을 때만 의미가 있음).
+    키만 발급받아 넣으면 바로 동작하도록 미리 배선해 둔 것. 앞선 우선순위
+    (1차 관광공사 image_url, 1.5차 kto_photo_url, 2차 포토스팟)가 하나라도 있으면
+    호출하지 않는다(비용 절감, 구글은 셋 다 없을 때만 의미가 있음).
     구글이 photo media 엔드포인트에서 리다이렉트하는 이미지 URL은 단기 만료 가능성이
     높아 실제 파일을 다운로드해 저장하고, 작성자 아바타는 부가정보라 URL만 저장한다."""
-    if not settings.GOOGLE_PLACES_API_KEY or place.image_url:
+    if (not settings.GOOGLE_PLACES_API_KEY or place.image_url or place.kto_photo_url
+            or _has_approved_user_photo(place)):
         return False
 
     try:
@@ -625,12 +690,20 @@ def _refresh_via_google_photo(place: 'Place') -> bool:
 
 def ensure_google_photos_for_places(places, max_workers: int = 5) -> None:
     """코스/근처추천처럼 여러 장소를 한 번에 나열하는 화면에서, 개별 상세페이지를 열어본 적
-    없어도 목록에 미리보기 사진이 보이도록 구글 사진을 미리 채워둔다.
-    개별 조회(refresh_place_if_stale)와 동일한 가드(_google_photo_stale, image_url 존재 여부)를
-    그대로 타므로 이미 최신인 장소는 네트워크 호출 없이 즉시 스킵된다 — 이 함수를 여러 번 불러도
-    실제 API 호출은 필요한 만큼만 나간다. 여러 장소를 병렬로 처리해 목록 하나에 사진 없는 장소가
+    없어도 목록에 미리보기 사진이 보이도록 대표사진을 미리 채워둔다.
+    1.5차(KTO사진API)를 먼저 시도하고, 그래도 없고 포토스팟(2차)도 없는 장소만 구글(최후,
+    유료/쿼터 있음)로 넘긴다. 개별 조회(refresh_place_if_stale)와 동일한 가드를 그대로 타므로
+    이미 최신인 장소는 네트워크 호출 없이 즉시 스킵된다 — 이 함수를 여러 번 불러도 실제 API
+    호출은 필요한 만큼만 나간다. 여러 장소를 병렬로 처리해 목록 하나에 사진 없는 장소가
     몰려 있어도 응답 지연이 장소 수만큼 그대로 누적되지 않게 한다."""
-    targets = [p for p in places if not p.image_url and _google_photo_stale(p)]
+    no_primary = [p for p in places if not p.image_url]
+    for p in no_primary:
+        _refresh_via_kto_photo(p)
+
+    targets = [
+        p for p in no_primary
+        if not p.kto_photo_url and not _has_approved_user_photo(p) and _google_photo_stale(p)
+    ]
     if not targets:
         return
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -643,9 +716,12 @@ def refresh_place_if_stale(place: 'Place') -> bool:
     호출이 몰리지 않는다). 실제 KTO content_id가 있는 장소는 KTO로, yt_ 접두사
     미확정 장소는 카카오로 재검증한다(카카오 매칭이 되면 KTO 승격도 같이 시도).
     실패해도 조용히 무시 — 캐시된 값을 그대로 유지해 사용자 응답에는 영향을 주지 않는다.
-    대표사진 2차(구글) 갱신은 KTO/카카오와 별개로 7일 주기로 확인한다(_google_photo_stale)."""
-    if not place.image_url and _google_photo_stale(place):
-        _refresh_via_google_photo(place)
+    대표사진은 1.5차(KTO사진API, 08:00 주기)를 먼저 시도하고, 그래도 없고 포토스팟(2차)도
+    없을 때만 최후 수단인 구글(3차, KTO/카카오와 별개로 7일 주기)을 확인한다."""
+    if not place.image_url:
+        _refresh_via_kto_photo(place)
+        if not place.kto_photo_url and not _has_approved_user_photo(place) and _google_photo_stale(place):
+            _refresh_via_google_photo(place)
 
     if place.last_synced_at and place.last_synced_at >= _last_sync_cutoff():
         return False

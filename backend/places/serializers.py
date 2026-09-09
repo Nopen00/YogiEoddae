@@ -48,23 +48,28 @@ class PlaceSerializer(serializers.ModelSerializer):
         return PlaceBookmark.objects.filter(user=user, place=obj).exists()
 
     def get_image_url(self, obj):
-        """대표사진 우선순위: 1차 관광공사 → 2차 구글(Places API) → 3차 유저 포토스팟."""
+        """대표사진 우선순위: 1차 관광공사(firstimage) → 1.5차 관광공사 관광사진API →
+        2차 유저 포토스팟 → 3차(최후) 구글 Places API."""
         if obj.image_url:
             return obj.image_url
+        if obj.kto_photo_url:
+            return obj.kto_photo_url
+        photo = obj.photos.filter(status=Photo.STATUS_APPROVED).order_by('-created_at').first()
+        if photo:
+            return photo.image_url
         if obj.google_photo_url:
             request = self.context.get('request')
             return request.build_absolute_uri(obj.google_photo_url) if request else obj.google_photo_url
-        photo = obj.photos.filter(status=Photo.STATUS_APPROVED).order_by('-created_at').first()
-        return photo.image_url if photo else ''
+        return ''
 
     def get_photo_source(self, obj):
         """대표사진이 어디서 왔는지 — 프론트 '대표사진 출처' 표시용."""
-        if obj.image_url:
+        if obj.image_url or obj.kto_photo_url:
             return 'kto'
-        if obj.google_photo_url:
-            return 'google'
         if obj.photos.filter(status=Photo.STATUS_APPROVED).exists():
             return 'user'
+        if obj.google_photo_url:
+            return 'google'
         return None
 
     def get_photo_attribution(self, obj):
