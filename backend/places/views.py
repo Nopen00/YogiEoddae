@@ -753,12 +753,17 @@ class PlaceViewSet(viewsets.ReadOnlyModelViewSet):
         if keyword:
             qs = qs.filter(Q(name__icontains=keyword) | Q(address__icontains=keyword))
             # 1순위: 우리 DB(부분/줄임말 검색 가능). 여기서 못 찾았고 로그인한 사용자라면
-            # 2순위로 관광공사 API에서 검색해 새 장소를 등록하고 그 결과를 보여준다.
+            # 2순위로 관광공사(KTO) API에서, 그래도 없으면 3순위로 카카오 로컬 검색에서
+            # 찾아 새 장소를 등록하고 그 결과를 보여준다. 카카오까지 두는 이유는 동네 카페처럼
+            # 공식 관광지가 아니라 KTO에는 없는 개인적인 장소(포토스팟 등)도 커버하기 위함.
             # (비로그인 사용자에게도 열어두면 외부 API 호출/DB 쓰기가 무제한 유발될 수 있어 제한한다.)
             user = self.request.user
             if not qs.exists() and user and user.is_authenticated:
                 from places.management.commands.fetch_youtube_place import _kto_search
                 found = _kto_search(keyword, num_rows=5)
+                if not found:
+                    from places.services import kakao_search_and_register
+                    found = kakao_search_and_register(keyword, num_rows=5)
                 if found:
                     qs = Place.objects.filter(pk__in=[p.pk for p in found])
         if category:

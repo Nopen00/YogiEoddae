@@ -128,6 +128,36 @@ def _kakao_search_candidates(query: str, size: int = 5, lat=None, lng=None, radi
         return []
 
 
+def kakao_search_and_register(keyword: str, num_rows: int = 5) -> list:
+    """카카오 로컬 키워드 검색으로 장소를 찾아 DB에 저장한다 — 장소 검색 3순위 폴백
+    (1순위 DB, 2순위 KTO 다음). 동네 카페처럼 공식 관광지가 아니라 KTO에는 없는
+    개인적인 장소까지 찾을 수 있게 하기 위함(예: 포토스팟에 여행코스와 무관하게
+    직접 다녀온 장소를 올리고 싶은 경우).
+    카카오 업종 분류는 우리 category(관광공사 contenttypeid) 체계와 맞지 않아
+    비워둔다 — yt_ 미확정 장소와 동일하게 처리. kakao_place_id를 content_id
+    접두사로 써서 KTO(숫자)/유튜브(yt_) 스킴과 충돌하지 않게 한다."""
+    candidates = _kakao_search_candidates(keyword, size=num_rows)
+    places = []
+    for c in candidates:
+        if not c.get('kakao_place_id'):
+            continue
+        place, _ = Place.objects.update_or_create(
+            content_id=f"kakao_{c['kakao_place_id']}",
+            defaults={
+                'name': c['name'],
+                'address': c['address'],
+                'latitude': c['lat'],
+                'longitude': c['lng'],
+                'is_verified': True,
+                'kakao_place_id': c['kakao_place_id'],
+                'kakao_place_url': c.get('kakao_place_url') or '',
+                'phone': c.get('phone') or '',
+            },
+        )
+        places.append(place)
+    return places
+
+
 def kakao_reverse_geocode(lat, lng):
     """좌표 → 행정 주소(도로명 우선, 없으면 지번) 변환. 실패 시 None.
     AI가 추정한 장소명/주소가 부정확할 때, 저장된 좌표가 실제로 어디를 가리키는지
