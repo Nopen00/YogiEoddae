@@ -26,6 +26,7 @@ import { TextSeparator } from '../ui/TextSeparator';
 import { logEvent } from '@/services/logger';
 
 const PAGE_SIZE = 3;
+const SEARCH_DEBOUNCE_MS = 300;
 
 interface PlaceSelectAlertProps {
   visible: boolean;
@@ -34,7 +35,7 @@ interface PlaceSelectAlertProps {
 }
 
 export const PlaceSelectAlert = ({ visible, onConfirm, onClose }: PlaceSelectAlertProps) => {
-  const [allPlaces, setAllPlaces] = useState<Place[]>([]);
+  const [results, setResults] = useState<Place[]>([]);
   const [inputText, setInputText] = useState('');
   const [page, setPage] = useState(0);
   const [confirmTarget, setConfirmTarget] = useState<Place | null>(null);
@@ -43,13 +44,30 @@ export const PlaceSelectAlert = ({ visible, onConfirm, onClose }: PlaceSelectAle
     if (visible) {
       setInputText('');
       setPage(0);
+      setResults([]);
       setConfirmTarget(null);
-      placeApi.getList().then((res) => setAllPlaces(res.data.results)).catch(err => logEvent('error', 'PlaceSelectAlert.tsx:46', err?.message || String(err)));
     }
   }, [visible]);
 
   const keyword = inputText.trim();
-  const filteredPlaces = keyword ? allPlaces.filter((p) => p.name.includes(keyword)) : [];
+
+  // 검색어를 서버(/api/places/?keyword=)로 직접 보낸다 — 첫 페이지 목록만 클라이언트에서
+  // 필터링하던 예전 방식은 이미 등록된 지 오래된 장소가 검색에서 아예 빠지는 문제가 있었다.
+  useEffect(() => {
+    if (!visible || !keyword) {
+      setResults([]);
+      return;
+    }
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      placeApi.getList({ keyword })
+        .then((res) => { if (!cancelled) setResults(res.data.results); })
+        .catch((err) => { if (!cancelled) logEvent('error', 'PlaceSelectAlert.tsx:keyword-search', err?.message || String(err)); });
+    }, SEARCH_DEBOUNCE_MS);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [visible, keyword]);
+
+  const filteredPlaces = results;
   const pageCount = Math.max(1, Math.ceil(filteredPlaces.length / PAGE_SIZE));
   const visiblePlaces = filteredPlaces.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
 

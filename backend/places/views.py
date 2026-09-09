@@ -2,6 +2,7 @@ import json
 import os
 import threading
 import uuid
+from zoneinfo import ZoneInfo
 
 import requests
 from django.conf import settings
@@ -17,6 +18,8 @@ from rest_framework.response import Response
 
 from django.utils import timezone
 from django.views.decorators.csrf import ensure_csrf_cookie
+
+KST = ZoneInfo('Asia/Seoul')
 
 from .models import Place, Media, MediaPlace, Tag, Photo, PhotoImage, PhotoLike
 from .serializers import (
@@ -299,11 +302,23 @@ def admin_place_search_view(request):
     if not keyword:
         return JsonResponse({'results': []})
 
-    # 1차: KTO 관광공사 검색
+    results = []
+
+    # 0차: 우리 DB에 이미 있는 장소(부분/줄임말 검색 가능 — 정확한 등록명을
+    # 몰라도 "상명대"처럼 입력해도 매칭된다). 있으면 외부 API 호출 없이 바로 반환한다.
+    db_matches = Place.objects.filter(
+        Q(name__icontains=keyword) | Q(address__icontains=keyword)
+    ).exclude(latitude__isnull=True).exclude(longitude__isnull=True)[:5]
+    for p in db_matches:
+        results.append({
+            'name': p.name, 'address': p.address,
+            'lat': float(p.latitude), 'lng': float(p.longitude), 'source': 'db',
+        })
+
+    # 1차: DB에 없으면 KTO 관광공사 검색
     from places.management.commands.fetch_youtube_place import _kto_search
     from places.services import kakao_search, _has_precise_address
-    candidates = _kto_search(keyword, num_rows=5)
-    results = []
+    candidates = [] if results else _kto_search(keyword, num_rows=5)
     for p in candidates:
         if not p.address:
             continue
@@ -553,7 +568,7 @@ def admin_playlist_fetch_history_view(request):
                 'playlist_url': j.playlist_url,
                 'status': j.status,
                 'video_count': len(j.videos),
-                'created_at': j.created_at.strftime('%Y-%m-%d %H:%M'),
+                'created_at': j.created_at.astimezone(KST).strftime('%Y-%m-%d %H:%M'),
             }
             for j in jobs
         ],
@@ -737,6 +752,15 @@ class PlaceViewSet(viewsets.ReadOnlyModelViewSet):
 
         if keyword:
             qs = qs.filter(Q(name__icontains=keyword) | Q(address__icontains=keyword))
+            # 1순위: 우리 DB(부분/줄임말 검색 가능). 여기서 못 찾았고 로그인한 사용자라면
+            # 2순위로 관광공사 API에서 검색해 새 장소를 등록하고 그 결과를 보여준다.
+            # (비로그인 사용자에게도 열어두면 외부 API 호출/DB 쓰기가 무제한 유발될 수 있어 제한한다.)
+            user = self.request.user
+            if not qs.exists() and user and user.is_authenticated:
+                from places.management.commands.fetch_youtube_place import _kto_search
+                found = _kto_search(keyword, num_rows=5)
+                if found:
+                    qs = Place.objects.filter(pk__in=[p.pk for p in found])
         if category:
             qs = qs.filter(category=category)
         if unverified == 'true':
