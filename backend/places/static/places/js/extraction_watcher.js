@@ -219,9 +219,12 @@
       return;
     }
     fetch('/places/extract/playlist/job/' + jobId + '/status/')
-      .then(function (res) { return res.json(); })
+      .then(function (res) {
+        if (res.status === 404) { stopWatching(); return null; }
+        return res.json();
+      })
       .then(function (data) {
-        if (!data.ok) return;
+        if (!data || !data.ok) return;
         renderData(data);
         if (data.status !== 'running' && pollTimer) {
           clearInterval(pollTimer);
@@ -270,8 +273,27 @@
     ensureUi();
     var jobId = localStorage.getItem(JOB_ID_KEY);
     if (!jobId) return;
-    renderVisibility();
-    startPolling();
+    // 새로 열린 페이지에서는 먼저 작업이 아직 유효한지 한 번 확인한다.
+    // (작업이 이미 삭제됐으면 정리하고, 이미 끝난 작업이면 전체화면으로 막지 않고 위젯으로만 보여준다.)
+    fetch('/places/extract/playlist/job/' + jobId + '/status/')
+      .then(function (res) {
+        if (res.status === 404) { stopWatching(); return null; }
+        return res.json();
+      })
+      .then(function (data) {
+        if (!data || !data.ok) return;
+        if (data.status !== 'running') {
+          localStorage.setItem(VIEW_STATE_KEY, 'minimized');
+        }
+        renderVisibility();
+        renderData(data);
+        if (data.status === 'running') startPolling();
+      })
+      .catch(function () {
+        // 네트워크 오류 — 기존 저장된 상태로 표시하고 폴링에서 재시도
+        renderVisibility();
+        startPolling();
+      });
   }
 
   window.YgeExtractionWatcher = { start: start, _retry: retry };
