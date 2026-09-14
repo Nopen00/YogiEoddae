@@ -48,6 +48,10 @@ const PHOTO_SPOT_IMAGE_HEIGHT = Math.round(PHOTO_SPOT_CARD_WIDTH * 3 / 4);
 const TAB_BAR_HEIGHT = Typography.subtitle1.lineHeight + Spacing.v.small * 2;
 
 const CATEGORIES = ['추천', '유튜브 PICK', '드라마 PICK', '영화 PICK', '포토스팟'];
+// PICK 카드 하단의 작은 장소 썸네일 슬라이드 — 코스 카드 개수만큼 mediaApi.getPlaces()를
+// 개별 호출해서 만드는 구조라(카드 20개면 요청 20개) DB가 커질수록 랙이 심해짐.
+// 벌크로 가져오는 API로 교체하기 전까지 임시로 꺼둔다 (관련 상태/이펙트는 그대로 둠).
+const SHOW_PICK_CARD_PLACE_THUMBNAILS = false;
 const COURSE_SORT_OPTIONS = SORT_OPTIONS.filter(option => option !== '관련도 높은 순');
 const PLACE_COUNT_SORT_OPTIONS: SortOption[] = ['장소 많은 순', '장소 적은 순'];
 const PHOTO_TAGS = ['자연', '음식', '풍경', '야경', '감성', '카페', '도심', '계절'];
@@ -173,6 +177,7 @@ const CourseScreen = () => {
   }, [allMedia]);
 
   useEffect(() => {
+    if (!SHOW_PICK_CARD_PLACE_THUMBNAILS) return;
     [...youtubeMedia, ...dramaMedia, ...movieMedia].forEach(media => {
       mediaApi.getPlaces(media.id).then(res => {
         const images = res.data.map(mp => mp.place.image_url).filter(Boolean);
@@ -348,7 +353,7 @@ const CourseScreen = () => {
             <PlaceThumb uri={item.thumbnail_url} style={styles.pickCardTitleImage} />
           </View>
         </TouchableOpacity>
-        {slideImages.length > 0 && (
+        {SHOW_PICK_CARD_PLACE_THUMBNAILS && slideImages.length > 0 && (
           <FlatList
             data={slideImages}
             renderItem={({ item: uri }) => (
