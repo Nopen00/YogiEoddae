@@ -187,29 +187,23 @@ class MediaSerializer(serializers.ModelSerializer):
         model = Media
         fields = ['id', 'title', 'media_type', 'year', 'thumbnail_url', 'source_url', 'description', 'tags', 'is_bookmarked', 'place_count', 'is_submitted', 'rating', 'like_count', 'created_at']
 
+    # 아래 5개 필드는 MediaViewSet._annotate_counts()가 서브쿼리로 미리 계산해
+    # obj에 붙여둔 값을 읽기만 한다 (목록 항목마다 별도 쿼리를 던지던 N+1 제거).
     def get_is_bookmarked(self, obj):
-        user = _get_user_from_context(self.context)
-        if not user:
-            return False
-        from bookmarks.models import MediaBookmark
-        return MediaBookmark.objects.filter(user=user, media=obj).exists()
+        return getattr(obj, 'is_bookmarked_anno', False)
 
     def get_place_count(self, obj):
-        return obj.media_places.filter(status='admin_approved').count()
+        return getattr(obj, 'place_count_anno', 0)
 
     def get_rating(self, obj):
-        avg = obj.reviews.aggregate(avg=Avg('rating'))['avg']
-        return round(float(avg), 1) if avg is not None else 0
+        val = getattr(obj, 'rating_anno', None)
+        return round(float(val), 1) if val is not None else 0
 
     def get_like_count(self, obj):
-        return obj.bookmarks.count()
+        return getattr(obj, 'like_count_anno', 0)
 
     def get_is_submitted(self, obj):
-        user = _get_user_from_context(self.context)
-        if not user:
-            return False
-        from quiz.models import QuizSubmission
-        return QuizSubmission.objects.filter(user=user, media=obj).exists()
+        return getattr(obj, 'is_submitted_anno', False)
 
 
 class MediaPlaceSerializer(serializers.ModelSerializer):
@@ -263,26 +257,20 @@ class MediaDetailSerializer(serializers.ModelSerializer):
         ensure_google_photos_for_places([mp.place for mp in media_places])
         return MediaPlaceSerializer(media_places, many=True, context=self.context).data
 
+    # 아래 5개 필드는 MediaViewSet._annotate_counts()가 서브쿼리로 미리 계산해
+    # obj에 붙여둔 값을 읽기만 한다 (상세 조회마다 별도 쿼리를 던지던 N+1 제거).
     def get_is_bookmarked(self, obj):
-        user = _get_user_from_context(self.context)
-        if not user:
-            return False
-        from bookmarks.models import MediaBookmark
-        return MediaBookmark.objects.filter(user=user, media=obj).exists()
+        return getattr(obj, 'is_bookmarked_anno', False)
 
     def get_is_submitted(self, obj):
-        user = _get_user_from_context(self.context)
-        if not user:
-            return False
-        from quiz.models import QuizSubmission
-        return QuizSubmission.objects.filter(user=user, media=obj).exists()
+        return getattr(obj, 'is_submitted_anno', False)
 
     def get_place_count(self, obj):
-        return obj.media_places.filter(status='admin_approved').count()
+        return getattr(obj, 'place_count_anno', 0)
 
     def get_rating(self, obj):
-        avg = obj.reviews.aggregate(avg=Avg('rating'))['avg']
-        return round(float(avg), 1) if avg is not None else 0
+        val = getattr(obj, 'rating_anno', None)
+        return round(float(val), 1) if val is not None else 0
 
     def get_like_count(self, obj):
-        return obj.bookmarks.count()
+        return getattr(obj, 'like_count_anno', 0)

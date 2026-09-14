@@ -7,7 +7,11 @@ from zoneinfo import ZoneInfo
 import requests
 from django.conf import settings
 from django.core.files.storage import default_storage
-from django.db.models import Count, Q
+from django.db.models import (
+    Count, Q, Avg, Max, Exists, OuterRef, Subquery, Value,
+    BooleanField, IntegerField, FloatField,
+)
+from django.db.models.functions import Coalesce
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from rest_framework import status, viewsets
@@ -36,6 +40,7 @@ from bookmarks.models import MediaBookmark, PlaceBookmark
 from mailbox.services import check_and_grant_like_milestone, grant_photo_publish_reward
 from quiz.models import QuizSubmission, QuizAnswer
 from quiz.services import grade_answer, recalculate_media_place, grant_quiz_rewards
+from reviews.models import MediaReview
 
 
 def place_map_test(request):
@@ -862,7 +867,7 @@ class MediaViewSet(viewsets.ReadOnlyModelViewSet):
         return MediaSerializer
 
     def get_queryset(self):
-        qs = super().get_queryset()
+        qs = super().get_queryset().prefetch_related('tags')
         media_type = self.request.query_params.get('type')
         if media_type:
             qs = qs.filter(media_type=media_type)
@@ -880,14 +885,43 @@ class MediaViewSet(viewsets.ReadOnlyModelViewSet):
                 bookmark_count=Count('bookmarks', distinct=True),
                 review_count=Count('reviews', distinct=True),
             ).order_by('-bookmark_count', '-review_count', '-created_at')
-        return qs
+        return self._annotate_counts(qs)
+
+    def _annotate_counts(self, qs):
+        """MediaSerializer가 코스마다 place_count/rating/like_count/is_bookmarked/is_submitted를
+        각각 별도 쿼리로 다시 세던 N+1을 서브쿼리 annotate로 한 번에 계산해 없앤다.
+        DB가 커질수록 유튜브 PICK 탭이 느려지던 원인이라 목록/상세 양쪽에서 공용으로 쓴다."""
+        place_count_sq = (MediaPlace.objects
+                           .filter(media=OuterRef('pk'), status=MediaPlace.STATUS_ADMIN_APPROVED)
+                           .order_by().values('media').annotate(c=Count('id')).values('c'))
+        rating_sq = (MediaReview.objects
+                     .filter(media=OuterRef('pk'))
+                     .order_by().values('media').annotate(a=Avg('rating')).values('a'))
+        like_count_sq = (MediaBookmark.objects
+                          .filter(media=OuterRef('pk'))
+                          .order_by().values('media').annotate(c=Count('id')).values('c'))
+        qs = qs.annotate(
+            place_count_anno=Coalesce(Subquery(place_count_sq, output_field=IntegerField()), 0),
+            rating_anno=Subquery(rating_sq, output_field=FloatField()),
+            like_count_anno=Coalesce(Subquery(like_count_sq, output_field=IntegerField()), 0),
+        )
+        user = getattr(self.request, 'user', None)
+        if user and user.is_authenticated:
+            is_bookmarked_expr = Exists(MediaBookmark.objects.filter(media=OuterRef('pk'), user=user))
+            is_submitted_expr = Exists(QuizSubmission.objects.filter(media=OuterRef('pk'), user=user))
+        else:
+            is_bookmarked_expr = Value(False, output_field=BooleanField())
+            is_submitted_expr = Value(False, output_field=BooleanField())
+        return qs.annotate(is_bookmarked_anno=is_bookmarked_expr, is_submitted_anno=is_submitted_expr)
 
     @action(detail=False, methods=['get'], url_path='bookmarked', permission_classes=[IsAuthenticated])
     def bookmarked(self, request):
         """GET /api/media/bookmarked/  저장한 코스 목록"""
-        bookmarks = MediaBookmark.objects.filter(user=request.user).select_related('media').prefetch_related('media__tags')
-        media_list = [b.media for b in bookmarks]
-        return Response(MediaSerializer(media_list, many=True, context={'request': request}).data)
+        qs = (self._annotate_counts(Media.objects.filter(bookmarks__user=request.user))
+              .prefetch_related('tags')
+              .annotate(bookmarked_at=Max('bookmarks__created_at'))
+              .order_by('-bookmarked_at'))
+        return Response(MediaSerializer(qs, many=True, context={'request': request}).data)
 
     @action(detail=True, methods=['get'])
     def places(self, request, pk=None):

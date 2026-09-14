@@ -727,8 +727,9 @@ def ensure_google_photos_for_places(places, max_workers: int = 5) -> None:
     호출은 필요한 만큼만 나간다. 여러 장소를 병렬로 처리해 목록 하나에 사진 없는 장소가
     몰려 있어도 응답 지연이 장소 수만큼 그대로 누적되지 않게 한다."""
     no_primary = [p for p in places if not p.image_url]
-    for p in no_primary:
-        _refresh_via_kto_photo(p)
+    if no_primary:
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            list(executor.map(_refresh_via_kto_photo, no_primary))
 
     targets = [
         p for p in no_primary
