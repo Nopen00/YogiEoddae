@@ -13,6 +13,10 @@ import requests as http_requests
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
+from django.db.models import (
+    OuterRef, Subquery, Avg, Count, Exists, Value, BooleanField, IntegerField, FloatField, Prefetch,
+)
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 from googleapiclient.discovery import build
 
@@ -739,6 +743,34 @@ def ensure_google_photos_for_places(places, max_workers: int = 5) -> None:
         return
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         list(executor.map(_refresh_via_google_photo, targets))
+
+
+def annotate_places_for_list(places_qs, user=None):
+    """PlaceSerializer가 장소마다 따로 던지던 rating/like_count/is_bookmarked 쿼리와
+    대표사진 중복 조회(get_image_url/get_photo_source 각각 photos를 따로 쿼리하던 것)를
+    서브쿼리/prefetch로 한 번에 처리해 없앤다. 코스 상세에서 장소 여러 개를 한 번에
+    나열할 때(작은 썸네일 목록) 이게 없으면 장소 수만큼 쿼리가 쌓여 랙이 생긴다."""
+    from reviews.models import PlaceReview
+    from bookmarks.models import PlaceBookmark
+
+    rating_sq = (PlaceReview.objects.filter(place=OuterRef('pk'))
+                 .order_by().values('place').annotate(a=Avg('rating')).values('a'))
+    like_count_sq = (PlaceBookmark.objects.filter(place=OuterRef('pk'))
+                      .order_by().values('place').annotate(c=Count('id')).values('c'))
+    qs = places_qs.annotate(
+        rating_anno=Subquery(rating_sq, output_field=FloatField()),
+        like_count_anno=Coalesce(Subquery(like_count_sq, output_field=IntegerField()), 0),
+    )
+    if user and user.is_authenticated:
+        is_bookmarked_expr = Exists(PlaceBookmark.objects.filter(place=OuterRef('pk'), user=user))
+    else:
+        is_bookmarked_expr = Value(False, output_field=BooleanField())
+    qs = qs.annotate(is_bookmarked_anno=is_bookmarked_expr)
+    return qs.prefetch_related(
+        'tags',
+        Prefetch('photos', queryset=Photo.objects.filter(status=Photo.STATUS_APPROVED).order_by('-created_at'),
+                  to_attr='approved_photo_cache'),
+    )
 
 
 def refresh_place_if_stale(place: 'Place') -> bool:

@@ -1,6 +1,9 @@
-from django.db.models import Avg
+from django.db.models import Avg, Prefetch
 from rest_framework import serializers
 from .models import MediaPlace, Place, Media, Tag, Photo, PhotoImage
+
+
+_NOT_ANNOTATED = object()
 
 
 def _get_user_from_context(context):
@@ -40,12 +43,25 @@ class PlaceSerializer(serializers.ModelSerializer):
             'photo_source', 'photo_attribution',
         ]
 
+    # rating/like_count/is_bookmarked, 대표사진(photos) 조회는 annotate_places_for_list()로
+    # 미리 채운 큐리셋(코스 상세의 장소 목록 등)이면 그 값을 그대로 쓰고, 아니면(다른
+    # 호출부) 예전처럼 그때그때 쿼리한다 — 장소 여러 개를 한 번에 나열할 때(작은 썸네일
+    # 목록) annotate 없이 쓰면 장소 수만큼 쿼리가 쌓여 랙이 생기던 부분.
     def get_is_bookmarked(self, obj):
+        val = getattr(obj, 'is_bookmarked_anno', None)
+        if val is not None:
+            return val
         user = _get_user_from_context(self.context)
         if not user:
             return False
         from bookmarks.models import PlaceBookmark
         return PlaceBookmark.objects.filter(user=user, place=obj).exists()
+
+    def _approved_photos(self, obj):
+        cache = getattr(obj, 'approved_photo_cache', None)
+        if cache is not None:
+            return cache
+        return list(obj.photos.filter(status=Photo.STATUS_APPROVED).order_by('-created_at'))
 
     def get_image_url(self, obj):
         """대표사진 우선순위: 1차 관광공사(firstimage) → 1.5차 관광공사 관광사진API →
@@ -54,9 +70,9 @@ class PlaceSerializer(serializers.ModelSerializer):
             return obj.image_url
         if obj.kto_photo_url:
             return obj.kto_photo_url
-        photo = obj.photos.filter(status=Photo.STATUS_APPROVED).order_by('-created_at').first()
-        if photo:
-            return photo.image_url
+        photos = self._approved_photos(obj)
+        if photos:
+            return photos[0].image_url
         if obj.google_photo_url:
             request = self.context.get('request')
             return request.build_absolute_uri(obj.google_photo_url) if request else obj.google_photo_url
@@ -66,7 +82,7 @@ class PlaceSerializer(serializers.ModelSerializer):
         """대표사진이 어디서 왔는지 — 프론트 '대표사진 출처' 표시용."""
         if obj.image_url or obj.kto_photo_url:
             return 'kto'
-        if obj.photos.filter(status=Photo.STATUS_APPROVED).exists():
+        if self._approved_photos(obj):
             return 'user'
         if obj.google_photo_url:
             return 'google'
@@ -84,11 +100,14 @@ class PlaceSerializer(serializers.ModelSerializer):
         }
 
     def get_rating(self, obj):
-        avg = obj.reviews.aggregate(avg=Avg('rating'))['avg']
-        return round(float(avg), 1) if avg is not None else 0
+        val = getattr(obj, 'rating_anno', _NOT_ANNOTATED)
+        if val is _NOT_ANNOTATED:
+            val = obj.reviews.aggregate(avg=Avg('rating'))['avg']
+        return round(float(val), 1) if val is not None else 0
 
     def get_like_count(self, obj):
-        return obj.bookmarks.count()
+        val = getattr(obj, 'like_count_anno', None)
+        return val if val is not None else obj.bookmarks.count()
 
 
 class PhotoImageSerializer(serializers.ModelSerializer):
@@ -252,8 +271,10 @@ class MediaDetailSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'media_type', 'year', 'thumbnail_url', 'source_url', 'description', 'tags', 'is_bookmarked', 'is_submitted', 'places', 'place_count', 'rating', 'like_count', 'created_at']
 
     def get_places(self, obj):
-        media_places = obj.media_places.select_related('place').all()
-        from .services import ensure_google_photos_for_places
+        from .services import ensure_google_photos_for_places, annotate_places_for_list
+        user = _get_user_from_context(self.context)
+        place_qs = annotate_places_for_list(Place.objects.all(), user)
+        media_places = obj.media_places.prefetch_related(Prefetch('place', queryset=place_qs)).all()
         ensure_google_photos_for_places([mp.place for mp in media_places])
         return MediaPlaceSerializer(media_places, many=True, context=self.context).data
 

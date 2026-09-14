@@ -9,7 +9,7 @@ from django.conf import settings
 from django.core.files.storage import default_storage
 from django.db.models import (
     Count, Q, Avg, Max, Exists, OuterRef, Subquery, Value,
-    BooleanField, IntegerField, FloatField,
+    BooleanField, IntegerField, FloatField, Prefetch,
 )
 from django.db.models.functions import Coalesce
 from django.http import JsonResponse
@@ -34,7 +34,7 @@ from .serializers import (
 from .moderation import moderate_photo, CATEGORY_LABELS
 from .services import (
     refresh_place_if_stale, fetch_nearby_places, get_or_create_place_by_content_id,
-    ensure_google_photos_for_places, _kto_image_url,
+    ensure_google_photos_for_places, _kto_image_url, annotate_places_for_list,
 )
 from bookmarks.models import MediaBookmark, PlaceBookmark
 from mailbox.services import check_and_grant_like_milestone, grant_photo_publish_reward
@@ -928,10 +928,10 @@ class MediaViewSet(viewsets.ReadOnlyModelViewSet):
         """코스 목록 화면은 개별 장소 상세페이지를 거치지 않고 바로 나열되므로, 여기서
         미리 구글 대표사진을 채워둬야 미리보기 사진이 보인다(ensure_google_photos_for_places)."""
         media = self.get_object()
+        place_qs = annotate_places_for_list(Place.objects.all(), request.user)
         media_places = (MediaPlace.objects
                         .filter(media=media, status=MediaPlace.STATUS_ADMIN_APPROVED)
-                        .select_related('place')
-                        .prefetch_related('place__tags')
+                        .prefetch_related(Prefetch('place', queryset=place_qs))
                         .order_by('day', 'id'))
         ensure_google_photos_for_places([mp.place for mp in media_places])
         return Response(MediaPlaceSerializer(media_places, many=True, context={'request': request}).data)
