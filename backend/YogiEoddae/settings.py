@@ -108,6 +108,10 @@ WSGI_APPLICATION = 'YogiEoddae.wsgi.application'
 DATABASES = {
     'default': env.db()
 }
+# Django MySQL 백엔드는 OPTIONS.charset을 안 주면 기본값으로 utf8(3바이트)을 써서
+# 이모지 등 4바이트 문자를 INSERT할 때 "Incorrect string value" 에러가 난다.
+# 테이블/컬럼은 이미 utf8mb4라 커넥션만 맞춰주면 됨.
+DATABASES['default'].setdefault('OPTIONS', {})['charset'] = 'utf8mb4'
 
 
 # Password hashing
