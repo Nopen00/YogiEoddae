@@ -155,6 +155,15 @@
     <h1><img class="ic" src="{% static 'places/icons/map-pin.svg' %}" alt="">{{ media.title }}</h1>
     <p>{{ media.get_media_type_display }}</p>
   </div>
+  {% if media.source_url %}
+  <a href="{{ media.source_url }}" target="_blank" rel="noopener" class="btn-reextract" style="margin-right:8px; background:#f3f4f6; color:#374151; border:1px solid #e5e7eb;">
+    <img class="ic" src="{% static 'places/icons/clock.svg' %}" alt="">영상 바로가기
+  </a>
+  {% endif %}
+  <button type="button" class="btn-reextract" id="addPlaceBtn"
+    onclick="openAddModal()" style="margin-right:8px; background:#eff6ff; color:#2563eb; border:1px solid #bfdbfe;">
+    <img class="ic" src="{% static 'places/icons/map-pin.svg' %}" alt="">장소 추가
+  </button>
   <button type="button" class="btn-reextract" id="geocodeBtn"
     onclick="geocodeAll()" style="margin-right:8px; background:#f0fdf4; color:#16a34a; border:1px solid #bbf7d0;">
     <img class="ic" src="{% static 'places/icons/map-pin.svg' %}" alt="">주소 일괄갱신
@@ -303,6 +312,30 @@
   {% endif %}
 
 </main>
+
+<!-- 장소 추가 모달 -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h2 class="modal-title"><img class="ic" src="{% static 'places/icons/map-pin.svg' %}" alt="">장소 추가</h2>
+    <p class="modal-sub">AI가 놓친 장소를 직접 입력하세요. KTO/카카오에서 자동으로 위치를 찾아 승인 목록에 추가합니다.</p>
+
+    <div class="field-wrap">
+      <label class="field-label">장소명</label>
+      <input type="text" id="addName" class="field-input" placeholder="예: 오죽헌">
+    </div>
+    <div class="field-wrap">
+      <label class="field-label">주소/지역 힌트 <span style="color:#9ca3af;font-weight:400">(선택)</span></label>
+      <input type="text" id="addAddress" class="field-input" placeholder="예: 강원 강릉시">
+    </div>
+
+    <p class="modal-msg" id="addModalMsg"></p>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeAddModal()">취소</button>
+      <button class="btn-confirm" id="addConfirmBtn" onclick="saveAddPlace()">추가</button>
+    </div>
+  </div>
+</div>
 
 <!-- 위치 수정 모달 -->
 <div class="modal-overlay" id="editModal">
@@ -646,6 +679,54 @@
       btn.disabled = false; btn.textContent = '승인 취소';
     }
   }
+
+  /* ── 장소 추가 ── */
+  function openAddModal() {
+    document.getElementById('addName').value = '';
+    document.getElementById('addAddress').value = '';
+    document.getElementById('addModalMsg').textContent = '';
+    document.getElementById('addModalMsg').className = 'modal-msg';
+    document.getElementById('addModal').classList.add('open');
+    document.getElementById('addName').focus();
+  }
+
+  function closeAddModal() {
+    document.getElementById('addModal').classList.remove('open');
+  }
+
+  document.getElementById('addModal').addEventListener('click', closeAddModal);
+
+  async function saveAddPlace() {
+    const name = document.getElementById('addName').value.trim();
+    const address = document.getElementById('addAddress').value.trim();
+    const msgEl = document.getElementById('addModalMsg');
+
+    if (!name) { msgEl.textContent = '장소명을 입력하세요.'; msgEl.className = 'modal-msg err'; return; }
+
+    const btn = document.getElementById('addConfirmBtn');
+    btn.disabled = true; btn.textContent = '추가 중...';
+
+    try {
+      const res = await fetch('/places/extract/review/{{ media.pk }}/add-place/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+        body: JSON.stringify({ name, address }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        msgEl.textContent = '추가 완료 ✓';
+        msgEl.className = 'modal-msg ok';
+        setTimeout(() => location.reload(), 800);
+      } else {
+        msgEl.textContent = data.error || '추가 실패'; msgEl.className = 'modal-msg err';
+      }
+    } catch {
+      msgEl.textContent = '네트워크 오류'; msgEl.className = 'modal-msg err';
+    }
+    btn.disabled = false; btn.textContent = '추가';
+  }
+
+  document.getElementById('addAddress').addEventListener('keydown', e => { if (e.key === 'Enter') saveAddPlace(); });
 
   async function geocodeAll() {
     const btn = document.getElementById('geocodeBtn');

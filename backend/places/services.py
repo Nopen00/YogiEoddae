@@ -910,6 +910,9 @@ def run_extraction(url, media_title, media_type, max_locations, ai_choice, scene
         if not video_info:
             return {'media': None, 'places': [], 'log': [], 'error': '영상 정보를 가져올 수 없습니다.'}
 
+        if not media_title:
+            media_title = video_info['title'][:200]
+
         writer.write(f'제목: {video_info["title"]}')
 
         comments = _fetch_comments(youtube, video_id)

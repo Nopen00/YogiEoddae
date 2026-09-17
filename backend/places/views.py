@@ -454,6 +454,42 @@ def admin_place_update_view(request, place_id):
     })
 
 
+def admin_add_manual_place_view(request, media_id):
+    """AI 추출이 놓친 장소를 관리자가 이름/주소로 직접 찾아 코스에 추가.
+    resolve_place()로 KTO→Kakao 순서 매칭해 바로 승인 상태로 저장한다(좌표가 부정확하면
+    기존 '위치 수정' 모달로 다시 보정할 수 있음)."""
+    if request.method != 'POST':
+        return JsonResponse({'ok': False}, status=405)
+    media = get_object_or_404(Media, pk=media_id)
+    try:
+        data = json.loads(request.body)
+    except ValueError:
+        data = {}
+    name = (data.get('name') or '').strip()
+    address_hint = (data.get('address') or '').strip()
+    if not name:
+        return JsonResponse({'ok': False, 'error': '장소명을 입력하세요.'}, status=400)
+
+    from .services import resolve_place
+    place = resolve_place(name, address_hint, f'manual{media.pk}')
+    mp, _created = MediaPlace.objects.get_or_create(
+        media=media,
+        place=place,
+        defaults={
+            'scene_description': address_hint,
+            'confidence_score': 100,
+            'is_confirmed': True,
+            'status': MediaPlace.STATUS_ADMIN_APPROVED,
+            'ai_reason': '관리자 수동 추가',
+        },
+    )
+    if mp.status != MediaPlace.STATUS_ADMIN_APPROVED:
+        mp.status = MediaPlace.STATUS_ADMIN_APPROVED
+        mp.is_confirmed = True
+        mp.save(update_fields=['status', 'is_confirmed'])
+    return JsonResponse({'ok': True})
+
+
 def admin_review_view(request, media_id):
     media = get_object_or_404(Media, pk=media_id)
 

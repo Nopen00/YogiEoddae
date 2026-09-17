@@ -3,6 +3,7 @@ from django.urls import path
 from .views import (
     fetch_and_save_places, get_place_list, place_map_test, demo_view, map_embed_view,
     index_view, admin_media_list_view, admin_extract_view, admin_review_view,
+    admin_add_manual_place_view,
     admin_place_update_view, admin_place_search_view,
     admin_place_reverse_geocode_view, admin_place_nearby_view,
     admin_geocode_media_view, admin_revoke_approval_view, admin_delete_media_view,
@@ -32,6 +33,7 @@ urlpatterns = [
     path('place/<int:place_id>/reverse-geocode/', staff_member_required(admin_place_reverse_geocode_view), name='admin_place_reverse_geocode'),
     path('place/<int:place_id>/nearby-candidates/', staff_member_required(admin_place_nearby_view), name='admin_place_nearby'),
     path('extract/review/<int:media_id>/geocode/', staff_member_required(admin_geocode_media_view),   name='admin_geocode_media'),
+    path('extract/review/<int:media_id>/add-place/', staff_member_required(admin_add_manual_place_view), name='admin_add_manual_place'),
     path('mediaplace/<int:mp_id>/revoke/',         staff_member_required(admin_revoke_approval_view), name='admin_revoke_approval'),
 
     # 재생목록 일괄 추출
