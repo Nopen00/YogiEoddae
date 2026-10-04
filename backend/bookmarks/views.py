@@ -7,6 +7,7 @@ from django.shortcuts import get_object_or_404
 from .models import MediaBookmark, PlaceBookmark, PhotoBookmark
 from .serializers import MediaBookmarkSerializer, PlaceBookmarkSerializer, PhotoBookmarkSerializer
 from places.models import Media, Place, Photo
+from places.services import approved_photos_prefetch
 
 
 class BookmarkListView(APIView):
@@ -16,12 +17,12 @@ class BookmarkListView(APIView):
     def get(self, request):
         user = request.user
         media_bookmarks = MediaBookmark.objects.filter(user=user).select_related('media').prefetch_related('media__tags')
-        place_bookmarks = PlaceBookmark.objects.filter(user=user).select_related('place').prefetch_related('place__tags')
+        place_bookmarks = PlaceBookmark.objects.filter(user=user).select_related('place').prefetch_related('place__tags', approved_photos_prefetch('place__'))
         photo_bookmarks = PhotoBookmark.objects.filter(user=user).select_related('photo__place').prefetch_related('photo__tags')
 
         return Response({
             'saved_media':  MediaBookmarkSerializer(media_bookmarks, many=True).data,
-            'saved_places': PlaceBookmarkSerializer(place_bookmarks, many=True).data,
+            'saved_places': PlaceBookmarkSerializer(place_bookmarks, many=True, context={'request': request}).data,
             'saved_photos': PhotoBookmarkSerializer(photo_bookmarks, many=True).data,
         })
 

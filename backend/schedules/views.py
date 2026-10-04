@@ -9,6 +9,12 @@ from django.shortcuts import get_object_or_404
 from .models import Schedule, DailyPlace, ScheduleBookmark
 from .serializers import ScheduleSerializer, ScheduleCreateSerializer, DailyPlaceSerializer
 from places.models import Media, MediaPlace
+from places.services import approved_photos_prefetch
+
+
+def _place_prefetch(prefix=''):
+    """일정의 장소 목록 + 장소별 대표사진(포토스팟) 조회를 한 번에 미리 가져온다 (N+1 방지)."""
+    return (f'{prefix}daily_places__place', approved_photos_prefetch(f'{prefix}daily_places__place__'))
 
 
 def _extend_end_date_for_max_day(start_date, end_date, max_day):
@@ -30,7 +36,7 @@ class ScheduleListCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        schedules = Schedule.objects.filter(user=request.user).prefetch_related('daily_places__place')
+        schedules = Schedule.objects.filter(user=request.user).prefetch_related(*_place_prefetch())
         return Response(ScheduleSerializer(schedules, many=True, context={'request': request}).data)
 
     def post(self, request):
@@ -45,7 +51,7 @@ class ScheduleDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
     def _get_schedule(self, pk, user):
-        return get_object_or_404(Schedule, pk=pk, user=user)
+        return get_object_or_404(Schedule.objects.prefetch_related(*_place_prefetch()), pk=pk, user=user)
 
     def get(self, request, pk):
         schedule = self._get_schedule(pk, request.user)
@@ -195,6 +201,6 @@ class BookmarkedScheduleListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        bookmarks = ScheduleBookmark.objects.filter(user=request.user).select_related('schedule').prefetch_related('schedule__daily_places__place')
+        bookmarks = ScheduleBookmark.objects.filter(user=request.user).select_related('schedule').prefetch_related(*_place_prefetch('schedule__'))
         schedules = [b.schedule for b in bookmarks]
         return Response(ScheduleSerializer(schedules, many=True, context={'request': request}).data)

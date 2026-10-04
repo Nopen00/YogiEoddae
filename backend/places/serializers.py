@@ -1,6 +1,7 @@
 from django.db.models import Avg, Prefetch
 from rest_framework import serializers
 from .models import MediaPlace, Place, Media, Tag, Photo, PhotoImage
+from .services import get_approved_photos, resolve_place_image_url
 
 
 _NOT_ANNOTATED = object()
@@ -58,25 +59,10 @@ class PlaceSerializer(serializers.ModelSerializer):
         return PlaceBookmark.objects.filter(user=user, place=obj).exists()
 
     def _approved_photos(self, obj):
-        cache = getattr(obj, 'approved_photo_cache', None)
-        if cache is not None:
-            return cache
-        return list(obj.photos.filter(status=Photo.STATUS_APPROVED).order_by('-created_at'))
+        return get_approved_photos(obj)
 
     def get_image_url(self, obj):
-        """대표사진 우선순위: 1차 관광공사(firstimage) → 1.5차 관광공사 관광사진API →
-        2차 유저 포토스팟 → 3차(최후) 구글 Places API."""
-        if obj.image_url:
-            return obj.image_url
-        if obj.kto_photo_url:
-            return obj.kto_photo_url
-        photos = self._approved_photos(obj)
-        if photos:
-            return photos[0].image_url
-        if obj.google_photo_url:
-            request = self.context.get('request')
-            return request.build_absolute_uri(obj.google_photo_url) if request else obj.google_photo_url
-        return ''
+        return resolve_place_image_url(obj, self.context.get('request'))
 
     def get_photo_source(self, obj):
         """대표사진이 어디서 왔는지 — 프론트 '대표사진 출처' 표시용."""

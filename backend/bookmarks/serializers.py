@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from places.services import resolve_place_image_url
 from .models import MediaBookmark, PlaceBookmark, PhotoBookmark
 
 
@@ -22,13 +23,16 @@ class PlaceBookmarkSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(source='place.id')
     name = serializers.CharField(source='place.name')
     address = serializers.CharField(source='place.address')
-    image_url = serializers.URLField(source='place.image_url')
+    image_url = serializers.SerializerMethodField()
     tags = serializers.SerializerMethodField()
     saved_at = serializers.DateTimeField(source='created_at')
 
     class Meta:
         model = PlaceBookmark
         fields = ('id', 'name', 'address', 'image_url', 'tags', 'saved_at')
+
+    def get_image_url(self, obj):
+        return resolve_place_image_url(obj.place, self.context.get('request'))
 
     def get_tags(self, obj):
         return [{'name': t.name, 'category': t.category} for t in obj.place.tags.all()]

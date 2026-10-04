@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from places.models import Media, Photo, Place
+from places.services import approved_photos_prefetch
 from mailbox.services import grant_review_write_reward
 from .models import MediaReview, MediaReviewLike, PhotoReview, PhotoReviewLike, PlaceReview, PlaceReviewLike
 from .serializers import MediaReviewSerializer, PhotoReviewSerializer, PlaceReviewSerializer
@@ -21,9 +22,11 @@ REVIEW_TYPES = {
 
 def _reviews_queryset(review_model, fk_name, review_type):
     extra = ['photo__place'] if review_type == 'photo' else []
+    # 장소 리뷰는 장소 대표사진 폴백(포토스팟) 조회도 미리 가져와 N+1을 막는다.
+    photos = [approved_photos_prefetch(f'{fk_name}__')] if review_type == 'place' else []
     return (review_model.objects
             .select_related('user', fk_name, *extra)
-            .prefetch_related(f'{fk_name}__tags'))
+            .prefetch_related(f'{fk_name}__tags', *photos))
 
 
 def _validate_rating(value):

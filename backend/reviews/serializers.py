@@ -1,6 +1,7 @@
 from zoneinfo import ZoneInfo
 
 from rest_framework import serializers
+from places.services import resolve_place_image_url
 from .models import MediaReview, PlaceReview, PhotoReview
 
 KST = ZoneInfo('Asia/Seoul')
@@ -60,7 +61,7 @@ class PlaceReviewSerializer(ReviewSerializerBase):
             'id': obj.place_id,
             'name': obj.place.name,
             'address': obj.place.address,
-            'image_url': obj.place.image_url,
+            'image_url': resolve_place_image_url(obj.place, self.context.get('request')),
             'category': obj.place.category,
             'tags': _tag_list(obj.place.tags),
         }

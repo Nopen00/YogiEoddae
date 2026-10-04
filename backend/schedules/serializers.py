@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from places.services import resolve_place_image_url
 from .models import Schedule, DailyPlace, ScheduleBookmark
 
 
@@ -6,9 +7,12 @@ class PlaceBriefSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
     address = serializers.CharField()
-    image_url = serializers.URLField()
+    image_url = serializers.SerializerMethodField()
     latitude = serializers.DecimalField(max_digits=20, decimal_places=14)
     longitude = serializers.DecimalField(max_digits=20, decimal_places=14)
+
+    def get_image_url(self, obj):
+        return resolve_place_image_url(obj, self.context.get('request'))
 
 
 class DailyPlaceSerializer(serializers.ModelSerializer):

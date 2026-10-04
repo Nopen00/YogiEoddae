@@ -745,6 +745,37 @@ def ensure_google_photos_for_places(places, max_workers: int = 5) -> None:
         list(executor.map(_refresh_via_google_photo, targets))
 
 
+def approved_photos_prefetch(prefix=''):
+    """장소의 승인된 포토스팟을 approved_photo_cache에 미리 담는 Prefetch.
+    prefix로 관계 경로를 줄 수 있다 (예: 'daily_places__place__')."""
+    return Prefetch(f'{prefix}photos', queryset=Photo.objects.filter(status=Photo.STATUS_APPROVED).order_by('-created_at'),
+                    to_attr='approved_photo_cache')
+
+
+def get_approved_photos(place: 'Place') -> list:
+    """approved_photo_cache(prefetch)가 있으면 그걸, 없으면 쿼리로 승인된 포토스팟을 반환."""
+    cache = getattr(place, 'approved_photo_cache', None)
+    if cache is not None:
+        return cache
+    return list(place.photos.filter(status=Photo.STATUS_APPROVED).order_by('-created_at'))
+
+
+def resolve_place_image_url(place: 'Place', request=None) -> str:
+    """장소 대표사진 우선순위: 1차 관광공사(firstimage) → 1.5차 관광공사 관광사진API →
+    2차 유저 포토스팟 → 3차(최후) 구글 Places API. 장소 썸네일을 내려주는 모든
+    시리얼라이저(코스/일정/찜/리뷰)가 이 함수를 써서 같은 사진이 보이게 한다."""
+    if place.image_url:
+        return place.image_url
+    if place.kto_photo_url:
+        return place.kto_photo_url
+    photos = get_approved_photos(place)
+    if photos:
+        return photos[0].image_url
+    if place.google_photo_url:
+        return request.build_absolute_uri(place.google_photo_url) if request else place.google_photo_url
+    return ''
+
+
 def annotate_places_for_list(places_qs, user=None):
     """PlaceSerializer가 장소마다 따로 던지던 rating/like_count/is_bookmarked 쿼리와
     대표사진 중복 조회(get_image_url/get_photo_source 각각 photos를 따로 쿼리하던 것)를
@@ -766,11 +797,7 @@ def annotate_places_for_list(places_qs, user=None):
     else:
         is_bookmarked_expr = Value(False, output_field=BooleanField())
     qs = qs.annotate(is_bookmarked_anno=is_bookmarked_expr)
-    return qs.prefetch_related(
-        'tags',
-        Prefetch('photos', queryset=Photo.objects.filter(status=Photo.STATUS_APPROVED).order_by('-created_at'),
-                  to_attr='approved_photo_cache'),
-    )
+    return qs.prefetch_related('tags', approved_photos_prefetch())
 
 
 def refresh_place_if_stale(place: 'Place') -> bool:
